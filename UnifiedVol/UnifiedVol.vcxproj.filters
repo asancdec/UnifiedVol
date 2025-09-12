@@ -18,6 +18,7 @@
     <None Include="data\Analysis_SPY.xlsx" />
     <None Include="data\SVI_VolSurface_SPY_04072011.csv" />
     <None Include="data\VolSurface_SPY_04072011.csv" />
+    <None Include="data\inputs\VolSurface_SPY_04072011.csv" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\DataStructs\RawSVIParams.hpp">
@@ -38,21 +39,36 @@
     <ClInclude Include="include\VolModels\SVI.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\Core\VolSurface.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Core\SliceData.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Core\MarketData.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Models\SVI\SVI.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Models\SVI\SVIParams.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\VolModels\SVI.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Utils\CSVRead.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\DataStructs\VolSurface.cpp">
+    <ClCompile Include="src\Core\VolSurface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utils\CSVWrite.cpp">
+    <ClCompile Include="src\Core\SliceData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Models\SVI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

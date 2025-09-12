@@ -1,17 +1,26 @@
 #include "Utils/CSVRead.hpp"
 #include "Utils/CSVWrite.hpp"
-#include "DataStructs/VolSurface.hpp"
-#include "VolModels/SVI.hpp"
+#include "Core/VolSurface.hpp"
+#include "Core/MarketData.hpp"
+#include "Models/SVI/SVI.hpp"
 
+
+#include <iostream>
 
 int main() 
 {
+    MarketData mkt{0.0, 0.0};
 
-    VolSurface impVolSurf{ readVolSurface("data/VolSurface_SPY_04072011.csv") };
+    VolSurface mktVolSurf{ readVolSurface("data/inputs/VolSurface_SPY_04072011.csv", mkt) };
 
-    impVolSurf.printConsole();
 
-    //SVI svi{impVolSurf};
+    mktVolSurf.printImpVol();
+    std::cout << "\n";
+    mktVolSurf.printTotVar();
+    std::cout << "\n";
+
+
+    SVI svi{ mktVolSurf };
 
     //svi.modelVolSurf.printConsole();
 

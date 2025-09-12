@@ -1,14 +1,14 @@
 /**
-* RawSVIParams.hpp
+* SVIParams.hpp
 * Author: Alvaro Sanchez de Carlos
-* Date: 08/17/2025
+* Date: 08/21/2025
 */
 
-#ifndef RAW_SVI_PARAMS_HPP
-#define RAW_SVI_PARAMS_HPP
+#ifndef SVI_PARAMS_HPP
+#define SVI_PARAMS_HPP
 
 // Raw SVI parameters to calibrate per maturity slice
-struct RawSVIParams
+struct SVIParams
 {
 	double a;
 	double b;
@@ -17,4 +17,4 @@ struct RawSVIParams
 	double sigma;
 };
 
-#endif // RAW_SVI_PARAMS_HPP
+#endif // SVI_PARAMS_HPP

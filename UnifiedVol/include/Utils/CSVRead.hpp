@@ -4,11 +4,10 @@
 * Date: 08/17/2025
 */
 
+#ifndef CSV_READ_HPP
+#define CSV_READ_HPP
 
-#ifndef CSVREAD_HPP
-#define CSVREAD_HPP
-
-#include "DataStructs/VolSurface.hpp"
+#include "Core/VolSurface.hpp"
 #include <vector>
 #include <string>
 
@@ -21,10 +20,9 @@
  * - The remaining cells contain implied volatilities for each strike-maturity pair.
  *
  * @param filename Path to the CSV file.
- * @return VolSurface<double> Object containing the strikes, maturities, and implied volatilities.
+ * @return VolSurface Object containing the strikes, maturities, and implied volatilities.
  */
-VolSurface readVolSurface(const std::string& filename);
+VolSurface readVolSurface(const std::string& filename, const MarketData& mkt);
 
 
-
-#endif // CSVREAD_HPP
+#endif // CSV_READ_HPP

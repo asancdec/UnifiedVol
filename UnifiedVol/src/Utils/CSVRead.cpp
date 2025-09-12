@@ -11,14 +11,13 @@
 #include <stdexcept>
 
 
-VolSurface readVolSurface(const std::string& filename)
+VolSurface readVolSurface(const std::string& filename, const MarketData& mkt)
 {
     // Open the CSV file for reading
     std::ifstream file(filename);
-    if (!file.is_open())
+    if (!file.is_open()) 
     {
-        std::cerr << "Error: Could not open file " << filename << "\n";
-        // Could consider throwing an exception here instead of continuing
+        throw std::runtime_error("Error: Could not open file " + filename);
     }
 
     // Container to store the raw CSV data
@@ -26,55 +25,46 @@ VolSurface readVolSurface(const std::string& filename)
     std::string line{};
 
     // Read file line by line
-    while (std::getline(file, line))
+    while (std::getline(file, line)) 
     {
-        std::stringstream ss(line); // Split line by commas
+        std::stringstream ss(line);
         std::string cell{};
-        std::vector<double> row{}; // Row of doubles
-
-        // Read each cell in the line
+        std::vector<double> row{};
         while (std::getline(ss, cell, ','))
         {
-            try
+            try 
             {
-                row.push_back(std::stod(cell)); // Convert string to double
+                row.push_back(std::stod(cell));
             }
-            catch (...)
+            catch (...) 
             {
-                // Ignore any non-numeric cells (e.g., empty or header)
+                // Ignore non-numeric cells (e.g., empty or header)
             }
         }
-
-        // Only add non-empty rows to the data
-        if (!row.empty())
-        {
+        if (!row.empty()) {
             data.push_back(row);
         }
     }
 
-    // Extract moneyness (K/S) from the first row
-    // Skip the first element (row[0]) because it may be an empty header cell
-    std::vector<double> moneyness(data[0].begin(), data[0].end());
-
-    // Prepare vector for maturities
-    std::vector<double> maturities{};
-    maturities.reserve(data.size() - 1); 
-
-    // Prepare matrix for implied volatilities
-    std::vector<std::vector<double>> vols{};
-    vols.reserve(data.size() - 1);
-
-    // Loop through each row (skip first row because it's the header)
-    for (size_t i = 1; i < data.size(); ++i)
-    {
-        // First column in the row is the maturity
-        maturities.push_back(data[i][0]);
-
-        // Remaining columns are the implied volatilities
-        std::vector<double> rowVols(data[i].begin() + 1, data[i].end());
-        vols.push_back(rowVols);
+    if (data.empty()) {
+        throw std::runtime_error("CSV file is empty or invalid: " + filename);
     }
 
-    // Construct and return a VolSurface object with the extracted data
-    return VolSurface(moneyness, maturities, vols);
+    // Extract moneyness (K/S) from the first row
+    std::vector<double> m(data[0].begin(), data[0].end());
+
+    // Prepare maturities and vol matrix
+    std::vector<double> mats{};
+    std::vector<std::vector<double>> vols{};
+    mats.reserve(data.size() - 1);
+    vols.reserve(data.size() - 1);
+
+    for (size_t i = 1; i < data.size(); ++i) 
+    {
+        mats.push_back(data[i][0]); // First column is maturity
+        vols.push_back(std::vector<double>(data[i].begin() + 1, data[i].end())); // Remaining are vols
+    }
+
+    // Construct VolSurface using the new FromMarketData method
+    return VolSurface::FromMarketData(m, vols, mats, mkt);
 }

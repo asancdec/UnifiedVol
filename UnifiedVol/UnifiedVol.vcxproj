@@ -136,23 +136,32 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="data\Analysis_SPY.xlsx" />
+    <None Include="data\inputs\VolSurface_SPY_04072011.csv" />
     <None Include="data\SVI_VolSurface_SPY_04072011.csv" />
     <None Include="data\VolSurface_SPY_04072011.csv" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\Core\MarketData.hpp" />
+    <ClInclude Include="include\Core\VolSurface.hpp" />
     <ClInclude Include="include\DataStructs\RawSVIParams.hpp" />
     <ClInclude Include="include\DataStructs\SliceData.hpp" />
     <ClInclude Include="include\DataStructs\VolSurface.hpp" />
+    <ClInclude Include="include\Core\SliceData.hpp" />
+    <ClInclude Include="include\Models\SVI\SVI.hpp" />
+    <ClInclude Include="include\Models\SVI\SVIParams.hpp" />
     <ClInclude Include="include\Utils\CSVRead.hpp" />
-    <ClInclude Include="include\Utils\CSVWrite.hpp" />
+    <ClInclude Include="include\Utils\CSVWrite.hpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="include\VolModels\SVI.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\DataStructs\VolSurface.cpp" />
+    <ClCompile Include="src\Core\SliceData.cpp" />
+    <ClCompile Include="src\Core\VolSurface.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Models\SVI.cpp" />
     <ClCompile Include="src\Utils\CSVRead.cpp" />
-    <ClCompile Include="src\Utils\CSVWrite.cpp" />
-    <ClCompile Include="src\VolModels\SVI.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
