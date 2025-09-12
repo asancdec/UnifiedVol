@@ -16,6 +16,16 @@ class SliceData
 {   
 private:
 
+    //--------------------------------------------------------------------------
+    // Member variables
+    //--------------------------------------------------------------------------
+
+    std::vector<double> mny_;            // plain moneyness (K/S)
+    std::vector<double> logFM_;          // log-forward moneyness log(K/F)
+    std::vector<double> vol_;            // implied volatilities 
+    std::vector<double> wT_;             // total variance (vol²T) 
+
+
     // Custom constructor using plain moneyness and implied volatility data
     explicit SliceData (const std::vector<double>& mny, 
                         const std::vector<double>& logFM,
@@ -23,13 +33,10 @@ private:
                         const std::vector<double>& wT);
      
 public:
-    std::vector<double> mny_;            // plain moneyness (K/S)
-    std::vector<double> logFM_;          // log-forward moneyness log(K/F)
-    std::vector<double> vol_;            // implied volatilities 
-    std::vector<double> wT_;             // total variance (vol²T) 
 
+    //--------------------------------------------------------------------------
     // Initialization
-   
+    //--------------------------------------------------------------------------   
     SliceData() = delete;
 
     // Initialize class using plain moneyness and implied volatility data
@@ -44,7 +51,9 @@ public:
         const MarketData& mkt,
         double T);
 
-    // Functionality
+    //--------------------------------------------------------------------------
+    // Math functions
+    //--------------------------------------------------------------------------
 
     // Determine minimum total variance
     const double minWT() const noexcept;
@@ -58,13 +67,22 @@ public:
     // Determine maximum log-forward moneyness
     const double maxLogFM() const noexcept;
 
+    //--------------------------------------------------------------------------
     // Utilities
+    //--------------------------------------------------------------------------
     
     // Print implied volatility slice on console
     void printImpVol() const;
 
     // Print total variance slice on console
     void printTotVar() const;
+
+    // Getters
+    const std::vector<double>& mny() const;
+    const std::vector<double>& logFM() const;
+    const std::vector<double>& vol() const;
+    const std::vector<double>& wT() const;
+
 };
 
 #endif // SLICE_DATA_HPP

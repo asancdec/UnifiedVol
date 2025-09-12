@@ -16,14 +16,22 @@ class VolSurface
 {
 private:
 
-    VolSurface(std::vector<SliceData>&& slices, std::vector<double>&& mats);
-
-public:
+    //--------------------------------------------------------------------------
+    // Member variables
+    //--------------------------------------------------------------------------
 
     std::vector<SliceData> slices_;         // 2D volatility grid: vols[maturity][maturity slice]
     std::vector<double>    maturities_;     // Vector with different volatility surface maturities
 
+    // Custom constructor
+    VolSurface(std::vector<SliceData>&& slices, std::vector<double>&& mats);
+
+public:
+
+    //--------------------------------------------------------------------------
     // Initialization
+    //--------------------------------------------------------------------------
+
     VolSurface() = delete;
 
     // Initialize class using plain moneyness K/S and implied volatility data
@@ -38,13 +46,19 @@ public:
         const std::vector<double>& maturities,
         const MarketData& mkt);
 
+    //--------------------------------------------------------------------------
     // Utilities
+    //--------------------------------------------------------------------------
 
     // Print implied volatility surface on the console
     void printImpVol() const;
 
     // Print total variance surface on the console
     void printTotVar() const;
+
+    // Getters
+    const std::vector<SliceData>& slices() const;
+    const std::vector<double>& maturities() const;
 };
 
 

@@ -48,7 +48,6 @@ SliceData SliceData::fromMarketData(const std::vector<double>& mny,
     return SliceData(mny, logFM, vol, tVar);
 }
 
-
 SliceData SliceData::fromModelData(const std::vector<double>& logFM,
     const std::vector<double>& wT,
     const MarketData& mkt,
@@ -77,7 +76,6 @@ SliceData SliceData::fromModelData(const std::vector<double>& logFM,
 
     return SliceData(mny, logFM, vol, wT);
 }
-
 
 const double SliceData::minWT() const noexcept
 {
@@ -116,3 +114,25 @@ void SliceData::printTotVar() const
     }
     std::cout << "\n";
 }
+
+const std::vector<double>& SliceData::mny() const
+{
+    return mny_;
+}
+
+const std::vector<double>& SliceData::logFM() const
+{
+    return logFM_;
+}
+
+const std::vector<double>& SliceData::vol() const
+{
+    return vol_;
+}
+
+const std::vector<double>& SliceData::wT() const
+{
+    return wT_;
+}
+
+
