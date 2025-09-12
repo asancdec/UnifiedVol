@@ -51,20 +51,20 @@ VolSurface readVolSurface(const std::string& filename, const MarketData& mkt)
     }
 
     // Extract moneyness (K/S) from the first row
-    std::vector<double> m(data[0].begin(), data[0].end());
+    std::vector<double> mny(data[0].begin(), data[0].end());
 
     // Prepare maturities and vol matrix
-    std::vector<double> mats{};
+    std::vector<double> maturities{};
     std::vector<std::vector<double>> vols{};
-    mats.reserve(data.size() - 1);
+    maturities.reserve(data.size() - 1);
     vols.reserve(data.size() - 1);
 
     for (size_t i = 1; i < data.size(); ++i) 
     {
-        mats.push_back(data[i][0]); // First column is maturity
+        maturities.push_back(data[i][0]); // First column is maturity
         vols.push_back(std::vector<double>(data[i].begin() + 1, data[i].end())); // Remaining are vols
     }
 
     // Construct VolSurface using the new FromMarketData method
-    return VolSurface::FromMarketData(m, vols, mats, mkt);
+    return VolSurface::fromMarketData(mny, vols, maturities, mkt);
 }

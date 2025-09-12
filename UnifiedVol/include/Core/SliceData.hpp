@@ -17,34 +17,34 @@ class SliceData
 private:
 
     // Custom constructor using plain moneyness and implied volatility data
-    explicit SliceData (const std::vector<double>& m, 
+    explicit SliceData (const std::vector<double>& mny, 
                         const std::vector<double>& logFM,
                         const std::vector<double>& vol, 
                         const std::vector<double>& wT);
      
 public:
-    std::vector<double> m;            // plain moneyness (K/S)
-    std::vector<double> logFM;        // log-forward moneyness log(K/F)
-    std::vector<double> vol;          // implied volatilities 
-    std::vector<double> wT;           // total variance (vol²T) 
+    std::vector<double> mny_;            // plain moneyness (K/S)
+    std::vector<double> logFM_;          // log-forward moneyness log(K/F)
+    std::vector<double> vol_;            // implied volatilities 
+    std::vector<double> wT_;             // total variance (vol²T) 
 
     // Initialization
    
     SliceData() = delete;
 
     // Initialize class using plain moneyness and implied volatility data
-    static SliceData FromMarketData(const std::vector<double>& m,
+    static SliceData fromMarketData(const std::vector<double>& mny,
         const std::vector<double>& vol,
         const MarketData& mkt,
         double T);
 
     // Initialize class using log-forward moneyness and total implied variance
-    static SliceData FromModelData(const std::vector<double>& logFM,
+    static SliceData fromModelData(const std::vector<double>& logFM,
         const std::vector<double>& wT,
         const MarketData& mkt,
         double T);
 
-    // Functionalities
+    // Functionality
 
     // Determine minimum total variance
     const double minWT() const noexcept;
@@ -62,6 +62,7 @@ public:
     
     // Print implied volatility slice on console
     void printImpVol() const;
+
     // Print total variance slice on console
     void printTotVar() const;
 };

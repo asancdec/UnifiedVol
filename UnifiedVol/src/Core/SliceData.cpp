@@ -13,14 +13,14 @@
 #include <iomanip>
 
 
-SliceData::SliceData(const std::vector<double>& m,
+SliceData::SliceData(const std::vector<double>& mny,
     const std::vector<double>& logFM,
     const std::vector<double>& vol, 
     const std::vector<double>& wT)
-    : m(m), logFM(logFM), vol(vol), wT(wT)
+    : mny_(mny), logFM_(logFM), vol_(vol), wT_(wT)
 {}
 
-SliceData SliceData::FromMarketData(const std::vector<double>& m, 
+SliceData SliceData::fromMarketData(const std::vector<double>& mny,
     const std::vector<double>& vol,
     const MarketData& mkt, double T)
 {   
@@ -29,8 +29,8 @@ SliceData SliceData::FromMarketData(const std::vector<double>& m,
 
     // Convert plain moneyness (K/S0) into log-moneyness log(K/F)
     std::vector<double> logFM{};
-    logFM.reserve(m.size());
-    std::transform(m.begin(), m.end(),
+    logFM.reserve(mny.size());
+    std::transform(mny.begin(), mny.end(),
         std::back_inserter(logFM), [fwdFactor](double mny)
         {
             return std::log(mny / fwdFactor);
@@ -45,11 +45,11 @@ SliceData SliceData::FromMarketData(const std::vector<double>& m,
             return sigma * sigma * T;
         });
 
-    return SliceData(m, logFM, vol, tVar);
+    return SliceData(mny, logFM, vol, tVar);
 }
 
 
-SliceData SliceData::FromModelData(const std::vector<double>& logFM,
+SliceData SliceData::fromModelData(const std::vector<double>& logFM,
     const std::vector<double>& wT,
     const MarketData& mkt,
     double T)
@@ -58,10 +58,10 @@ SliceData SliceData::FromModelData(const std::vector<double>& logFM,
     double fwdFactor{ (mkt.r - mkt.q) * T };
 
     // Convert log-moneyness log(K/F) into plain moneyness K/S
-    std::vector<double> m{};
-    m.reserve(logFM.size());
+    std::vector<double> mny{};
+    mny.reserve(logFM.size());
     std::transform(logFM.begin(), logFM.end(),
-        std::back_inserter(m), [fwdFactor](double mny)
+        std::back_inserter(mny), [fwdFactor](double mny)
         {
             return std::exp(mny + fwdFactor);
         });
@@ -75,33 +75,33 @@ SliceData SliceData::FromModelData(const std::vector<double>& logFM,
             return std::sqrt(var / T);
         });
 
-    return SliceData(m, logFM, vol, wT);
+    return SliceData(mny, logFM, vol, wT);
 }
 
 
 const double SliceData::minWT() const noexcept
 {
-    return *std::min_element(wT.begin(), wT.end());
+    return *std::min_element(wT_.begin(), wT_.end());
 }
 
 const double SliceData::maxWT() const noexcept
 {
-    return *std::max_element(wT.begin(), wT.end());
+    return *std::max_element(wT_.begin(), wT_.end());
 }
 
 const double SliceData::minLogFM() const noexcept
 {
-    return *std::min_element(logFM.begin(), logFM.end());
+    return *std::min_element(logFM_.begin(), logFM_.end());
 }
 
 const double SliceData::maxLogFM() const noexcept
 {
-    return *std::max_element(logFM.begin(), logFM.end());
+    return *std::max_element(logFM_.begin(), logFM_.end());
 }
 
 void SliceData::printImpVol() const
 {
-    for (const auto& v : vol)
+    for (const auto& v : vol_)
     {
         std::cout << std::fixed << std::setprecision(4) << v << "\t";
     }
@@ -110,7 +110,7 @@ void SliceData::printImpVol() const
 
 void SliceData::printTotVar() const
 {
-    for (const auto& v : wT)
+    for (const auto& v : wT_)
     {
         std::cout << std::fixed << std::setprecision(4) << v << "\t";
     }

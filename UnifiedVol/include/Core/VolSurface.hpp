@@ -20,22 +20,22 @@ private:
 
 public:
 
-    std::vector<SliceData> slices;      // 2D volatility grid: vols[maturity][maturity slice]
-    std::vector<double>    mats;        // Vector with different volatility surface maturities
+    std::vector<SliceData> slices_;         // 2D volatility grid: vols[maturity][maturity slice]
+    std::vector<double>    maturities_;     // Vector with different volatility surface maturities
 
     // Initialization
     VolSurface() = delete;
 
     // Initialize class using plain moneyness K/S and implied volatility data
-    static VolSurface FromMarketData(const std::vector<double>& m,
+    static VolSurface fromMarketData(const std::vector<double>& mny,
         const std::vector<std::vector<double>>& vols,
         const std::vector<double>& mats,
         const MarketData& mkt);
 
     // Initialize class using log-forward moneyness log(K/F) and total variance
-    static VolSurface FromModelData(const std::vector<std::vector<double>>& logFM,
+    static VolSurface fromModelData(const std::vector<std::vector<double>>& logFM,
         const std::vector<std::vector<double>>& wT,
-        const std::vector<double>& mats,
+        const std::vector<double>& maturities,
         const MarketData& mkt);
 
     // Utilities

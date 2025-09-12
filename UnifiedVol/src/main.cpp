@@ -4,7 +4,6 @@
 #include "Core/MarketData.hpp"
 #include "Models/SVI/SVI.hpp"
 
-
 #include <iostream>
 
 int main() 
@@ -21,6 +20,8 @@ int main()
 
 
     SVI svi{ mktVolSurf };
+
+    std::cout << "OK";
 
     //svi.modelVolSurf.printConsole();
 
