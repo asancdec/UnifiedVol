@@ -20,6 +20,7 @@ private:
     // Member variables
     //--------------------------------------------------------------------------
 
+    double T_;                      // slice maturity
     std::vector<double> mny_;            // plain moneyness (K/S)
     std::vector<double> logFM_;          // log-forward moneyness log(K/F)
     std::vector<double> vol_;            // implied volatilities 
@@ -27,11 +28,11 @@ private:
 
 
     // Custom constructor using plain moneyness and implied volatility data
-    explicit SliceData (const std::vector<double>& mny, 
+    explicit SliceData (double T,
+                        const std::vector<double>& mny, 
                         const std::vector<double>& logFM,
                         const std::vector<double>& vol, 
                         const std::vector<double>& wT);
-     
 public:
 
     //--------------------------------------------------------------------------
@@ -67,21 +68,25 @@ public:
     // Determine maximum log-forward moneyness
     const double maxLogFM() const noexcept;
 
+    // Return ATM total variance
+    const double atmWT() const noexcept;
+
     //--------------------------------------------------------------------------
     // Utilities
     //--------------------------------------------------------------------------
     
     // Print implied volatility slice on console
-    void printImpVol() const;
+    void printImpVol() const noexcept;
 
     // Print total variance slice on console
-    void printTotVar() const;
+    void printTotVar() const noexcept;
 
     // Getters
-    const std::vector<double>& mny() const;
-    const std::vector<double>& logFM() const;
-    const std::vector<double>& vol() const;
-    const std::vector<double>& wT() const;
+    const double T() const noexcept;
+    const std::vector<double>& mny() const noexcept;
+    const std::vector<double>& logFM() const noexcept;
+    const std::vector<double>& vol() const noexcept;
+    const std::vector<double>& wT() const noexcept;
 
 };
 

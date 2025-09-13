@@ -149,6 +149,7 @@
     <ClInclude Include="include\Core\SliceData.hpp" />
     <ClInclude Include="include\Models\SVI\SVI.hpp" />
     <ClInclude Include="include\Models\SVI\SVIParams.hpp" />
+    <ClInclude Include="include\Models\SVI\SVISlice.hpp" />
     <ClInclude Include="include\Utils\CSVRead.hpp" />
     <ClInclude Include="include\Utils\CSVWrite.hpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

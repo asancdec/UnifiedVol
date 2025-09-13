@@ -13,35 +13,60 @@
 #include <iomanip>
 
 
-SVI::GKPrecomp::GKPrecomp(double a, double b, double rho, double m, double sigma, double k) noexcept
+
+// g(k) related precomputed variables
+struct SVI::GKPrecomp
 {
-    this->x = k - m;                                          // x := k-m
-    this->R = std::hypot(x, sigma);                           // R:= sqrt(x^2 + sigma^2)
-    this->invR = 1.0 / R;                                     // invR := 1 / R
-    this->wk = std::fma(b, (rho * x + R), a);                 // w(k) := a + b*(rho*x + R)
-    this->wkD1 = b * (rho + x * invR);                        // w'(k) := b * (rho + x/R)
-    this->wkD1Squared = wkD1 * wkD1;                          // w'(k)^2
-    this->invRCubed = invR * invR * invR;                     // 1/(R^3)
-    this->sigmaSquared = sigma * sigma;                       // sigma^2
-    this->wkD2 = b * sigmaSquared * invRCubed;                // w''(k) := b * sigma^2 / R^3
-    this->A = 1.0 - 0.5 * k * wkD1 / wk;                      // A := 1 - k * w'/(2 * w)                        
-    this->B = (1.0 / wk) + 0.25;                              // B := 1/w(k) + 1/4
-}
+    double x;             // x := k-m
+    double R;             // R:= sqrt(x^2 + sigma^2)
+    double invR;          // invR := 1 / R
+    double wk;            // w(k) := a + b*(rho*x + R)
+    double wkD1;          // w'(k) := b * (rho + x/R)
+    double wkD1Squared;   // w'(k)^2
+    double invRCubed;     // 1/(R^3)
+    double sigmaSquared;  // sigma^2
+    double wkD2;          // w''(k) := b * sigma^2 / R^3
+    double A;             // A := 1 - k * w'/(2 * w)                        
+    double B;             // B := 1/w(k) + 1/4
+
+    // Constructor
+    GKPrecomp(double a, double b, double rho, double m, double sigma, double k) noexcept
+    {
+        this->x = k - m;                                          // x := k-m
+        this->R = std::hypot(x, sigma);                           // R:= sqrt(x^2 + sigma^2)
+        this->invR = 1.0 / R;                                     // invR := 1 / R
+        this->wk = std::fma(b, (rho * x + R), a);                 // w(k) := a + b*(rho*x + R)
+        this->wkD1 = b * (rho + x * invR);                        // w'(k) := b * (rho + x/R)
+        this->wkD1Squared = wkD1 * wkD1;                          // w'(k)^2
+        this->invRCubed = invR * invR * invR;                     // 1/(R^3)
+        this->sigmaSquared = sigma * sigma;                       // sigma^2
+        this->wkD2 = b * sigmaSquared * invRCubed;                // w''(k) := b * sigma^2 / R^3
+        this->A = 1.0 - 0.5 * k * wkD1 / wk;                      // A := 1 - k * w'/(2 * w)                        
+        this->B = (1.0 / wk) + 0.25;                              // B := 1/w(k) + 1/4
+    }
+
+};
+
+// Objective function data
+struct SVI::Obj
+{
+    const double* k;   // Pointer to the first element of the forward log-moneyness vector
+    const double* wT;  // Pointer to the first element of the total variance vector
+    size_t n;          // Number of data points being fit in the objective
+};
 
 
 SVI::SVI(const VolSurface& mktVolSurf) : mktVolSurf_(mktVolSurf)
 {   
+    // Initialize slices vector
+    sviSlices_.reserve(mktVolSurf_.slices().size());
 
-    //for (const auto& slice : mktVolSurf_.slices_)
-    //{
-    //    calibrateSlice(slice);
-    //}
+    // Set the first variance vector
 
-   
-    for (const auto& slice : mktVolSurf_.slices()) 
+    // Calibrate each slice
+    for (const auto& slice : mktVolSurf.slices())
     {
         calibrateSlice(slice);
-        break; // only the first one
     }
 }
 
@@ -73,8 +98,11 @@ void SVI::calibrateSlice(const SliceData& slice)
     opt.set_lower_bounds(lB);
     opt.set_upper_bounds(uB);
 
+    // Enforce positive minimum variance constraint
+    wTMinConstraint(opt);
+
     // For each log-forward moneyness point, add one convexity constraint g(k) ≥ 0
-    addConvexityConstraints(opt, kSlice, 1e-6);
+    addConvexityConstraints(opt, kSlice, 1e-10);
 
     // Initialize objective data instance
     Obj obj{ kSlice.data(), wTSlice.data(),  wTSlice.size() };
@@ -83,43 +111,63 @@ void SVI::calibrateSlice(const SliceData& slice)
     objectiveFunction(opt, obj);
 
     // Stopping criteria
-    opt.set_ftol_rel(1e-8); // Stop  when objective stops improving
-    opt.set_maxeval(5000);  // Do not evaluate objective/constraints more than 4000 times
+    opt.set_ftol_rel(1e-10);  // Stop when objective stops improving
+    opt.set_maxeval(7000);    // Do not evaluate objective/constraints more than 7000 times
 
-
+    // Solve the problem
     std::vector<double> x{ iG };
-    double SSE{0.0};
-    try {
-        nlopt::result res = opt.optimize(x, SSE);
-    }
-    catch (const std::exception& e) 
+    double SSE{ 0.0 };
+    try { nlopt::result res = opt.optimize(x, SSE);}
+    catch (const std::exception& e)
     {
         std::cerr << "NLopt error: " << e.what() << '\n';
-
-        return; // or handle
+        return;
     }
 
-    std::cout << x[0] << ' ' << x[1] << ' ' << x[2] << ' ' << x[3] << ' ' << x[4] << '\n';
+    // Extract variables
+    const double a{ x[0] };
+    const double b{ x[1] };
+    const double rho{ x[2] };
+    const double m{ x[3] };
+    const double sigma{ x[4] };
+
+    std::cout << std::fixed << std::setprecision(10)
+        << "T=" << slice.T()
+        << "  a=" << x[0]
+        << "  b=" << x[1]
+        << "  rho=" << x[2]
+        << "  m=" << x[3]
+        << "  sigma=" << x[4]
+        << '\n';
+
+    // Save calibration results
+    sviSlices_.emplace_back(
+        SVISlice
+        {
+        slice.T(),                 
+        SVIParams{ a, b, rho, m, sigma }
+        });
+
+    // TBD NO CALENDAR ARB CONSTRAINT
 }
 
 
 std::array<double, 5> SVI::initGuess(const SliceData& slice) noexcept
-{
-    return     
-    {
-        0.5 * slice.minWT(),      // a
-        0.1,                      // b
-        -0.5,                     // rho
-        0.1 ,                     // m
-        0.1                       // sigma
-    };
+{   
+    const double b{0.1};
+    const double rho{ -0.5 };
+    const double m{ 0.1 };
+    const double sigma{ 0.1 };
+    const double a{ slice.atmWT() - b * (-rho * m + std::hypot(m, sigma)) };
+
+    return { a, b, rho, m, sigma };
 }
 
 std::array<double, 5> SVI::lowerBounds(const SliceData& slice) noexcept
 {
     return     
     {
-        1e-4,                     // a
+        -2.0,                     // a
         0.001,                    // b            
         -0.9999,                  // rho
         2.0 * slice.minLogFM(),   // m
@@ -135,7 +183,7 @@ std::array<double, 5> SVI::upperBounds(const SliceData& slice) noexcept
     1.0,                      // b
     0.9999,                   // rho
     2.0 * slice.maxLogFM(),   // m
-    1.0                       // sigma
+    4.0                       // sigma
     };
 }
 
@@ -147,6 +195,48 @@ void SVI::clampIG(std::array<double, 5>& iG,
     {
         iG[i] = std::clamp(iG[i], lb[i], ub[i]);
     }
+}
+
+void SVI::wTMinConstraint(nlopt::opt& opt)
+{
+    opt.add_inequality_constraint
+    (   
+        // Non-capturing lambda. 
+        // The unary + converts it to a C function pointer (NLopt requirement).
+        +[](unsigned n,        // dimension of x (here 5)
+            const double* x,   // pointer to current parameter vector: [a,b,rho,m,sigma]
+            double* grad,      // gradient buffer
+            void* /*data*/     // Nlopt requirement, not used here
+            ) -> double
+        {
+            const double a{ x[0] };
+            const double b{ x[1] };
+            const double rho{ x[2] };
+            const double sigma{ x[4] };
+
+            // Precompute sqrt(1 - rho^2)
+            const double S{ std::sqrt(1.0 - rho * rho) };
+
+            // Calculate minimum variance
+            // wMin := a + b * sigma * sqrt(1 - rho^2)
+            const double wMin{ std::fma(b, sigma * S, a) };
+
+            if (grad)
+            {
+                // c(x) = eps - wmin  => grad c = -∇wmin
+                grad[0] = -1.0;                   // -∂wmin/∂a
+                grad[1] = -sigma * S;             // -∂wmin/∂b
+                grad[2] = b * sigma * (rho / S);  // -∂wmin/∂rho
+                grad[3] = 0.0;                    // -∂wmin/∂m
+                grad[4] = -b * S;                 // -∂wmin/∂σ
+            }
+
+            // Enforce wMin >= eps  <--> c(x) ≤ eps - wMin <= 0
+            return 1e-10 - wMin;
+        },
+        /*data*/ nullptr,
+        /*tol*/ 1e-12
+    );
 }
 
 void SVI::addConvexityConstraints(nlopt::opt& opt,
@@ -279,13 +369,10 @@ void SVI::objectiveFunction(nlopt::opt& opt, const Obj& obj)
 
 double SVI::wk(double a, double b, double rho, double m, double sigma, double k) noexcept
 {   
-    // Precompute parameters
-    const double x {k - m};                     // x := k-m
-    const double R{ std::hypot(x, sigma) };     // R:= sqrt(x^2 + sigma^2)
-
     // Calculate and return total variance
-    return std::fma(b, (rho * x + R), a);       // w(k) := a + b*(rho*x + R) 
-}
+    const double x {k - m};                                     // x := k-m
+    return std::fma(b, (rho * x + std::hypot(x, sigma)), a);    // w(k) := a + b*(rho*x + sqrt(x^2 + sigma^2)) 
+}   
 
 double SVI::gk(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept
 {   

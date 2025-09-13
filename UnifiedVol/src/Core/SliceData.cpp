@@ -13,11 +13,12 @@
 #include <iomanip>
 
 
-SliceData::SliceData(const std::vector<double>& mny,
+SliceData::SliceData(double T,
+    const std::vector<double>& mny,
     const std::vector<double>& logFM,
     const std::vector<double>& vol, 
     const std::vector<double>& wT)
-    : mny_(mny), logFM_(logFM), vol_(vol), wT_(wT)
+    : T_(T), mny_(mny), logFM_(logFM), vol_(vol), wT_(wT)
 {}
 
 SliceData SliceData::fromMarketData(const std::vector<double>& mny,
@@ -45,7 +46,7 @@ SliceData SliceData::fromMarketData(const std::vector<double>& mny,
             return sigma * sigma * T;
         });
 
-    return SliceData(mny, logFM, vol, tVar);
+    return SliceData(T, mny, logFM, vol, tVar);
 }
 
 SliceData SliceData::fromModelData(const std::vector<double>& logFM,
@@ -74,7 +75,7 @@ SliceData SliceData::fromModelData(const std::vector<double>& logFM,
             return std::sqrt(var / T);
         });
 
-    return SliceData(mny, logFM, vol, wT);
+    return SliceData(T, mny, logFM, vol, wT);
 }
 
 const double SliceData::minWT() const noexcept
@@ -97,7 +98,19 @@ const double SliceData::maxLogFM() const noexcept
     return *std::max_element(logFM_.begin(), logFM_.end());
 }
 
-void SliceData::printImpVol() const
+const double SliceData::atmWT() const noexcept
+{   
+    const std::size_t n{ (std::min)(logFM_.size(), wT_.size()) };
+    const double* first{ logFM_.data() };
+    const double* last{ first + n };
+    const double* it = std::min_element(first, last, [](double a, double b)
+        { 
+            return std::abs(a) < std::abs(b); 
+        });
+    return wT_[static_cast<std::size_t>(it - first)];
+}
+
+void SliceData::printImpVol() const noexcept
 {
     for (const auto& v : vol_)
     {
@@ -106,8 +119,8 @@ void SliceData::printImpVol() const
     std::cout << "\n";
 }
 
-void SliceData::printTotVar() const
-{
+void SliceData::printTotVar() const noexcept
+{   
     for (const auto& v : wT_)
     {
         std::cout << std::fixed << std::setprecision(4) << v << "\t";
@@ -115,22 +128,27 @@ void SliceData::printTotVar() const
     std::cout << "\n";
 }
 
-const std::vector<double>& SliceData::mny() const
+const double SliceData::T() const noexcept
+{
+    return T_;
+}
+
+const std::vector<double>& SliceData::mny() const noexcept
 {
     return mny_;
 }
 
-const std::vector<double>& SliceData::logFM() const
+const std::vector<double>& SliceData::logFM() const noexcept
 {
     return logFM_;
 }
 
-const std::vector<double>& SliceData::vol() const
+const std::vector<double>& SliceData::vol() const noexcept
 {
     return vol_;
 }
 
-const std::vector<double>& SliceData::wT() const
+const std::vector<double>& SliceData::wT() const noexcept
 {
     return wT_;
 }

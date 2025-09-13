@@ -9,12 +9,12 @@
 
 // Raw SVI parameters to calibrate per maturity slice
 struct SVIParams
-{
-	const double a;
-	const double b;
-	const double rho;
-	const double m;
-	const double sigma;
+{	
+	double a;
+	double b;
+	double rho;
+	double m;
+	double sigma;
 };
 
 #endif // SVI_PARAMS_HPP
