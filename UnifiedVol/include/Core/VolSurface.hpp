@@ -51,14 +51,17 @@ public:
     //--------------------------------------------------------------------------
 
     // Print implied volatility surface on the console
-    void printImpVol() const;
+    void printImpVol() const noexcept;
 
     // Print total variance surface on the console
-    void printTotVar() const;
+    void printTotVar() const noexcept;
+
+    // Return number of strikes
+    std::size_t numStrikes() const;
 
     // Getters
-    const std::vector<SliceData>& slices() const;
-    const std::vector<double>& maturities() const;
+    const std::vector<SliceData>& slices() const noexcept;
+    const std::vector<double>& maturities() const noexcept;
 };
 
 

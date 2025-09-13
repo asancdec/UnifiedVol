@@ -71,6 +71,9 @@ public:
     // Return ATM total variance
     const double atmWT() const noexcept;
 
+    // Return vector of vegas
+    std::vector<double> vega() const noexcept;
+
     //--------------------------------------------------------------------------
     // Utilities
     //--------------------------------------------------------------------------

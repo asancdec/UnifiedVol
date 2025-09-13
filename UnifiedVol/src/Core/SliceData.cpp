@@ -7,6 +7,7 @@
 #include "Core/SliceData.hpp"
 
 #include <cmath>
+#include <numbers>
 #include <algorithm>
 #include <iterator>
 #include <iostream>
@@ -109,6 +110,21 @@ const double SliceData::atmWT() const noexcept
         });
     return wT_[static_cast<std::size_t>(it - first)];
 }
+
+std::vector<double> SliceData::vega() const noexcept
+{
+    const double sqrtT{ std::sqrt(T_) };
+    std::vector<double> v(logFM_.size());
+
+    for (size_t i = 0; i < logFM_.size(); ++i)
+    {
+        const double d1{ (-logFM_[i] + 0.5 * vol_[i] * vol_[i] * T_) / (vol_[i] * sqrtT) };
+        const double nd1{ std::exp(-0.5 * d1 * d1) / std::sqrt(2.0 * std::numbers::pi) };
+        v[i] = nd1 * sqrtT;
+    }
+    return v;
+}
+
 
 void SliceData::printImpVol() const noexcept
 {

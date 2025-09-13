@@ -12,9 +12,30 @@
 #include <cmath>
 #include <iomanip>
 
+struct SVI::SliceView
+{
+    const double* k;        // Pointer to log-forward moneyness 
+    const double* wK;       // Pointer to total variance 
+    size_t n;               // Number of data points
+    const double* T;        // Pointer to maturity
+    const double* vegaMkt;  // Pointer to market Vega
 
+    // Constructor with optional T and vegaMkt
+    SliceView(
+        const double* k,
+        const double* wK,
+        size_t n,
+        const double* T = nullptr,
+        const double* vegaMkt = nullptr)
+        : k(k), wK(wK), n(n), T(T), vegaMkt(vegaMkt) {}
+};
 
-// g(k) related precomputed variables
+struct SVI::ConstraintCtx
+{
+    double k;       // Log-forward moneyness
+    double prevWk;  // Total variance of the previous slice
+};
+
 struct SVI::GKPrecomp
 {
     double x;             // x := k-m
@@ -29,7 +50,6 @@ struct SVI::GKPrecomp
     double A;             // A := 1 - k * w'/(2 * w)                        
     double B;             // B := 1/w(k) + 1/4
 
-    // Constructor
     GKPrecomp(double a, double b, double rho, double m, double sigma, double k) noexcept
     {
         this->x = k - m;                                          // x := k-m
@@ -44,37 +64,35 @@ struct SVI::GKPrecomp
         this->A = 1.0 - 0.5 * k * wkD1 / wk;                      // A := 1 - k * w'/(2 * w)                        
         this->B = (1.0 / wk) + 0.25;                              // B := 1/w(k) + 1/4
     }
-
-};
-
-// Objective function data
-struct SVI::Obj
-{
-    const double* k;   // Pointer to the first element of the forward log-moneyness vector
-    const double* wT;  // Pointer to the first element of the total variance vector
-    size_t n;          // Number of data points being fit in the objective
 };
 
 
 SVI::SVI(const VolSurface& mktVolSurf) : mktVolSurf_(mktVolSurf)
 {   
     // Initialize slices vector
-    sviSlices_.reserve(mktVolSurf_.slices().size());
+    sviSlices_.reserve(mktVolSurf.slices().size());
 
-    // Set the first variance vector
+    // Initialize the first total variance vector
+    std::vector<double> wkSlice(mktVolSurf.numStrikes(), 0.0);
 
     // Calibrate each slice
     for (const auto& slice : mktVolSurf.slices())
     {
-        calibrateSlice(slice);
+        calibrateSlice(slice, wkSlice);
+
+        //std::cout << std::fixed << std::setprecision(10) << "wkSlice:";
+        //for (const double w : wkSlice) std::cout << ' ' << w;
+        //std::cout << '\n';
     }
 }
 
-void SVI::calibrateSlice(const SliceData& slice)
+void SVI::calibrateSlice(const SliceData& slice, std::vector<double>& wKPrevSlice)
 {
-    // Store slice data as constant references
+    // Constant references to slice data
     const std::vector<double>& kSlice{ slice.logFM() };
     const std::vector<double>& wTSlice{ slice.wT() };
+    double T{ slice.T() };
+    const std::vector<double>& vegaMkt{ slice.vega() };
 
     // Define initial guess 
     std::array<double, 5 > iGArr{ initGuess(slice) };
@@ -98,14 +116,20 @@ void SVI::calibrateSlice(const SliceData& slice)
     opt.set_lower_bounds(lB);
     opt.set_upper_bounds(uB);
 
-    // Enforce positive minimum variance constraint
-    wTMinConstraint(opt);
+    // Enforce positive minimum toal variance constraint
+    wMinConstraint(opt);
 
-    // For each log-forward moneyness point, add one convexity constraint g(k) ≥ 0
-    addConvexityConstraints(opt, kSlice, 1e-10);
+    // Initialize no calendar arbitrage data instance
+    SliceView cal{ kSlice.data(), wKPrevSlice.data(),  wKPrevSlice.size()};
+
+    // Enforce calendar spread arbitrage constraints: Wk_current ≥ Wk_previous
+    addCalendarNoArbConstraints(opt, cal, wKPrevSlice.data());
+
+    // Enforce convexity constraints: g(k) ≥ 0
+    addConvexityConstraints(opt, kSlice);
 
     // Initialize objective data instance
-    Obj obj{ kSlice.data(), wTSlice.data(),  wTSlice.size() };
+    SliceView obj{ kSlice.data(), wTSlice.data(),  wTSlice.size(), &T, vegaMkt.data()};
 
     // Define objective function with analytical gradient
     objectiveFunction(opt, obj);
@@ -117,12 +141,7 @@ void SVI::calibrateSlice(const SliceData& slice)
     // Solve the problem
     std::vector<double> x{ iG };
     double SSE{ 0.0 };
-    try { nlopt::result res = opt.optimize(x, SSE);}
-    catch (const std::exception& e)
-    {
-        std::cerr << "NLopt error: " << e.what() << '\n';
-        return;
-    }
+    nlopt::result res{ opt.optimize(x, SSE) };
 
     // Extract variables
     const double a{ x[0] };
@@ -130,15 +149,6 @@ void SVI::calibrateSlice(const SliceData& slice)
     const double rho{ x[2] };
     const double m{ x[3] };
     const double sigma{ x[4] };
-
-    std::cout << std::fixed << std::setprecision(10)
-        << "T=" << slice.T()
-        << "  a=" << x[0]
-        << "  b=" << x[1]
-        << "  rho=" << x[2]
-        << "  m=" << x[3]
-        << "  sigma=" << x[4]
-        << '\n';
 
     // Save calibration results
     sviSlices_.emplace_back(
@@ -148,7 +158,13 @@ void SVI::calibrateSlice(const SliceData& slice)
         SVIParams{ a, b, rho, m, sigma }
         });
 
-    // TBD NO CALENDAR ARB CONSTRAINT
+    // Modify slice total variance vector
+    // Purpose: enforce no-arbitrage calendar spread constraint on the next slices 
+    std::transform(kSlice.begin(), kSlice.end(), wKPrevSlice.begin(),
+        [a, b, rho, m, sigma](double k) noexcept 
+        {
+            return wk(a, b, rho, m, sigma, k);
+        });
 }
 
 
@@ -183,7 +199,7 @@ std::array<double, 5> SVI::upperBounds(const SliceData& slice) noexcept
     1.0,                      // b
     0.9999,                   // rho
     2.0 * slice.maxLogFM(),   // m
-    4.0                       // sigma
+    3.0                       // sigma
     };
 }
 
@@ -197,76 +213,117 @@ void SVI::clampIG(std::array<double, 5>& iG,
     }
 }
 
-void SVI::wTMinConstraint(nlopt::opt& opt)
+void SVI::wMinConstraint(nlopt::opt& opt)
 {
     opt.add_inequality_constraint
-    (   
-        // Non-capturing lambda. 
-        // The unary + converts it to a C function pointer (NLopt requirement).
-        +[](unsigned n,        // dimension of x (here 5)
-            const double* x,   // pointer to current parameter vector: [a,b,rho,m,sigma]
-            double* grad,      // gradient buffer
-            void* /*data*/     // Nlopt requirement, not used here
+    ( 
+        +[](unsigned n, const double* x, double* grad, void*
             ) -> double
         {
+            // Extract variables
             const double a{ x[0] };
             const double b{ x[1] };
             const double rho{ x[2] };
             const double sigma{ x[4] };
 
-            // Precompute sqrt(1 - rho^2)
+            // Precompute variables
             const double S{ std::sqrt(1.0 - rho * rho) };
 
             // Calculate minimum variance
-            // wMin := a + b * sigma * sqrt(1 - rho^2)
-            const double wMin{ std::fma(b, sigma * S, a) };
+            const double wMin{ std::fma(b, sigma * S, a) };  // wMin := a + b * sigma * sqrt(1 - rho^2)
 
             if (grad)
             {
-                // c(x) = eps - wmin  => grad c = -∇wmin
-                grad[0] = -1.0;                   // -∂wmin/∂a
-                grad[1] = -sigma * S;             // -∂wmin/∂b
-                grad[2] = b * sigma * (rho / S);  // -∂wmin/∂rho
-                grad[3] = 0.0;                    // -∂wmin/∂m
-                grad[4] = -b * S;                 // -∂wmin/∂σ
+                // ∇c(x) = -∇wMin
+                grad[0] = -1.0;                   // -∂wMin/∂a
+                grad[1] = -sigma * S;             // -∂wMin/∂b
+                grad[2] = b * sigma * (rho / S);  // -∂wMin/∂rho
+                grad[3] = 0.0;                    // -∂wMin/∂m
+                grad[4] = -b * S;                 // -∂wMin/∂sigma
             }
 
-            // Enforce wMin >= eps  <--> c(x) ≤ eps - wMin <= 0
+            // Enforce wMin ≥ eps <-> c(x) = eps - wMin ≤ 0
             return 1e-10 - wMin;
         },
-        /*data*/ nullptr,
-        /*tol*/ 1e-12
+        nullptr,
+        1e-10
     );
 }
 
-void SVI::addConvexityConstraints(nlopt::opt& opt,
-    const std::vector<double>& kSlice,
-    double tol) 
+void SVI::addCalendarNoArbConstraints(nlopt::opt& opt, const SliceView& cal, const double* prevWk)
 {
-    // For each log-forward moneyness point, add one convexity constraint g(k) ≥ 0
-    for (size_t i = 0; i < kSlice.size(); ++i)
-    {   
-        // Add one inequality constraint for each point
-        opt.add_inequality_constraint
-        (
-            // Non-capturing lambda. 
-            // The unary + converts it to a C function pointer (NLopt requirement).
-            +[](
-                unsigned n,       // dimension of x (here 5)
-                const double* x,  // pointer to current parameter vector: [a,b,rho,m,sigma]
-                double* grad,     // gradient buffer
-                void* data        // opaque pointer carrying k
-                ) -> double
+    // Store contexts in a static vector so addresses remain valid
+    static std::vector<ConstraintCtx> contexts;
+    contexts.resize(cal.n);                      
+    for (size_t i = 0; i < cal.n; ++i)
+    {
+        contexts[i] = ConstraintCtx{ cal.k[i], prevWk[i] };
+    }
+
+    // For each k, add one no calendar arbitrage constraint
+    for (auto& ctx : contexts) 
+    {
+        opt.add_inequality_constraint(
+            +[](unsigned, const double* x, double* grad, void* data) -> double 
             {
-                // Recover parameters
-                const double k{ *static_cast<const double*>(data) };
+                // Reinterpret opaque pointer
+                const ConstraintCtx& c{ *static_cast<const ConstraintCtx*>(data) };
+
+                // Extract variables
                 const double a{ x[0] };
                 const double b{ x[1] };
                 const double rho{ x[2] };
                 const double m{ x[3] };
                 const double sigma{ x[4] };
 
-                // Build precompute from the CURRENT x and this k
+                // Precompute variables
+                const double xi{ c.k - m };
+                const double R{ std::hypot(xi, sigma) };
+                const double invR{ 1.0 / R };
+
+                // Calculate wK
+                const double wK{ a + b * (rho * xi + R) };
+
+                if (grad) 
+                {
+                    grad[0] = -1.0;                     // -∂w/∂a
+                    grad[1] = -(rho * xi + R);          // -∂w/∂b
+                    grad[2] = -b * xi;                  // -∂w/∂ρ
+                    grad[3] = b * (rho + xi * invR);    // -∂w/∂m
+                    grad[4] = -b * (sigma * invR);      // -∂w/∂sigma
+                }
+
+                // NLopt expects c(x) ≤ 0.
+                // Here:  c(x) = prevWk + eps − w(k)
+                // Enforces w(k) ≥ prevWk + eps  (no calendar arbitrage, with small tolerance)
+                return c.prevWk + 1e-10 - wK;  
+            },
+            &ctx,
+            1e-10
+        );
+    }
+}
+
+void SVI::addConvexityConstraints(nlopt::opt& opt, const std::vector<double>& kSlice) 
+{
+    // For each k, add one convexity constraint g(k) ≥ 0
+    for (size_t i = 0; i < kSlice.size(); ++i)
+    {   
+        opt.add_inequality_constraint
+        (
+            +[](unsigned n, const double* x, double* grad, void* data) -> double
+            {
+                // Reinterpret opaque pointer
+                const double k{ *static_cast<const double*>(data) };
+
+                // Extract variables
+                const double a{ x[0] };
+                const double b{ x[1] };
+                const double rho{ x[2] };
+                const double m{ x[3] };
+                const double sigma{ x[4] };
+
+                // Build g(K) precompute instance for efficiency
                 const SVI::GKPrecomp p{ a, b, rho, m, sigma, k };
                 const double g {SVI::gk(a, b, rho, m, sigma, k, p)};
 
@@ -281,33 +338,26 @@ void SVI::addConvexityConstraints(nlopt::opt& opt,
                 }
 
                 // NLopt enforces c(x) ≤ tol. 
-                // With c(x) = -g(k) this means: -g(k) ≤ tol <-> g(k) ≥ -tol.
+                // Here c(x) = -g(k), so -g(k) ≤ tol  
+                // Enforces g(k) ≥ -tol  (≈ g(k) ≥ 0 with small slack)
                 return -g;
             },
-            reinterpret_cast<void*>(const_cast<double*>(&kSlice[i])),
-            tol                  
+            const_cast<double*>(&kSlice[i]),
+            1e-10                  
         );
     }
 }
 
-void SVI::objectiveFunction(nlopt::opt& opt, const Obj& obj)
+void SVI::objectiveFunction(nlopt::opt& opt, const SliceView& obj)
 {   
-    // Set minimization objective (SSE)
     opt.set_min_objective
     (
-        // Non-capturing lambda. 
-        // The unary + converts it to a C function pointer (NLopt requirement).
-        +[](
-            unsigned n,       // dimension of x (here 5).
-            const double* x,  // pointer to current parameter vector: [a,b,rho,m,sigma]
-            double* grad,     // gradient buffer
-            void* data        // opaque pointer to Obj { Ks, w, n } 
-            ) -> double
+        +[](unsigned n, const double* x, double* grad, void* data) -> double
         {
-            // Recover Obj from the opaque pointer 
-            const Obj& obj = *static_cast<const Obj*>(data);
+            // Reinterpret opaque pointer
+            const SliceView& obj{ *static_cast<const SliceView*>(data) };
 
-            // Recover parameters
+            // Extract variables
             const double a{ x[0] };
             const double b{ x[1] };
             const double rho{ x[2] };
@@ -321,113 +371,123 @@ void SVI::objectiveFunction(nlopt::opt& opt, const Obj& obj)
             std::array<double, 5> g{}; 
 
             for (size_t i = 0; i < obj.n; ++i)
-            {
-                // Evaluate total variance
-                const double wT{SVI::wk(a,b, rho, m, sigma, obj.k[i])};
+            {   
+                // Extract variables
+                const double k{ obj.k[i] };
+                const double T{ *obj.T };
 
-                // Calculate SSE between model and market wT
-                const double r{ wT - obj.wT[i] };
-                SSE += r * r;
+                // Model data
+                const double wKModel{SVI::wk(a,b, rho, m, sigma, k)};
+                const double volModel{ std::sqrt(wKModel / T) };
 
-                // Precompute variables
-                const double xi{ obj.k[i] - m };
-                const double R{ std::hypot(xi, sigma) };
-                const double invR{ 1.0 / R };
+                // Market data
+                const double wKMarket{ obj.wK[i] };
+                const double volMarket{std::sqrt(wKMarket / T) };
 
-                // Accumulate analytical gradient of the objective function 
-                if (grad) 
-                {
-                    std::array<double, 5> dw
-                    {
-                        1.0,                   // ∂w/∂a
-                        rho * xi + R,          // ∂w/∂b
-                        b * xi,                // ∂w/∂ρ
-                        -b *(rho + xi * invR), // ∂w/∂m
-                        b* (sigma * invR)      // ∂w/∂sigma
-                    };
-                    
-                    for (int j = 0; j < 5 && j < static_cast<int>(n); ++j)
-                    {   
-                        // ∇f += 2 r ∇w
-                        g[j] += 2.0 * r * dw[j];
-                    }
+                // Calculate vega weight
+                const double weight{ 1.0 / obj.vegaMkt[i]};
+
+                // Calculate weighted SSE between model and market volatility
+                const double r{ volModel - volMarket };
+                SSE += weight *  r * r;
+
+                if (grad)
+                {   
+                    // Precompute variables
+                    const double xi{ k - m };
+                    const double R{ std::hypot(xi, sigma) };
+                    const double invR{ 1.0 / R };
+
+                    // Chain rule factor: ∂σ/∂θ = 1/(2*sqrt(T*w)) * ∂w/∂θ
+                    const double factor{ 0.5 / std::sqrt(T * wKModel) };
+
+                    // Calculate partial derivatives
+                    const double dvolda{ factor };                               // ∂σ/∂a := 1/(2*sqrt(T*w)) * ∂w/∂a   = factor * 1
+                    const double dvoldb{ factor * (rho * xi + R) };              // ∂σ/∂b := 1/(2*sqrt(T*w)) * ∂w/∂b   = factor * (rho*xi + R)
+                    const double dvolrho{ factor * (b * xi) };                   // ∂σ/∂ρ := 1/(2*sqrt(T*w)) * ∂w/∂ρ   = factor * (b*xi)
+                    const double dvoldm{ factor * (-b * (rho + xi * invR)) };    // ∂σ/∂m := 1/(2*sqrt(T*w)) * ∂w/∂m   = factor * ( -b*(rho + xi/R) )
+                    const double dvoldsigma{ factor * (b * (sigma * invR)) };    // ∂σ/∂σ := 1/(2*sqrt(T*w)) * ∂w/∂σ   = factor * ( b*(σ/R) )
+
+                    // ∇f += 2 * weight * r * ∂σ/∂θ 
+                    g[0] += 2.0 * weight * r * dvolda;
+                    g[1] += 2.0 * weight * r * dvoldb;
+                    g[2] += 2.0 * weight * r * dvolrho;
+                    g[3] += 2.0 * weight * r * dvoldm;
+                    g[4] += 2.0 * weight * r * dvoldsigma;
                 }
             }
 
-            // Provide gradient to NLopt
             if (grad)
-            {
+            {               
+                // Provide gradient to NLopt
                 const auto mCopy = (std::min)(static_cast<std::size_t>(n), g.size());
                 std::copy_n(g.data(), mCopy, grad);
             }
-
             return SSE;
         },
-        const_cast<Obj*>(&obj)   
+        const_cast<SliceView*>(&obj)
     );
 }
 
 double SVI::wk(double a, double b, double rho, double m, double sigma, double k) noexcept
 {   
-    // Calculate and return total variance
     const double x {k - m};                                     // x := k-m
     return std::fma(b, (rho * x + std::hypot(x, sigma)), a);    // w(k) := a + b*(rho*x + sqrt(x^2 + sigma^2)) 
 }   
 
 double SVI::gk(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept
 {   
-    return (p.A * p.A) - 0.25 * p.wkD1Squared* p.B + p.wkD2 / 2.0;   // g(k) := A^2 - B * (w')^2 / 4 + w''/2
+    return (p.A * p.A) - 0.25 * p.wkD1Squared* p.B + p.wkD2 / 2.0;  // g(k) := A^2 - B * (w')^2 / 4 + w''/2
 }
 
 std::array<double, 5> SVI::gkGradient(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept
 {
     // Precomputations
     double invR5{ p.invRCubed * p.invR * p.invR };    // 1/R^5
-    double wkSquaredInv{ 1.0 / (p.wk * p.wk)};       // 1/w^2
+    double wkSquaredInv{ 1.0 / (p.wk * p.wk)};        // 1/w^2
     
     // Calculate partial derivatives of g(k) with respect to w, w1, and w2
     double dgdw{ p.A * k * p.wkD1 * wkSquaredInv + 0.25 * p.wkD1Squared * wkSquaredInv }; // ∂g/∂w := A*k*w'/w^2 + (w')^2 / (4 * w^2)
-    double dgdw1{ -p.A * k / p.wk - 0.5 * p.wkD1 * p.B};                                  // ∂g/∂w1 := -A*k/w - w'*B/2
-    double dgdw2{ 0.5 };                                                                  // ∂g/∂w2 := 1/2
+    double dgdw1{ -p.A * k / p.wk - 0.5 * p.wkD1 * p.B};                                  // ∂g/∂w' := -A*k/w - w'*B/2
+    double dgdw2{ 0.5 };                                                                  // ∂g/∂w'' := 1/2
 
-    // Calculate gradient of w
+    // ---------- ∂w/∂θ ---------
     std::array<double, 5> dw
     {
-        1.0,                       // a
-        rho * p.x + p.R,           // b
-        b * p.x,                   // rho
-        -b * (rho + p.x * p.invR), // m
-        b * sigma * p.invR         // sigma
+        1.0,                         // ∂w/∂a   := 1
+        rho * p.x + p.R,             // ∂w/∂b   := ρ (k-m) + R
+        b * p.x,                     // ∂w/∂ρ   := b (k-m)
+        -b * (rho + p.x * p.invR),   // ∂w/∂m   := -b ( ρ + (k-m)/R )
+        b * sigma * p.invR           // ∂w/∂σ   := b (σ / R)
     };
 
-    // Calculate gradient of w1
+    // ---------- ∂w′/∂θ ------
     std::array<double, 5> dw1
     {
-        0.0,                                // a
-        rho + p.x * p.invR,                 // b
-        b,                                  // rho
-        -b * p.sigmaSquared * p.invRCubed,  // m
-        -b * p.x * sigma * p.invRCubed      // sigma
+        0.0,                                // ∂w′/∂a   := 0
+        rho + p.x * p.invR,                 // ∂w′/∂b   := ρ + (k-m)/R
+        b,                                  // ∂w′/∂ρ   := b
+        -b * p.sigmaSquared * p.invRCubed,  // ∂w′/∂m   := -b * σ^2 / R^3
+        -b * p.x * sigma * p.invRCubed      // ∂w′/∂σ   := -b * (k-m) * σ / R^3
     };
 
-    // Calculate gradient of w2
+
+    // ---------- ∂w″/∂θ ----------
     std::array<double, 5> dw2
     {
-        0.0,                                                                // a
-        p.sigmaSquared * p.invRCubed,                                       // b
-        0.0,                                                                // rho
-        3.0 * b * p.sigmaSquared * p.x * invR5,                             // m
-        b*(2 * sigma * p.invRCubed - 3.0*p.sigmaSquared * sigma * invR5)    // sigma
+        0.0,                                                                 // ∂w″/∂a   := 0
+        p.sigmaSquared * p.invRCubed,                                        // ∂w″/∂b   := σ^2 / R^3
+        0.0,                                                                 // ∂w″/∂ρ   := 0
+        3.0 * b * p.sigmaSquared * p.x * invR5,                              // ∂w″/∂m   := 3 b σ^2 (k-m) / R^5
+        b * (2 * sigma * p.invRCubed - 3.0 * p.sigmaSquared * sigma * invR5) // ∂w″/∂σ := b( 2σ/R^3 - 3σ^3/R^5 )
     };
 
 
-    // Calculate the gradient of g(k) using the chain rule
+    // Chain rule: ∇g = (∂g/∂w)∇w + (∂g/∂w1)∇w1 + (∂g/∂w2)∇w2
     std::array<double, 5> dg{};
     for (int j = 0; j < 5; ++j)
     {   
-        // ∇g = (∂g/∂w)∇w + (∂g/∂w1)∇w1 + (∂g/∂w2)∇w2
         dg[j] = dgdw * dw[j] + dgdw1 * dw1[j] + dgdw2 * dw2[j];
-
     }
     return dg;
 }

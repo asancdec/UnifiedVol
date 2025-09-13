@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
+#include <string>
 
 VolSurface::VolSurface(std::vector<SliceData>&& slices,
     std::vector<double>&& maturities)
@@ -49,7 +50,7 @@ VolSurface VolSurface::fromModelData(const std::vector<std::vector<double>>& log
     return VolSurface(std::move(slices), std::vector<double>(maturities));
 }
 
-void VolSurface::printImpVol() const
+void VolSurface::printImpVol() const noexcept
 {
     // Print header row
     std::cout << "T\\%S\t";
@@ -69,7 +70,7 @@ void VolSurface::printImpVol() const
     }
 }
 
-void VolSurface::printTotVar() const
+void VolSurface::printTotVar() const noexcept
 {
     // Print header row
     std::cout << "T\\k\t";
@@ -89,12 +90,34 @@ void VolSurface::printTotVar() const
     }
 }
 
-const std::vector<SliceData>& VolSurface::slices() const
+std::size_t VolSurface::numStrikes() const
+{   
+    // Extract the number of strikes in the first slcie
+    const std::size_t n{ slices_.front().logFM().size() };
+
+    // Check that every slice has the same number of strikes
+    for (std::size_t i = 1; i < slices_.size(); ++i)
+    {
+        const std::size_t ni{ slices_[i].logFM().size() };
+        if (ni != n) 
+        {
+            throw std::runtime_error
+            (
+                "numStrikes(): inconsistent k-grid length — slice 0 has " +
+                std::to_string(n) + " strikes, slice " + std::to_string(i) +
+                " has " + std::to_string(ni));
+        }
+    }
+    return n;
+}
+
+
+const std::vector<SliceData>& VolSurface::slices() const noexcept
 {
     return slices_;
 }
 
-const std::vector<double>& VolSurface::maturities() const
+const std::vector<double>& VolSurface::maturities() const noexcept
 {
     return maturities_;
 }
