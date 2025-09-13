@@ -80,9 +80,9 @@ SVI::SVI(const VolSurface& mktVolSurf) : mktVolSurf_(mktVolSurf)
     {
         calibrateSlice(slice, wkSlice);
 
-        //std::cout << std::fixed << std::setprecision(10) << "wkSlice:";
-        //for (const double w : wkSlice) std::cout << ' ' << w;
-        //std::cout << '\n';
+        std::cout << std::fixed << std::setprecision(10) << "wkSlice:";
+        for (const double w : wkSlice) std::cout << ' ' << w;
+        std::cout << '\n';
     }
 }
 
@@ -116,7 +116,7 @@ void SVI::calibrateSlice(const SliceData& slice, std::vector<double>& wKPrevSlic
     opt.set_lower_bounds(lB);
     opt.set_upper_bounds(uB);
 
-    // Enforce positive minimum toal variance constraint
+    // Enforce positive minimum total variance constraint
     wMinConstraint(opt);
 
     // Initialize no calendar arbitrage data instance
@@ -442,11 +442,11 @@ double SVI::gk(double a, double b, double rho, double m, double sigma, double k,
 
 std::array<double, 5> SVI::gkGradient(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept
 {
-    // Precomputations
+    // Precompute variables
     double invR5{ p.invRCubed * p.invR * p.invR };    // 1/R^5
     double wkSquaredInv{ 1.0 / (p.wk * p.wk)};        // 1/w^2
     
-    // Calculate partial derivatives of g(k) with respect to w, w1, and w2
+    // Calculate partial derivatives of g(k) with respect to w, w', and w''
     double dgdw{ p.A * k * p.wkD1 * wkSquaredInv + 0.25 * p.wkD1Squared * wkSquaredInv }; // ∂g/∂w := A*k*w'/w^2 + (w')^2 / (4 * w^2)
     double dgdw1{ -p.A * k / p.wk - 0.5 * p.wkD1 * p.B};                                  // ∂g/∂w' := -A*k/w - w'*B/2
     double dgdw2{ 0.5 };                                                                  // ∂g/∂w'' := 1/2
@@ -471,7 +471,6 @@ std::array<double, 5> SVI::gkGradient(double a, double b, double rho, double m, 
         -b * p.x * sigma * p.invRCubed      // ∂w′/∂σ   := -b * (k-m) * σ / R^3
     };
 
-
     // ---------- ∂w″/∂θ ----------
     std::array<double, 5> dw2
     {
@@ -481,7 +480,6 @@ std::array<double, 5> SVI::gkGradient(double a, double b, double rho, double m, 
         3.0 * b * p.sigmaSquared * p.x * invR5,                              // ∂w″/∂m   := 3 b σ^2 (k-m) / R^5
         b * (2 * sigma * p.invRCubed - 3.0 * p.sigmaSquared * sigma * invR5) // ∂w″/∂σ := b( 2σ/R^3 - 3σ^3/R^5 )
     };
-
 
     // Chain rule: ∇g = (∂g/∂w)∇w + (∂g/∂w1)∇w1 + (∂g/∂w2)∇w2
     std::array<double, 5> dg{};
