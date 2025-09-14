@@ -148,6 +148,7 @@
     <ClInclude Include="include\DataStructs\VolSurface.hpp" />
     <ClInclude Include="include\Core\SliceData.hpp" />
     <ClInclude Include="include\Models\SVI\SVI.hpp" />
+    <ClInclude Include="include\Models\SVI\SVIConfig.hpp" />
     <ClInclude Include="include\Models\SVI\SVIParams.hpp" />
     <ClInclude Include="include\Models\SVI\SVISlice.hpp" />
     <ClInclude Include="include\Utils\CSVRead.hpp" />

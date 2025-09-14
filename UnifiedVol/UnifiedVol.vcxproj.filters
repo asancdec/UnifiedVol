@@ -54,6 +54,9 @@
     <ClInclude Include="include\Models\SVI\SVIParams.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\Models\SVI\SVIConfig.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\Models\SVI\SVISlice.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

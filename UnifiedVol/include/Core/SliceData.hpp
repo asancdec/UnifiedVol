@@ -57,22 +57,19 @@ public:
     //--------------------------------------------------------------------------
 
     // Determine minimum total variance
-    const double minWT() const noexcept;
+    double minWT() const noexcept;
 
     // Determine maximum total variance
-    const double maxWT() const noexcept;
+    double maxWT() const noexcept;
 
     // Determine minimum log-forward moneyness
-    const double minLogFM() const noexcept;
+    double minLogFM() const noexcept;
 
     // Determine maximum log-forward moneyness
-    const double maxLogFM() const noexcept;
+    double maxLogFM() const noexcept;
 
     // Return ATM total variance
-    const double atmWT() const noexcept;
-
-    // Return vector of vegas
-    std::vector<double> vega() const noexcept;
+    double atmWT() const noexcept;
 
     //--------------------------------------------------------------------------
     // Utilities
@@ -85,7 +82,7 @@ public:
     void printTotVar() const noexcept;
 
     // Getters
-    const double T() const noexcept;
+    double T() const noexcept;
     const std::vector<double>& mny() const noexcept;
     const std::vector<double>& logFM() const noexcept;
     const std::vector<double>& vol() const noexcept;

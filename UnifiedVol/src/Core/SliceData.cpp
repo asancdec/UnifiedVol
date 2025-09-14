@@ -1,5 +1,5 @@
 /**
-* SliceData.hpp
+* SliceData.cpp
 * Author: Alvaro Sanchez de Carlos
 * Date: 09/9/2025
 */
@@ -12,6 +12,7 @@
 #include <iterator>
 #include <iostream>
 #include <iomanip>
+#include <stdexcept> 
 
 
 SliceData::SliceData(double T,
@@ -79,27 +80,27 @@ SliceData SliceData::fromModelData(const std::vector<double>& logFM,
     return SliceData(T, mny, logFM, vol, wT);
 }
 
-const double SliceData::minWT() const noexcept
+double SliceData::minWT() const noexcept
 {
     return *std::min_element(wT_.begin(), wT_.end());
 }
 
-const double SliceData::maxWT() const noexcept
+double SliceData::maxWT() const noexcept
 {
     return *std::max_element(wT_.begin(), wT_.end());
 }
 
-const double SliceData::minLogFM() const noexcept
+double SliceData::minLogFM() const noexcept
 {
     return *std::min_element(logFM_.begin(), logFM_.end());
 }
 
-const double SliceData::maxLogFM() const noexcept
+double SliceData::maxLogFM() const noexcept
 {
     return *std::max_element(logFM_.begin(), logFM_.end());
 }
 
-const double SliceData::atmWT() const noexcept
+double SliceData::atmWT() const noexcept
 {   
     const std::size_t n{ (std::min)(logFM_.size(), wT_.size()) };
     const double* first{ logFM_.data() };
@@ -110,21 +111,6 @@ const double SliceData::atmWT() const noexcept
         });
     return wT_[static_cast<std::size_t>(it - first)];
 }
-
-std::vector<double> SliceData::vega() const noexcept
-{
-    const double sqrtT{ std::sqrt(T_) };
-    std::vector<double> v(logFM_.size());
-
-    for (size_t i = 0; i < logFM_.size(); ++i)
-    {
-        const double d1{ (-logFM_[i] + 0.5 * vol_[i] * vol_[i] * T_) / (vol_[i] * sqrtT) };
-        const double nd1{ std::exp(-0.5 * d1 * d1) / std::sqrt(2.0 * std::numbers::pi) };
-        v[i] = nd1 * sqrtT;
-    }
-    return v;
-}
-
 
 void SliceData::printImpVol() const noexcept
 {
@@ -144,7 +130,7 @@ void SliceData::printTotVar() const noexcept
     std::cout << "\n";
 }
 
-const double SliceData::T() const noexcept
+double SliceData::T() const noexcept
 {
     return T_;
 }

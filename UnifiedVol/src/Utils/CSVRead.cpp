@@ -9,62 +9,172 @@
 #include <sstream>
 #include <iostream>
 #include <stdexcept>
-
+#include <cctype>
+#include <string>
+#include <vector>
 
 VolSurface readVolSurface(const std::string& filename, const MarketData& mkt)
 {
     // Open the CSV file for reading
     std::ifstream file(filename);
-    if (!file.is_open()) 
+    if (!file.is_open())
     {
         throw std::runtime_error("Error: Could not open file " + filename);
     }
 
-    // Container to store the raw CSV data
-    std::vector<std::vector<double>> data{};
-    std::string line{};
-
-    // Read file line by line
-    while (std::getline(file, line)) 
-    {
-        std::stringstream ss(line);
-        std::string cell{};
-        std::vector<double> row{};
-        while (std::getline(ss, cell, ','))
+    // Small helpers (kept local to preserve file style)
+    auto trim = [](std::string& s)
         {
-            try 
+            auto issp = [](unsigned char c) { return std::isspace(c); };
+            while (!s.empty() && issp(s.front())) s.erase(s.begin());
+            while (!s.empty() && issp(s.back()))  s.pop_back();
+        };
+
+    auto parseCell = [&](const std::string& raw, double& out, bool strict = true) -> bool
+        {
+            std::string s = raw;
+            trim(s);
+            if (s.empty()) return false;
+
+            bool percent = false;
+            if (!s.empty() && s.back() == '%')
             {
-                row.push_back(std::stod(cell));
+                percent = true; s.pop_back(); trim(s);
+                if (s.empty()) { if (strict) throw std::invalid_argument("lonely %"); else return false; }
             }
-            catch (...) 
+
+            size_t idx = 0;
+            try { out = std::stod(s, &idx); }
+            catch (...) { if (strict) throw; else return false; }
+
+            if (idx != s.size())
             {
-                // Ignore non-numeric cells (e.g., empty or header)
+                if (strict) throw std::invalid_argument("trailing junk in \"" + raw + "\"");
+                return false;
             }
-        }
-        if (!row.empty()) {
-            data.push_back(row);
-        }
+
+            if (percent) out *= 0.01;
+            return true;
+        };
+
+    auto splitComma = [](const std::string& line)
+        {
+            std::vector<std::string> cells;
+            std::stringstream ss(line);
+            std::string cell;
+            while (std::getline(ss, cell, ',')) cells.push_back(cell);
+            if (!line.empty() && line.back() == ',') cells.emplace_back(""); // trailing comma
+            return cells;
+        };
+
+    // --------------------------------------------------------------------------
+    // Read header row
+    // Expect: [label or empty], mny1, mny2, ...
+    // --------------------------------------------------------------------------
+    std::string line{};
+    if (!std::getline(file, line))
+    {
+        throw std::runtime_error("CSV file is empty: " + filename);
     }
 
-    if (data.empty()) {
-        throw std::runtime_error("CSV file is empty or invalid: " + filename);
+    const auto header = splitComma(line);
+    if (header.size() < 2)
+    {
+        throw std::runtime_error("Header must have at least 2 columns (blank/label + one moneyness)");
     }
 
-    // Extract moneyness (K/S) from the first row
-    std::vector<double> mny(data[0].begin(), data[0].end());
+    std::vector<double> mny;
+    mny.reserve(header.size() - 1);
 
-    // Prepare maturities and vol matrix
+    for (std::size_t j = 1; j < header.size(); ++j) // skip first header cell
+    {
+        double v{};
+        if (!parseCell(header[j], v, /*strict=*/true))
+            throw std::runtime_error("Non-numeric moneyness at header col " + std::to_string(j + 1));
+        mny.push_back(v);
+    }
+
+    if (mny.empty())
+    {
+        throw std::runtime_error("No moneyness columns found in header");
+    }
+
+    // --------------------------------------------------------------------------
+    // Read data rows: maturity, vol_1, vol_2, ..., vol_N
+    // --------------------------------------------------------------------------
     std::vector<double> maturities{};
     std::vector<std::vector<double>> vols{};
-    maturities.reserve(data.size() - 1);
-    vols.reserve(data.size() - 1);
 
-    for (size_t i = 1; i < data.size(); ++i) 
+    std::size_t lineNo = 1; // already consumed header
+    while (std::getline(file, line))
     {
-        maturities.push_back(data[i][0]); // First column is maturity
-        vols.push_back(std::vector<double>(data[i].begin() + 1, data[i].end())); // Remaining are vols
+        ++lineNo;
+
+        std::string probe = line;
+        trim(probe);
+        if (probe.empty()) continue; // skip blank lines
+
+        const auto cells = splitComma(line);
+        if (cells.size() < 2)
+        {
+            throw std::runtime_error("Row " + std::to_string(lineNo) + " has fewer than 2 columns");
+        }
+
+        // First column is maturity
+        double T{};
+        if (!parseCell(cells[0], T, /*strict=*/true))
+        {
+            throw std::runtime_error("Missing/invalid maturity at row " + std::to_string(lineNo));
+        }
+
+        // Remaining must match mny.size()
+        if (cells.size() - 1 < mny.size())
+        {
+            throw std::runtime_error(
+                "Row " + std::to_string(lineNo) + " has only " +
+                std::to_string(cells.size() - 1) + " vol columns; expected " +
+                std::to_string(mny.size()));
+        }
+
+        std::vector<double> row;
+        row.reserve(mny.size());
+        for (std::size_t j = 0; j < mny.size(); ++j)
+        {
+            double sigma{};
+            if (!parseCell(cells[1 + j], sigma, /*strict=*/true))
+            {
+                throw std::runtime_error(
+                    "Non-numeric vol at row " + std::to_string(lineNo) +
+                    ", col " + std::to_string(1 + j + 1));
+            }
+            row.push_back(sigma);
+        }
+
+        maturities.push_back(T);
+        vols.push_back(std::move(row));
     }
 
-    // Construct VolSurface using the new FromMarketData method
+    if (maturities.empty())
+    {
+        throw std::runtime_error("CSV file has no data rows: " + filename);
+    }
+
+    // Final sanity: shapes must match
+    if (vols.size() != maturities.size())
+    {
+        throw std::runtime_error("Internal error: vols rows != maturities count");
+    }
+    for (std::size_t i = 0; i < vols.size(); ++i)
+    {
+        if (vols[i].size() != mny.size())
+        {
+            throw std::runtime_error(
+                "Ragged row at data row " + std::to_string(i + 2) + // +2 for header + 1-based
+                ": got " + std::to_string(vols[i].size()) +
+                " vols, expected " + std::to_string(mny.size()));
+        }
+    }
+
+    // Construct VolSurface using the MarketData-based ctor
     return VolSurface::fromMarketData(mny, vols, maturities, mkt);
 }

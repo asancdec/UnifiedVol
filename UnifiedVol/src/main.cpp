@@ -18,10 +18,7 @@ int main()
     mktVolSurf.printTotVar();
     std::cout << "\n";
 
-
     SVI svi{ mktVolSurf };
-
-    std::cout << "OK";
 
     //svi.modelVolSurf.printConsole();
 

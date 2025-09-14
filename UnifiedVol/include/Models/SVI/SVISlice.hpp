@@ -15,4 +15,4 @@ struct SVISlice
 	SVIParams sviParams;
 };
 
-#endif // SVI_PARAMS_HPP
+#endif // SVI_SLICE_HPP

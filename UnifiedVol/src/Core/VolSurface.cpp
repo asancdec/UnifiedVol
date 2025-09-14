@@ -5,10 +5,13 @@
 */
 
 #include "Core/VolSurface.hpp"
+
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
 #include <string>
+#include <stdexcept>
+
 
 VolSurface::VolSurface(std::vector<SliceData>&& slices,
     std::vector<double>&& maturities)
@@ -92,7 +95,7 @@ void VolSurface::printTotVar() const noexcept
 
 std::size_t VolSurface::numStrikes() const
 {   
-    // Extract the number of strikes in the first slcie
+    // Extract the number of strikes in the first slice
     const std::size_t n{ slices_.front().logFM().size() };
 
     // Check that every slice has the same number of strikes
@@ -110,7 +113,6 @@ std::size_t VolSurface::numStrikes() const
     }
     return n;
 }
-
 
 const std::vector<SliceData>& VolSurface::slices() const noexcept
 {
