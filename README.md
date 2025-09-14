@@ -1,6 +1,6 @@
 # UnifiedVol
 
-UnifiedVol is a work-in-progress quantitative finance library for volatility surface modeling and option pricing.  
+UnifiedVol is a work-in-progress quantitative finance library for volatility surface modeling.  
 
 ---
 
