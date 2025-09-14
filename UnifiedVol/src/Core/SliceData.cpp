@@ -12,8 +12,8 @@
 #include <iterator>
 #include <iostream>
 #include <iomanip>
-#include <stdexcept> 
-
+#include <stdexcept>
+#include <string> 
 
 SliceData::SliceData(double T,
     const std::vector<double>& mny,
@@ -112,7 +112,7 @@ double SliceData::atmWT() const noexcept
     return wT_[static_cast<std::size_t>(it - first)];
 }
 
-void SliceData::printImpVol() const noexcept
+void SliceData::printVol() const noexcept
 {
     for (const auto& v : vol_)
     {
@@ -155,4 +155,31 @@ const std::vector<double>& SliceData::wT() const noexcept
     return wT_;
 }
 
+void SliceData::setWT(const std::vector<double>& wT)
+{   
+    // Check matching size
+    if (wT.size() != wT_.size())
+    {
+        throw std::invalid_argument
+        (
+            "SliceData::setWT size mismatch: wT.size()=" +
+            std::to_string(wT.size()) +
+            ", expected " + std::to_string(wT_.size())
+        );
+    }
 
+    // Create a copy
+    wT_ = wT;  
+
+    // Recalculate volatility per strike: sigma = sqrt(w/T)
+    const double invT{ 1.0 / T_ };
+    for (size_t i = 0; i < wT_.size(); ++i) 
+    {
+        const double wk = wT_[i];
+        if (wk < 0.0) 
+        {
+            throw std::logic_error("SliceData::setWT: negative total variance at idx " + std::to_string(i));
+        }
+        vol_[i] = std::sqrt(wk * invT);
+    }
+}

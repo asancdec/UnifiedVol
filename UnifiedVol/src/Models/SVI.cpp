@@ -58,39 +58,41 @@ struct SVI::GKPrecomp
     }
 };
 
-SVI::SVI(const VolSurface& mktVolSurf, bool isPrintResults) : config_{}
+SVI::SVI(const VolSurface& mktVolSurf, bool isPrintResults) : calVolSurf_(mktVolSurf), config_{}
 {   
-    // Initialize slices vector
-    sviSlices_.reserve(mktVolSurf.slices().size());
-
-    // Initialize the first total variance vector
-    std::vector<double> wkSlice(mktVolSurf.numStrikes(), 0.0);
+    // Initialize vectors
+    sviSlices_.reserve(calVolSurf_.numSlices());
+    std::vector<double> wkSlice(calVolSurf_.numStrikes(), 0.0);
 
     // Calibrate each slice
-    for (const auto& mktSlice : mktVolSurf.slices())
-    {
-        calibrateSlice(mktSlice, wkSlice, isPrintResults);
+    for (auto& slice : calVolSurf_.slices())
+    {   
+        // Update calculated variances use them on the next slice calibration
+        wkSlice = calSlice(slice, wkSlice, isPrintResults);
+
+        // Set the slice of the calibrated volatility surface
+        slice.setWT(wkSlice);
     }
 }
 
-void SVI::calibrateSlice(const SliceData& mktSlice, std::vector<double>& wKPrevSlice, bool isPrintResults)
+std::vector<double> SVI::calSlice(const SliceData& slice, const std::vector<double>& wKPrevSlice, bool isPrintResults)
 {
     // Constant references to slice data
-    const std::vector<double>& kSlice{ mktSlice.logFM() };
-    const std::vector<double>& wTSlice{ mktSlice.wT() };
+    const std::vector<double>& kSlice{ slice.logFM() };
+    const std::vector<double>& wKSlice{ slice.wT() };
 
 	// Size checks
-    if (kSlice.size() != wTSlice.size() || kSlice.size() != wKPrevSlice.size())
-        throw std::invalid_argument("kSlice/wTSlice/wKPrevSlice size mismatch");
+    if (kSlice.size() != wKSlice.size() || kSlice.size() != wKPrevSlice.size())
+        throw std::invalid_argument("kSlice/wKSlice/wKPrevSlice size mismatch");
 
     // Define initial guess 
-    std::array<double, 5 > iGArr{ initGuess(mktSlice) };
+    std::array<double, 5 > iGArr{ initGuess(slice) };
 
     // Lower bound constraints
-    std::array<double, 5> lBArr{ lowerBounds(mktSlice) };
+    std::array<double, 5> lBArr{ lowerBounds(slice) };
 
     // Upper bound constraints
-    std::array<double, 5> uBArr{ upperBounds(mktSlice) };
+    std::array<double, 5> uBArr{ upperBounds(slice) };
 
     // Clamp initial guess within lower and upper bounds
     clampIG(iGArr, lBArr, uBArr);
@@ -106,10 +108,10 @@ void SVI::calibrateSlice(const SliceData& mktSlice, std::vector<double>& wKPrevS
     opt.set_upper_bounds(uB);
 
     // Enforce positive minimum total variance constraint
-    wMinConstraint(opt);
+    addWMinConstr(opt);
 
     // Enforce Roger Lee wing slope constraints
-    addLeeMaxSlopeConstraints(opt);
+    addMaxSlopeConstr(opt);
 
     // Initialize no calendar arbitrage data instance
     SliceView cal{ kSlice.data(), wKPrevSlice.data(), wKPrevSlice.size()};
@@ -123,16 +125,16 @@ void SVI::calibrateSlice(const SliceData& mktSlice, std::vector<double>& wKPrevS
     }
 
     // Enforce calendar spread arbitrage constraints: Wk_current ≥ Wk_previous
-    addCalendarNoArbConstraints(opt, contexts);
+    addCalendarConstr(opt, contexts);
 
     // Enforce convexity constraints: g(k) ≥ 0
-    addConvexityConstraints(opt, kSlice);
+    addConvexityConstr(opt, kSlice);
 
     // Initialize objective data instance
-    SliceView obj{ kSlice.data(), wTSlice.data(),  wTSlice.size()};
+    SliceView obj{ kSlice.data(), wKSlice.data(), wKSlice.size()};
 
     // Define objective function with analytical gradient
-    objectiveFunction(opt, obj);
+    addObjFunc(opt, obj);
 
     // Stopping criteria
     opt.set_ftol_rel(config_.ftolRel);  // Stop when objective stops improving
@@ -149,23 +151,17 @@ void SVI::calibrateSlice(const SliceData& mktSlice, std::vector<double>& wKPrevS
     const double rho{ x[2] };
     const double m{ x[3] };
     const double sigma{ x[4] };
-    SVISlice modelSlice{ mktSlice.T(), SVIParams{a, b, rho, m, sigma}};
+    SVISlice calSlice{ slice.T(), SVIParams{a, b, rho, m, sigma}};
 
     // Evaluate calibration
-    evalCalib(modelSlice, lBArr, uBArr, sse, mktSlice, kSlice, wKPrevSlice, isPrintResults);
+    evalCal(calSlice, lBArr, uBArr, sse, kSlice, wKPrevSlice, isPrintResults);
 
     // Save calibration results
-    sviSlices_.emplace_back(modelSlice);
+    sviSlices_.emplace_back(calSlice);
 
-    // Modify slice total variance vector
-    // Purpose: enforce no-arbitrage calendar spread constraint on the next slices 
-    std::transform(kSlice.begin(), kSlice.end(), wKPrevSlice.begin(),
-        [a, b, rho, m, sigma](double k) noexcept 
-        {
-            return wk(a, b, rho, m, sigma, k);
-        });
+    // Create and return calibrated variance vector
+    return makewKSlice(kSlice, a, b, rho, m, sigma);
 }
-
 
 std::array<double, 5> SVI::initGuess(const SliceData& slice) noexcept
 {   
@@ -178,26 +174,26 @@ std::array<double, 5> SVI::initGuess(const SliceData& slice) noexcept
     return { a, b, rho, m, sigma };
 }
 
-std::array<double, 5> SVI::lowerBounds(const SliceData& mktSlice) noexcept
+std::array<double, 5> SVI::lowerBounds(const SliceData& slice) noexcept
 {
     return     
     {
-        -10.0,                        // a
+        -10.0,                       // a
         0.001,                       // b            
         -0.9999,                     // rho
-        5.0 * mktSlice.minLogFM(),   // m
+        5.0 * slice.minLogFM(),      // m
         0.01                         // sigma
     };
 }
 
-std::array<double, 5> SVI::upperBounds(const SliceData& mktSlice) noexcept
+std::array<double, 5> SVI::upperBounds(const SliceData& slice) noexcept
 {
     return 
     {
-    mktSlice.maxWT(),            // a
-    2.0,                         // b
-    0.9999,                      // rho
-    5.0 * mktSlice.maxLogFM(),   // m
+    slice.maxWT(),              // a
+    2.0,                        // b
+    0.9999,                     // rho
+    5.0 * slice.maxLogFM(),     // m
     10.0                        // sigma
     };
 }
@@ -226,7 +222,7 @@ void SVI::clampIG(std::array<double, 5>& iG,
     }
 }
 
-void SVI::wMinConstraint(nlopt::opt& opt) const
+void SVI::addWMinConstr(nlopt::opt& opt) const
 {   
     const double* epsPtr{ &config_.eps };
     opt.add_inequality_constraint
@@ -266,7 +262,7 @@ void SVI::wMinConstraint(nlopt::opt& opt) const
     );
 }
 
-void SVI::addLeeMaxSlopeConstraints(nlopt::opt& opt) const
+void SVI::addMaxSlopeConstr(nlopt::opt& opt) const
 {
     // Right wing: b*(1 + rho) <= 2
     opt.add_inequality_constraint(
@@ -316,7 +312,7 @@ void SVI::addLeeMaxSlopeConstraints(nlopt::opt& opt) const
     );
 }
 
-void SVI::addCalendarNoArbConstraints(nlopt::opt& opt, std::vector<ConstraintCtx>& contexts) const
+void SVI::addCalendarConstr(nlopt::opt& opt, std::vector<ConstraintCtx>& contexts) const
 {
     // For each k, add one no calendar arbitrage constraint
     for (auto& ctx : contexts) 
@@ -362,7 +358,7 @@ void SVI::addCalendarNoArbConstraints(nlopt::opt& opt, std::vector<ConstraintCtx
     }
 }
 
-void SVI::addConvexityConstraints(nlopt::opt& opt, const std::vector<double>& kSlice) const
+void SVI::addConvexityConstr(nlopt::opt& opt, const std::vector<double>& kSlice) const
 {
     // For each k, add one convexity constraint g(k) ≥ 0
     for (size_t i = 0; i < kSlice.size(); ++i)
@@ -388,7 +384,7 @@ void SVI::addConvexityConstraints(nlopt::opt& opt, const std::vector<double>& kS
                 if (grad) 
                 {
                     // ∇g = [dg/da, dg/db, dg/dρ, dg/dm, dg/dσ]
-                    const auto dg{ SVI::gkGradient(a, b, rho, m, sigma, k, p) };
+                    const auto dg{ SVI::gkGrad(a, b, rho, m, sigma, k, p) };
                     for (unsigned j = 0; j < 5 && j < n; ++j)
                     {
                         grad[j] = -dg[j]; // c(x) = -g(k) 
@@ -406,7 +402,7 @@ void SVI::addConvexityConstraints(nlopt::opt& opt, const std::vector<double>& kS
     }
 }
 
-void SVI::objectiveFunction(nlopt::opt& opt, const SliceView& obj) const
+void SVI::addObjFunc(nlopt::opt& opt, const SliceView& obj) const
 {   
     opt.set_min_objective
     (
@@ -487,7 +483,7 @@ double SVI::gk(double a, double b, double rho, double m, double sigma, double k,
     return (p.A * p.A) - 0.25 * p.wkD1Squared* p.B + p.wkD2 / 2.0;  // g(k) := A^2 - B * (w')^2 / 4 + w''/2
 }
 
-std::array<double, 5> SVI::gkGradient(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept
+std::array<double, 5> SVI::gkGrad(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept
 {
     // Precompute variables
     double invR5{ p.invRCubed * p.invR * p.invR };    // 1/R^5
@@ -537,22 +533,21 @@ std::array<double, 5> SVI::gkGradient(double a, double b, double rho, double m, 
     return dg;
 }
 
-void SVI::evalCalib(const SVISlice& modelSlice,
+void SVI::evalCal(const SVISlice& calSlice,
     const std::array<double, 5>& lBArr,
     const std::array<double, 5>& uBArr,
     double sse,
-    const SliceData& mktSlice,
     const std::vector<double>& kSlice,
     const std::vector<double>& wKPrevSlice,
     bool isPrintResults) const noexcept
 {
     // Extract parameters
-    const double T{ modelSlice.T };
-    const double a{ modelSlice.sviParams.a };
-    const double b{ modelSlice.sviParams.b };
-    const double rho{ modelSlice.sviParams.rho };
-    const double m{ modelSlice.sviParams.m };
-    const double sig{ modelSlice.sviParams.sigma };
+    const double T{ calSlice.T };
+    const double a{ calSlice.sviParams.a };
+    const double b{ calSlice.sviParams.b };
+    const double rho{ calSlice.sviParams.rho };
+    const double m{ calSlice.sviParams.m };
+    const double sig{ calSlice.sviParams.sigma };
     const double SSE{ sse };
 
     // ---- Print results ----
@@ -686,4 +681,26 @@ const char* SVI::paramName(std::size_t i) noexcept
 {
     static constexpr const char* names[5] = { "a", "b", "rho", "m", "sigma" };
     return (i < 5) ? names[i] : "?";
+}
+
+std::vector<double> SVI::makewKSlice(const std::vector<double>& kSlice,
+    double a, double b, double rho, double m, double sigma) noexcept
+{
+    std::vector<double> wKSlice;
+    wKSlice.reserve(kSlice.size());
+
+    std::transform(
+        kSlice.begin(), kSlice.end(),
+        std::back_inserter(wKSlice),
+        [a, b, rho, m, sigma](double k) noexcept 
+        {
+            return wk(a, b, rho, m, sigma, k);
+        });
+
+    return wKSlice;
+}
+
+const VolSurface& SVI::getVolSurf() const noexcept
+{
+    return calVolSurf_;
 }

@@ -20,10 +20,10 @@ private:
     // Member variables
     //--------------------------------------------------------------------------
 
-    double T_;                      // slice maturity
+    double T_;                           // slice maturity
     std::vector<double> mny_;            // plain moneyness (K/S)
     std::vector<double> logFM_;          // log-forward moneyness log(K/F)
-    std::vector<double> vol_;            // implied volatilities 
+    std::vector<double> vol_;            // volatilities 
     std::vector<double> wT_;             // total variance (vol²T) 
 
 
@@ -75,8 +75,8 @@ public:
     // Utilities
     //--------------------------------------------------------------------------
     
-    // Print implied volatility slice on console
-    void printImpVol() const noexcept;
+    // Print volatility slice on console
+    void printVol() const noexcept;
 
     // Print total variance slice on console
     void printTotVar() const noexcept;
@@ -88,6 +88,8 @@ public:
     const std::vector<double>& vol() const noexcept;
     const std::vector<double>& wT() const noexcept;
 
+    // Setters
+    void setWT(const std::vector<double>& wT); 
 };
 
 #endif // SLICE_DATA_HPP

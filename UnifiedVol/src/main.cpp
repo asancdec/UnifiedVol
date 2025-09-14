@@ -13,12 +13,17 @@ int main()
     VolSurface mktVolSurf{ readVolSurface("data/inputs/VolSurface_SPY_04072011.csv", mkt) };
 
 
-    mktVolSurf.printImpVol();
-    std::cout << "\n";
-    mktVolSurf.printTotVar();
+    mktVolSurf.printVol();
     std::cout << "\n";
 
     SVI svi{ mktVolSurf };
+
+    VolSurface sviVolSurf{svi.getVolSurf()};
+    std::cout << "\n";
+
+
+    sviVolSurf.printVol();
+    std::cout << "\n";
 
     //svi.modelVolSurf.printConsole();
 

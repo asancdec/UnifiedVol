@@ -53,7 +53,7 @@ VolSurface VolSurface::fromModelData(const std::vector<std::vector<double>>& log
     return VolSurface(std::move(slices), std::vector<double>(maturities));
 }
 
-void VolSurface::printImpVol() const noexcept
+void VolSurface::printVol() const noexcept
 {
     // Print header row
     std::cout << "T\\%S\t";
@@ -69,7 +69,7 @@ void VolSurface::printImpVol() const noexcept
     for (size_t i = 0; i < slices_.size(); ++i)
     {
         std::cout << std::fixed << std::setprecision(2) << maturities_[i] << "\t";
-        slices_[i].printImpVol();
+        slices_[i].printVol();
     }
 }
 
@@ -114,7 +114,7 @@ std::size_t VolSurface::numStrikes() const
     return n;
 }
 
-const std::vector<SliceData>& VolSurface::slices() const noexcept
+std::vector<SliceData>& VolSurface::slices() noexcept
 {
     return slices_;
 }
@@ -122,4 +122,9 @@ const std::vector<SliceData>& VolSurface::slices() const noexcept
 const std::vector<double>& VolSurface::maturities() const noexcept
 {
     return maturities_;
+}
+
+size_t VolSurface::numSlices() const noexcept
+{
+    return slices_.size();
 }
