@@ -23,7 +23,7 @@
 ## Examples
 
 - [SVI Calibration Fits (PDF)](docs/SVI_calibration_fits.pdf)  
-- Market implied volatilities vs fitted SVI curves (multi-tenor surface)  :
+- Market implied volatilities vs fitted SVI curves (SPY 2025-04-07)  :
 
 <img width="1867" height="1157" alt="SVI calibration" src="https://github.com/user-attachments/assets/ed85c8bf-f065-494e-b6ba-d7b19175c5f2" />
 
