@@ -1,50 +1,73 @@
-# UnifiedVol
+# UnifiedVol  
 
-UnifiedVol is a work-in-progress quantitative finance library in C++ for volatility surface modeling.  
-
----
-
-## Available Features
-
-### 1. SVI Calibration
-- Enforces no-arbitrage conditions:
-  1. No calendar arbitrage.
-  2. No butterfly spread arbitrage.
-  3. Positive minimum variance constraint.
-  4. Roger Lee’s asymptotic wing slope bounds.  
-
-- Calibration performed with Sequential Quadratic Programming (SQP). 
-- Analytical gradients implemented for improved speed and numerical stability.
-- Calibration results are tested afterward.
-
----
-## Examples
-
-[SVI Calibration Fits (PDF)](docs/SVI_calibration_fits.pdf)
+**UnifiedVol** is a C++20 quantitative finance library for volatility surface modeling and calibration.  
 
 ---
 
-## References
+## Current Capabilities  
+
+### Arbitrage-Free SVI Calibration  
+- Full enforcement of static no-arbitrage conditions:  
+  - Calendar arbitrage  
+  - Butterfly spread arbitrage  
+  - Positive minimum variance  
+  - Roger Lee’s asymptotic wing slope bounds  
+
+- Calibration methodology:  
+  - Sequential Quadratic Programming (SQP) with constraint handling via [NLopt](https://nlopt.readthedocs.io/)  
+  - Closed-form analytical gradients for improved speed and numerical stability  
+  - Post-calibration validation to confirm absence of arbitrage violations  
+
+---
+
+## Examples  
+
+- [SVI Calibration Fits (PDF)](docs/SVI_calibration_fits.pdf)  
+- Example: Market implied volatilities vs fitted SVI curves (multi-tenor surface)  
+
+<p align="center">  
+  <img src="svi_card_plot_dark_soft_points_notitle.png" width="600"/>  
+</p>  
+
+---
+
+## Roadmap  
+
+Planned extensions include:  
+- SSVI (Stochastic Volatility Inspired) parameterization  
+- SABR stochastic volatility model  
+- Heston stochastic variance model  
+- Stochastic Local Volatility (SLV) frameworks  
+- Integration with PDE solvers for local volatility pricing  
+
+---
+
+## References  
+
 - Roger W. Lee (2003), *The Moment Formula for Implied Volatility at Extreme Strikes*  
 - Jim Gatheral & Antoine Jacquier (2014), *Arbitrage-Free SVI Volatility Surfaces*  
 - Zeliade Systems (2012), *Quasi-Explicit Calibration of Gatheral’s SVI Model* (White Paper)  
-- Tahar Ferhati (2020), *Robust Calibration for SVI Model Arbitrage-Free*
-  
+- Tahar Ferhati (2020), *Robust Calibration for SVI Model Arbitrage-Free*  
+
 ---
 
-## Data
-Sample option surface data used for testing has been obtained from the public sample data found in:  
+## Data  
+
+Sample surfaces calibrated in this project are derived from publicly available option data:  
 
 - [CBOE Volatility Surface Data](https://datashop.cboe.com/volatility-surfaces)  
 
 ---
 
-## Dependencies
-- [NLopt](https://nlopt.readthedocs.io/) — nonlinear optimization library used as the back-end for SQP calibration, constraint handling, and stopping criteria  
-- Standard C++20 STL  
+## Dependencies  
+
+- C++20 STL  
+- [NLopt](https://nlopt.readthedocs.io/) — nonlinear optimization library for SQP calibration, constraint enforcement, and stopping criteria  
 
 ---
 
-## Status
-This repository is under active development. Interfaces and implementation details are subject to change without notice.  
-Future releases are planned to include SSVI, Heston, SABR, and stochastic local volatility (SLV) models.
+## Status  
+
+This repository is under active development. Interfaces, APIs, and model implementations are subject to refinement.  
+The long-term goal is to provide a production-ready volatility modeling library suitable for front-office quantitative research,  
+model validation, and risk management. 
