@@ -67,6 +67,4 @@ Sample surfaces calibrated in this project are derived from publicly available o
 
 ## Status  
 
-This repository is under active development. Interfaces, APIs, and model implementations are subject to refinement.  
-The long-term goal is to provide a production-ready volatility modeling library suitable for front-office quantitative research,  
-model validation, and risk management. 
+This repository is under active development. Interfaces, APIs, and model implementations are subject to further changes.
