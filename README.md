@@ -1,6 +1,6 @@
 # UnifiedVol
 
-UnifiedVol is a work-in-progress quantitative finance library for volatility surface modeling.  
+UnifiedVol is a work-in-progress quantitative finance library in C++ for volatility surface modeling.  
 
 ---
 
@@ -8,10 +8,10 @@ UnifiedVol is a work-in-progress quantitative finance library for volatility sur
 
 ### 1. SVI Calibration
 - Enforces no-arbitrage conditions:
-  1. No calendar arbitrage  
-  2. No butterfly spread arbitrage  
-  3. Positive minimum variance constraint  
-  4. Roger Lee’s asymptotic wing slope bounds  
+  1. No calendar arbitrage.
+  2. No butterfly spread arbitrage.
+  3. Positive minimum variance constraint.
+  4. Roger Lee’s asymptotic wing slope bounds.  
 
 - Calibration performed with Sequential Quadratic Programming (SQP). 
 - Analytical gradients implemented for improved speed and numerical stability.
