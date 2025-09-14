@@ -135,9 +135,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="data\Analysis_SPY.xlsx" />
+    <None Include="data\other\Analysis_SPY.xlsx" />
     <None Include="data\inputs\VolSurface_SPY_04072011.csv" />
-    <None Include="data\SVI_VolSurface_SPY_04072011.csv" />
+    <None Include="data\other\SVI_VolSurface_SPY_04072011.csv" />
     <None Include="data\VolSurface_SPY_04072011.csv" />
   </ItemGroup>
   <ItemGroup>
@@ -147,12 +147,14 @@
     <ClInclude Include="include\DataStructs\SliceData.hpp" />
     <ClInclude Include="include\DataStructs\VolSurface.hpp" />
     <ClInclude Include="include\Core\SliceData.hpp" />
+    <ClInclude Include="include\Errors\Errors.hpp" />
+    <ClInclude Include="include\Utils\Log.hpp" />
     <ClInclude Include="include\Models\SVI\SVI.hpp" />
     <ClInclude Include="include\Models\SVI\SVIConfig.hpp" />
     <ClInclude Include="include\Models\SVI\SVIParams.hpp" />
     <ClInclude Include="include\Models\SVI\SVISlice.hpp" />
-    <ClInclude Include="include\Utils\CSVRead.hpp" />
-    <ClInclude Include="include\Utils\CSVWrite.hpp">
+    <ClInclude Include="include\Utils\Data\CSVRead.hpp" />
+    <ClInclude Include="include\Utils\Data\CSVWrite.hpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
@@ -161,6 +163,8 @@
   <ItemGroup>
     <ClCompile Include="src\Core\SliceData.cpp" />
     <ClCompile Include="src\Core\VolSurface.cpp" />
+    <ClCompile Include="src\Errors\Errors.cpp" />
+    <ClCompile Include="src\Utils\Log.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Models\SVI.cpp" />
     <ClCompile Include="src\Utils\CSVRead.cpp" />

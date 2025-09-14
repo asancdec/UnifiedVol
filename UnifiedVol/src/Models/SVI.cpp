@@ -5,6 +5,8 @@
 */
 
 #include "Models/SVI/SVI.hpp"
+#include "Errors/Errors.hpp"
+#include "Utils/Log.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -13,6 +15,9 @@
 #include <array>
 #include <iomanip>
 #include <limits> 
+
+using uv::ErrorCode;
+
 
 struct SVI::SliceView
 {
@@ -82,8 +87,12 @@ std::vector<double> SVI::calSlice(const SliceData& slice, const std::vector<doub
     const std::vector<double>& wKSlice{ slice.wT() };
 
 	// Size checks
-    if (kSlice.size() != wKSlice.size() || kSlice.size() != wKPrevSlice.size())
-        throw std::invalid_argument("kSlice/wKSlice/wKPrevSlice size mismatch");
+    UV_REQUIRE(kSlice.size() == wKSlice.size() && kSlice.size() == wKPrevSlice.size(),
+        ErrorCode::InvalidArgument,
+        "kSlice/wKSlice/wKPrevSlice size mismatch: "
+        "k=" + std::to_string(kSlice.size()) +
+        ", wK=" + std::to_string(wKSlice.size()) +
+        ", wKprev=" + std::to_string(wKPrevSlice.size()));
 
     // Define initial guess 
     std::array<double, 5 > iGArr{ initGuess(slice) };
@@ -119,10 +128,7 @@ std::vector<double> SVI::calSlice(const SliceData& slice, const std::vector<doub
     // Vector of constraints context
     std::vector<ConstraintCtx> contexts;
     contexts.resize(cal.n);
-    for (size_t i = 0; i < cal.n; ++i)
-    {
-        contexts[i] = ConstraintCtx{ cal.k[i], wKPrevSlice[i], config_.eps};
-    }
+    for (size_t i = 0; i < cal.n; ++i) contexts[i] = ConstraintCtx{ cal.k[i], wKPrevSlice[i], config_.eps};
 
     // Enforce calendar spread arbitrage constraints: Wk_current ≥ Wk_previous
     addCalendarConstr(opt, contexts);
@@ -204,21 +210,17 @@ void SVI::clampIG(std::array<double, 5>& iG,
 {
     bool clampedAny{ false };
 
-    for (std::size_t i = 0; i < iG.size(); ++i)
+    for (std::size_t i = 0; i < iG.size(); ++i) 
     {
         const double before = iG[i];
         const double after = std::clamp(before, lb[i], ub[i]);
-
-        if (after != before)
-        {
-            clampedAny = true;
-            std::cerr << std::fixed << std::setprecision(6)
-                << "clampIG: parameter " << paramName(i)
-                << " clamped from " << before
-                << " to " << after
-                << " (lb=" << lb[i] << ", ub=" << ub[i] << ")\n";
-            iG[i] = after;
-        }
+        UV_WARN(after == before,
+            std::string("SVI::clampIG: ") + paramName(i) +
+            " out of bounds: " + std::to_string(before) +
+            " -> clamped to " + std::to_string(after) +
+            " (lb=" + std::to_string(lb[i]) +
+            ", ub=" + std::to_string(ub[i]) + ')');
+        iG[i] = after;
     }
 }
 
@@ -585,26 +587,24 @@ void SVI::evalCal(const SVISlice& calSlice,
 
         if (near(v, lb))
         {
-            std::cerr << "WARNING -- " << paramName(i)
-                << " hit LOWER bound: v=" << v
-                << " (lb=" << lb << ")\n";
+            uv::warn(std::string("SVI: ") + paramName(i) +
+                " hit LOWER bound: v=" + std::to_string(v) +
+                " (lb=" + std::to_string(lb) + ')');
         }
-        else if (near(v, ub))
-        {
-            std::cerr << "WARNING -- " << paramName(i)
-                << " hit UPPER bound: v=" << v
-                << " (ub=" << ub << ")\n";
+        else if (near(v, ub)) {
+            uv::warn(std::string("SVI: ") + paramName(i) +
+                " hit UPPER bound: v=" + std::to_string(v) +
+                " (ub=" + std::to_string(ub) + ')');
         }
     }
 
     // ---- wMin constraint violation ----
-
     const double S{ std::sqrt((std::max)(0.0, 1.0 - rho * rho)) };
     const double wMin{ std::fma(b, sig * S, a) };
     if (config_.eps - wMin > config_.tol)
     {
-        std::cerr << "WARNING -- No-arbitrage constraint violated -- WMIn violated: wMin=" << wMin
-            << " < eps=" << config_.eps << "\n";
+        uv::warn(std::string("No-arbitrage: wMin violated: wMin=") +
+            std::to_string(wMin) + " < eps=" + std::to_string(config_.eps));
     }
 
     // ---- Lee wing-slope constraint violations ----
@@ -612,18 +612,18 @@ void SVI::evalCal(const SVISlice& calSlice,
     const double leeRight{ b * (1.0 + rho) - 2.0 };
     if (leeRight > config_.tol)
     {
-        std::cerr << "WARNING -- No-arbitrage constraint violated -- "
-            << "Right wing slope: b*(1+rho)=" << (b * (1.0 + rho))
-            << " > 2.0  (b=" << b << ", rho=" << rho << ")\n";
+        uv::warn(std::string("No-arbitrage: right wing slope > 2: b*(1+rho)=") +
+            std::to_string(b * (1.0 + rho)) +
+            " (b=" + std::to_string(b) + ", rho=" + std::to_string(rho) + ')');
     }
 
     // Left wing: b * (1 - rho) <= 2
     const double leeLeft{ b * (1.0 - rho) - 2.0 };
     if (leeLeft > config_.tol)
     {
-        std::cerr << "WARNING -- No-arbitrage constraint violated -- "
-            << "Left wing slope: b*(1-rho)=" << (b * (1.0 - rho))
-            << " > 2.0  (b=" << b << ", rho=" << rho << ")\n";
+        uv::warn(std::string("No-arbitrage: left wing slope > 2: b*(1-rho)=") +
+            std::to_string(b * (1.0 - rho)) +
+            " (b=" + std::to_string(b) + ", rho=" + std::to_string(rho) + ')');
     }
 
     // ---- Convexity g(k) violation ----
@@ -641,41 +641,37 @@ void SVI::evalCal(const SVISlice& calSlice,
 
     if (gMin < -config_.tol)
     {
-        std::cerr << "WARNING -- No-arbitrage constraint violated -- "
-            << "Convexity: min g(k)=" << gMin
-            << " at k=" << kAtMin
-            << "  (violations " << nViol << "/" << kSlice.size()
-            << ", tol=" << config_.tol << ")\n";
+        uv::warn(std::string("No-arbitrage: convexity violated: min g(k)=") +
+            std::to_string(gMin) + " at k=" + std::to_string(kAtMin) +
+            " (violations " + std::to_string(nViol) + "/" + std::to_string(kSlice.size()) +
+            ", tol=" + std::to_string(config_.tol) + ')');
     }
 
     // ---- Calendar no-arb: w_curr(k) >= w_prev(k) + eps on current grid ----
-    if (wKPrevSlice.size() == kSlice.size())
+    std::size_t nCalViol{ 0 };
+    double minMargin{ std::numeric_limits<double>::infinity() };
+    double kAtWorst{ 0.0 };
+
+    for (std::size_t i{ 0 }; i < kSlice.size(); ++i)
     {
-        std::size_t nCalViol{ 0 };
-        double minMargin{ std::numeric_limits<double>::infinity() };
-        double kAtWorst{ 0.0 };
+        const double k{ kSlice[i] };
+        const double wPrev{ wKPrevSlice[i] + config_.eps };
+        const double wCurr{ SVI::wk(a, b, rho, m, sig, k) };
 
-        for (std::size_t i{ 0 }; i < kSlice.size(); ++i)
-        {
-            const double k{ kSlice[i] };
-            const double wPrev{ wKPrevSlice[i] + config_.eps };
-            const double wCurr{ SVI::wk(a, b, rho, m, sig, k) };
+        const double margin{ wCurr - wPrev };            // should be >= 0
+        if (margin < minMargin) { minMargin = margin; kAtWorst = k; }
+        if (margin < -config_.tol) { ++nCalViol; }
+    }
 
-            const double margin{ wCurr - wPrev };            // should be >= 0
-            if (margin < minMargin) { minMargin = margin; kAtWorst = k; }
-            if (margin < -config_.tol) { ++nCalViol; }
-        }
-
-        if (minMargin < -config_.tol)
-        {
-            std::cerr << "WARNING -- No-arbitrage constraint violated -- "
-                << "Calendar: min[w_curr - (w_prev+eps)]=" << minMargin
-                << " at k=" << kAtWorst
-                << "  (violations " << nCalViol << "/" << kSlice.size()
-                << ", tol=" << config_.tol << ", eps=" << config_.eps << ")\n";
-        }
+    if (minMargin < -config_.tol)
+    {
+        uv::warn(std::string("No-arbitrage: calendar violated: min[w_curr - (w_prev+eps)]=") +
+            std::to_string(minMargin) + " at k=" + std::to_string(kAtWorst) +
+            " (violations " + std::to_string(nCalViol) + "/" + std::to_string(kSlice.size()) +
+            ", tol=" + std::to_string(config_.tol) + ", eps=" + std::to_string(config_.eps) + ')');
     }
 }
+  
 
 const char* SVI::paramName(std::size_t i) noexcept
 {

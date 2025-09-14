@@ -5,6 +5,7 @@
 */
 
 #include "Core/SliceData.hpp"
+#include "Errors/Errors.hpp"
 
 #include <cmath>
 #include <numbers>
@@ -12,8 +13,9 @@
 #include <iterator>
 #include <iostream>
 #include <iomanip>
-#include <stdexcept>
 #include <string> 
+
+using uv::ErrorCode;
 
 SliceData::SliceData(double T,
     const std::vector<double>& mny,
@@ -158,15 +160,9 @@ const std::vector<double>& SliceData::wT() const noexcept
 void SliceData::setWT(const std::vector<double>& wT)
 {   
     // Check matching size
-    if (wT.size() != wT_.size())
-    {
-        throw std::invalid_argument
-        (
-            "SliceData::setWT size mismatch: wT.size()=" +
-            std::to_string(wT.size()) +
-            ", expected " + std::to_string(wT_.size())
-        );
-    }
+    UV_REQUIRE(wT.size() == wT_.size(), ErrorCode::InvalidArgument,
+        "SliceData::setWT size mismatch: got " + std::to_string(wT.size()) +
+        ", expected " + std::to_string(wT_.size()));
 
     // Create a copy
     wT_ = wT;  
@@ -176,10 +172,8 @@ void SliceData::setWT(const std::vector<double>& wT)
     for (size_t i = 0; i < wT_.size(); ++i) 
     {
         const double wk = wT_[i];
-        if (wk < 0.0) 
-        {
-            throw std::logic_error("SliceData::setWT: negative total variance at idx " + std::to_string(i));
-        }
+        UV_REQUIRE(wk >= 0.0, ErrorCode::InvalidArgument,
+            "Negative total variance at idx " + std::to_string(i));
         vol_[i] = std::sqrt(wk * invT);
     }
 }

@@ -5,13 +5,14 @@
 */
 
 #include "Core/VolSurface.hpp"
+#include "Errors/Errors.hpp"
 
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
 #include <string>
-#include <stdexcept>
 
+using uv::ErrorCode;
 
 VolSurface::VolSurface(std::vector<SliceData>&& slices,
     std::vector<double>&& maturities)
@@ -102,14 +103,10 @@ std::size_t VolSurface::numStrikes() const
     for (std::size_t i = 1; i < slices_.size(); ++i)
     {
         const std::size_t ni{ slices_[i].logFM().size() };
-        if (ni != n) 
-        {
-            throw std::runtime_error
-            (
-                "numStrikes(): inconsistent k-grid length — slice 0 has " +
-                std::to_string(n) + " strikes, slice " + std::to_string(i) +
-                " has " + std::to_string(ni));
-        }
+        UV_REQUIRE(ni == n, ErrorCode::InvalidArgument,
+            "numStrikes(): inconsistent k-grid length — slice 0 has " +
+            std::to_string(n) + " strikes, slice " + std::to_string(i) +
+            " has " + std::to_string(ni));
     }
     return n;
 }

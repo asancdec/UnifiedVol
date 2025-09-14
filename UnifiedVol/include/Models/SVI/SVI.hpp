@@ -86,7 +86,7 @@ private:
 	// SVI total variance for a given log-forward moneyness
 	static double wk(double a, double b, double rho, double m, double sigma, double k) noexcept;
 
-	// g(k) optimized version for calibration
+	// g(k) optimized function for calibration
 	static double gk(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept; 
 
 	// ∇g(k)
@@ -123,11 +123,6 @@ public:
 
 	// Calibration occurs when object is initialized
 	SVI(const VolSurface& mktVolSurf, bool isPrintResults = true);
-
-	//--------------------------------------------------------------------------
-	// Math functions 
-	//--------------------------------------------------------------------------
-	static double gk(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept;
 
 	//--------------------------------------------------------------------------
 	// Utilities
