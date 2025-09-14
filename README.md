@@ -20,14 +20,13 @@
 
 ---
 
-## Examples  
+## Examples  https://github.com/asancdec/UnifiedVol/blob/master/README.md
 
 - [SVI Calibration Fits (PDF)](docs/SVI_calibration_fits.pdf)  
 - Example: Market implied volatilities vs fitted SVI curves (multi-tenor surface)  
 
-<p align="center">  
-  <img src="svi_card_plot_dark_soft_points_notitle.png" width="600"/>  
-</p>  
+<img width="1867" height="1157" alt="SVI calibration" src="https://github.com/user-attachments/assets/ed85c8bf-f065-494e-b6ba-d7b19175c5f2" />
+
 
 ---
 
