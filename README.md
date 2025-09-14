@@ -18,12 +18,16 @@ Currently, it provides robust no-arbitrage calibration of the raw SVI parameteri
 - Analytical gradients implemented for improved speed and numerical stability.
 - Calibration results are tested afterward.
 
+---
+
 ## References
 - Roger W. Lee (2003), *The Moment Formula for Implied Volatility at Extreme Strikes*  
 - Jim Gatheral & Antoine Jacquier (2014), *Arbitrage-Free SVI Volatility Surfaces*  
 - Zeliade Systems (2012), *Quasi-Explicit Calibration of Gatheral’s SVI Model* (White Paper)  
 - Tahar Ferhati (2020), *Robust Calibration for SVI Model Arbitrage-Free*
   
+---
+
 ## Data
 Sample option surface data used for testing has been obtained from the public sample data found in:  
 
