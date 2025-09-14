@@ -17,8 +17,12 @@ UnifiedVol is a work-in-progress quantitative finance library for volatility sur
 - Analytical gradients implemented for improved speed and numerical stability.
 - Calibration results are tested afterward.
 
-Examples
-Below are sample fits from the SVI calibration module:
+---
+## Examples
+
+Calibration results and plots are available in the following PDF:
+
+[SVI Calibration Fits (PDF)](docs/SVI_calibration_fits.pdf)
 
 ---
 
