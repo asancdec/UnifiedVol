@@ -361,3 +361,45 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+
+# --- UnifiedVol / CMake / vcpkg add-ons ---
+
+# CMake build & install trees
+build/
+install/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+Makefile
+*.ninja
+*.ninja_deps
+*.ninja_log
+
+# Per-config output dirs some generators create
+Debug/
+Release/
+RelWithDebInfo/
+MinSizeRel/
+x64/
+x86/
+
+# vcpkg (local clones; keep vcpkg.json tracked)
+vcpkg_installed/
+vcpkg_downloads/
+packages/
+buildtrees/
+
+# IDEs (extras beyond VisualStudio.gitignore)
+.vscode/
+.idea/
+
+# Logs / temps
+*.tlog
+*.log
+*.tmp
+
+# Data outputs (keep inputs tracked)
+data/outputs/
