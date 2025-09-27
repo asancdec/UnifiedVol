@@ -4,24 +4,6 @@
 
 ---
 
-## Build
-
-### Configure (vcpkg will install dependencies automatically)
-cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
-  -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
-  -DVCPKG_MANIFEST_MODE=ON `
-  -DUNIFIEDVOL_BUILD_EXAMPLE=ON
-
-### Build (choose Debug or Release)
-cmake --build build --config Debug
-cmake --build build --config Release
-
-### Run with explicit CSV path
-.\build\Debug\unifiedvol_example.exe data\inputs\VolSurface_SPY_04072011.csv
-.\build\Release\unifiedvol_example.exe data\inputs\VolSurface_SPY_04072011.csv
-
----
-
 ## Current Capabilities  
 
 ### Arbitrage-Free SVI Calibration  
@@ -44,7 +26,6 @@ cmake --build build --config Release
 - Market implied volatilities vs fitted SVI curves (SPY 2025-04-07)  :
 
 <img width="1867" height="1157" alt="SVI calibration" src="https://github.com/user-attachments/assets/ed85c8bf-f065-494e-b6ba-d7b19175c5f2" />
-
 
 ---
 
@@ -81,6 +62,24 @@ Sample surfaces calibrated in this project are derived from publicly available o
 - [CMake ≥ 3.22](https://cmake.org/download/)  
 - [Visual Studio 2022](https://visualstudio.microsoft.com/vs/) with C++ support  
 - [vcpkg](https://github.com/microsoft/vcpkg) (manifest mode enabled)  
+
+---
+
+## Build
+
+### Configure (vcpkg will install dependencies automatically)
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
+  -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
+  -DVCPKG_MANIFEST_MODE=ON `
+  -DUNIFIEDVOL_BUILD_EXAMPLE=ON
+
+### Build (choose Debug or Release)
+cmake --build build --config Debug
+cmake --build build --config Release
+
+### Run with explicit CSV path
+.\build\Debug\unifiedvol_example.exe data\inputs\VolSurface_SPY_04072011.csv
+.\build\Release\unifiedvol_example.exe data\inputs\VolSurface_SPY_04072011.csv
 
 ---
 
