@@ -6,17 +6,17 @@
 
 ## Build
 
-# Configure (vcpkg will install dependencies automatically)
+### Configure (vcpkg will install dependencies automatically)
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
   -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
   -DVCPKG_MANIFEST_MODE=ON `
   -DUNIFIEDVOL_BUILD_EXAMPLE=ON
 
-# Build (choose Debug or Release)
+### Build (choose Debug or Release)
 cmake --build build --config Debug
 cmake --build build --config Release
 
-# Run with explicit CSV path
+### Run with explicit CSV path
 .\build\Debug\unifiedvol_example.exe data\inputs\VolSurface_SPY_04072011.csv
 .\build\Release\unifiedvol_example.exe data\inputs\VolSurface_SPY_04072011.csv
 
