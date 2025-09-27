@@ -40,8 +40,7 @@ int main(int argc, char* argv[])
 
         VolSurface sviVolSurf{ svi.getVolSurf() };
 
-        sviVolSurf.printVol();
-        std::cout << "\n";
+        sviVolSurf.printTotVar();
 
         // End timer
         const auto t1{ std::chrono::high_resolution_clock::now() };

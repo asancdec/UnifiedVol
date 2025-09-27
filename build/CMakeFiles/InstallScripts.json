@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/UnifiedVol/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
