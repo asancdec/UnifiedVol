@@ -23,6 +23,7 @@ namespace uv
         NotImplemented,
         DataFormat,
         CalibrationError,
+        LinearAlgebra,
         Unknown
     };
 

@@ -67,19 +67,10 @@ Sample surfaces calibrated in this project are derived from publicly available o
 
 ## Build
 
-### Configure (vcpkg will install dependencies automatically)
-cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
-  -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake `
-  -DVCPKG_MANIFEST_MODE=ON `
-  -DUNIFIEDVOL_BUILD_EXAMPLE=ON
-
-### Build (choose Debug or Release)
-cmake --build build --config Debug
+rm -r -fo build; 
+cmake -S . -B build -G "Ninja Multi-Config" -DCMAKE_TOOLCHAIN_FILE="C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DVCPKG_MANIFEST_MODE=ON -DUNIFIEDVOL_BUILD_EXAMPLE=ON; 
 cmake --build build --config Release
-
-### Run with explicit CSV path
-.\build\Debug\unifiedvol_example.exe data\inputs\VolSurface_SPY_04072011.csv
-.\build\Release\unifiedvol_example.exe data\inputs\VolSurface_SPY_04072011.csv
+./build/Release/unifiedvol_example.exe
 
 ---
 
