@@ -1,14 +1,12 @@
 ﻿/**
 * StandardGL.hpp
 * Author: Alvaro Sanchez de Carlos
-* Date: 09/27/2025
 */
 
-#ifndef STANDARDGL_HPP
-#define STANDARDGL_HPP
+#pragma once 
 
 #include <vector>
-#include <functional> 
+#include <cmath> 
 
 class StandardGL
 {
@@ -35,8 +33,10 @@ public:
 	// Functionality
 	//--------------------------------------------------------------------------
  
-	// Evaluate ∫ f(x) e^{-x} dx ≈ Σ w_i f(x_i)  (α = 0 case)
-	double eval(const std::function<double(double)>& f) const;
+	// Evaluation a function's numeric integral using GL-Quadrature
+	// Neumaier compensated summation
+	template<typename F>
+	double eval(F&& f) const noexcept;
 
 	//--------------------------------------------------------------------------
 	// Utilities
@@ -45,4 +45,5 @@ public:
 
 };
 
-#endif // STANDARDGL_HPP
+#include "StandardGL.inl"
+

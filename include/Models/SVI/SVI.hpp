@@ -1,15 +1,14 @@
 ﻿/**
 * SVI.hpp
 * Author: Alvaro Sanchez de Carlos
-* Date: 09/09/2025
 */
 
-#ifndef SVI_HPP
-#define SVI_HPP
+#pragma once
 
 #include "Core/VolSurface.hpp"
 #include "Models/SVI/SVISlice.hpp"
-#include "Models/SVI/SVIConfig.hpp"
+#include "Models/Calibration/Config.hpp"
+#include "Models/Calibration/Calibrator.hpp"
 
 #include <nlopt.hpp>
 
@@ -27,20 +26,14 @@ private:
 	//--------------------------------------------------------------------------	
 
 	std::vector<SVISlice> sviSlices_;  // Calibration data and parameters
-	SVIConfig config_;                 // Calibration configuration data
 	VolSurface calVolSurf_;            // Calibrated SVI volatility surface
 
 	//--------------------------------------------------------------------------
 	// Forward declarations
 	//--------------------------------------------------------------------------
 
-	// SliceView data
-	struct SliceView;
-
-	// No calendar arbitrage constraint context data
 	struct ConstraintCtx;
-
-	// g(k) related precomputation data
+	struct ObjCtx;
 	struct GKPrecomp;
 
 	//--------------------------------------------------------------------------
@@ -48,7 +41,10 @@ private:
 	//--------------------------------------------------------------------------
 
 	// Single slice calibration
-	std::vector<double> calSlice(const SliceData& mktSlice, const std::vector<double>& wKPrevSlice, bool isPrintResults);
+	std::vector<double> calibrateSlice(const SliceData& mktSlice, 
+		const std::vector<double>& wKPrevSlice,
+		const Config<5>& sviConfig, 
+		bool isValidateResults);
 
 	// Initial guess
 	static std::array<double, 5> initGuess(const SliceData& slice) noexcept;
@@ -59,25 +55,20 @@ private:
 	// Upper bounds
 	static std::array<double, 5> upperBounds(const SliceData& slice) noexcept;
 
-	// Clamp initial guess within the lower and upper bounds
-	static void clampIG(std::array<double, 5>& iG,
-		const std::array<double, 5>& lb,
-		const std::array<double, 5>& ub) noexcept;
-
-	// Add the minimum total variance constraint: wMin ≥ 0.0 
-	void addWMinConstr(nlopt::opt& opt) const;
+	// Define the minimum total variance constraint: wMin ≥ 0.0 
+	static void addWMinConstraint(Calibrator<5>& calibrator) noexcept;
 
 	// Add Roger Lee left wing and right wing max slope constraints
-	void addMaxSlopeConstr(nlopt::opt& opt) const;
+	static void addMaxSlopeConstraint(Calibrator<5>& calibrator) noexcept;
 
 	// Add no calendar spread arbitrage constraint: Wk_current ≥ Wk_previous
-	void addCalendarConstr(nlopt::opt& opt, std::vector<ConstraintCtx>& contexts) const;
+	static void addCalendarConstraint(Calibrator<5>& calibrator, std::vector<ConstraintCtx>& contexts) noexcept;
 
 	// Add no butterfly arbitrage constraints g(k) ≥ 0.0 
-	void addConvexityConstr(nlopt::opt& opt,const std::vector<double>& kSlice) const;
+	static void addConvexityConstraint(Calibrator<5>& calibrator, const std::vector<double>& kSlice) noexcept;
 
 	// Add objective function with analytical gradient
-	void addObjFunc(nlopt::opt& opt, const SliceView& obj) const;
+	void setMinObjective(Calibrator<5>& calibrator, const ObjCtx& obj) noexcept;
 
 	//--------------------------------------------------------------------------
 	// Math functions
@@ -97,16 +88,11 @@ private:
 	//--------------------------------------------------------------------------
 
 	// Check calibration results
-	void evalCal(const SVISlice& modelSlice,
-		const std::array<double, 5>& lBArr,
-		const std::array<double, 5>& uBArr,
-		double sse,
+	void evalCal(const SVISlice& calibSlice,
+		const Config<5>& config,
 		const std::vector<double>& kSlice,
-		const std::vector<double>& wKPrevSlice,
-		bool isPrintResults) const noexcept;
+		const std::vector<double>& wKPrevSlice) const noexcept;
 
-	// Return parameters name based on index
-	static const char* paramName(std::size_t i) noexcept;
 
 	// Make a wK slice
 	static std::vector<double> makewKSlice(const std::vector<double>& kSlice,
@@ -122,7 +108,7 @@ public:
 	SVI() = delete;
 
 	// Calibration occurs when object is initialized
-	SVI(const VolSurface& mktVolSurf, bool isPrintResults = true);
+	SVI(const VolSurface& mktVolSurf, bool isValidateResults = true);
 
 	//--------------------------------------------------------------------------
 	// Utilities
@@ -131,6 +117,3 @@ public:
 	// Get model volatility surface
 	const VolSurface& getVolSurf() const noexcept;
 };
-
-
-#endif // SVI_HPP

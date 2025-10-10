@@ -1,11 +1,9 @@
 /**
 * SliceData.hpp
 * Author: Alvaro Sanchez de Carlos
-* Date: 09/09/2025
 */
 
-#ifndef SLICE_DATA_HPP
-#define SLICE_DATA_HPP
+#pragma once
 
 #include "Core/MarketData.hpp"
 
@@ -75,10 +73,10 @@ public:
     // Utilities
     //--------------------------------------------------------------------------
     
-    // Print volatility slice on console
+    // Print volatility slice
     void printVol() const noexcept;
 
-    // Print total variance slice on console
+    // Print total variance slice 
     void printTotVar() const noexcept;
 
     // Getters
@@ -92,4 +90,3 @@ public:
     void setWT(const std::vector<double>& wT); 
 };
 
-#endif // SLICE_DATA_HPP

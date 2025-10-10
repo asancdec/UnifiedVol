@@ -1,11 +1,9 @@
 /**
 * VolSurface.hpp
 * Author: Alvaro Sanchez de Carlos
-* Date: 08/17/2025
 */
 
-#ifndef VOLSURFACE_HPP
-#define VOLSURFACE_HPP
+#pragma once
 
 #include "Core/SliceData.hpp"
 #include "Core/MarketData.hpp"
@@ -64,6 +62,3 @@ public:
     const std::vector<double>& maturities() const noexcept;
     size_t numSlices() const noexcept;
 };
-
-
-#endif // VOLSURFACE_HPP

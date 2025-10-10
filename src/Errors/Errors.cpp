@@ -1,6 +1,7 @@
-﻿// Errors.cpp
-// Author: Alvaro Sanchez de Carlos
-// Date: 09/09/2025
+﻿/**
+* Errors.cpp
+* Author: Alvaro Sanchez de Carlos
+*/
 
 #include "Errors/Errors.hpp"
 

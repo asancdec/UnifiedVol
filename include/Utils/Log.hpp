@@ -1,23 +1,61 @@
-// Log.hpp
-// Author: Alvaro Sanchez de Carlos
-// Date: 09/14/2025
+/**
+* Log.hpp
+* Author: Alvaro Sanchez de Carlos
+*/
 
-#ifndef UV_LOG_HPP
-#define UV_LOG_HPP
+#pragma once
 
-#include <source_location>
+#include <fstream>
 #include <string_view>
 
-namespace uv {
+namespace uv
+{
+    enum class Level { Info, Warn };
 
-    // Print a warning with file:line (no throw)
-    void warn(std::string_view msg,
-        std::source_location loc = std::source_location::current());
+    class Log
+    {
+    public:
+        // Singleton instance
+        static Log& instance();
+
+        // Enable file output (writes to <project_root>/logs/<path>).
+        void setFile(std::string_view path);
+
+        // Enable or disable console output
+        void enableConsole(bool enabled) noexcept;
+
+        // Core logging API (prints to console; also to file if enabled).
+        void log(Level lvl, std::string_view msg);
+
+    private:
+        Log(); // private constructor to enforce singleton pattern
+        std::ofstream file_;
+        bool fileEnabled_{ false };
+        bool consoleEnabled_{ true };
+    };
 
 } // namespace uv
 
-// Warn if NOT(cond). Just prints; never throws.
-#define UV_WARN(cond, message) \
-    do { if (!(cond)) ::uv::warn((message)); } while (0)
 
-#endif // UV_LOG_HPP
+// ---------------------------------------------------------------------------
+// Macros
+// ---------------------------------------------------------------------------
+
+// Configure file output once at startup (e.g. in main()).
+#define UV_LOG_TO_FILE(pathstr) \
+    ::uv::Log::instance().setFile((pathstr))
+
+// Enable or disable console logging
+#define UV_LOG_CONSOLE(enabled) \
+    ::uv::Log::instance().enableConsole((enabled))
+
+// Info-level message (always printed)
+#define UV_INFO(msg) \
+    ::uv::Log::instance().log(::uv::Level::Info, (msg))
+
+// Warning message, printed only if condition is true
+#define UV_WARN(cond, msg) \
+    do { \
+        if (cond) \
+            ::uv::Log::instance().log(::uv::Level::Warn, (msg)); \
+    } while (0)

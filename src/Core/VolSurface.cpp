@@ -1,14 +1,14 @@
 /**
 * VolSurface.cpp
 * Author: Alvaro Sanchez de Carlos
-* Date: 08/21/2025
 */
 
 #include "Core/VolSurface.hpp"
 #include "Errors/Errors.hpp"
+#include "Utils/Log.hpp"
 
 #include <iomanip>
-#include <iostream>
+#include <sstream>
 #include <algorithm>
 #include <string>
 
@@ -23,6 +23,18 @@ VolSurface VolSurface::fromMarketData(const std::vector<double>& mny,
     const std::vector<double>& maturities,
     const MarketData& mkt)
 {
+    // --- Size checks ---
+    UV_REQUIRE(vols.size() == maturities.size(),
+        ErrorCode::InvalidArgument,
+        "vols.size() != maturities.size()");
+    for (size_t i = 0; i < vols.size(); ++i) 
+    {
+        UV_REQUIRE(vols[i].size() == mny.size(),
+            ErrorCode::InvalidArgument,
+            "vols[" + std::to_string(i) + "].size() != mny.size()");
+    }
+
+    // --- Build slices ---
     std::vector<SliceData> slices;
     slices.reserve(maturities.size());
 
@@ -41,6 +53,20 @@ VolSurface VolSurface::fromModelData(const std::vector<std::vector<double>>& log
     const std::vector<double>& maturities,
     const MarketData& mkt)
 {
+    // --- Size checks ---
+    UV_REQUIRE(logFM.size() == maturities.size(),
+        ErrorCode::InvalidArgument,
+        "logFM.size() != maturities.size()");
+    UV_REQUIRE(wT.size() == maturities.size(),
+        ErrorCode::InvalidArgument,
+        "wT.size() != maturities.size()");
+    for (size_t i = 0; i < maturities.size(); ++i) {
+        UV_REQUIRE(logFM[i].size() == wT[i].size(),
+            ErrorCode::InvalidArgument,
+            "logFM[" + std::to_string(i) + "].size() != wT[" + std::to_string(i) + "].size()");
+    }
+
+    // --- Build slices ---
     std::vector<SliceData> slices;
     slices.reserve(maturities.size());
 
@@ -56,42 +82,52 @@ VolSurface VolSurface::fromModelData(const std::vector<std::vector<double>>& log
 
 void VolSurface::printVol() const noexcept
 {
-    // Print header row
-    std::cout << "T\\%S\t";
+    std::ostringstream oss;
+    oss << '\n';
+    oss << "T\\%S\t";
 
-    // Print moneyness K/S from the first slice, 2 decimals
+    // Header row (moneyness)
     for (const auto& m : slices_[0].mny())
-    {
-        std::cout << std::fixed << std::setprecision(2) << m << "\t";
-    }
-    std::cout << "\n";
+        oss << std::fixed << std::setprecision(2) << m << '\t';
+    oss << '\n';
 
-    // Print implied volatility slices
+    // Each maturity row
     for (size_t i = 0; i < slices_.size(); ++i)
     {
-        std::cout << std::fixed << std::setprecision(2) << maturities_[i] << "\t";
-        slices_[i].printVol();
+        oss << std::fixed << std::setprecision(2) << maturities_[i] << '\t';
+
+        for (const auto& v : slices_[i].vol())
+            oss << std::fixed << std::setprecision(4) << v << '\t';
+
+        oss << '\n';
     }
+
+    UV_INFO(oss.str()); 
 }
 
 void VolSurface::printTotVar() const noexcept
 {
-    // Print header row
-    std::cout << "T\\k\t";
+    std::ostringstream oss;
+    oss << '\n';
+    oss << "T\\k\t";
 
-    // Print moneyness K/S from the first slice, 2 decimals
+    // Header row (moneyness)
     for (const auto& m : slices_[0].mny())
-    {
-        std::cout << std::fixed << std::setprecision(2) << m << "\t";
-    }
-    std::cout << "\n";
+        oss << std::fixed << std::setprecision(2) << m << '\t';
+    oss << '\n';
 
-    // Print total variance slices
+    // Each maturity row
     for (size_t i = 0; i < slices_.size(); ++i)
     {
-        std::cout << std::fixed << std::setprecision(2) << maturities_[i] << "\t";
-        slices_[i].printTotVar();
+        oss << std::fixed << std::setprecision(2) << maturities_[i] << '\t';
+
+        for (const auto& v : slices_[i].wT())
+            oss << std::fixed << std::setprecision(4) << v << '\t';
+
+        oss << '\n';
     }
+
+    UV_INFO(oss.str());  // <<—— same here
 }
 
 std::size_t VolSurface::numStrikes() const

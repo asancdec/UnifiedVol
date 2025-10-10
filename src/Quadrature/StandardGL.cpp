@@ -1,24 +1,22 @@
 ﻿/**
 * StandardGL.cpp
 * Author: Alvaro Sanchez de Carlos
-* Date: 09/27/2025
 */
 
 #include "Quadrature/StandardGL.hpp"
 #include "Errors/Errors.hpp"
-
+#include "Utils/Log.hpp"
 
 #include <Eigen/Dense>
-#include <cmath>
 #include <utility>
-#include <iostream>
 #include <iomanip>
+#include <sstream>
+
 
 using uv::ErrorCode;
 using Eigen::MatrixXd;
 using Eigen::SelfAdjointEigenSolver;
 using Eigen::VectorXd;
-
 
 StandardGL::StandardGL(const int N, const double alpha) : N_(N)
 {
@@ -53,7 +51,7 @@ StandardGL::StandardGL(const int N, const double alpha) : N_(N)
     }
 
     const VectorXd evals{ es.eigenvalues() };     // x_i (ascending)
-    const MatrixXd V{ es.eigenvectors() };       // columns are normalized eigenvectors v_i
+    const MatrixXd V{ es.eigenvectors() };        // columns are normalized eigenvectors v_i
 
     // Mu is defined as the zeroth moment of the weight function
     // For Gauss Laguerre:
@@ -63,39 +61,34 @@ StandardGL::StandardGL(const int N, const double alpha) : N_(N)
 
     xk_.resize(N_);
     wk_.resize(N_);
+
     for (int i = 0; i < N_; ++i)
     {
         xk_[i] = evals(i);         // Quadrature node (root of Laguerre polynomial)
-        double v0 = V(0, i);       // First component of eigenvector i
+        double v0{ V(0, i) };      // First component of eigenvector i
         wk_[i] = mu0 * (v0 * v0);  // Quadrature weight corresponding to xk_[i]
     }
 }
 
-double StandardGL::eval(const std::function<double(double)>& f) const
-{
-    UV_REQUIRE(!xk_.empty() && xk_.size() == wk_.size(),
-        ErrorCode::DataFormat, "StandardGL::eval: grid not initialized");
-
-    double sum = 0.0;
-    for (int i = 0; i < N_; ++i)
-        sum += wk_[i] * f(xk_[i]);   // plain accumulation
-
-    return sum;
-}
-
 void StandardGL::printGrid() const noexcept
 {
-    std::cout << "Gauss-Laguerre grid (N=" << N_ << ")\n";
-    std::cout << std::left << std::setw(6) << "#"
+    std::ostringstream oss;
+    oss << "\n";
+    oss << std::fixed << std::setprecision(12);
+
+    oss << "Gauss-Laguerre grid (N=" << N_ << ")\n";
+    oss << std::left << std::setw(6) << "#"
         << std::right << std::setw(22) << "x_i (node)"
         << std::setw(22) << "w_i (weight)" << '\n';
-    std::cout << std::string(6 + 22 + 22, '-') << '\n';
+    oss << std::string(6 + 22 + 22, '-') << '\n';
 
-    for (int i = 0; i < N_; ++i) {
-        std::cout << std::left << std::setw(6) << i
+    for (int i = 0; i < N_; ++i)
+    {
+        oss << std::left << std::setw(6) << i
             << std::right << std::scientific << std::setprecision(12)
             << std::setw(22) << xk_[i]
             << std::setw(22) << wk_[i]
             << '\n';
     }
+    UV_INFO(oss.str());
 }

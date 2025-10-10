@@ -1,17 +1,17 @@
 /**
 * SliceData.cpp
 * Author: Alvaro Sanchez de Carlos
-* Date: 09/9/2025
 */
 
 #include "Core/SliceData.hpp"
 #include "Errors/Errors.hpp"
+#include "Utils/Log.hpp"
 
 #include <cmath>
 #include <numbers>
 #include <algorithm>
 #include <iterator>
-#include <iostream>
+#include <sstream>
 #include <iomanip>
 #include <string> 
 
@@ -116,20 +116,24 @@ double SliceData::atmWT() const noexcept
 
 void SliceData::printVol() const noexcept
 {
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(4);
+
     for (const auto& v : vol_)
-    {
-        std::cout << std::fixed << std::setprecision(4) << v << "\t";
-    }
-    std::cout << "\n";
+        oss << v << '\t';
+
+    UV_INFO(oss.str()); 
 }
 
 void SliceData::printTotVar() const noexcept
-{   
+{
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(4);
+
     for (const auto& v : wT_)
-    {
-        std::cout << std::fixed << std::setprecision(4) << v << "\t";
-    }
-    std::cout << "\n";
+        oss << v << '\t';
+
+    UV_INFO(oss.str());
 }
 
 double SliceData::T() const noexcept

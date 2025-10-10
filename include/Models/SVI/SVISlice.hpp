@@ -1,18 +1,16 @@
 /**
 * SVISlice.hpp
 * Author: Alvaro Sanchez de Carlos
-* Date: 08/21/2025
 */
 
-#ifndef SVI_SLICE_HPP
-#define SVI_SLICE_HPP
-
-#include "Models/SVI/SVIParams.hpp"
+#pragma once
 
 struct SVISlice
 {
 	double T;
-	SVIParams sviParams;
+	double a;
+	double b;
+	double rho;
+	double m;
+	double sigma;
 };
-
-#endif // SVI_SLICE_HPP

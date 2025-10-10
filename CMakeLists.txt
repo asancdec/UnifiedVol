@@ -36,4 +36,11 @@ if(UNIFIEDVOL_BUILD_EXAMPLE)
   add_executable(unifiedvol_example ${CMAKE_SOURCE_DIR}/examples/main.cpp)
   target_link_libraries(unifiedvol_example PRIVATE UnifiedVol)
   target_include_directories(unifiedvol_example PRIVATE ${CMAKE_SOURCE_DIR}/include)
+
+  # --- Copy the data folder next to the example binary ---
+  add_custom_command(TARGET unifiedvol_example POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/data
+            $<TARGET_FILE_DIR:unifiedvol_example>/data
+  )
 endif()

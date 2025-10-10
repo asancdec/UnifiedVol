@@ -1,11 +1,9 @@
 /**
 * CSVRead.hpp
 * Author: Alvaro Sanchez de Carlos
-* Date: 08/17/2025
 */
 
-#ifndef CSV_READ_HPP
-#define CSV_READ_HPP
+#pragma once
 
 #include "Core/VolSurface.hpp"
 #include <vector>
@@ -25,4 +23,3 @@
 VolSurface readVolSurface(const std::string& filename, const MarketData& mkt);
 
 
-#endif // CSV_READ_HPP

@@ -1,11 +1,9 @@
 /**
 * MarketData.hpp
 * Author: Alvaro Sanchez de Carlos
-* Date: 08/20/2025
 */
 
-#ifndef MARKET_DATA_HPP
-#define MARKET_DATA_HPP
+#pragma once
 
 struct MarketData
 {
@@ -13,5 +11,5 @@ struct MarketData
 	double q; // Continuously compounded annualized dividend yield
 };
 
-#endif // MARKET_DATA_HPP
+
 

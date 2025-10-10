@@ -1,9 +1,9 @@
-// Errors.hpp
-// Author: Alvaro Sanchez de Carlos
-// Date: 09/09/2025
+/**
+* Errors.hpp
+* Author: Alvaro Sanchez de Carlos
+*/
 
-#ifndef UV_ERRORS_HPP
-#define UV_ERRORS_HPP
+#pragma once
 
 #include <stdexcept>
 #include <string>
@@ -65,10 +65,9 @@ namespace uv
         std::string_view message,
         std::source_location loc = std::source_location::current());
 
-    // Guard macro for quick checks (throws UnifiedVolError when cond is false)
+  
+ // Guard macro for quick checks (throws UnifiedVolError when cond is false)
 #define UV_REQUIRE(cond, code, message) \
         do { if (!(cond)) ::uv::raise((code), (message)); } while (0)
-
 } // namespace uv
 
-#endif // UV_ERRORS_HPP

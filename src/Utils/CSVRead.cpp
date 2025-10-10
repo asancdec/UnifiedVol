@@ -1,7 +1,6 @@
 ﻿/**
 * CSVRead.cpp
 * Author: Alvaro Sanchez de Carlos
-* Date: 08/17/2025
 */
 
 #include "Errors/Errors.hpp"       
