@@ -27,7 +27,6 @@ int main(int argc, char* argv[])
 {
     try 
     {   
-
         // Choose the CSV path:
         //  - If the user passed a command-line argument, use that path (argv[1]).
         //  - Otherwise, fall back to your default CSV inside the repo.
@@ -38,7 +37,8 @@ int main(int argc, char* argv[])
         UV_LOG_TO_FILE("calibration.log");
         UV_LOG_CONSOLE(true);
 
-
+        // Start timer
+        const auto t0{ std::chrono::high_resolution_clock::now() };
 
         MarketData mkt
         { 0.0,          // r
@@ -51,10 +51,9 @@ int main(int argc, char* argv[])
         SVI svi{ mktVolSurf  };
 
         VolSurface sviVolSurf{ svi.getVolSurf() };
-        sviVolSurf.printBSCall();
+        //sviVolSurf.printBSCall();
         
-        // Start timer
-        const auto t0{ std::chrono::high_resolution_clock::now() };
+
         
         GaussLaguerre gl{ 64, 0.0};
         gl.printGrid();
