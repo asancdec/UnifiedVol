@@ -23,6 +23,9 @@ private:
     std::vector<double> logFM_;          // log-forward moneyness log(K/F)
     std::vector<double> vol_;            // volatilities 
     std::vector<double> wT_;             // total variance (vol²T) 
+    std::vector<double> K_;              // strikes vector
+    std::vector<double> callBS_;         // value of European call options
+    MarketData marketData_;              // market data struct
 
 
     // Custom constructor using plain moneyness and implied volatility data
@@ -30,7 +33,8 @@ private:
                         const std::vector<double>& mny, 
                         const std::vector<double>& logFM,
                         const std::vector<double>& vol, 
-                        const std::vector<double>& wT);
+                        const std::vector<double>& wT,
+                        const MarketData& marketData);
 public:
 
     //--------------------------------------------------------------------------
@@ -54,6 +58,18 @@ public:
     // Math functions
     //--------------------------------------------------------------------------
 
+    // Black-Scholes pricing
+    static double blackScholes(double T,
+        double r,
+        double q,
+        double vol,
+        double S,
+        double K, 
+        bool isCall) noexcept;
+
+    // Normal cumulative density function
+    static double normalCDF(double x) noexcept;
+
     // Determine minimum total variance
     double minWT() const noexcept;
 
@@ -70,23 +86,22 @@ public:
     double atmWT() const noexcept;
 
     //--------------------------------------------------------------------------
-    // Utilities
-    //--------------------------------------------------------------------------
-    
-    // Print volatility slice
-    void printVol() const noexcept;
-
-    // Print total variance slice 
-    void printTotVar() const noexcept;
-
     // Getters
+    //--------------------------------------------------------------------------
+ 
     double T() const noexcept;
     const std::vector<double>& mny() const noexcept;
     const std::vector<double>& logFM() const noexcept;
     const std::vector<double>& vol() const noexcept;
     const std::vector<double>& wT() const noexcept;
+    const std::vector<double>& K() const noexcept;
+    const std::vector<double>& callBS() const noexcept;
 
+
+    //--------------------------------------------------------------------------
     // Setters
+    //--------------------------------------------------------------------------
+
     void setWT(const std::vector<double>& wT); 
 };
 

@@ -4,6 +4,7 @@
   "builtin-baseline": "4bb07a326d9b9bce3703272a509e5bc25dd9cfd5",
   "dependencies": [
     "nlopt",
-    "eigen3"
+    "eigen3",
+    "ceres"
   ]
 }

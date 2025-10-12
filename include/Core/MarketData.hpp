@@ -7,9 +7,7 @@
 
 struct MarketData
 {
-	double r; // Continuously compounded annualized risk-free rate
-	double q; // Continuously compounded annualized dividend yield
+	double r; // continuously compounded annualized risk-free rate
+	double q; // continuously compounded annualized dividend yield
+	double S; // spot price
 };
-
-
-

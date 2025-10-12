@@ -24,10 +24,12 @@ target_include_directories(UnifiedVol PUBLIC
 # --- Dependencies (via vcpkg, CONFIG mode) ---
 find_package(nlopt CONFIG REQUIRED)       # provides NLopt::nlopt
 find_package(Eigen3 CONFIG REQUIRED)      # provides Eigen3::Eigen
+find_package(Ceres CONFIG REQUIRED)       # provides Ceres::ceres 
 
 target_link_libraries(UnifiedVol PUBLIC
   NLopt::nlopt
   Eigen3::Eigen
+  Ceres::ceres
 )
 
 # --- Example (optional) ---

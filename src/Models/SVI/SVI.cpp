@@ -4,10 +4,8 @@
 */
 
 #include "Models/SVI/SVI.hpp"
-#include "Errors/Errors.hpp"
 #include "Utils/Log.hpp"
 #include <nlopt.hpp>
-
 #include <iostream>
 #include <algorithm>
 #include <vector>

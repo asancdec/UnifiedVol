@@ -57,11 +57,14 @@ Sample surfaces calibrated in this project are derived from publicly available o
 
 ---
 
-## Depenencies
+## Dependencies
 
 - [CMake ≥ 3.22](https://cmake.org/download/)  
 - [Visual Studio 2022](https://visualstudio.microsoft.com/vs/) with C++ support  
 - [vcpkg](https://github.com/microsoft/vcpkg) (manifest mode enabled)  
+- [Eigen 3](https://gitlab.com/libeigen/eigen) — linear algebra library (MPL2 license)  
+- [NLopt](https://github.com/stevengj/nlopt) — nonlinear optimization (LGPL)  
+- [Ceres Solver](https://github.com/ceres-solver/ceres-solver) — nonlinear least-squares optimization (Apache-2.0)  
 
 ---
 

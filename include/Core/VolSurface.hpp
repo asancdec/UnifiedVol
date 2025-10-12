@@ -54,6 +54,9 @@ public:
     // Print total variance surface on the console
     void printTotVar() const noexcept;
 
+    // Print Black-Scholes Call price surface
+    void printBSCall() const noexcept;
+
     // Return number of strikes
     std::size_t numStrikes() const;
 

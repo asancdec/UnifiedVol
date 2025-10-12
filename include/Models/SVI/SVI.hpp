@@ -7,8 +7,8 @@
 
 #include "Core/VolSurface.hpp"
 #include "Models/SVI/SVISlice.hpp"
-#include "Models/Calibration/Config.hpp"
-#include "Models/Calibration/Calibrator.hpp"
+#include "Math/Calibration/Config.hpp"
+#include "Math/Calibration/Calibrator.hpp"
 
 #include <nlopt.hpp>
 

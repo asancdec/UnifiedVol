@@ -21,9 +21,47 @@ SliceData::SliceData(double T,
     const std::vector<double>& mny,
     const std::vector<double>& logFM,
     const std::vector<double>& vol, 
-    const std::vector<double>& wT)
-    : T_(T), mny_(mny), logFM_(logFM), vol_(vol), wT_(wT)
-{}
+    const std::vector<double>& wT,
+    const MarketData& marketData)
+    : T_(T), mny_(mny), logFM_(logFM), vol_(vol), wT_(wT), marketData_(marketData)
+{   
+    // Set variables
+    double r{ marketData_.r };
+    double q{ marketData_.q };
+    double S{ marketData_.S };
+
+    // Set the strikes vector
+    K_.reserve(mny_.size());
+    std::transform(mny_.begin(), mny_.end(),
+        std::back_inserter(K_), [S](double mny)
+        {
+            return mny * S;
+        });
+
+    // Check matching size
+    UV_REQUIRE(
+        vol_.size() == K_.size(),
+        ErrorCode::InvalidArgument,
+        "SliceData::constructor size mismatch: vol_.size() = " + std::to_string(vol_.size()) +
+        ", K_.size() = " + std::to_string(K_.size())
+    );
+
+    // Calculate Call Black-Scholes price
+    callBS_.resize(vol_.size());
+    for (std::size_t i = 0; i < vol_.size(); ++i)
+    {
+        callBS_[i] = blackScholes
+        (
+            T_,
+            r,
+            q,
+            vol_[i],
+            S,
+            K_[i],
+            true
+        );
+    }
+}
 
 SliceData SliceData::fromMarketData(const std::vector<double>& mny,
     const std::vector<double>& vol,
@@ -50,7 +88,7 @@ SliceData SliceData::fromMarketData(const std::vector<double>& mny,
             return sigma * sigma * T;
         });
 
-    return SliceData(T, mny, logFM, vol, tVar);
+    return SliceData(T, mny, logFM, vol, tVar, mkt);
 }
 
 SliceData SliceData::fromModelData(const std::vector<double>& logFM,
@@ -79,7 +117,34 @@ SliceData SliceData::fromModelData(const std::vector<double>& logFM,
             return std::sqrt(var / T);
         });
 
-    return SliceData(T, mny, logFM, vol, wT);
+    return SliceData(T, mny, logFM, vol, wT, mkt);
+}
+
+double SliceData::blackScholes(double T,
+    double r,
+    double q,
+    double vol,
+    double S,
+    double K,
+    bool isCall) noexcept
+{
+    double volSqrtT{ std::sqrt(T) * vol };
+    double d1{std::fma(T, (r - q + vol * vol * 0.5), std::log(S/K)) / volSqrtT };
+    double d2{ std::fma(-1.0, volSqrtT, d1) };
+
+    if (isCall)
+    {
+        return S * std::exp(-q * T) * normalCDF(d1) - K * std::exp(-r * T) * normalCDF(d2);
+    }
+    else
+    {
+        return K * std::exp(-r * T) * normalCDF(-d2) - S * std::exp(-q * T) * normalCDF(-d1);
+    }
+}
+
+double SliceData::normalCDF(double x) noexcept
+{
+    return std::erfc( -x / std::sqrt(2.0)) * 0.5;
 }
 
 double SliceData::minWT() const noexcept
@@ -114,28 +179,6 @@ double SliceData::atmWT() const noexcept
     return wT_[static_cast<std::size_t>(it - first)];
 }
 
-void SliceData::printVol() const noexcept
-{
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(4);
-
-    for (const auto& v : vol_)
-        oss << v << '\t';
-
-    UV_INFO(oss.str()); 
-}
-
-void SliceData::printTotVar() const noexcept
-{
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(4);
-
-    for (const auto& v : wT_)
-        oss << v << '\t';
-
-    UV_INFO(oss.str());
-}
-
 double SliceData::T() const noexcept
 {
     return T_;
@@ -161,6 +204,16 @@ const std::vector<double>& SliceData::wT() const noexcept
     return wT_;
 }
 
+const std::vector<double>& SliceData::K() const noexcept
+{
+    return K_;
+}
+
+const std::vector<double>& SliceData::callBS() const noexcept
+{
+    return callBS_;
+}
+
 void SliceData::setWT(const std::vector<double>& wT)
 {   
     // Check matching size
@@ -179,5 +232,23 @@ void SliceData::setWT(const std::vector<double>& wT)
         UV_REQUIRE(wk >= 0.0, ErrorCode::InvalidArgument,
             "Negative total variance at idx " + std::to_string(i));
         vol_[i] = std::sqrt(wk * invT);
+    }
+
+    // Recalculate Call Black-Scholes prices
+    double r{ marketData_.r };
+    double q{ marketData_.q };
+    double S{ marketData_.S };
+    for (std::size_t i = 0; i < vol_.size(); ++i)
+    {
+        callBS_[i] = blackScholes
+        (
+            T_,
+            r,
+            q,
+            vol_[i],
+            S,
+            K_[i],
+            true
+        );
     }
 }

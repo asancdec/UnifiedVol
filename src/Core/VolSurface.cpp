@@ -127,7 +127,31 @@ void VolSurface::printTotVar() const noexcept
         oss << '\n';
     }
 
-    UV_INFO(oss.str());  // <<—— same here
+    UV_INFO(oss.str()); 
+}
+
+void VolSurface::printBSCall() const noexcept
+{
+    std::ostringstream oss;
+    oss << '\n';
+    oss << "T\\k\t";
+
+    // Header row (moneyness)
+    for (const auto& m : slices_[0].mny())
+        oss << std::fixed << std::setprecision(2) << m << '\t';
+    oss << '\n';
+
+    // Each maturity row
+    for (size_t i = 0; i < slices_.size(); ++i)
+    {
+        oss << std::fixed << std::setprecision(2) << maturities_[i] << '\t';
+
+        for (const auto& v : slices_[i].callBS())
+            oss << std::fixed << std::setprecision(2) << v << '\t';
+
+        oss << '\n';
+    }
+    UV_INFO(oss.str());
 }
 
 std::size_t VolSurface::numStrikes() const

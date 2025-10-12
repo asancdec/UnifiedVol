@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <format>
 #include <cmath>
-#include <format>
 #include <chrono>
 
 template <std::size_t N>

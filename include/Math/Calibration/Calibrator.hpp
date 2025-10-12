@@ -4,7 +4,7 @@
 */
 
 #pragma once
-#include "Models/Calibration/Config.hpp"
+#include "Math/Calibration/Config.hpp"
 
 #include <nlopt.hpp>
 
