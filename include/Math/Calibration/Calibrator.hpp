@@ -5,9 +5,7 @@
 
 #pragma once
 #include "Math/Calibration/Config.hpp"
-
 #include <nlopt.hpp>
-
 #include <vector>
 #include <array>
 #include <cstddef>

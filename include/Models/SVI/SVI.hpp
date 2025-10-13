@@ -9,9 +9,7 @@
 #include "Models/SVI/SVISlice.hpp"
 #include "Math/Calibration/Config.hpp"
 #include "Math/Calibration/Calibrator.hpp"
-
 #include <nlopt.hpp>
-
 #include <stdexcept>
 #include <map>
 #include <vector>
