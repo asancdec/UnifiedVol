@@ -23,13 +23,14 @@ target_include_directories(UnifiedVol PUBLIC
 
 # --- Dependencies (via vcpkg, CONFIG mode) ---
 find_package(NLopt CONFIG REQUIRED)       # provides NLopt::nlopt
-find_package(Eigen3 CONFIG REQUIRED)      # provides Eigen3::Eigen
 find_package(Ceres CONFIG REQUIRED)       # provides Ceres::ceres 
+find_package(Boost CONFIG REQUIRED COMPONENTS math)  # Boost::math, Boost::boost
 
 target_link_libraries(UnifiedVol PUBLIC
   NLopt::nlopt
-  Eigen3::Eigen
   Ceres::ceres
+  Boost::boost         
+  Boost::math           
 )
 
 # --- Example (optional) ---

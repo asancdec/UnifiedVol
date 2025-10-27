@@ -1,5 +1,5 @@
 ﻿/**
-* GaussLaguerre.hpp
+* TanHSinH.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -7,50 +7,57 @@
 
 #include <vector>
 #include <cmath> 
+#include <utility> 
 
-class GaussLaguerre
+class TanHSinH
 {
 private:
+
+	//--------------------------------------------------------------------------
+	// Internal struct
+	//--------------------------------------------------------------------------	
+	struct Node
+	{
+		long double y;     // yn := 1 - xn
+		long double x;     // Abscissas value
+		long double w;     // Weight value
+	};
+
 
 	//--------------------------------------------------------------------------
 	// Member variables
 	//--------------------------------------------------------------------------	
 
-	const int N_;                  // Number of points in the quadrature
-	const long double alpha_;	   // Shape parameter
-	std::vector<long double> xk_;  // Nodes vector
-	std::vector<long double> wk_;  // Weights vector
+	const long double h_;            // Step size
+	std::vector<Node> nodes_;        // Nodes vector
+	std::size_t       N_;            // Number of nodes
+
+
 	//--------------------------------------------------------------------------
 	// Math
 	//--------------------------------------------------------------------------
 
-	// Evaluate derivative L'_N(α)(x)
-	long double Lprime(const long double xi) const noexcept;
+	// Fixed Tanh-Sinh rule node (returns struct with weight and abscissas value)
+	static Node generateNode(const long double nh) noexcept;
 
-	// Gauss–Laguerre weight at node x_i 
-	long double weight(const long double xi) const noexcept;
+	// Domain mapping function (0, inf) -> (-1, 1)
+	template<typename F>
+	static long double transformIntegrand(long double x, long double y, F&& f) noexcept;
 
 public:
 
 	//--------------------------------------------------------------------------
 	// Initialization
 	//--------------------------------------------------------------------------
-
-	// Constructor uses Golub and Welsh algorithm to generate nodes
-	// Calculates weights using derivative of Laguerre polynomial
-	GaussLaguerre(const int N = 64, const double = 0.0);
+	TanHSinH(const unsigned int N = 64);
 
 	//--------------------------------------------------------------------------
 	// Math
 	//--------------------------------------------------------------------------
 
-	// Evaluation a function's numeric integral using GL-Quadrature
+	// Evaluation a function's numeric integral
 	template<typename F>
-	double eval(F&& f) const;
-
-	// Evaluation a function's unweighted numeric integral using GL-Quadrature
-	template<typename F>
-	double evalUnweighted(F&& f) const;
+	double integrateZeroToInf(F&& f) const noexcept;
 
 	//--------------------------------------------------------------------------
 	// Utilities
@@ -59,5 +66,4 @@ public:
 
 };
 
-#include "GaussLaguerre.inl"
-
+#include "TanHSinH.inl"
