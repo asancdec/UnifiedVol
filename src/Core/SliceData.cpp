@@ -19,32 +19,69 @@ using uv::ErrorCode;
 
 SliceData::SliceData(double T,
     const std::vector<double>& mny,
-    const std::vector<double>& logFM,
-    const std::vector<double>& vol, 
-    const std::vector<double>& wT,
-    const MarketData& marketData)
-    : T_(T), mny_(mny), logFM_(logFM), vol_(vol), wT_(wT), marketData_(marketData)
-{   
+    const std::vector<double>& vol,
+    const MarketData& mktData) :
+    T_(T), 
+    mny_(mny), 
+    vol_(vol),
+    mktData_(mktData)
+{  
+    // Check matching dimensions
+    UV_REQUIRE(
+        vol_.size() == mny_.size(),
+        ErrorCode::InvalidArgument,
+        "SliceData::constructor size mismatch: vol_.size() = " + std::to_string(vol_.size()) +
+        ", mny_.size() = " + std::to_string(mny_.size())
+    );
+
+    // Check for positive maturity
+    UV_REQUIRE(
+        T_ > 0.0,
+        ErrorCode::InvalidArgument,
+        "SliceData::constructor: maturity T_ must be positive (T_ = " + std::to_string(T_) + ")"
+    );
+
+    // Check for positive volatility
+    auto it = std::find_if(vol_.begin(), vol_.end(),
+        [](double v) { return v <= 0.0 || !std::isfinite(v); });
+    UV_REQUIRE(
+        it == vol_.end(),
+        ErrorCode::InvalidArgument,
+        "SliceData::constructor: all volatilities must be positive and finite, found invalid value: " +
+        std::to_string((it != vol_.end()) ? *it : -1.0)
+    );
+
     // Set variables
-    double r{ marketData_.r };
-    double q{ marketData_.q };
-    double S{ marketData_.S };
+    double r{ mktData_.r };
+    double q{ mktData_.q };
+    double S{ mktData_.S };
+
+    // Calculate forward price
+    F_ = S * std::exp((r - q) * T_);
 
     // Set the strikes vector
-    K_.reserve(mny_.size());
-    std::transform(mny_.begin(), mny_.end(),
-        std::back_inserter(K_), [S](double mny)
+    K_.resize(mny_.size());
+    std::transform(mny_.begin(), mny_.end(), K_.begin(), 
+        [S](double mny)
         {
             return mny * S;
         });
 
-    // Check matching size
-    UV_REQUIRE(
-        vol_.size() == K_.size(),
-        ErrorCode::InvalidArgument,
-        "SliceData::constructor size mismatch: vol_.size() = " + std::to_string(vol_.size()) +
-        ", K_.size() = " + std::to_string(K_.size())
-    );
+    // Convert plain strikes K into log-moneyness log(K/F)
+    logFM_.resize(K_.size());
+    std::transform(K_.begin(), K_.end(), logFM_.begin(), 
+        [F = F_](double K)
+        {       
+            return std::log(K / F); 
+        });
+
+    // Convert implied volatility into total variance
+    wT_.resize(vol_.size());
+    std::transform(vol_.begin(), vol_.end(),wT_.begin(),
+        [T = T_](double vol)
+        {
+            return vol * vol * T;
+        });
 
     // Calculate Call Black-Scholes price
     callBS_.resize(vol_.size());
@@ -61,63 +98,6 @@ SliceData::SliceData(double T,
             true
         );
     }
-}
-
-SliceData SliceData::fromMarketData(const std::vector<double>& mny,
-    const std::vector<double>& vol,
-    const MarketData& mkt, double T)
-{   
-    // Compute forward factor F/S0
-    double fwdFactor{ std::exp((mkt.r - mkt.q) * T) };
-
-    // Convert plain moneyness (K/S0) into log-moneyness log(K/F)
-    std::vector<double> logFM{};
-    logFM.reserve(mny.size());
-    std::transform(mny.begin(), mny.end(),
-        std::back_inserter(logFM), [fwdFactor](double mny)
-        {
-            return std::log(mny / fwdFactor);
-        });
-
-    // Convert implied volatility into total variance
-    std::vector<double> tVar{};
-    tVar.reserve(vol.size());
-    std::transform(vol.begin(), vol.end(),
-        std::back_inserter(tVar), [T](double sigma)
-        {
-            return sigma * sigma * T;
-        });
-
-    return SliceData(T, mny, logFM, vol, tVar, mkt);
-}
-
-SliceData SliceData::fromModelData(const std::vector<double>& logFM,
-    const std::vector<double>& wT,
-    const MarketData& mkt,
-    double T)
-{
-    // Compute forward factor: (r - q) * T
-    double fwdFactor{ (mkt.r - mkt.q) * T };
-
-    // Convert log-moneyness log(K/F) into plain moneyness K/S
-    std::vector<double> mny{};
-    mny.reserve(logFM.size());
-    std::transform(logFM.begin(), logFM.end(),
-        std::back_inserter(mny), [fwdFactor](double mny)
-        {
-            return std::exp(mny + fwdFactor);
-        });
-
-    // Convert total variance into implied volatility
-    std::vector<double> vol{};
-    vol.reserve(wT.size());
-    std::transform(wT.begin(), wT.end(),
-        std::back_inserter(vol), [T](double var)
-        {
-            return std::sqrt(var / T);
-        });
-
-    return SliceData(T, mny, logFM, vol, wT, mkt);
 }
 
 double SliceData::blackScholes(double T,
@@ -184,6 +164,11 @@ double SliceData::T() const noexcept
     return T_;
 }
 
+double SliceData::F() const noexcept
+{
+    return F_;
+}
+
 const std::vector<double>& SliceData::mny() const noexcept
 {
     return mny_;
@@ -235,9 +220,10 @@ void SliceData::setWT(const std::vector<double>& wT)
     }
 
     // Recalculate Call Black-Scholes prices
-    double r{ marketData_.r };
-    double q{ marketData_.q };
-    double S{ marketData_.S };
+    double r{ mktData_.r };
+    double q{ mktData_.q };
+    double S{ mktData_.S };
+
     for (std::size_t i = 0; i < vol_.size(); ++i)
     {
         callBS_[i] = blackScholes

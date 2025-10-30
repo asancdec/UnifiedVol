@@ -14,70 +14,24 @@
 
 using uv::ErrorCode;
 
-VolSurface::VolSurface(std::vector<SliceData>&& slices,
-    std::vector<double>&& maturities)
-: slices_(std::move(slices)), maturities_(std::move(maturities)) {}
-
-VolSurface VolSurface::fromMarketData(const std::vector<double>& mny,
+VolSurface::VolSurface(const std::vector<double>& mny,
     const std::vector<std::vector<double>>& vols,
     const std::vector<double>& maturities,
-    const MarketData& mkt)
+    const MarketData& mktData)
+: maturities_(maturities)
 {
-    // --- Size checks ---
-    UV_REQUIRE(vols.size() == maturities.size(),
-        ErrorCode::InvalidArgument,
-        "vols.size() != maturities.size()");
-    for (size_t i = 0; i < vols.size(); ++i) 
-    {
-        UV_REQUIRE(vols[i].size() == mny.size(),
-            ErrorCode::InvalidArgument,
-            "vols[" + std::to_string(i) + "].size() != mny.size()");
-    }
-
-    // --- Build slices ---
-    std::vector<SliceData> slices;
-    slices.reserve(maturities.size());
-
+    // Build slices
+    slices_.reserve(maturities.size());
     for (size_t i = 0; i < maturities.size(); ++i)
     {
-        slices.push_back
+        slices_.emplace_back
         (
-            SliceData::fromMarketData(mny, vols[i], mkt, maturities[i])
+            SliceData(maturities_[i],
+                mny,
+                vols[i],
+                mktData)
         );
     }
-    return VolSurface(std::move(slices), std::vector<double>(maturities));
-}
-
-VolSurface VolSurface::fromModelData(const std::vector<std::vector<double>>& logFM,
-    const std::vector<std::vector<double>>& wT,
-    const std::vector<double>& maturities,
-    const MarketData& mkt)
-{
-    // --- Size checks ---
-    UV_REQUIRE(logFM.size() == maturities.size(),
-        ErrorCode::InvalidArgument,
-        "logFM.size() != maturities.size()");
-    UV_REQUIRE(wT.size() == maturities.size(),
-        ErrorCode::InvalidArgument,
-        "wT.size() != maturities.size()");
-    for (size_t i = 0; i < maturities.size(); ++i) {
-        UV_REQUIRE(logFM[i].size() == wT[i].size(),
-            ErrorCode::InvalidArgument,
-            "logFM[" + std::to_string(i) + "].size() != wT[" + std::to_string(i) + "].size()");
-    }
-
-    // --- Build slices ---
-    std::vector<SliceData> slices;
-    slices.reserve(maturities.size());
-
-    for (size_t i = 0; i < maturities.size(); ++i)
-    {
-        slices.push_back
-        (
-            SliceData::fromModelData(logFM[i], wT[i], mkt, maturities[i])
-        );
-    }
-    return VolSurface(std::move(slices), std::vector<double>(maturities));
 }
 
 void VolSurface::printVol() const noexcept

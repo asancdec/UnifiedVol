@@ -7,102 +7,73 @@
 #include <limits>
 
 template<typename F>
-double TanHSinH::integrateZeroToInf(F&& f) const noexcept
+long double TanHSinH::integrateZeroToInf(F&& f) const noexcept
 {
-    // Machine Epsilon
-	const long double eps{ std::numeric_limits<long double>::epsilon() };
-
-	// Counter of how many terms fall below the relative error threshold
+	// Counter of the number of terms that fall below evaluation threshold
 	unsigned int smallStreak{ 0U };
 
-	// Running total of the right hand side compensated sum
+	// Accumulated sum of the right hand area
 	long double sumRight{ 0.0L };   
 
-	// Compensation accumulator for lost low-order bits
-	long double c{ 0.0L };     
-
-	// Right side only
+	// Right-hand side
 	for (const auto& node : nodes_)
 	{
-		// u(x) * w   (u includes the Jacobian; implement transformIntegrand(x,f))
+		// u(x) * w 
 		const long double term{ node.w * transformIntegrand(node.x, node.y, f) };
 
-		// Guard against NaN tails
-		if (!std::isfinite(term)) continue; 
+		// Guard against NaN
+		if (!std::isfinite(term)) continue;
 
-		// Simple relative threshold vs current |sum|
-		if (std::fabs(term) <= std::fabs(sumRight * eps))
+		// Check if calculated term is below relative threshold
+		if (std::fabs(term) <= std::fabs(sumRight * std::numeric_limits<long double>::epsilon()))
 		{	
-			// Stop integrating if there are two insignificant consecutive evals
-			if (++smallStreak >= 2) break;
+			// Stop integrating if two consecutive streaks
+			if (++smallStreak >= 2U)
+			{
+				smallStreak = 0U;
+				break;
+			}
 		}
 		else 
 		{	
-			// Reset the counter
 			smallStreak = 0;
 		}
-
-		// Neumaier compensated summation
-		const long double t{ sumRight + term };
-		if (std::fabs(sumRight) >= std::fabs(term))
-			c += (sumRight - t) + term;
-		else
-			c += (term - t) + sumRight;  
-		sumRight = t;
+		
+		// Accumulate to current sum
+		sumRight += term;
 	}
 
-	// Add compensation term to the right-hand sum
-	sumRight += c;
-
-	// Running total of the left hand side compensated sum
+	// Accumulated sum of the left hand area
 	long double sumLeft{ 0.0L };
 
-	// Reset variables
-    smallStreak = 0U;
-	c = 0.0L;
-
-	// Left side only
-	bool skipCenter{ true }; 
-	for (const auto& node : nodes_)
+	// Left-hand side (do not double count n=0)
+	for (std::size_t i = 1; i < nodes_.size(); ++i)
 	{
-		if (skipCenter) 
-		{	
-			// Do not double count n=0
-			skipCenter = false; 
-			continue; 
-		}
+		// Define node
+		const Node& node{ nodes_[i] };
 
-		// u(x) * w   (u includes the Jacobian; implement transformIntegrand(x,f))
-		const long double term{ node.w * transformIntegrand(-node.x, 2.0L-node.y, f) };
+		// u(x) * w 
+		const long double term{ node.w * transformIntegrand(-node.x, 2.0L - node.y, f) };
 
-		// Guard against NaN tails
+		// Guard against NaN
 		if (!std::isfinite(term)) continue;
 
-		// Simple relative threshold vs current |sum|
-		if (std::fabs(term) <= std::fabs(sumLeft * eps))
+		// Check if calculated term is below relative threshold
+		if (std::fabs(term) <= std::fabs(sumLeft * std::numeric_limits<long double>::epsilon()))
 		{
-			// Stop integrating if there are two insignificant consecutive evals
-			if (++smallStreak >= 2) break;
+			// Stop integrating if two consecutive streaks
+			if (++smallStreak >= 2U) break;
 		}
 		else
 		{
-			// Reset the counter
 			smallStreak = 0;
 		}
 
-		// Neumaier compensated summation
-		const long double t{ sumLeft + term };
-		if (std::fabs(sumLeft) >= std::fabs(term))
-			c += (sumLeft - t) + term;   
-		else
-			c += (term - t) + sumLeft;
-		sumLeft = t;
+		// Accumulate to current sum
+		sumLeft += term;
 	}
 
-	// Add compensation term to the left-hand sum
-	sumLeft += c;
-
-	return static_cast<double>(h_ * (sumLeft + sumRight));
+	return h_ * (sumLeft + sumRight);
 }
 
 template<typename F>

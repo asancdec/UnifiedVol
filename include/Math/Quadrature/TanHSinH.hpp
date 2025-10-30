@@ -57,7 +57,7 @@ public:
 
 	// Evaluation a function's numeric integral
 	template<typename F>
-	double integrateZeroToInf(F&& f) const noexcept;
+	long double integrateZeroToInf(F&& f) const noexcept;
 
 	//--------------------------------------------------------------------------
 	// Utilities

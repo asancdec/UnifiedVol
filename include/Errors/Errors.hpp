@@ -24,7 +24,7 @@ namespace uv
         DataFormat,
         CalibrationError,
         LinearAlgebra,
-        Unknown
+        Unknown,
     };
 
     // Converts an ErrorCode to a short string label.

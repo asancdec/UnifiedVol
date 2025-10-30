@@ -19,40 +19,25 @@ private:
     //--------------------------------------------------------------------------
 
     double T_;                           // slice maturity
+    double F_;                           // forward price
     std::vector<double> mny_;            // plain moneyness (K/S)
     std::vector<double> logFM_;          // log-forward moneyness log(K/F)
     std::vector<double> vol_;            // volatilities 
     std::vector<double> wT_;             // total variance (vol²T) 
     std::vector<double> K_;              // strikes vector
     std::vector<double> callBS_;         // value of European call options
-    MarketData marketData_;              // market data struct
+    MarketData mktData_;                  // market data struct
 
-
-    // Custom constructor using plain moneyness and implied volatility data
-    explicit SliceData (double T,
-                        const std::vector<double>& mny, 
-                        const std::vector<double>& logFM,
-                        const std::vector<double>& vol, 
-                        const std::vector<double>& wT,
-                        const MarketData& marketData);
 public:
 
     //--------------------------------------------------------------------------
     // Initialization
     //--------------------------------------------------------------------------   
     SliceData() = delete;
-
-    // Initialize class using plain moneyness and implied volatility data
-    static SliceData fromMarketData(const std::vector<double>& mny,
+    explicit SliceData(double T,
+        const std::vector<double>& mny,
         const std::vector<double>& vol,
-        const MarketData& mkt,
-        double T);
-
-    // Initialize class using log-forward moneyness and total implied variance
-    static SliceData fromModelData(const std::vector<double>& logFM,
-        const std::vector<double>& wT,
-        const MarketData& mkt,
-        double T);
+        const MarketData& mktData);
 
     //--------------------------------------------------------------------------
     // Math functions
@@ -90,6 +75,7 @@ public:
     //--------------------------------------------------------------------------
  
     double T() const noexcept;
+    double F() const noexcept;
     const std::vector<double>& mny() const noexcept;
     const std::vector<double>& logFM() const noexcept;
     const std::vector<double>& vol() const noexcept;

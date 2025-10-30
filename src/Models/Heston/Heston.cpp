@@ -1,269 +1,167 @@
-﻿///**
-//* Heston.cpp
-//* Author: Alvaro Sanchez de Carlos
-//*/
-//
-//#include "Models/Heston/Heston.hpp"
-//#include <cmath>
-//#include <numbers>
-//#include <iostream>
-//#include <random>
-//#include <algorithm>
-//#include <cstdint>
-//
-//
-//
-//Heston::Heston(const VolSurface& volSurf, const TanSinH& glQuadrature) 
-//	: volSurf_(volSurf), glQuadrature_(glQuadrature)
-//{
-//	std::cout << "Heston started\n";
-//}
-//
-//double Heston::callPrice(double kappa,
-//	double theta,
-//	double sigma,
-//	double rho,
-//	double v0,
-//	double T,
-//	double S,
-//	double r,
-//	double q,
-//	double K) const noexcept
-//{
-//	// Imaginary unit
-//	constexpr std::complex<double> i(0.0, 1.0);
-//
-//	// Common precomputed terms
-//	const double logSPlusDrift{ std::log(S) + (r - q) * T };   // ln(S) + (r−q)T
-//	const double SXExpMinusQT{ S * std::exp(-q * T) };         // S e^{-qT}
-//	const double KXExpMinusRT{ K * std::exp(-r * T) };         // K e^{-rT}
-//	const double logK{ std::log(K) };                          // log-strike
-//
-//	const double invPi{ 1.0 / std::numbers::pi };
-//	// Integrand #1:  Re{ e^{-iu logK}/(iu) * φ(u − i, T) } 
-//	auto integrand1 = [=](double u) -> double
-//		{
-//			const std::complex<double> iu{ i * u };
-//			return std::real
-//			(
-//				std::exp(-iu * logK) / iu *
-//				Heston::charFunction(kappa, theta, sigma, rho, v0, T, S,
-//					logSPlusDrift, std::complex<double>{ u, -1.0 })
-//			);
-//		};
-//	
-//	// Integrand #2:  Re{ e^{-iu logK}/(iu) * φ(u, T) }     
-//	auto integrand2 = [=](double u) -> double
-//		{
-//			const std::complex<double> iu{ i * u };
-//			return std::real
-//			(
-//				std::exp(-iu * logK) / iu *
-//				Heston::charFunction(kappa, theta, sigma, rho, v0, T, S,
-//					logSPlusDrift, std::complex<double>{ u, 0.0})
-//			);
-//		};
-//
-//	
-//	// Evaluate both integrals ∫₀^∞ simultaneously via Gauss–Laguerre quadrature
-//	const auto [integral1, integral2] = glQuadrature_.evalUnweightedBoth(integrand1, integrand2);
-//
-//	// Final Heston call price  
-//	return SXExpMinusQT * (0.5 + invPi * integral1)
-//		- KXExpMinusRT * (0.5 + invPi * integral2);
-//}
-//
-//
-//
-//
-//std::complex<double> Heston::charFunction(double kappa,
-//	double theta,
-//	double sigma,
-//	double rho,
-//	double v0,
-//	double T,
-//	double S,
-//	double logSPlusDrift,
-//	std::complex<double> u) noexcept
-//{	
-//	//---------------------------------------------------------------------------
-//	// Full and fast calibration of	the Heston stochastic volatility model
-//	// Yiran Cuia, Sebastian del Baño Rollin, Guido Germano
-//	// Eq. (11a): ξ = κ − ρ σ i u
-//	// Eq. (11b): d = sqrt( ξ² + σ² (u² + i u) )
-//	// Eq. (15b): A₁ = (u² + i u) sinh(d t / 2)
-//	// Eq. (15c): A₂ = d cosh(d t / 2) + ξ sinh(d t / 2)
-//	// Eq. (15a): A  = A₁ / A₂
-//	// Eq. (17b): D  = log d + (κ − d)t/2 − log( (d+ξ)/2 + (d−ξ)/2 e^{−d t} )
-//	// Eq. (18): φ(u,t) = exp{ i u (ln S + (r−q)t)
-//	//                         − (t κ θ ρ i u)/σ − v₀ A + (2 κ θ / σ²) D }
-//	//---------------------------------------------------------------------------
-//
-//	constexpr std::complex<double> i(0.0, 1.0);
-//	const double kappaTimesTheta{ kappa * theta };
-//	const double sigmaSquared{ sigma * sigma };
-//
-//	// Compute auxiliary complex terms: i*u, u^2, (i*u + u^2)
-//	const std::complex<double> iu{ i * u };
-//	const std::complex<double> uSquared{ u * u };
-//	const std::complex<double> iuPlusUSquared{ iu + uSquared };
-//
-//	// ξ = κ − ρσ i u   (Eq. 11a)
-//	const std::complex<double> xi{ kappa - sigma * rho * iu };
-//
-//	// d = sqrt( ξ² + σ² (u² + i u) )   (Eq. 11b)
-//	const std::complex<double> d{ std::sqrt(xi * xi + sigmaSquared * iuPlusUSquared) };
-//	const std::complex<double> dTimesTHalf{ d * (T * 0.5) };
-//
-//	// Evaluate sinh(d t / 2) and cosh(d t / 2) efficiently from a single exp()
-//	const std::complex<double> expDT2{ std::exp(dTimesTHalf) };
-//	const std::complex<double> invExpDT2{ std::complex<double>(1.0, 0.0) / expDT2 };
-//	const std::complex<double> coshDT2{ (expDT2 + invExpDT2) * 0.5 };
-//	const std::complex<double> sinhDT2{ (expDT2 - invExpDT2) * 0.5 };
-//
-//	// Compute A = A1 / A2  (Eq. 15a–15c)
-//	const std::complex<double> A1{ iuPlusUSquared * sinhDT2 };
-//	const std::complex<double> A2{ d * coshDT2 + xi * sinhDT2 };
-//	const std::complex<double> A{ A1 / A2 };
-//
-//	// exp(-d t) reused in D (Eq. 17b)
-//	const std::complex<double> expMinusDT{ invExpDT2 * invExpDT2 };
-//
-//	// Compute D = log d + (κ − d)t/2 − log((d+ξ)/2 + (d−ξ)/2 e^{−d t})  (Eq. 17b)
-//	const std::complex<double> D{
-//		std::log(d) + (kappa - d) * (T * 0.5)
-//		- std::log((d + xi) * 0.5 + (d - xi) * 0.5 * expMinusDT)
-//	};
-//
-//	// Final characteristic function φ(u,t)  (Eq. 18)
-//	return std::exp(
-//		iu * logSPlusDrift
-//		- (T * kappaTimesTheta * rho * iu) / sigma
-//		- v0 * A
-//		+ (2.0 * kappaTimesTheta / sigmaSquared) * D);
-//}
+﻿/**
+* Heston.cpp
+* Author: Alvaro Sanchez de Carlos
+*/
+
+#include "Models/Heston/Heston.hpp"
+#include "Errors/Errors.hpp"
+#include "Math/MathFunctions/MathFunctions.hpp"
+#include <cmath>
+#include <numbers>
+#include <iostream>
+
+using uv::ErrorCode;
+using uv::log1pComplex;
 
 
-//
-//double Heston::callPrice(double kappa,
-//	double theta,
-//	double sigma,
-//	double rho,
-//	double v0,
-//	double T,
-//	double S,
-//	double r,
-//	double q,
-//	double K) const noexcept
-//{
-//	// Imaginary unit
-//	constexpr std::complex<double> i(0.0, 1.0);
-//
-//	// Common precomputed terms
-//	const double logSPlusDrift{ std::log(S) + (r - q) * T };   // ln(S) + (r−q)T
-//	const double SXExpMinusQT{ S * std::exp(-q * T) };         // S e^{-qT}
-//	const double KXExpMinusRT{ K * std::exp(-r * T) };         // K e^{-rT}
-//	const double logK{ std::log(K) };                          // log-strike
-//	const double invPi{ 1.0 / std::numbers::pi };
-//
-//	// Integrand #1:  Re{ e^{-iu logK}/(iu) * φ(u − i, T) } 
-//	auto integrand1 = [=](double u) -> double
-//		{
-//			const std::complex<double> iu{ i * u };
-//			return std::real
-//			(
-//				std::exp(-iu * logK) / iu *
-//				Heston::charFunction(kappa, theta, sigma, rho, v0, T, S,
-//					logSPlusDrift, std::complex<double>{ u, -1.0 })
-//			);
-//		};
-//
-//	// Integrand #2:  Re{ e^{-iu logK}/(iu) * φ(u, T) }     
-//	auto integrand2 = [=](double u) -> double
-//		{
-//			const std::complex<double> iu{ i * u };
-//			return std::real
-//			(
-//				std::exp(-iu * logK) / iu *
-//				Heston::charFunction(kappa, theta, sigma, rho, v0, T, S,
-//					logSPlusDrift, std::complex<double>{ u, 0.0})
-//			);
-//		};
-//
-//	// Evaluate both integrals ∫₀^∞ simultaneously via Gauss–Laguerre quadrature
-//	const auto [integral1, integral2] = glQuadrature_.evalUnweightedBoth(integrand1, integrand2);
-//
-//	// Final Heston call price  (Eq. 9)
-//	return 0.5 * (SXExpMinusQT - KXExpMinusRT)
-//		+ (SXExpMinusQT * invPi) * integral1
-//		- (KXExpMinusRT * invPi) * integral2;
-//}
+Heston::Heston(const VolSurface& volSurf,
+	std::shared_ptr<const TanHSinH> quad,
+	const HestonConfig& config):
+	volSurf_(volSurf),
+	quad_(std::move(quad)),	
+	config_(config)
+{	
+	// --- Alpha checks ---
+	UV_REQUIRE(
+		(config_.alphaItm <= -1.0 - config_.eps) && (config_.alphaOtm >= config_.eps),
+		ErrorCode::InvalidArgument,
+		"Alpha must be outside [-1, 0] range");
+
+	std::cout << "Heston started\n";
+}
+
+long double Heston::getResidues(long double alpha,
+	const long double F,
+	const long double K) const noexcept
+{
+	if (alpha < -1.0) return F - K;
+	else return 0.0L;
+}
+
+long double Heston::getAlpha(long double w) const noexcept
+{
+	if (w >= 0.0) return config_.alphaItm;
+	else return config_.alphaOtm;
+}
+
+long double Heston::getPhi(long double kappa,
+	long double theta,
+	long double sigma,
+	long double rho,
+	long double v0,
+	long double T,
+	long double w) const noexcept
+{	
+	if ((w * (rho - sigma * w / (v0 + kappa * theta * T))) >= 0.0L) return 0.0L;
+	else return std::copysign(std::numbers::pi_v<long double> / 12.0L, w);
+}
+
+std::complex<long double> Heston::charFunction(long double kappa,
+	long double theta,
+	long double sigma,
+	long double rho,
+	long double v0,
+	long double T,
+	std::complex<long double> u) noexcept
+{
+	// Define i 
+	constexpr std::complex<long double> i(0.0L, 1.0L);
+
+	// u * ( u+ 1)
+	std::complex<long double> uu{ u * (u + i) };
+
+	// sigma^2
+	const long double sigmaSquared{ sigma * sigma };
+
+	// beta := kappa - i * sigma * rho * u
+	const std::complex<long double> beta{ kappa - i * sigma * rho * u };
+		
+	// D : = sqrt(beta^2 + sigma^2 * u * (u + i))
+	const std::complex<long double> D{ std::sqrt(beta * beta + sigmaSquared * uu)};
+
+	// B + D
+	const std::complex<long double> betaPlusD{ beta + D };
+
+	// B - D
+	const std::complex<long double> betaMinusD{ -sigmaSquared * uu / betaPlusD };
+
+	// G := (beta - D) / (beta + D)
+	const std::complex<long double> G{ betaMinusD / betaPlusD };
+
+	// e^(-D * T)
+	const std::complex<long double> expMinusDT{ std::exp(-D * T) };
+	
+	// 1 - G * e^(-D*T)
+	const std::complex<long double> oneMinusGExpMinusDt{ 1.0L - G * expMinusDT };
+
+	// A : = k * theta / sigma^2 * ((beta - D) * T - 2 * ln((1 - G * e^(-D *  T)) / (1 - G)))
+	const std::complex<long double> A{kappa * theta / sigmaSquared * (betaMinusD * T - 2.0L 
+		* (log1pComplex<long double>(-G * expMinusDT - log1pComplex<long double>(-G))))};
+
+	// B: = (beta - D) / sigma^2 * ((1 - e^(-D * T)) / (1 - G * e^(-D * T)))
+	const std::complex<long double>B{betaMinusD / sigmaSquared  * (1.0L - expMinusDT) / oneMinusGExpMinusDt};
+
+	// psi(u) := e^( A + v0 * B)
+	return std::exp(A + v0 * B);
+}
+
+double Heston::callPrice(long double kappa,
+	long double theta,
+	long double sigma,
+	long double rho,
+	long double v0,
+	long double T,
+	long double F,
+	long double r,
+	long double K) const noexcept
+{
+
+	// Calculate w
+	const long double w{ std::log(F / K) };
+
+	// Determine alpha
+	const long double alpha(getAlpha(w));
+
+	// Calculate residues
+	const long double R{getResidues(alpha, F, K)};
+
+	// Determine phi
+	const long double phi{ getPhi(kappa, theta, sigma, rho, v0, T, w) };
+
+	// Precomputations
+	constexpr std::complex<long double> i(0.0L, 1.0L);
+	const long double tanPhi{std::tan(phi)};
+	const std::complex<long double> onePlusITanPhi { 1.0L + i * tanPhi };
+	const std::complex<long double> c{(i - tanPhi) * w};
+
+	// Define the integrand
+	auto integrand = [=](long double x) noexcept -> long double
+		{
+			// Calculate h(x)
+			const std::complex<long double> h{ -i * alpha + x * onePlusITanPhi };
+
+			// h - i
+			const std::complex<long double> hMinusI{ h - i };
+
+			// Evaluate characteristic function at h(x) - i
+			const std::complex<long double> charFuncVal{ charFunction(kappa, theta, sigma, rho, v0, T, hMinusI) };
+
+			// Calculate Q(h(x))
+			const std::complex<long double> Q{ charFuncVal / (hMinusI * h) };
+
+			// Calculate and return integrand
+			return std::real
+			(
+				std::exp(x * c) * Q * onePlusITanPhi
+			);
+
+		};
+
+	// Evaluate integrand
+	const long double integral{quad_->integrateZeroToInf(integrand)};
+
+	// Calculate and return Call price
+	return static_cast<double>(std::exp(-r * T) * (R - F / std::numbers::pi_v<long double> * std::exp(alpha * w) * integral));
+}
 
 
-
-//std::complex<double> Heston::charFunction(double kappa,
-//	double theta,
-//	double sigma,
-//	double rho,
-//	double v0,
-//	double T,
-//	double S,
-//	double logSPlusDrift,
-//	std::complex<double> u) noexcept
-//{	
-//	//---------------------------------------------------------------------------
-//	// Full and fast calibration of	the Heston stochastic volatility model
-//	// Yiran Cuia, Sebastian del Baño Rollin, Guido Germano
-//	// Eq. (11a): ξ = κ − ρ σ i u
-//	// Eq. (11b): d = sqrt( ξ² + σ² (u² + i u) )
-//	// Eq. (15b): A₁ = (u² + i u) sinh(d t / 2)
-//	// Eq. (15c): A₂ = d cosh(d t / 2) + ξ sinh(d t / 2)
-//	// Eq. (15a): A  = A₁ / A₂
-//	// Eq. (17b): D  = log d + (κ − d)t/2 − log( (d+ξ)/2 + (d−ξ)/2 e^{−d t} )
-//	// Eq. (18): φ(u,t) = exp{ i u (ln S + (r−q)t)
-//	//                         − (t κ θ ρ i u)/σ − v₀ A + (2 κ θ / σ²) D }
-//	//---------------------------------------------------------------------------
-//
-//	constexpr std::complex<double> i(0.0, 1.0);
-//	const double kappaTimesTheta{ kappa * theta };
-//	const double sigmaSquared{ sigma * sigma };
-//
-//	// Compute auxiliary complex terms: i*u, u^2, (i*u + u^2)
-//	const std::complex<double> iu{ i * u };
-//	const std::complex<double> uSquared{ u * u };
-//	const std::complex<double> iuPlusUSquared{ iu + uSquared };
-//
-//	// ξ = κ − ρσ i u   (Eq. 11a)
-//	const std::complex<double> xi{ kappa - sigma * rho * iu };
-//
-//	// d = sqrt( ξ² + σ² (u² + i u) )   (Eq. 11b)
-//	const std::complex<double> d{ std::sqrt(xi * xi + sigmaSquared * iuPlusUSquared) };
-//	const std::complex<double> dTimesTHalf{ d * (T * 0.5) };
-//
-//	// Evaluate sinh(d t / 2) and cosh(d t / 2) efficiently from a single exp()
-//	const std::complex<double> expDT2{ std::exp(dTimesTHalf) };
-//	const std::complex<double> invExpDT2{ std::complex<double>(1.0, 0.0) / expDT2 };
-//	const std::complex<double> coshDT2{ (expDT2 + invExpDT2) * 0.5 };
-//	const std::complex<double> sinhDT2{ (expDT2 - invExpDT2) * 0.5 };
-//
-//	// Compute A = A1 / A2  (Eq. 15a–15c)
-//	const std::complex<double> A1{ iuPlusUSquared * sinhDT2 };
-//	const std::complex<double> A2{ d * coshDT2 + xi * sinhDT2 };
-//	const std::complex<double> A{ A1 / A2 };
-//
-//	// exp(-d t) reused in D (Eq. 17b)
-//	const std::complex<double> expMinusDT{ invExpDT2 * invExpDT2 };
-//
-//	// Compute D = log d + (κ − d)t/2 − log((d+ξ)/2 + (d−ξ)/2 e^{−d t})  (Eq. 17b)
-//	const std::complex<double> D{
-//		std::log(d) + (kappa - d) * (T * 0.5)
-//		- std::log((d + xi) * 0.5 + (d - xi) * 0.5 * expMinusDT)
-//	};
-//
-//	// Final characteristic function φ(u,t)  (Eq. 18)
-//	return std::exp(
-//		iu * logSPlusDrift
-//		- (T * kappaTimesTheta * rho * iu) / sigma
-//		- v0 * A
-//		+ (2.0 * kappaTimesTheta / sigmaSquared) * D);
-//}

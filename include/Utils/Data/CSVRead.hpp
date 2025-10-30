@@ -9,6 +9,8 @@
 #include <vector>
 #include <string>
 
+namespace uv 
+{
 /**
  * @brief Reads a CSV file containing a volatility surface and returns a VolSurface object.
  *
@@ -20,6 +22,6 @@
  * @param filename Path to the CSV file.
  * @return VolSurface Object containing the strikes, maturities, and implied volatilities.
  */
-VolSurface readVolSurface(const std::string& filename, const MarketData& mkt);
-
+VolSurface readVolSurface(const std::string& filename, const MarketData& mktData);
+}
 
