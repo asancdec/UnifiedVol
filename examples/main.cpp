@@ -56,10 +56,27 @@ int main(int argc, char* argv[])
 
         VolSurface mktVolSurf{ uv::readVolSurface(path.string(), mktData) };
 
-        SVI svi{ mktVolSurf  };
+        // Initialize SVI calibration configuration struct
+        CalibratorConfig<5> sviConfig
+        {
+            1e-12,                             // eps
+            1e-9,                              // tol
+            1e-10,                             // ftolRel
+            10000,                             // maxEval
+            { "a", "b", "rho", "m", "sigma" }  // Parameter names
+        };
 
-        VolSurface sviVolSurf{ svi.getVolSurf() };
-        
+        // Initialize Calibrator instance
+        Calibrator<5> calibrator
+        {
+            sviConfig,
+            nlopt::LD_SLSQP
+        };
+
+        SVI svi{ };
+
+        SVIReport sviReport{ svi.calibrate(mktVolSurf, calibrator) };
+
         TanHSinH quad{ 1000 };
 
         HestonConfig config
@@ -70,7 +87,7 @@ int main(int argc, char* argv[])
 
 
         Heston heston(
-            sviVolSurf, 
+            sviReport.volSurf,
             std::make_shared<const TanHSinH>(quad),
             config
         );

@@ -6,25 +6,16 @@
 #pragma once
 
 #include "Core/VolSurface.hpp"
-#include "Models/SVI/SVISlice.hpp"
-#include "Math/Calibration/Config.hpp"
+#include "Models/SVI/SVIReport.hpp"
 #include "Math/Calibration/Calibrator.hpp"
 #include <nlopt.hpp>
 #include <stdexcept>
-#include <map>
 #include <vector>
 #include <array> 
 
 class SVI
 {
 private:
-
-	//--------------------------------------------------------------------------
-	// Member variables
-	//--------------------------------------------------------------------------	
-
-	std::vector<SVISlice> sviSlices_;  // Calibration data and parameters
-	VolSurface calVolSurf_;            // Calibrated SVI volatility surface
 
 	//--------------------------------------------------------------------------
 	// Forward declarations
@@ -37,12 +28,6 @@ private:
 	//--------------------------------------------------------------------------
 	// Calibration
 	//--------------------------------------------------------------------------
-
-	// Single slice calibration
-	std::vector<double> calibrateSlice(const SliceData& mktSlice, 
-		const std::vector<double>& wKPrevSlice,
-		const Config<5>& sviConfig, 
-		bool isValidateResults);
 
 	// Initial guess
 	static std::array<double, 5> initGuess(const SliceData& slice) noexcept;
@@ -63,10 +48,10 @@ private:
 	static void addCalendarConstraint(Calibrator<5>& calibrator, std::vector<ConstraintCtx>& contexts) noexcept;
 
 	// Add no butterfly arbitrage constraints g(k) ≥ 0.0 
-	static void addConvexityConstraint(Calibrator<5>& calibrator, const std::vector<double>& kSlice) noexcept;
+	static void addConvexityConstraint(Calibrator<5>& calibrator, std::vector<double>& kStorage) noexcept;
 
 	// Add objective function with analytical gradient
-	void setMinObjective(Calibrator<5>& calibrator, const ObjCtx& obj) noexcept;
+	static void setMinObjective(Calibrator<5>& calibrator, const ObjCtx& obj) noexcept;
 
 	//--------------------------------------------------------------------------
 	// Math functions
@@ -86,10 +71,10 @@ private:
 	//--------------------------------------------------------------------------
 
 	// Check calibration results
-	void evalCal(const SVISlice& calibSlice,
-		const Config<5>& config,
+	static void evalCal(const SVISlice& sviSlice,
+		const Calibrator<5>& calibrator,
 		const std::vector<double>& kSlice,
-		const std::vector<double>& wKPrevSlice) const noexcept;
+		const std::vector<double>& wKPrevSlice) noexcept;
 
 
 	// Make a wK slice
@@ -101,17 +86,14 @@ public:
 	//--------------------------------------------------------------------------
 	// Initialization
 	//--------------------------------------------------------------------------
+	SVI() = default;
 
-	// Delete default constructor
-	SVI() = delete;
+	//--------------------------------------------------------------------------
+	// Calibration
+	//--------------------------------------------------------------------------
 
 	// Calibration occurs when object is initialized
-	SVI(const VolSurface& mktVolSurf, bool isValidateResults = true);
-
-	//--------------------------------------------------------------------------
-	// Utilities
-	//--------------------------------------------------------------------------
-
-	// Get model volatility surface
-	const VolSurface& getVolSurf() const noexcept;
+	static SVIReport calibrate(const VolSurface& mktVolSurf,
+		const Calibrator<5>& prototype,
+		bool isValidateResults = true);
 };

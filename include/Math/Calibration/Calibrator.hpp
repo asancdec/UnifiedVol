@@ -4,7 +4,7 @@
 */
 
 #pragma once
-#include "Math/Calibration/Config.hpp"
+#include "Math/Calibration/CalibratorConfig.hpp"
 #include <nlopt.hpp>
 #include <vector>
 #include <array>
@@ -34,17 +34,16 @@ private:
     //--------------------------------------------------------------------------
     // Member variables
     //--------------------------------------------------------------------------	
+    CalibratorConfig<N> config_;       // Calibration configuration (tolerances, limits)
+    nlopt::opt opt_;                   // NLopt optimizer instance
+    nlopt::algorithm algo_;            // Nlopt algorithm used
 
     std::vector<double> lowerBounds_;  // Lower parameter bounds
     std::vector<double> upperBounds_;  // Upper parameter bounds
     std::vector<double> initGuess_;    // Initial parameter guess
 
-    Config<N> config_;                 // Calibration configuration (tolerances, limits)
-    nlopt::opt opt_;                   // NLopt optimizer instance
-
     ObjWrapCtx objCtx_{};              // Wrapped objective context used internally
     unsigned iterCount_{ 0 };          // Number of objective evaluations performed
-
 
     //--------------------------------------------------------------------------
     // Static variables
@@ -57,12 +56,22 @@ public:
     // Initialization
     //--------------------------------------------------------------------------
     Calibrator() = delete;
+    explicit Calibrator(const CalibratorConfig<N>& config,
+        nlopt::algorithm algo);
 
-    explicit Calibrator(std::array<double, N> initGuess,
-                        std::array<double, N> lowerBounds,
-                        std::array<double, N> upperBounds,
-                        const Config<N>& config,
-                        nlopt::algorithm algo);
+    //--------------------------------------------------------------------------
+    // Cloning
+    //--------------------------------------------------------------------------
+
+    // Return new calibrator object with same settings as the current instance
+    Calibrator<N> fresh() const noexcept;
+
+    //--------------------------------------------------------------------------
+    // Set Initial Guess and Bounds
+    //--------------------------------------------------------------------------	
+    void setGuessBounds(std::array<double, N> initGuess,
+        std::array<double, N> lowerBounds,
+        std::array<double, N> upperBounds) noexcept;
 
     //--------------------------------------------------------------------------
     // Add inequality constraints
@@ -83,6 +92,7 @@ public:
     // Getters
     //--------------------------------------------------------------------------
     const double& eps() const noexcept;
+    double tol() const noexcept;
 };
 
 #include "Calibrator.inl"

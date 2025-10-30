@@ -1,5 +1,5 @@
 ﻿/**
-* Config.hpp
+* CalibratorConfig.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -9,7 +9,7 @@
 #include <cstddef>
 
 template <std::size_t N>
-struct Config
+struct CalibratorConfig
 {
 	double eps;                                   // Small epsilon used for inequality tolerances
 	double tol;                                   // Constraint tolerance passed to NLopt (|c(x)| ≤ tol considered satisfied)

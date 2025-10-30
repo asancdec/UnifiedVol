@@ -6,12 +6,10 @@
 #include "Models/SVI/SVI.hpp"
 #include "Utils/Log.hpp"
 #include <nlopt.hpp>
-#include <iostream>
 #include <algorithm>
-#include <vector>
 #include <cmath>
-#include <array>
 #include <limits> 
+#include <memory>
 #include <format>
 
 struct SVI::ConstraintCtx
@@ -58,105 +56,95 @@ struct SVI::GKPrecomp
     }
 };
 
-SVI::SVI(const VolSurface& mktVolSurf, bool isValidateResults) : calVolSurf_(mktVolSurf)
+SVIReport SVI::calibrate(const VolSurface& mktVolSurf,
+    const Calibrator<5>& prototype,
+    bool isValidateResults)
 {   
-    // Initialize vectors
-    sviSlices_.reserve(calVolSurf_.numSlices());
-    std::vector<double> wkSlice(calVolSurf_.numStrikes(), 0.0);
+    // Copy market volatility surface
+    VolSurface sviVolSurf{ mktVolSurf };
 
-    // Initialize SVI calibration configuration struct
-    Config<5> sviConfig
-    {
-        1e-12,                             // eps
-        1e-9,                              // tol
-        1e-10,                             // ftolRel
-        10000,                             // maxEval
-        { "a", "b", "rho", "m", "sigma" }  // Parameter names
-    };
+    // Initialize vectors
+    std::vector<SVISlice> sviSlices;
+    sviSlices.reserve(sviVolSurf.numSlices());
+    std::vector<double> wkSlice(sviVolSurf.numStrikes(), 0.0);
 
     // Calibrate each slice
-    for (auto& slice : calVolSurf_.slices())
+    for (auto& slice : sviVolSurf.slices())
     {   
+        // Constant references to slice data
+        const std::vector<double>& kSlice{ slice.logFM() };
+        const std::vector<double>& wKSlice{ slice.wT() };
+
+        // Initialize calibrator instance
+        Calibrator<5> calibrator{ prototype.fresh() };
+
+        // Set initial guess and bounds
+        calibrator.setGuessBounds(
+            initGuess(slice),
+            lowerBounds(slice),
+            upperBounds(slice)
+        );
+
+        // Enforce positive minimum total variance constraint
+        addWMinConstraint(calibrator);
+
+        // Enforce Roger Lee wing slope constraints
+        addMaxSlopeConstraint(calibrator);
+
+        // Vector of constraints context
+        std::vector<ConstraintCtx> contexts;
+        contexts.resize(kSlice.size());
+        for (std::size_t i = 0; i < kSlice.size(); ++i)
+        {
+            contexts[i] = ConstraintCtx
+            {
+                kSlice[i],
+                wkSlice[i],
+                calibrator.eps()
+            };
+        }
+
+        // Enforce calendar spread arbitrage constraints: Wk_current ≥ Wk_previous
+        addCalendarConstraint(calibrator, contexts);
+
+        // Enforce convexity constraints: g(k) ≥ 0
+        std::vector<double> kStorage{ kSlice };
+        addConvexityConstraint(calibrator, kStorage);
+
+        // Objective function contexts
+        ObjCtx obj{ kSlice.data(), wKSlice.data(), kSlice.size() };
+
+        // Define objective function with analytical gradient
+        setMinObjective(calibrator, obj);
+
+        // Solve the optimization problem
+        std::vector<double> params{ calibrator.optimize() };
+
+        // Extract calibration results
+        double T{ slice.T() };
+        double a{ params[0] };
+        double b{ params[1] };
+        double rho{ params[2] };
+        double m{ params[3] };
+        double sigma{ params[4] };
+
+        SVISlice sviSlice{ T, a, b, rho, m, sigma };
+
+        // Evaluate calibration
+        if (isValidateResults) evalCal(sviSlice, calibrator, kSlice, wkSlice);
+
+        // Save calibration parameter results
+        sviSlices.emplace_back(std::move(sviSlice));
+
         // Update calculated variances use them on the next slice calibration
-        wkSlice = calibrateSlice(slice, wkSlice, sviConfig, isValidateResults);
+        wkSlice = makewKSlice(kSlice, a, b, rho, m, sigma);
 
         // Set the slice of the calibrated volatility surface
         slice.setWT(wkSlice);
     }
+    return { std::move(sviSlices), std::move(sviVolSurf) };
 }
 
-std::vector<double> SVI::calibrateSlice(const SliceData& slice, const std::vector<double>& wKPrevSlice, const Config<5>& sviConfig, bool isValidateResults)
-{
-    // Constant references to slice data
-    const std::vector<double>& kSlice{ slice.logFM() };
-    const std::vector<double>& wKSlice{ slice.wT() };
-
-    // Initialize Calibrator instance
-    Calibrator<5> calibrator
-    {
-        initGuess(slice),
-        lowerBounds(slice),
-        upperBounds(slice),
-        sviConfig,
-        nlopt::LD_SLSQP
-    };
-
-    // Enforce positive minimum total variance constraint
-    addWMinConstraint(calibrator);
-
-    // Enforce Roger Lee wing slope constraints
-    addMaxSlopeConstraint(calibrator);
-
-    // Vector of constraints context
-    std::vector<ConstraintCtx> contexts;
-    contexts.resize(kSlice.size());
-    for (std::size_t i = 0; i < kSlice.size(); ++i)
-    {
-        contexts[i] = ConstraintCtx
-        {
-            kSlice[i],          
-            wKPrevSlice[i],   
-            calibrator.eps() 
-        };
-    }
-
-    // Enforce calendar spread arbitrage constraints: Wk_current ≥ Wk_previous
-    addCalendarConstraint(calibrator, contexts);
-
-    // Enforce convexity constraints: g(k) ≥ 0
-    addConvexityConstraint(calibrator, kSlice);
-
-    // Objective function contexts
-    ObjCtx obj{ kSlice.data(), wKSlice.data(), kSlice.size() };
-
-    // Define objective function with analytical gradient
-    setMinObjective(calibrator, obj);
-
-    // Solve the problem
-    std::vector<double> params{ calibrator.optimize() };
-
-    // Extract calibration results
-    double T{ slice.T() };
-    double a{ params[0] };
-    double b{ params[1] };
-    double rho{ params[2] };
-    double m{ params[3] };
-    double sigma{ params[4] };
-
-    SVISlice calibSlice{ T, a, b, rho, m, sigma};
-
-    // Evaluate calibration
-    if (isValidateResults)
-    {
-        evalCal(calibSlice, sviConfig, kSlice, wKPrevSlice);
-    }
-
-    // Save calibration results
-    sviSlices_.emplace_back(calibSlice);
-
-    // Create and return calibrated variance vector
-    return makewKSlice(kSlice, a, b, rho, m, sigma);
-}
 
 std::array<double, 5> SVI::initGuess(const SliceData& slice) noexcept
 {   
@@ -326,13 +314,10 @@ void SVI::addCalendarConstraint(Calibrator<5>& calibrator,
     }
 }
 
-void SVI::addConvexityConstraint(Calibrator<5>& calibrator, const std::vector<double>& kSlice) noexcept
+void SVI::addConvexityConstraint(Calibrator<5>& calibrator, std::vector<double>& kStorage) noexcept
 {
-    // Local vector to hold data for NLopt callbacks
-    std::vector<double> kVals = kSlice;
-
     // For each k, add one convexity constraint g(k) ≥ 0
-    for (std::size_t i = 0; i < kVals.size(); ++i)
+    for (std::size_t i = 0; i < kStorage.size(); ++i)
     {
         calibrator.addInequalityConstraint(
             +[](unsigned n, const double* x, double* grad, void* data) -> double
@@ -364,7 +349,7 @@ void SVI::addConvexityConstraint(Calibrator<5>& calibrator, const std::vector<do
                 // Enforces g(k) ≥ -tol  (≈ g(k) ≥ 0 with small slack)
                 return -g;
             },
-            &kVals[i]  // pointer to stable local copy
+            &kStorage[i]  // pointer to stable local copy
         );
     }
 }
@@ -499,21 +484,21 @@ std::array<double, 5> SVI::gkGrad(double a, double b, double rho, double m, doub
     return dg;
 }
 
-void SVI::evalCal(const SVISlice& calibSlice,
-    const Config<5>& sviConfig,
+void SVI::evalCal(const SVISlice& sviSlice,
+    const Calibrator<5>& calibrator,
     const std::vector<double>& kSlice,
-    const std::vector<double>& wKPrevSlice) const noexcept
+    const std::vector<double>& wKPrevSlice) noexcept
 {
     // Extract parameters
-    const double a{ calibSlice.a };
-    const double b{ calibSlice.b };
-    const double rho{ calibSlice.rho };
-    const double m{ calibSlice.m };
-    const double sigma{ calibSlice.sigma };
+    const double a{ sviSlice.a };
+    const double b{ sviSlice.b };
+    const double rho{ sviSlice.rho };
+    const double m{ sviSlice.m };
+    const double sigma{ sviSlice.sigma };
  
     // Extract config attributes
-    const double eps{ sviConfig.eps };
-    const double tol{ sviConfig.tol };
+    const double eps{ calibrator.eps()};
+    const double tol{ calibrator.tol()};
 
     // ---- wMin constraint violation ----
     const double S = std::sqrt(std::max(0.0, 1.0 - rho * rho));
@@ -593,9 +578,4 @@ std::vector<double> SVI::makewKSlice(const std::vector<double>& kSlice,
         });
 
     return wKSlice;
-}
-
-const VolSurface& SVI::getVolSurf() const noexcept
-{
-    return calVolSurf_;
 }

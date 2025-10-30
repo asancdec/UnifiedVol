@@ -13,11 +13,26 @@
 #include <chrono>
 
 template <std::size_t N>
-Calibrator<N>::Calibrator(std::array<double, N> initGuess,
+Calibrator<N>::Calibrator(const CalibratorConfig<N>& config,
+    nlopt::algorithm algo) :
+    config_(config), 
+    opt_(algo, N),
+    algo_(algo)
+{
+    opt_.set_ftol_rel(config_.ftolRel);  // Stop when objective stops improving
+    opt_.set_maxeval(config_.maxEval);   // Maximum number of evaluations
+}
+
+template <std::size_t N>
+Calibrator<N> Calibrator<N>::fresh() const noexcept
+{
+    return Calibrator{config_, algo_};
+}
+
+template <std::size_t N>
+void Calibrator<N>::setGuessBounds(std::array<double, N> initGuess,
     std::array<double, N> lowerBounds,
-    std::array<double, N> upperBounds,
-    const Config<N>& config,
-    nlopt::algorithm algo) : config_(config), opt_(algo, N)
+    std::array<double, N> upperBounds) noexcept
 {
     // Clamp initial guess within upper and lower bounds
     for (std::size_t i = 0; i < initGuess.size(); ++i)
@@ -43,10 +58,6 @@ Calibrator<N>::Calibrator(std::array<double, N> initGuess,
     // Configure NLopt with bounds and tolerances
     opt_.set_lower_bounds(lowerBounds_);
     opt_.set_upper_bounds(upperBounds_);
-
-    // Stopping criteria
-    opt_.set_ftol_rel(config_.ftolRel);  // Stop when objective stops improving
-    opt_.set_maxeval(config_.maxEval);   // Maximum number of evaluations
 }
 
 template <std::size_t N>
@@ -140,4 +151,10 @@ template <std::size_t N>
 const double& Calibrator<N>::eps() const noexcept
 {
     return config_.eps;
+}
+
+template <std::size_t N>
+double Calibrator<N>::tol() const noexcept
+{
+    return config_.tol;
 }
