@@ -13,7 +13,8 @@
 #include <sstream>
 #include <filesystem>
 
-namespace uv {
+namespace uv 
+{
 
     Log& Log::instance()
     {

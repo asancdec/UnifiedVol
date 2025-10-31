@@ -5,10 +5,14 @@
 
 #pragma once
 
-struct HestonParams
+namespace uv
 {
-	long double kappa;  // Mean reversion speed
-	long double theta;  // Long term variance
-	long double sigma;  // Volatility of volatility
-	long double rho;    // Correlation
-};
+	struct HestonParams
+	{
+		long double kappa;  // Mean reversion speed
+		long double theta;  // Long term variance
+		long double sigma;  // Volatility of variance
+		long double rho;    // Correlation
+		long double vo;     // Initial variance
+	};
+}

@@ -5,9 +5,12 @@
 
 #pragma once
 
-struct MarketData
+namespace uv
 {
-	double r; // continuously compounded annualized risk-free rate
-	double q; // continuously compounded annualized dividend yield
-	double S; // spot price
-};
+	struct MarketData
+	{
+		double r; // continuously compounded risk-free rate
+		double q; // continuously compounded dividend yield
+		double S; // spot price
+	};
+}

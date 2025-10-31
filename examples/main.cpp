@@ -3,7 +3,7 @@
 #include "Core/VolSurface.hpp"
 #include "Core/MarketData.hpp"
 #include "Models/SVI/SVI.hpp"
-#include "Models/Heston/Heston.hpp"
+#include "Models/Heston/HestonPricer.hpp"
 #include "Models/Heston/HestonConfig.hpp"
 #include "Errors/Errors.hpp"  
 #include "Math/Quadrature/TanHSinH.hpp"
@@ -18,6 +18,8 @@
 #include <utility>
 #include <numbers>
 #include <memory>
+
+using namespace uv;
 
 
 inline double norm_cdf(double x) {
@@ -56,7 +58,6 @@ int main(int argc, char* argv[])
 
         VolSurface mktVolSurf{ uv::readVolSurface(path.string(), mktData) };
 
-        // Initialize SVI calibration configuration struct
         CalibratorConfig<5> sviConfig
         {
             1e-12,                             // eps
@@ -67,15 +68,15 @@ int main(int argc, char* argv[])
         };
 
         // Initialize Calibrator instance
-        Calibrator<5> calibrator
+        Calibrator<5> sviCalibrator
         {
             sviConfig,
             nlopt::LD_SLSQP
         };
 
-        SVI svi{ };
+        uv::SVI svi{ };
 
-        SVIReport sviReport{ svi.calibrate(mktVolSurf, calibrator) };
+        uv::SVIReport sviReport{ svi.calibrate(mktVolSurf, sviCalibrator) };
 
         TanHSinH quad{ 1000 };
 
@@ -85,12 +86,11 @@ int main(int argc, char* argv[])
             3.5
         };
 
-
-        Heston heston(
-            sviReport.volSurf,
+        HestonPricer heston(
             std::make_shared<const TanHSinH>(quad),
             config
         );
+
 
         // Parameters where Heston = BS
         const double kappa = 1.0;     // irrelevant if sigma = 0
@@ -160,6 +160,16 @@ int main(int argc, char* argv[])
             std::cout << "✅ Passed: Heston price converges to intrinsic value as T → 0.\n";
         else
             std::cout << "❌ Failed: Heston price deviates from intrinsic value.\n";
+
+
+
+
+
+
+
+
+
+
 
         // End time
         const auto t1 = std::chrono::high_resolution_clock::now();

@@ -8,12 +8,15 @@
 #include <string_view>
 #include <cstddef>
 
-template <std::size_t N>
-struct CalibratorConfig
+namespace uv
 {
-	double eps;                                   // Small epsilon used for inequality tolerances
-	double tol;                                   // Constraint tolerance passed to NLopt (|c(x)| ≤ tol considered satisfied)
-	double ftolRel;                               // Relative stopping criterion for objective improvement (NLopt ftol_rel)
-	unsigned int maxEval;                         // Maximum number of function evaluations allowed during optimization
-	std::array<std::string_view, N> paramNames_;  // Parameter names
-};
+	template <::std::size_t N>
+	struct CalibratorConfig
+	{
+		double eps;                                     // Small epsilon used for inequality tolerances
+		double tol;                                     // Constraint tolerance passed to NLopt (|c(x)| ≤ tol considered satisfied)
+		double ftolRel;                                 // Relative stopping criterion for objective improvement (NLopt ftol_rel)
+		unsigned int maxEval;                           // Maximum number of function evaluations allowed during optimization
+		::std::array<std::string_view, N> paramNames_;  // Parameter names
+	};
+}

@@ -4,7 +4,6 @@
 */
 
 #pragma once
-
 #include <fstream>
 #include <string_view>
 
@@ -34,28 +33,28 @@ namespace uv
         bool consoleEnabled_{ true };
     };
 
+    // ---------------------------------------------------------------------------
+    // Macros
+    // ---------------------------------------------------------------------------
+
+    // Configure file output once at startup (e.g. in main()).
+    #define UV_LOG_TO_FILE(pathstr) \
+        Log::instance().setFile((pathstr))
+
+    // Enable or disable console logging
+    #define UV_LOG_CONSOLE(enabled) \
+        Log::instance().enableConsole((enabled))
+
+    // Info-level message (always printed)
+    #define UV_INFO(msg) \
+        Log::instance().log(Level::Info, (msg))
+
+    // Warning message, printed only if condition is true
+    #define UV_WARN(cond, msg) \
+        do { \
+            if (cond) \
+                Log::instance().log(Level::Warn, (msg)); \
+        } while (0)
 } // namespace uv
 
 
-// ---------------------------------------------------------------------------
-// Macros
-// ---------------------------------------------------------------------------
-
-// Configure file output once at startup (e.g. in main()).
-#define UV_LOG_TO_FILE(pathstr) \
-    ::uv::Log::instance().setFile((pathstr))
-
-// Enable or disable console logging
-#define UV_LOG_CONSOLE(enabled) \
-    ::uv::Log::instance().enableConsole((enabled))
-
-// Info-level message (always printed)
-#define UV_INFO(msg) \
-    ::uv::Log::instance().log(::uv::Level::Info, (msg))
-
-// Warning message, printed only if condition is true
-#define UV_WARN(cond, msg) \
-    do { \
-        if (cond) \
-            ::uv::Log::instance().log(::uv::Level::Warn, (msg)); \
-    } while (0)

@@ -5,12 +5,15 @@
 
 #pragma once
 
-struct SVISlice
+namespace uv
 {
-	double T;
-	double a;
-	double b;
-	double rho;
-	double m;
-	double sigma;
-};
+	struct SVISlice
+	{
+		double T;
+		double a;
+		double b;
+		double rho;
+		double m;
+		double sigma;
+	};
+}
