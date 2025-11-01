@@ -19,13 +19,13 @@ namespace uv
 
         double T_;                           // slice maturity
         double F_;                           // forward price
-        std::vector<double> mny_;            // plain moneyness (K/S)
-        std::vector<double> logFM_;          // log-forward moneyness log(K/F)
-        std::vector<double> vol_;            // volatilities 
-        std::vector<double> wT_;             // total variance (vol²T) 
-        std::vector<double> K_;              // strikes vector
-        std::vector<double> callBS_;         // value of European call options
-        MarketData mktData_;                  // market data struct
+        ::std::vector<double> mny_;          // plain moneyness (K/S)
+        ::std::vector<double> logFM_;        // log-forward moneyness log(K/F)
+        ::std::vector<double> vol_;          // volatilities 
+        ::std::vector<double> wT_;           // total variance (vol²T) 
+        ::std::vector<double> K_;            // strikes vector
+        ::std::vector<double> callBS_;       // value of European call options
+        MarketData mktData_;                 // market data struct
 
     public:
 
@@ -34,25 +34,13 @@ namespace uv
         //--------------------------------------------------------------------------   
         SliceData() = delete;
         explicit SliceData(double T,
-            const std::vector<double>& mny,
-            const std::vector<double>& vol,
+            const ::std::vector<double>& mny,
+            const ::std::vector<double>& vol,
             const MarketData& mktData);
 
         //--------------------------------------------------------------------------
         // Math functions
         //--------------------------------------------------------------------------
-
-        // Black-Scholes pricing
-        static double blackScholes(double T,
-            double r,
-            double q,
-            double vol,
-            double S,
-            double K,
-            bool isCall) noexcept;
-
-        // Normal cumulative density function
-        static double normalCDF(double x) noexcept;
 
         // Determine minimum total variance
         double minWT() const noexcept;
@@ -75,18 +63,19 @@ namespace uv
 
         double T() const noexcept;
         double F() const noexcept;
-        const std::vector<double>& mny() const noexcept;
-        const std::vector<double>& logFM() const noexcept;
-        const std::vector<double>& vol() const noexcept;
-        const std::vector<double>& wT() const noexcept;
-        const std::vector<double>& K() const noexcept;
-        const std::vector<double>& callBS() const noexcept;
+        double r() const noexcept;
+        const ::std::vector<double>& mny() const noexcept;
+        const ::std::vector<double>& logFM() const noexcept;
+        const ::std::vector<double>& vol() const noexcept;
+        const ::std::vector<double>& wT() const noexcept;
+        const ::std::vector<double>& K() const noexcept;
+        const ::std::vector<double>& callBS() const noexcept;
 
 
         //--------------------------------------------------------------------------
         // Setters
         //--------------------------------------------------------------------------
-
-        void setWT(const std::vector<double>& wT);
+        void setWT(const ::std::vector<double>& wT);
+        void setCallBS(const ::std::vector<double>& callBS);
     };
 }

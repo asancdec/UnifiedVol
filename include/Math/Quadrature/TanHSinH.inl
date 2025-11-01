@@ -24,10 +24,10 @@ namespace uv
 			const long double term{ node.w * transformIntegrand(node.x, node.y, f) };
 
 			// Guard against NaN
-			if (!std::isfinite(term)) continue;
+			if (!::std::isfinite(term)) continue;
 
 			// Check if calculated term is below relative threshold
-			if (std::fabs(term) <= std::fabs(sumRight * std::numeric_limits<long double>::epsilon()))
+			if (::std::fabs(term) <= ::std::fabs(sumRight * ::std::numeric_limits<long double>::epsilon()))
 			{	
 				// Stop integrating if two consecutive streaks
 				if (++smallStreak >= 2U)
@@ -49,7 +49,7 @@ namespace uv
 		long double sumLeft{ 0.0L };
 
 		// Left-hand side (do not double count n=0)
-		for (std::size_t i = 1; i < nodes_.size(); ++i)
+		for (::std::size_t i = 1; i < nodes_.size(); ++i)
 		{
 			// Define node
 			const Node& node{ nodes_[i] };
@@ -58,10 +58,10 @@ namespace uv
 			const long double term{ node.w * transformIntegrand(-node.x, 2.0L - node.y, f) };
 
 			// Guard against NaN
-			if (!std::isfinite(term)) continue;
+			if (!::std::isfinite(term)) continue;
 
 			// Check if calculated term is below relative threshold
-			if (std::fabs(term) <= std::fabs(sumLeft * std::numeric_limits<long double>::epsilon()))
+			if (::std::fabs(term) <= ::std::fabs(sumLeft * ::std::numeric_limits<long double>::epsilon()))
 			{
 				// Stop integrating if two consecutive streaks
 				if (++smallStreak >= 2U) break;

@@ -7,7 +7,7 @@
 
 #include "Core/VolSurface.hpp"
 #include "Math/Calibration/CalibratorReport.hpp"
-#include "Math/Calibration/Calibrator.hpp"
+#include "Math/Calibration/NLopt/CalibratorNLopt.hpp"
 #include "Models/SVI/SVISlice.hpp"
 #include <stdexcept>
 #include <vector>
@@ -15,7 +15,7 @@
 
 namespace uv
 {
-	using SVIReport = CalibratorReport<std::vector<SVISlice>>;
+	using SVIReport = CalibratorReport<::std::vector<SVISlice>>;
 
 	class SVI
 	{
@@ -32,31 +32,31 @@ namespace uv
 		// Initial guess and bounds
 		//--------------------------------------------------------------------------
 		// Initial guess
-		static std::array<double, 5> initGuess(const SliceData& slice) noexcept;
+		static ::std::array<double, 5> initGuess(const SliceData& slice) noexcept;
 
 		// Lower bounds
-		static std::array<double, 5> lowerBounds(const SliceData& slice) noexcept;
+		static ::std::array<double, 5> lowerBounds(const SliceData& slice) noexcept;
 
 		// Upper bounds
-		static std::array<double, 5> upperBounds(const SliceData& slice) noexcept;
+		static ::std::array<double, 5> upperBounds(const SliceData& slice) noexcept;
 
 		//--------------------------------------------------------------------------
 		// Calibration
 		//--------------------------------------------------------------------------
 		// Define the minimum total variance constraint: wMin ≥ 0.0 
-		static void addWMinConstraint(Calibrator<5>& calibrator) noexcept;
+		static void addWMinConstraint(CalibratorNLopt<5>& calibrator) noexcept;
 
 		// Add Roger Lee left wing and right wing max slope constraints
-		static void addMaxSlopeConstraint(Calibrator<5>& calibrator) noexcept;
+		static void addMaxSlopeConstraint(CalibratorNLopt<5>& calibrator) noexcept;
 
 		// Add no calendar spread arbitrage constraint: Wk_current ≥ Wk_previous
-		static void addCalendarConstraint(Calibrator<5>& calibrator, std::vector<ConstraintCtx>& contexts) noexcept;
+		static void addCalendarConstraint(CalibratorNLopt<5>& calibrator, ::std::vector<ConstraintCtx>& contexts) noexcept;
 
 		// Add no butterfly arbitrage constraints g(k) ≥ 0.0 
-		static void addConvexityConstraint(Calibrator<5>& calibrator, std::vector<double>& kStorage) noexcept;
+		static void addConvexityConstraint(CalibratorNLopt<5>& calibrator, ::std::vector<double>& kStorage) noexcept;
 
 		// Add objective function with analytical gradient
-		static void setMinObjective(Calibrator<5>& calibrator, const ObjCtx& obj) noexcept;
+		static void setMinObjective(CalibratorNLopt<5>& calibrator, const ObjCtx& obj) noexcept;
 
 		//--------------------------------------------------------------------------
 		// Math functions
@@ -68,19 +68,19 @@ namespace uv
 		static double gk(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept; 
 
 		// ∇g(k)
-		static std::array<double, 5> gkGrad(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept;
+		static ::std::array<double, 5> gkGrad(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept;
 
 		//--------------------------------------------------------------------------
 		// Testing
 		//--------------------------------------------------------------------------
 		// Check calibration results
 		static void evalCal(const SVISlice& sviSlice,
-			const Calibrator<5>& calibrator,
-			const std::vector<double>& kSlice,
-			const std::vector<double>& wKPrevSlice) noexcept;
+			const CalibratorNLopt<5>& calibrator,
+			const ::std::vector<double>& kSlice,
+			const ::std::vector<double>& wKPrevSlice) noexcept;
 
 		// Make a wK slice
-		static std::vector<double> makewKSlice(const std::vector<double>& kSlice,
+		static ::std::vector<double> makewKSlice(const ::std::vector<double>& kSlice,
 			double a, double b, double rho, double m, double sigma) noexcept;
 
 	public:
@@ -94,7 +94,7 @@ namespace uv
 		// Calibration
 		//--------------------------------------------------------------------------
 		static SVIReport calibrate(const VolSurface& mktVolSurf,
-			const Calibrator<5>& prototype,
+			const CalibratorNLopt<5>& prototype,
 			bool isValidateResults = true);
 	};
 }

@@ -22,7 +22,7 @@ namespace uv
             // Define optimal step size using a heuristic rule
             boost::math::lambert_w0
             (
-                2.0L * std::numbers::pi_v<long double> *static_cast<long double>(N)
+                2.0L * ::std::numbers::pi_v<long double> *static_cast<long double>(N)
             )
             / static_cast<long double>(N)
         )
@@ -43,7 +43,7 @@ namespace uv
     TanHSinH::Node TanHSinH::generateNode(const long double nh) noexcept
     {
         // Calculate qn term
-        long double qn{ std::exp(-std::numbers::pi_v<long double> *std::sinh(nh)) };
+        long double qn{ ::std::exp(-::std::numbers::pi_v<long double> *::std::sinh(nh)) };
 
         // Precompute repetitive calculations
         long double qnInv{ 1.0L / (1.0L + qn) };
@@ -56,7 +56,7 @@ namespace uv
         {
             yn,                                                                 // yn term
             1.0L - yn,                                                          // Abscissas value
-            qnInv * yn * std::numbers::pi_v<long double> *std::cosh(nh)        // Weight value
+            qnInv * yn * ::std::numbers::pi_v<long double> *::std::cosh(nh)        // Weight value
         };
     }
 
@@ -65,28 +65,28 @@ namespace uv
         constexpr int idx_w = 6;
         constexpr int col_w = 24;
 
-        std::ostringstream oss;
+        ::std::ostringstream oss;
 
         // Left align the title
-        oss << std::left << "\nFixed Tanh-Sinh Grid\n";
+        oss << ::std::left << "\nFixed Tanh-Sinh Grid\n";
 
         // Reset to default (right) for numeric columns
-        oss << std::right;
+        oss << ::std::right;
 
         // Header
-        oss << std::setw(col_w) << "x_n (node)" << ' '
-            << std::setw(col_w) << "w_n (weight)" << '\n';
+        oss << ::std::setw(col_w) << "x_n (node)" << ' '
+            << ::std::setw(col_w) << "w_n (weight)" << '\n';
 
         // Separator
-        oss << std::string(idx_w + 1 + col_w + 1 + col_w, '-') << '\n';
+        oss << ::std::string(idx_w + 1 + col_w + 1 + col_w, '-') << '\n';
 
         // Body
-        oss << std::scientific << std::setprecision(16);
-        for (std::size_t n = 0; n < N_; ++n)
+        oss << ::std::scientific << ::std::setprecision(16);
+        for (::std::size_t n = 0; n < N_; ++n)
         {
-            oss << std::setw(idx_w) << std::left << n
-                << std::setw(col_w) << std::right << nodes_[n].x << ' '
-                << std::setw(col_w) << std::right << nodes_[n].w << '\n';
+            oss << ::std::setw(idx_w) << ::std::left << n
+                << ::std::setw(col_w) << ::std::right << nodes_[n].x << ' '
+                << ::std::setw(col_w) << ::std::right << nodes_[n].w << '\n';
         }
 
         UV_INFO(oss.str());

@@ -7,8 +7,10 @@
 #include "Models/Heston/HestonPricer.hpp"
 #include "Models/Heston/HestonParams.hpp"
 #include "Math/Calibration/CalibratorReport.hpp"
+#include "Math/Calibration/Ceres/CalibratorCeres.hpp"
 #include "Core/VolSurface.hpp"
 #include <array>
+#include <memory>
 
 namespace uv
 {
@@ -19,17 +21,23 @@ namespace uv
 	private:
 
 		//--------------------------------------------------------------------------
+		// Forward declarations
+		//--------------------------------------------------------------------------
+		// Residue functor per call price
+		// Uses numeric differentiation
+		struct PriceResidualND;
+
+		//--------------------------------------------------------------------------
 		// Initial guess and bounds
 		//--------------------------------------------------------------------------
-
 		// Initial guess
-		static std::array<double, 5> initGuess() noexcept;
+		static ::std::array<double, 5> initGuess() noexcept;
 
 		// Lower bounds
-		static std::array<double, 5> lowerBounds() noexcept;
+		static ::std::array<double, 5> lowerBounds() noexcept;
 
 		// Upper bounds
-		static std::array<double, 5> upperBounds() noexcept;
+		static ::std::array<double, 5> upperBounds() noexcept;
 
 	public:
 
@@ -41,7 +49,8 @@ namespace uv
 		//--------------------------------------------------------------------------
 		// Calibration
 		//--------------------------------------------------------------------------
-		static HestonReport calibrate(const VolSurface mktVolSurf,
-			const HestonPricer& pricer);
+		static void calibrate(const VolSurface& mktVolSurf,
+			::std::shared_ptr<const HestonPricer> pricer,
+			CalibratorCeres<5>& calibrator);
 	};
 }

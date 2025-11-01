@@ -5,7 +5,9 @@
 #include "Models/SVI/SVI.hpp"
 #include "Models/Heston/HestonPricer.hpp"
 #include "Models/Heston/HestonConfig.hpp"
+#include "Models/Heston/HestonCalibrator.hpp"
 #include "Errors/Errors.hpp"  
+#include "Math/MathFunctions/MathFunctions.hpp"
 #include "Math/Quadrature/TanHSinH.hpp"
 #include <chrono>
 #include <filesystem>
@@ -20,7 +22,6 @@
 #include <memory>
 
 using namespace uv;
-
 
 inline double norm_cdf(double x) {
     return 0.5 * std::erfc(-x / std::sqrt(2.0));
@@ -48,7 +49,6 @@ int main(int argc, char* argv[])
         UV_LOG_CONSOLE(true);
 
         // Start timer
-        const auto t0{ std::chrono::high_resolution_clock::now() };
 
         MarketData mktData
         { 0.0,          // r
@@ -56,7 +56,21 @@ int main(int argc, char* argv[])
           485.77548     // S
         };
 
-        VolSurface mktVolSurf{ uv::readVolSurface(path.string(), mktData) };
+        VolSurface mktVolSurf{ readVolSurface(path.string(), mktData) };
+        mktVolSurf.printVol();
+
+        const auto t0{ std::chrono::high_resolution_clock::now() };
+
+        for (auto& slice : mktVolSurf.slices())
+        {
+            auto copy = slice.callBS();
+            slice.setCallBS(copy);
+        }
+
+
+        const auto t1 = std::chrono::high_resolution_clock::now();
+        mktVolSurf.printVol();
+
 
         CalibratorConfig<5> sviConfig
         {
@@ -68,28 +82,28 @@ int main(int argc, char* argv[])
         };
 
         // Initialize Calibrator instance
-        Calibrator<5> sviCalibrator
+        CalibratorNLopt<5> nloptOptimizer
         {
             sviConfig,
             nlopt::LD_SLSQP
         };
 
-        uv::SVI svi{ };
+        SVI svi{};
 
-        uv::SVIReport sviReport{ svi.calibrate(mktVolSurf, sviCalibrator) };
+        SVIReport sviReport{ svi.calibrate(mktVolSurf, nloptOptimizer) };
 
         TanHSinH quad{ 1000 };
 
-        HestonConfig config
+
+        HestonPricer hestonPricer
         {
-            -3.5,
-            3.5
+            std::make_shared<const TanHSinH>(quad),
+            {
+                -3.5,
+                3.5
+            }
         };
 
-        HestonPricer heston(
-            std::make_shared<const TanHSinH>(quad),
-            config
-        );
 
 
         // Parameters where Heston = BS
@@ -106,7 +120,7 @@ int main(int argc, char* argv[])
         const double q = 0.0;
 
 
-        double hestonPrice = heston.callPrice(
+        double hestonPrice = hestonPricer.callPrice(
             kappa,
             theta,
             sigma,
@@ -136,7 +150,7 @@ int main(int argc, char* argv[])
         S = 105.0;
 
 
-        hestonPrice = heston.callPrice(
+        hestonPrice = hestonPricer.callPrice(
             kappa,
             theta,
             sigma,
@@ -162,18 +176,30 @@ int main(int argc, char* argv[])
             std::cout << "❌ Failed: Heston price deviates from intrinsic value.\n";
 
 
+        CalibratorConfig<5> hestonConfig
+        {
+            1e-12,                                      // eps
+            1e-9,                                       // tol
+            1e-10,                                      // ftolRel
+            10000,                                      // maxEval
+            { "kappa", "theta", "sigma", "rho", "v0" }  // Parameter names
+        };
+
+        CalibratorCeres<5> ceresOptimizer{ hestonConfig };
 
 
-
-
-
-
-
+        HestonCalibrator hestonCalibrator{};
+        //hestonCalibrator.calibrate
+        //(
+        //    mktVolSurf,
+        //    std::make_shared<const HestonPricer>(hestonPricer),
+        //    ceresOptimizer
+        //);
 
 
         // End time
-        const auto t1 = std::chrono::high_resolution_clock::now();
-        const auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
+
+        const auto dt = std::chrono::duration_cast<::std::chrono::milliseconds>(t1 - t0);
         UV_INFO(std::format("Done in {} ms", dt.count()));
 
         return EXIT_SUCCESS;

@@ -1,5 +1,5 @@
 /**
-* Calibrator.hpp
+* CalibratorNLopt.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -13,7 +13,7 @@
 namespace uv
 {
     template <::std::size_t N>
-    class Calibrator
+    class CalibratorNLopt
     {
     private:
 
@@ -36,9 +36,9 @@ namespace uv
         //--------------------------------------------------------------------------
         // Member variables
         //--------------------------------------------------------------------------	
-        CalibratorConfig<N> config_;       // Calibration configuration (tolerances, limits)
-        nlopt::opt opt_;                   // NLopt optimizer instance
-        nlopt::algorithm algo_;            // Nlopt algorithm used
+        CalibratorConfig<N> config_;       // Calibration configuration
+        ::nlopt::opt opt_;                   // NLopt optimizer instance
+        ::nlopt::algorithm algo_;            // Nlopt algorithm used
 
         ::std::vector<double> lowerBounds_;  // Lower parameter bounds
         ::std::vector<double> upperBounds_;  // Upper parameter bounds
@@ -57,21 +57,21 @@ namespace uv
         //--------------------------------------------------------------------------
         // Initialization
         //--------------------------------------------------------------------------
-        Calibrator() = delete;
-        explicit Calibrator(const CalibratorConfig<N>& config,
-            nlopt::algorithm algo);
+        CalibratorNLopt() = delete;
+        explicit CalibratorNLopt(const CalibratorConfig<N>& config,
+            ::nlopt::algorithm algo);
 
         //--------------------------------------------------------------------------
         // Cloning
         //--------------------------------------------------------------------------
 
         // Return new calibrator object with same settings as the current instance
-        Calibrator<N> fresh() const noexcept;
+        CalibratorNLopt<N> fresh() const noexcept;
 
         //--------------------------------------------------------------------------
         // Set Initial Guess and Bounds
         //--------------------------------------------------------------------------	
-        void setGuessBounds(std::array<double, N> initGuess,
+        void setGuessBounds(::std::array<double, N> initGuess,
             ::std::array<double, N> lowerBounds,
             ::std::array<double, N> upperBounds) noexcept;
 
@@ -98,4 +98,4 @@ namespace uv
     };
 }
 
-#include "Calibrator.inl"
+#include "CalibratorNLopt.inl"

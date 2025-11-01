@@ -30,8 +30,8 @@ namespace uv
 		//--------------------------------------------------------------------------	
 
 		const long double h_;            // Step size
-		std::vector<Node> nodes_;        // Nodes vector
-		std::size_t       N_;            // Number of nodes
+		::std::vector<Node> nodes_;        // Nodes vector
+		::std::size_t       N_;            // Number of nodes
 
 
 		//--------------------------------------------------------------------------
