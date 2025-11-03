@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
         //  - Otherwise, fall back to your default CSV inside the repo.
         const std::filesystem::path path = (argc > 1) ?
             std::filesystem::path{ argv[1] } :
-            std::filesystem::path{ "data/inputs/VolSurface_SPY_04072011.csv" };
+            std::filesystem::path{ "data/inputs/VolSurface_SPY_04072011.csv"};
 
         // Set logger
         UV_LOG_TO_FILE("calibration.log");
