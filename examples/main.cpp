@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
                 1e-9,                              // tol
                 1e-10,                             // ftolRel
                 10000,                             // maxEval
-                { "a", "b", "rho", "m", "sigma" }  // Parameter names
+                { "a", "b", "rho", "m", "sigma" }  // Parameter names 
             }
         };
 
