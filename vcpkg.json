@@ -1,0 +1,10 @@
+{
+  "name": "unifiedvol",
+  "version-string": "0.1.0",
+  "builtin-baseline": "4bb07a326d9b9bce3703272a509e5bc25dd9cfd5",
+  "dependencies": [
+    "nlopt",
+    "ceres",
+    "boost-math"
+  ]
+}

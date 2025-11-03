@@ -1,0 +1,130 @@
+###############################################################################
+# UnifiedVol – C++ / CMake / vcpkg / Ninja / Visual Studio (WSL) gitignore
+###############################################################################
+
+# ───────────────────────────────
+#  Build artifacts (CMake/Ninja)
+# ───────────────────────────────
+build/
+build-*/
+out/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+Makefile
+*.ninja
+*.ninja_deps
+*.ninja_log
+
+# Per-config directories some generators create
+Debug/
+Release/
+RelWithDebInfo/
+MinSizeRel/
+x64/
+x86/
+
+# ───────────────────────────────
+#  Visual Studio / VS Code
+# ───────────────────────────────
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.VC.opendb
+*.ipch
+*.pdb
+*.obj
+*.tlog
+*.tmp
+*.log
+
+# VS-specific CMake integration
+CMakeSettings.json
+CMakeUserPresets.json
+
+# ───────────────────────────────
+#  vcpkg (keep only manifest files)
+# ───────────────────────────────
+vcpkg_installed/
+vcpkg_downloads/
+buildtrees/
+packages/
+# keep manifests
+!vcpkg.json
+!vcpkg-configuration.json
+
+# ───────────────────────────────
+#  Logs / Data / Outputs
+# ───────────────────────────────
+logs/
+*.log
+*.out
+*.tmp
+*.csv~
+data/outputs/
+# keep input examples if desired
+!data/inputs/**
+
+# ───────────────────────────────
+#  Temporary or saved build state
+# ───────────────────────────────
+*.sd
+*.sd.save
+*.swp
+*.bak
+
+# ───────────────────────────────
+#  Coverage / Sanitizers / Profilers
+# ───────────────────────────────
+*.gcda
+*.gcno
+*.profraw
+*.profdata
+*.gcov
+
+# ───────────────────────────────
+#  OS / Editor cruft
+# ───────────────────────────────
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.cache/
+.clangd/
+.ipynb_checkpoints/
+
+# ───────────────────────────────
+#  Archives & executables
+# ───────────────────────────────
+*.a
+*.lib
+*.so
+*.dll
+*.exe
+*.out
+*.app
+*.dSYM/
+
+# ───────────────────────────────
+#  Miscellaneous
+# ───────────────────────────────
+*.pid
+*.seed
+*.old
+*.orig
+*.rej
+*.zip
+*.tar
+*.gz
+*.7z
+
+###############################################################################
+# End of file
+###############################################################################

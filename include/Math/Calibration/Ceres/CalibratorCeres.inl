@@ -1,0 +1,125 @@
+﻿/**
+* CalibratorCeres.hpp
+* Author: Alvaro Sanchez de Carlos
+*/
+
+#include "Math/Calibration/Utils/CalibratorUtils.hpp"
+#include "Utils/ConsoleRedirect.hpp"
+#include "Utils/Log.hpp"
+
+#include <memory>
+#include <iomanip>   
+#include <format>    
+#include <algorithm>
+
+namespace uv
+{
+    template <::std::size_t N, typename Policy>
+    CalibratorCeres<N, Policy>::CalibratorCeres(const CeresConfig<N>& config) : config_(config) {}
+
+    template <::std::size_t N, typename Policy>
+    void CalibratorCeres<N, Policy>::setGuessBounds(const ::std::array<double, N>& initGuess,
+        const ::std::array<double, N>& lowerBounds,
+        const ::std::array<double, N>& upperBounds) noexcept
+    {
+        // Set member variables
+        x_ = initGuess;
+        lowerBounds_ = lowerBounds;
+        upperBounds_ = upperBounds;
+
+        // Clamp initial guess within upper and lower bounds
+        uv::clamp<N>(x_, lowerBounds_, upperBounds_, config_.paramNames);
+
+        // Set initial guess
+        problem_.AddParameterBlock(x_.data(), static_cast<int>(N));
+
+        // Apply per-parameter bounds on that same block
+        for (int i = 0; i < static_cast<int>(N); ++i)
+        {
+            problem_.SetParameterLowerBound(x_.data(), i, lowerBounds_[i]);
+            problem_.SetParameterUpperBound(x_.data(), i, upperBounds_[i]);
+        }
+    }
+
+    template <::std::size_t N, typename Policy>
+    template< typename ResidualFunctor>
+    void CalibratorCeres<N, Policy>::addNumericResidual(ResidualFunctor&& f)
+    {   
+        // Define cost = ::std::ine the cost function
+        auto cost = ::std::make_unique 
+            < 
+            ::ceres::NumericDiffCostFunction 
+                < 
+                ResidualFunctor, 
+                Policy::method,
+                Policy::m,
+                static_cast<int>(N) 
+                >
+            > 
+            (
+                new ResidualFunctor(::std::forward<ResidualFunctor>(f))
+            );
+
+        problem_.AddResidualBlock
+        (
+            cost.release(),                                 // Raw pointer to cost function
+            Policy::makeLoss(config_.lossScale).release(),  // Raw pointer to loss function
+            x_.data()                                       // Raw pointer to parameter aray
+        );
+    }   
+
+    template <::std::size_t N, typename Policy>
+    ::std::array<double, N> CalibratorCeres<N, Policy>::optimize()
+    {   
+        // Set calibration options
+        ::ceres::Solver::Options options;
+        options.trust_region_strategy_type = Policy::trustRegionStrategy; 
+        options.linear_solver_type         = Policy::linearSolver;         
+        options.max_num_iterations         = config_.maxEval;            
+        options.function_tolerance         = config_.functionTol;          
+        options.parameter_tolerance        = config_.paramTol;           
+        options.gradient_tolerance         = config_.gradientTol;        
+        options.num_threads                = ::std::max(1u, std::thread::hardware_concurrency()); 
+        
+       
+        // Capture Ceres' progress output and redirect it to the unified UV logger
+        ::ceres::Solver::Summary summary;
+        {
+            // Enable live Ceres iteration table only if verbose mode is on
+            uv::ConsoleRedirect capture;
+            options.minimizer_progress_to_stdout = config_.verbose;
+
+            // Solve the problem
+            ceres::Solve(options, &problem_, &summary);
+
+            // Print final solver report if verbose mode is on
+            if (config_.verbose)  UV_INFO(summary.FullReport());
+        }
+
+        // Warn if upper or lower bounds are touched
+        uv::warnBoundsHit
+        (
+            x_,
+            lowerBounds_,
+            upperBounds_,
+            config_.paramNames
+        );
+
+        // Log calibration results 
+        uv::logResults
+        (
+            x_,                                                     // Parameters
+            config_.paramNames,                                     // Parameter names
+            summary.final_cost * 2.0,                               // SSE
+            summary.iterations.size(),                              // Iterations
+            summary.total_time_in_seconds * 1000.0,                 // Elapsed [ms]
+            (summary.termination_type == ::ceres::CONVERGENCE ||
+                summary.termination_type == ::ceres::USER_SUCCESS)  // Success flag
+        );
+
+        // Return calibrated parameters
+        return x_; 
+    }
+}
+
+ 
