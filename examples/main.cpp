@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
                 { "kappa", "theta", "sigma", "rho", "v0" },      // Parameter names
                 1e-16,                                           // Gradient tolerance
                 1.0,                                             // Loss scaling parameter   
-                false                                            // Logs the full Ceres calibration report 
+                true                                             // Logs the full Ceres calibration report 
             }
         };
 
