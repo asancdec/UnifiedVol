@@ -10,7 +10,7 @@ UnifiedVol is a C++20 volatility-modelling and pricing library designed for nume
 
 ## Core Modules
 
-### Arbitrage-Free SVI Calibration
+### Arbitrage-Free Stochastic Volatility Inspired (SVI) Model
 - Full enforcement of static arbitrage constraints:
   - Calendar monotonicity in total variance.
   - Butterfly convexity (no negative densities).  
