@@ -110,7 +110,7 @@ cmake --build build --config Release
 ./build/Release/unifiedvol_example
 ```
 
-### Profile-Guided Optimization (PGO)
+### Profile-Guided Optimization (Fun)
 
 ```bash
 # Generate profiled execution
@@ -123,7 +123,7 @@ cmake -S . -B build-pgo -G Ninja \
   -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
   -DCMAKE_CXX_FLAGS_RELEASE="-O3 -march=native -fprofile-generate=$(pwd)/pgo-data -DNDEBUG"
 cmake --build build-pgo -j
-./build-pgo/unifiedvol_example data/inputs/VolSurface_SPY_04072011.csv
+./build-pgo/unifiedvol_example
 
 # Use the profiled execution to re-compile optimally
 cmake -S . -B build-pgo -G Ninja \
@@ -134,4 +134,5 @@ cmake -S . -B build-pgo -G Ninja \
   -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
   -DCMAKE_CXX_FLAGS_RELEASE="-O3 -march=native -fprofile-use=$(pwd)/pgo-data -fprofile-correction -DNDEBUG"
 cmake --build build-pgo -j
+./build-pgo/unifiedvol_example
 ```
