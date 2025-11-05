@@ -28,15 +28,15 @@ Designed for quantitative developers, it emphasizes **numerical precision**, **a
 - Uses the Andersen–Lake (2018) contour deformation for stable evaluation of oscillatory complex integrals  
 - High-accuracy numerical integration via custom TanH–Sinh double-exponential quadrature
 - Features:
-  - Analytic Jacobians for fast and stable calibration  
-  - Calibration via Ceres Solver (Levenberg–Marquardt)
+  - Analytic Jacobians for fast and stable calibration. 
+  - Calibration via Ceres Solver (Levenberg–Marquardt) with multithreading support.
   - Long-double precision across all complex operations on the Andersen–Lake contour.
 
 ---
 
 ## Performance
 
-Benchmarks (WSL Ubuntu, **g++-13**, `-O3 -march=native`, long-double, 300 TanH–Sinh nodes):
+Benchmarks (WSL Ubuntu, **g++-13**, `-O3 -march=native`, multithreading (8), 300 TanH–Sinh nodes):
 
 - **Heston calibration (187 quotes):** **2.46 s** with PGO  
   *(~19 s → 2.46 s after analytic Jacobians + CF optimizations)*
