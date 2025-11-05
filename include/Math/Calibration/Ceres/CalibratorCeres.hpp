@@ -38,14 +38,13 @@ namespace uv
 		//--------------------------------------------------------------------------
 		// Calibration
 		//--------------------------------------------------------------------------	
-		// Set Initial Guess and Bounds
+		// Set initial guess and bounds
 		void setGuessBounds(const ::std::array<double, N>& initGuess,
 			const ::std::array<double, N>& lowerBounds,
 			const ::std::array<double, N>& upperBounds) noexcept;
 		
-		// Set numeric differentiation cost funcitons
-		template<typename ResidualFunctor>
-		void addNumericResidual(ResidualFunctor&& f);
+		// Set differentiation cost function
+		inline void addAnalyticResidual(::std::unique_ptr<::ceres::CostFunction> cf) noexcept;
 
 		// Solve the problem
 		::std::array<double, N> optimize();

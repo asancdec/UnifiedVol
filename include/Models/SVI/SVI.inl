@@ -35,33 +35,33 @@ namespace uv
         double x;             // x := k-m
         double R;             // R:= sqrt(x^2 + sigma^2)
         double invR;          // invR := 1 / R
-        double wk;            // w(k) := a + b*(rho*x + R)
-        double wkD1;          // w'(k) := b * (rho + x/R)
+        double wk;            // w(k) = a + b*(rho*x + R)
+        double wkD1;          // w'(k) = b * (rho + x/R)
         double wkD1Squared;   // w'(k)^2
         double invRCubed;     // 1/(R^3)
         double sigmaSquared;  // sigma^2
-        double wkD2;          // w''(k) := b * sigma^2 / R^3
+        double wkD2;          // w''(k) = b * sigma^2 / R^3
         double A;             // A := 1 - k * w'/(2 * w)                        
         double B;             // B := 1/w(k) + 1/4
 
         explicit GKPrecomp(double a, double b, double rho, double m, double sigma, double k) noexcept
         {
             this->x = k - m;                                          // x := k-m
-            this->R = ::std::hypot(x, sigma);                           // R:= sqrt(x^2 + sigma^2)
+            this->R = ::std::hypot(x, sigma);                         // R:= sqrt(x^2 + sigma^2)
             this->invR = 1.0 / R;                                     // invR := 1 / R
-            this->wk = ::std::fma(b, (rho * x + R), a);                 // w(k) := a + b*(rho*x + R)
-            this->wkD1 = b * (rho + x * invR);                        // w'(k) := b * (rho + x/R)
+            this->wk = ::std::fma(b, (rho * x + R), a);               // w(k) = a + b*(rho*x + R)
+            this->wkD1 = b * (rho + x * invR);                        // w'(k) = b * (rho + x/R)
             this->wkD1Squared = wkD1 * wkD1;                          // w'(k)^2
             this->invRCubed = invR * invR * invR;                     // 1/(R^3)
             this->sigmaSquared = sigma * sigma;                       // sigma^2
-            this->wkD2 = b * sigmaSquared * invRCubed;                // w''(k) := b * sigma^2 / R^3
+            this->wkD2 = b * sigmaSquared * invRCubed;                // w''(k) = b * sigma^2 / R^3
             this->A = 1.0 - 0.5 * k * wkD1 / wk;                      // A := 1 - k * w'/(2 * w)                        
             this->B = (1.0 / wk) + 0.25;                              // B := 1/w(k) + 1/4
         }
     };
 
     template <::nlopt::algorithm Algo>
-    ::std::tuple<::std::vector<SVISlice>, VolSurface> SVI::calibrate(const VolSurface& mktVolSurf,
+    inline ::std::tuple<::std::vector<SVISlice>, VolSurface> SVI::calibrate(const VolSurface& mktVolSurf,
         const CalibratorNLopt<5, Algo>& prototype,
         bool isValidateResults)
     {
@@ -152,7 +152,7 @@ namespace uv
     }
 
     template <::nlopt::algorithm Algo>
-    void SVI::addWMinConstraint(CalibratorNLopt<5, Algo>& calibrator) noexcept
+    inline void SVI::addWMinConstraint(CalibratorNLopt<5, Algo>& calibrator) noexcept
     {
         const double* epsPtr{ &calibrator.eps() };
 
@@ -192,7 +192,7 @@ namespace uv
     }
 
     template <::nlopt::algorithm Algo>
-    void SVI::addMaxSlopeConstraint(CalibratorNLopt<5, Algo>& calibrator) noexcept
+    inline void SVI::addMaxSlopeConstraint(CalibratorNLopt<5, Algo>& calibrator) noexcept
     {
         // Right wing: b*(1 + rho) <= 2
         calibrator.addInequalityConstraint(
@@ -241,7 +241,7 @@ namespace uv
     }
 
     template <::nlopt::algorithm Algo>
-    void SVI::addCalendarConstraint(CalibratorNLopt<5, Algo>& calibrator,
+    inline void SVI::addCalendarConstraint(CalibratorNLopt<5, Algo>& calibrator,
         ::std::vector<ConstraintCtx>& contexts) noexcept
     {
         // For each k, add one no calendar arbitrage constraint
@@ -273,7 +273,7 @@ namespace uv
                         grad[0] = -1.0;                     // -∂w/∂a
                         grad[1] = -(rho * xi + R);          // -∂w/∂b
                         grad[2] = -b * xi;                  // -∂w/∂ρ
-                        grad[3] = b * (rho + xi * invR);   // -∂w/∂m
+                        grad[3] = b * (rho + xi * invR);    // -∂w/∂m
                         grad[4] = -b * (sigma * invR);      // -∂w/∂σ
                     }
 
@@ -288,7 +288,7 @@ namespace uv
     }
 
     template <::nlopt::algorithm Algo>
-    void SVI::addConvexityConstraint(CalibratorNLopt<5, Algo>& calibrator, ::std::vector<double>& kStorage) noexcept
+    inline void SVI::addConvexityConstraint(CalibratorNLopt<5, Algo>& calibrator, ::std::vector<double>& kStorage) noexcept
     {
         // For each k, add one convexity constraint g(k) ≥ 0
         for (::std::size_t i = 0; i < kStorage.size(); ++i)
@@ -329,7 +329,7 @@ namespace uv
     }
 
     template <::nlopt::algorithm Algo>
-    void SVI::setMinObjective(CalibratorNLopt<5, Algo>& calibrator, const ObjCtx& obj) noexcept
+    inline void SVI::setMinObjective(CalibratorNLopt<5, Algo>& calibrator, const ObjCtx& obj) noexcept
     {
         calibrator.setMinObjective(
             +[](unsigned n, const double* x, double* grad, void* data) -> double
@@ -371,11 +371,11 @@ namespace uv
                         const double invR{ 1.0 / R };
 
                         // Calculate partial derivatives
-                        const double dwda{ 1.0 };                    // ∂w/∂a
-                        const double dwdb{ (rho * xi + R) };         // ∂w/∂b
-                        const double dwdrho{ (b * xi) };             // ∂w/∂ρ
-                        const double dwdm{ -b * (rho + xi * invR) }; // ∂w/∂m
-                        const double dwdsigma{ b * (sigma * invR) }; // ∂w/∂σ
+                        const double dwda{ 1.0 };                     // ∂w/∂a
+                        const double dwdb{ (rho * xi + R) };          // ∂w/∂b
+                        const double dwdrho{ (b * xi) };              // ∂w/∂ρ
+                        const double dwdm{ -b * (rho + xi * invR) };  // ∂w/∂m
+                        const double dwdsigma{ b * (sigma * invR) };  // ∂w/∂σ
 
                         // ∇f += 2 * r * ∂w/∂θ  (variance-SSE)
                         g[0] += 2.0 * r * dwda;
@@ -399,7 +399,7 @@ namespace uv
     }
 
     template <::nlopt::algorithm Algo>
-    void SVI::evalCal(const SVISlice& sviSlice,
+    inline void SVI::evalCal(const SVISlice& sviSlice,
         const CalibratorNLopt<5, Algo>& calibrator,
         const ::std::vector<double>& kSlice,
         const ::std::vector<double>& wKPrevSlice) noexcept

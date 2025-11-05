@@ -23,9 +23,8 @@ namespace uv
 		// Forward declarations
 		//--------------------------------------------------------------------------
 		// Residue functor per call price
-		// Uses numeric differentiation
 		template <::std::size_t N>
-		struct PriceResidualND;
+		struct PriceResidualJac;
 
 		//--------------------------------------------------------------------------
 		// Initial guess and bounds

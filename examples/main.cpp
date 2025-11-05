@@ -23,6 +23,7 @@
 #include <cassert>
 #include <utility>
 #include <numbers>
+#include <limits>
 #include <memory>
 
 using namespace uv;
@@ -44,7 +45,7 @@ int main(int argc, char* argv[])
 
         // Start timer
         StopWatch timer;
-        timer.StartStopWatch();;
+        timer.StartStopWatch();
 
         // Define market data
         MarketData mktData
@@ -74,7 +75,7 @@ int main(int argc, char* argv[])
         auto [slices, sviVolSurface] =  SVI::calibrate(mktVolSurf, nloptOptimizer);
 
         // Initialize integration quadrature
-        static constexpr std::size_t HestonNodes = 1000;
+        static constexpr std::size_t HestonNodes = 300;
         const TanHSinH<HestonNodes> quad{};
 
         // Initialize Heston pricer instance
@@ -93,8 +94,6 @@ int main(int argc, char* argv[])
                 5,                                // Number of calibration parameters (kappa, theta, sigma, rho, v0)
                 CeresPolicy
                   <
-                    ::ceres::CENTRAL,              // Numeric differentiation method (central differences)
-                    1,                             // Residual dimension (1 residual per market quote)
                     ::ceres::HuberLoss,            // Robust loss function type (Huber loss for outlier resistance)
                     ::ceres::LEVENBERG_MARQUARDT,  // Trust region strategy (LM algorithm)
                     ::ceres::DENSE_QR              // Linear solver type (dense QR decomposition for small problems)
@@ -108,7 +107,7 @@ int main(int argc, char* argv[])
                 1e-16,                                           // Function tolerance
                 1e-16,                                           // Parameter tolerance
                 { "kappa", "theta", "sigma", "rho", "v0" },      // Parameter names
-                0.0,                                             // Gradient tolerance
+                1e-16,                                           // Gradient tolerance
                 1.0,                                             // Loss scaling parameter   
                 false                                            // Logs the full Ceres calibration report 
             }
@@ -127,7 +126,6 @@ int main(int argc, char* argv[])
         };
         hestonVolurface.printVol();
 
-
         // End and log timer
         timer.LogTime<::std::milli>();
 
@@ -144,6 +142,11 @@ int main(int argc, char* argv[])
         return 1; // generic error
     }
 }
+
+
+
+
+
 
 
 

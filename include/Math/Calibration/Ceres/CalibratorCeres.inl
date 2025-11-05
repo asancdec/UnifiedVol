@@ -15,7 +15,7 @@
 namespace uv
 {
     template <::std::size_t N, typename Policy>
-    CalibratorCeres<N, Policy>::CalibratorCeres(const CeresConfig<N>& config) : config_(config) {}
+    inline CalibratorCeres<N, Policy>::CalibratorCeres(const CeresConfig<N>& config) : config_(config) {}
 
     template <::std::size_t N, typename Policy>
     void CalibratorCeres<N, Policy>::setGuessBounds(const ::std::array<double, N>& initGuess,
@@ -41,35 +41,19 @@ namespace uv
         }
     }
 
-    template <::std::size_t N, typename Policy>
-    template< typename ResidualFunctor>
-    void CalibratorCeres<N, Policy>::addNumericResidual(ResidualFunctor&& f)
-    {   
-        // Define cost = ::std::ine the cost function
-        auto cost = ::std::make_unique 
-            < 
-            ::ceres::NumericDiffCostFunction 
-                < 
-                ResidualFunctor, 
-                Policy::method,
-                Policy::m,
-                static_cast<int>(N) 
-                >
-            > 
-            (
-                new ResidualFunctor(::std::forward<ResidualFunctor>(f))
-            );
-
+    template <std::size_t N, typename Policy>
+    inline void CalibratorCeres<N, Policy>::addAnalyticResidual(::std::unique_ptr<::ceres::CostFunction> cf) noexcept
+    {
         problem_.AddResidualBlock
         (
-            cost.release(),                                 // Raw pointer to cost function
-            Policy::makeLoss(config_.lossScale).release(),  // Raw pointer to loss function
-            x_.data()                                       // Raw pointer to parameter aray
+            cf.release(),                                        
+            Policy::makeLoss(config_.lossScale).release(),       
+            x_.data()
         );
-    }   
+    }
 
     template <::std::size_t N, typename Policy>
-    ::std::array<double, N> CalibratorCeres<N, Policy>::optimize()
+    inline ::std::array<double, N> CalibratorCeres<N, Policy>::optimize()
     {   
         // Set calibration options
         ::ceres::Solver::Options options;

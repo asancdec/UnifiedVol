@@ -20,12 +20,16 @@ namespace uv
 		//--------------------------------------------------------------------------	
 		struct Node
 		{
-			long double y;     // yn := 1 - xn
-			long double x;     // Abscissas value
-			long double w;     // Weight value
+			long double w;              // weight value
+			long double y;              // yn term
+			long double x;              // abscissas value
+			long double factorRight;    // scaling term RHS
+			long double inputRight;     // transformed input RHS
+			long double factorLeft;     // scaling term LHS
+			long double inputLeft;      // transformed input LHS
 		};
 
-		//--------------------------------------------------------------------------
+      	//--------------------------------------------------------------------------
 		// Member variables
 		//--------------------------------------------------------------------------	
 
@@ -37,11 +41,7 @@ namespace uv
 		//--------------------------------------------------------------------------
 
 		// Fixed Tanh-Sinh rule node (returns struct with weight and abscissas value)
-		static Node generateNode(const long double nh) noexcept;
-
-		// Domain mapping function (0, inf) -> (-1, 1)
-		template<typename F>
-		static long double transformIntegrand(long double x, long double y, F&& f) noexcept;
+		Node generateNode(const long double nh) const noexcept;
 
 	public:
 
@@ -57,6 +57,10 @@ namespace uv
 		// Evaluation a function's numeric integral
 		template<typename F>
 		long double integrateZeroToInf(F&& f) const noexcept;
+
+		// Evaluation of multiple numeric integrals
+		template<::std::size_t M, typename F >
+		::std::array<long double, M> integrateZeroToInfMulti(F&& f) const noexcept;
 
 		//--------------------------------------------------------------------------
 		// Utilities
