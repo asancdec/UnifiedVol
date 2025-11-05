@@ -38,9 +38,9 @@ Designed for quantitative developers, it emphasizes **numerical precision**, **a
 
 Benchmarks (WSL Ubuntu, **g++-13**, `-O3 -march=native`, long-double, 300 TanH–Sinh nodes):
 
-- **Heston price:** ~**45 µs**  
 - **Heston calibration (187 quotes):** **2.46 s** with PGO  
-  *(~19 s → 2.46 s after analytic Jacobians + CF optimizations)*  
+  *(~19 s → 2.46 s after analytic Jacobians + CF optimizations)*
+- **Heston price:** ~**45 µs**  
 - **SVI calibration:** **1–5 ms** per slice  
   (**avg 2.66 ms**, **avg 682 iterations**, **avg SSE ≈ 3.1×10⁻⁵**)  
   *(strict calendar + butterfly constraints)*
