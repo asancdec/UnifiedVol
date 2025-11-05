@@ -12,27 +12,46 @@ Designed for quantitative developers, it emphasizes **numerical precision**, **a
 ## Core Modules
 
 ### Arbitrage-Free SVI Calibration
-- Full enforcement of static no-arbitrage conditions:  
-  - Calendar arbitrage  
-  - Butterfly arbitrage  
-  - Positive minimum variance  
-  - Roger Lee’s asymptotic wing-slope bounds  
-- Calibration methodology:  
-  - Sequential Quadratic Programming (SQP) via [NLopt](https://nlopt.readthedocs.io/)  
-  - Closed-form analytical gradients for improved speed and stability  
-  - Post-calibration validation to confirm absence of arbitrage violations  
+- Full enforcement of static arbitrage constraints:
+  - Calendar monotonicity in total variance  
+  - Butterfly convexity (no negative densities)  
+  - Positive minimum total variance  
+  - Roger–Lee asymptotic wing-slope bounds for extreme strikes  
+- Calibration framework:
+  - Sequential Quadratic Programming (SQP) via NLopt  
+  - Analytic gradients of the raw SVI parameterization for speed and numerical stability  
 
 ---
 
 ### Heston Stochastic Volatility Model
-- Characteristic-function-based pricing for European options using the Fourier-transform approach (Carr–Madan framework).  
-- Implements the **Andersen–Lake (2018)** contour-shift formulation for enhanced numerical stability in the complex plane.  
-- High-precision numerical integration performed via a custom **TanH–Sinh quadrature** scheme.  
-- Supports:
-  - Analytical gradient computation for calibration.  
-  - Calibration via the Ceres Solver backend.  
-  - Long-double precision arithmetic for improved numerical robustness.
-    
+- Characteristic-function pricing in the Fourier domain (Carr–Madan style formulation)  
+- Uses the Andersen–Lake (2018) contour deformation for stable evaluation of oscillatory complex integrals  
+- High-accuracy numerical integration via custom TanH–Sinh double-exponential quadrature
+- Features:
+  - Analytic Jacobians for fast and stable calibration  
+  - Calibration via Ceres Solver (Levenberg–Marquardt)
+  - Long-double precision across all complex operations on the Andersen–Lake contour.
+
+---
+
+## Performance
+
+Benchmarks (WSL Ubuntu, **g++-13**, `-O3 -march=native`, long-double, 300 TanH–Sinh nodes):
+
+- **Heston price:** ~**45 µs**  
+- **Heston calibration (187 quotes):** **2.46 s** with PGO  
+  *(~19 s → 2.46 s after analytic Jacobians + CF optimizations)*  
+- **SVI calibration:** **1–5 ms** per slice  
+  (**avg 2.66 ms**, **avg 682 iterations**, **avg SSE ≈ 3.1×10⁻⁵**)  
+  *(strict calendar + butterfly constraints)*
+
+**Ceres (Heston):** 34 iterations, 58 Jacobian evaluations, total **2.49 s** (converged).
+
+### Accuracy
+- Constant-vol limit (Heston → Black–Scholes): **3.5×10⁻¹⁵**  
+- Short-maturity limit (T → 0): **8.9×10⁻¹⁶**  
+- SVI wing limit (|k| → ∞, Roger-Lee bound): **< 6.2×10⁻¹⁵**
+
 ---
 
 ## References
