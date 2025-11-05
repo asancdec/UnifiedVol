@@ -97,7 +97,7 @@ Sample surfaces calibrated in this project are derived from publicly available o
 
 ## Build
 
-### Standard Build
+### Standard Build (Recommended)
 
 ```bash
 rm -rf build
@@ -108,34 +108,29 @@ cmake -S . -B build -G "Ninja Multi-Config" \
   -DUNIFIEDVOL_BUILD_EXAMPLE=ON
 cmake --build build --config Release
 ./build/Release/unifiedvol_example
-
+```
 
 ### Profile-Guided Optimization (PGO)
 
 ```bash
-
-rm -rf build-pgo-gen
-cmake -S . -B build-pgo-gen -G Ninja \
+rm -rf build-pgo pgo-data
+cmake -S . -B build-pgo -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_COMPILER=g++-13 \
   -DCMAKE_TOOLCHAIN_FILE="$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake" \
-  -DVCPKG_MANIFEST_MODE=ON \
-  -DVCPKG_TARGET_TRIPLET=x64-linux \
+  -DVCPKG_MANIFEST_MODE=ON -DVCPKG_TARGET_TRIPLET=x64-linux \
   -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
-  -DCMAKE_CXX_FLAGS="-O3 -march=native -fprofile-generate -DNDEBUG"
-cmake --build build-pgo-gen -j
-./build-pgo-gen/unifiedvol_example
+  -DCMAKE_CXX_FLAGS_RELEASE="-O3 -march=native -fprofile-generate=$(pwd)/pgo-data -DNDEBUG"
+cmake --build build-pgo -j
+./build-pgo/unifiedvol_example data/inputs/VolSurface_SPY_04072011.csv
 
-rm -rf build-pgo-use
-cp -r build-pgo-gen build-pgo-use
-
-cmake -S . -B build-pgo-use -G Ninja \
+# Now rebuild in-place with the profile
+cmake -S . -B build-pgo -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_COMPILER=g++-13 \
   -DCMAKE_TOOLCHAIN_FILE="$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake" \
-  -DVCPKG_MANIFEST_MODE=ON \
-  -DVCPKG_TARGET_TRIPLET=x64-linux \
+  -DVCPKG_MANIFEST_MODE=ON -DVCPKG_TARGET_TRIPLET=x64-linux \
   -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
-  -DCMAKE_CXX_FLAGS="-O3 -march=native -fprofile-use -fprofile-correction -DNDEBUG"
-cmake --build build-pgo-use -j
-./build-pgo-use/unifiedvol_example
+  -DCMAKE_CXX_FLAGS_RELEASE="-O3 -march=native -fprofile-use=$(pwd)/pgo-data -fprofile-correction -DNDEBUG"
+cmake --build build-pgo -j
+```
