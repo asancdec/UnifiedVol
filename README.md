@@ -29,10 +29,9 @@ Designed for quantitative developers, it emphasizes **numerical precision**, **a
 - Implements the **Andersen–Lake (2018)** contour-shift formulation for enhanced numerical stability in the complex plane.  
 - High-precision numerical integration performed via a custom **TanH–Sinh quadrature** scheme.  
 - Supports:
-  - Numerical (finite-difference) gradient computation for calibration.  
-  - Calibration via the **Ceres Solver** backend.  
+  - Analytical gradient computation for calibration.  
+  - Calibration via the Ceres Solver backend.  
   - Long-double precision arithmetic for improved numerical robustness.  
-- Provides direct comparison between **SVI-implied** and **Heston-implied** volatility smiles.
 
 ---
 
