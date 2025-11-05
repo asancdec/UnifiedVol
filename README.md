@@ -113,6 +113,7 @@ cmake --build build --config Release
 ### Profile-Guided Optimization (PGO)
 
 ```bash
+# Generate profiled execution
 rm -rf build-pgo pgo-data
 cmake -S . -B build-pgo -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
@@ -124,7 +125,7 @@ cmake -S . -B build-pgo -G Ninja \
 cmake --build build-pgo -j
 ./build-pgo/unifiedvol_example data/inputs/VolSurface_SPY_04072011.csv
 
-# Now rebuild in-place with the profile
+# Use the profiled execution to re-compile optimally
 cmake -S . -B build-pgo -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_COMPILER=g++-13 \
