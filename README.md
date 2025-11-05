@@ -31,39 +31,8 @@ Designed for quantitative developers, it emphasizes **numerical precision**, **a
 - Supports:
   - Analytical gradient computation for calibration.  
   - Calibration via the Ceres Solver backend.  
-  - Long-double precision arithmetic for improved numerical robustness.  
-
----
-
-### Example: SVI Calibration Fits
-
-![SVI Calibration Fits](docs/SVI_calibration_fits.png)
-
-The plot shows the calibrated SVI implied-volatility slices compared with 
-market data, illustrating arbitrage-free fitting across maturities.
-
----
-
-## Status 
-
-This repository is under active development. Interfaces, APIs, and model implementations are subject to further changes.
-
----
-
-## Architecture Overview
-
-UnifiedVol is organized into modular components:
-
-- **Core/** — market and volatility-surface data structures.  
-- **Math/** — numerical methods for calibration, integration, and complex analysis.  
-  - **Calibration/** — Ceres and NLopt backends with shared utilities.  
-  - **Quadrature/** — high-precision TanH–Sinh integration scheme.  
-  - **MathFunctions/** — stable transcendental and complex-valued functions.  
-- **Models/** — pricing and calibration engines.  
-  - **SVI/** — arbitrage-free SVI total-variance parameterization and calibration.  
-  - **Heston/** — Heston model pricing and calibration using the Andersen–Lake contour shift.  
-- **Utils/** — lightweight CSV I/O, logging, and configuration helpers.  
-
+  - Long-double precision arithmetic for improved numerical robustness.
+    
 ---
 
 ## References
@@ -136,3 +105,9 @@ cmake -S . -B build-pgo -G Ninja \
 cmake --build build-pgo -j
 ./build-pgo/unifiedvol_example
 ```
+
+---
+
+## Status 
+
+This repository is under active development. Interfaces, APIs, and model implementations are subject to further changes.
