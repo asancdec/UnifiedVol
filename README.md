@@ -109,9 +109,11 @@ cmake -S . -B build -G "Ninja Multi-Config" \
 cmake --build build --config Release
 ./build/Release/unifiedvol_example
 
-### Profile-Guided Optimization (PGO) 
+
+### Profile-Guided Optimization (PGO)
 
 ```bash
+
 rm -rf build-pgo-gen
 cmake -S . -B build-pgo-gen -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
