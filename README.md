@@ -97,6 +97,8 @@ Sample surfaces calibrated in this project are derived from publicly available o
 
 ## Build
 
+### Standard Build
+
 ```bash
 rm -rf build
 cmake -S . -B build -G "Ninja Multi-Config" \
@@ -106,3 +108,32 @@ cmake -S . -B build -G "Ninja Multi-Config" \
   -DUNIFIEDVOL_BUILD_EXAMPLE=ON
 cmake --build build --config Release
 ./build/Release/unifiedvol_example
+
+### Profile-Guided Optimization (PGO) 
+
+```bash
+rm -rf build-pgo-gen
+cmake -S . -B build-pgo-gen -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CXX_COMPILER=g++-13 \
+  -DCMAKE_TOOLCHAIN_FILE="$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake" \
+  -DVCPKG_MANIFEST_MODE=ON \
+  -DVCPKG_TARGET_TRIPLET=x64-linux \
+  -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+  -DCMAKE_CXX_FLAGS="-O3 -march=native -fprofile-generate -DNDEBUG"
+cmake --build build-pgo-gen -j
+./build-pgo-gen/unifiedvol_example
+
+rm -rf build-pgo-use
+cp -r build-pgo-gen build-pgo-use
+
+cmake -S . -B build-pgo-use -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CXX_COMPILER=g++-13 \
+  -DCMAKE_TOOLCHAIN_FILE="$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake" \
+  -DVCPKG_MANIFEST_MODE=ON \
+  -DVCPKG_TARGET_TRIPLET=x64-linux \
+  -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+  -DCMAKE_CXX_FLAGS="-O3 -march=native -fprofile-use -fprofile-correction -DNDEBUG"
+cmake --build build-pgo-use -j
+./build-pgo-use/unifiedvol_example
