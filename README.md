@@ -4,8 +4,7 @@
 
 # UnifiedVol
 
-**UnifiedVol** is a modern **C++20 library** for volatility-surface construction, option pricing, and model calibration.  
-Designed for quantitative developers, it emphasizes **numerical precision**, **arbitrage-free consistency**, and **modular extensibility**.
+UnifiedVol is a C++20 volatility-modelling and pricing library designed for numerical stability, predictable performance, and a modular structure suitable for production quantitative workflows.
 
 ---
 
@@ -13,20 +12,20 @@ Designed for quantitative developers, it emphasizes **numerical precision**, **a
 
 ### Arbitrage-Free SVI Calibration
 - Full enforcement of static arbitrage constraints:
-  - Calendar monotonicity in total variance  
-  - Butterfly convexity (no negative densities)  
-  - Positive minimum total variance  
-  - Roger–Lee asymptotic wing-slope bounds for extreme strikes  
+  - Calendar monotonicity in total variance.
+  - Butterfly convexity (no negative densities).  
+  - Positive minimum total variance. 
+  - Roger–Lee asymptotic wing-slope bounds for extreme strikes.  
 - Calibration framework:
-  - Sequential Quadratic Programming (SQP) via NLopt  
-  - Analytic gradients of the raw SVI parameterization for speed and numerical stability  
+  - Sequential Quadratic Programming (SQP) via NLopt.  
+  - Analytic gradients of the raw SVI parameterization for speed and numerical stability.  
 
 ---
 
 ### Heston Stochastic Volatility Model
-- Characteristic-function pricing in the Fourier domain (Carr–Madan style formulation)  
-- Uses the Andersen–Lake (2018) contour deformation for stable evaluation of oscillatory complex integrals  
-- High-accuracy numerical integration via custom TanH–Sinh double-exponential quadrature
+- Characteristic-function pricing in the Fourier domain (Carr–Madan style formulation).  
+- Uses the Andersen–Lake (2018) contour deformation for stable evaluation of oscillatory complex integrals.  
+- High-accuracy numerical integration via custom TanH–Sinh double-exponential quadrature.
 - Features:
   - Analytic Jacobians for fast and stable calibration. 
   - Calibration via Ceres Solver (Levenberg–Marquardt) with multithreading support.
