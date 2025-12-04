@@ -59,7 +59,8 @@ int main(int argc, char* argv[])
 
         // Generate volatility surface instance
         VolSurface mktVolSurf{ readVolSurface(path.string(), mktData) };
-        //mktVolSurf.printTotVar();
+        //mktVolSurf.printTotVar(); 
+
 
         // Initialize NLopt Calibrator instance
         CalibratorNLopt<5, nlopt::LD_SLSQP> nloptOptimizer
