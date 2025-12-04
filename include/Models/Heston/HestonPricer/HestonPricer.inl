@@ -14,10 +14,10 @@
 
 namespace uv
 {
-	template <::std::size_t N>
-	HestonPricer<N>::HestonPricer(::std::shared_ptr<const TanHSinH<N>> quad,
+	template <std::size_t N>
+	HestonPricer<N>::HestonPricer(std::shared_ptr<const TanHSinH<N>> quad,
 		const HestonConfig& config) :
-		quad_(::std::move(quad)),
+		quad_(std::move(quad)),
 		config_(config)
 	{
 		// Alpha checks
@@ -29,7 +29,7 @@ namespace uv
 		);
 	}
 
-	template <::std::size_t N>
+	template <std::size_t N>
 	double HestonPricer<N>::callPrice(long double kappa,
 		long double theta,
 		long double sigma,
@@ -41,7 +41,7 @@ namespace uv
 		long double K) const noexcept
 	{
 		// Calculate w
-		const long double w{ ::std::log(F / K) };
+		const long double w{ std::log(F / K) };
 
 		// Determine alpha
 		const long double alpha(getAlpha(w));
@@ -54,7 +54,7 @@ namespace uv
 
 		// Precomputations
 		constexpr cplx i(0.0L, 1.0L);
-		const long double tanPhi{ ::std::tan(phi) };
+		const long double tanPhi{ std::tan(phi) };
 		const cplx onePlusITanPhi{ 1.0L + i * tanPhi };
 		const cplx c{ (i - tanPhi) * w };
 		const cplx iAlpha{- i * alpha};
@@ -72,17 +72,17 @@ namespace uv
 				const cplx psi{ HestonPricer<N>::charFunction(kappa, theta, sigma, rho, v0, T, hMinusI) };
 
 				// Calculate and return integrand
-				return ::std::real(::std::exp(x * c) * psi / (hMinusI * h) * onePlusITanPhi);
+				return std::real(std::exp(x * c) * psi / (hMinusI * h) * onePlusITanPhi);
 			};
 
 		// Calculate and return call price
-		constexpr long double pi{ ::std::numbers::pi_v<long double> };
-		return ::std::exp(-r * T)
-			* (R - (F / pi) * ::std::exp(alpha * w)
+		constexpr long double pi{ std::numbers::pi_v<long double> };
+		return std::exp(-r * T)
+			* (R - (F / pi) * std::exp(alpha * w)
 				* quad_->integrateZeroToInf(integrand));
 	}
 
-	template <::std::size_t N>
+	template <std::size_t N>
 	double HestonPricer<N>::callPrice(long double T,
 		long double F,
 		long double r,
@@ -108,8 +108,8 @@ namespace uv
 			T, F, r, K);
 	}
 
-	template <::std::size_t N>
-	::std::array<double, 6> HestonPricer<N>::callPriceWithGradient(long double kappa,
+	template <std::size_t N>
+	std::array<double, 6> HestonPricer<N>::callPriceWithGradient(long double kappa,
 		long double theta,
 		long double sigma,
 		long double rho,
@@ -120,7 +120,7 @@ namespace uv
 		long double K) const noexcept
 	{
 		// Calculate w
-		const long double w{ ::std::log(F / K) };
+		const long double w{ std::log(F / K) };
 
 		// Determine alpha
 		const long double alpha(getAlpha(w));
@@ -133,17 +133,17 @@ namespace uv
 
 		// Precomputations
 		constexpr cplx i(0.0L, 1.0L);
-		const long double tanPhi{ ::std::tan(phi) };
+		const long double tanPhi{ std::tan(phi) };
 		const cplx onePlusITanPhi{ 1.0L + i * tanPhi };
 		const cplx c{ (i - tanPhi) * w };
 		const cplx iAlpha{ -i * alpha };
 
-		auto batchIntegrand = [=](long double x) noexcept -> ::std::array<long double, 6>
+		auto batchIntegrand = [=](long double x) noexcept -> std::array<long double, 6>
 			{
 				// Integrand precomputations
 				const cplx h{ iAlpha + x * onePlusITanPhi };
 				const cplx hMinusI{ h - i };
-				const cplx kernel{ ::std::exp(x * c) * onePlusITanPhi / (hMinusI * h) };
+				const cplx kernel{ std::exp(x * c) * onePlusITanPhi / (hMinusI * h) };
 
 				// Characteristic function and cached intermediates
 				const CFData cfData
@@ -254,12 +254,12 @@ namespace uv
 				const cplx kernelPsi{ kernel * psi };
 				return
 				{
-					::std::real(kernelPsi),                          // price integrand
-					::std::real(kernelPsi * (dA_dk + v0 * dB_dk)),   // dP/dkappa
-					::std::real(kernelPsi * (A * invTheta)),         // dP/dtheta
-					::std::real(kernelPsi * (dA_ds + v0 * dB_ds)),   // dP/dsigma
-					::std::real(kernelPsi * (dA_dr + v0 * dB_dr)),   // dP/drho
-					::std::real(kernelPsi * B)                       // dP/dv0
+					std::real(kernelPsi),                          // price integrand
+					std::real(kernelPsi * (dA_dk + v0 * dB_dk)),   // dP/dkappa
+					std::real(kernelPsi * (A * invTheta)),         // dP/dtheta
+					std::real(kernelPsi * (dA_ds + v0 * dB_ds)),   // dP/dsigma
+					std::real(kernelPsi * (dA_dr + v0 * dB_dr)),   // dP/drho
+					std::real(kernelPsi * B)                       // dP/dv0
 				};
 			};
 
@@ -267,12 +267,12 @@ namespace uv
 		const auto integrals = quad_->template integrateZeroToInfMulti<6>(batchIntegrand);
 
 		// Precomputations
-		const long double disc{ ::std::exp(-r * T) };
-		const long double pref{ (F / ::std::numbers::pi_v<long double>) * ::std::exp(alpha * w) };
+		const long double disc{ std::exp(-r * T) };
+		const long double pref{ (F / std::numbers::pi_v<long double>) * std::exp(alpha * w) };
 		const long double scale{ disc * pref };
 
 		// Assemble price and gradients (unrolled)
-		::std::array<double, 6> out{};
+		std::array<double, 6> out{};
 		out[0] = static_cast<double>(disc * (R - pref * integrals[0]));
 		out[1] = static_cast<double>(-scale * integrals[1]);
 		out[2] = static_cast<double>(-scale * integrals[2]);
@@ -282,9 +282,9 @@ namespace uv
 		return out;
 	}
 
-	template <::std::size_t N>
+	template <std::size_t N>
 	template <typename T>
-	void HestonPricer<N>::setHestonParams(const ::std::array<T, 5>& params) noexcept
+	void HestonPricer<N>::setHestonParams(const std::array<T, 5>& params) noexcept
 	{
 		params_ = HestonParams
 		{
@@ -296,7 +296,7 @@ namespace uv
 		};
 	}
 
-	template <::std::size_t N>
+	template <std::size_t N>
 	long double HestonPricer<N>::getResidues(long double alpha,
 		const long double F,
 		const long double K) noexcept
@@ -305,14 +305,14 @@ namespace uv
 		else return 0.0L;
 	}
 
-	template <::std::size_t N>
+	template <std::size_t N>
 	long double HestonPricer<N>::getAlpha(long double w) const noexcept
 	{
 		if (w >= 0.0) return config_.alphaItm;
 		else return config_.alphaOtm;
 	}
 
-	template <::std::size_t N>
+	template <std::size_t N>
 	long double HestonPricer<N>::getPhi(long double kappa,
 		long double theta,
 		long double sigma,
@@ -322,10 +322,10 @@ namespace uv
 		long double w) noexcept
 	{
 		if ((w * (rho - sigma * w / (v0 + kappa * theta * T))) >= 0.0L) return 0.0L;
-		else return ::std::copysign(::std::numbers::pi_v<long double> / 12.0L, w);
+		else return std::copysign(std::numbers::pi_v<long double> / 12.0L, w);
 	}
 
-	template <::std::size_t N>
+	template <std::size_t N>
 	cplx HestonPricer<N>::charFunction(long double kappa,
 		long double theta,
 		long double sigma,
@@ -347,7 +347,7 @@ namespace uv
 		const cplx beta{ kappa - i * sigma * rho * u };
 
 		// D : = sqrt(beta^2 + sigma^2 * u * (u + i))
-		const cplx D{ ::std::sqrt(beta * beta + sigma2 * uu) };
+		const cplx D{ std::sqrt(beta * beta + sigma2 * uu) };
 
 		// beta + D
 		const cplx betaPlusD{ beta + D };
@@ -355,7 +355,7 @@ namespace uv
 		// beta - D
 		const cplx r
 		{
-			(::std::real(beta * ::std::conj(D)) > 0.0L)
+			(std::real(beta * std::conj(D)) > 0.0L)
 			? -sigma2 * uu / betaPlusD
 			: beta - D
 		};
@@ -364,7 +364,7 @@ namespace uv
 		const cplx DT{ D * T };
 		cplx y
 		{
-			(::std::norm(D) > ::std::numeric_limits<long double>::epsilon() * (1.0L + ::std::abs(DT)))
+			(std::norm(D) > std::numeric_limits<long double>::epsilon() * (1.0L + std::abs(DT)))
 			? expm1Complex(-DT) / (2.0L * D)
 			: cplx(-T / 2.0L)
 		};
@@ -379,10 +379,10 @@ namespace uv
 		const cplx B{ uu * y / (1.0L - ry) };
 
 		// psi(u) := e^( A + v0 * B),
-		return ::std::exp(A + v0 * B);
+		return std::exp(A + v0 * B);
 	}
 
-	template <::std::size_t N>
+	template <std::size_t N>
 	CFData HestonPricer<N>::charFunctionCal(long double kappa,
 		long double theta,
 		long double sigma,
@@ -410,7 +410,7 @@ namespace uv
 		const cplx beta{ kappa - sigma * rho * ui };
 
 		// D := sqrt(beta^2 + sigma^2 * u(u+i))
-		const cplx D{ ::std::sqrt(beta * beta + sigma2 * uu) };
+		const cplx D{ std::sqrt(beta * beta + sigma2 * uu) };
 
 		// beta + D
 		const cplx betaPlusD{ beta + D };
@@ -418,7 +418,7 @@ namespace uv
 		// beta - D  (stable branch)
 		const cplx betaMinusD
 		{
-			(::std::real(beta * ::std::conj(D)) > 0.0L)
+			(std::real(beta * std::conj(D)) > 0.0L)
 			? -sigma2 * uu / betaPlusD
 			: beta - D
 		};
@@ -429,8 +429,8 @@ namespace uv
 		// y := expm1(-DT) / (2D)   with D≈0 fallback
 		const cplx y
 		{
-			(::std::norm(D) > ::std::numeric_limits<long double>::epsilon() *
-							  (1.0L + ::std::abs(DT)))
+			(std::norm(D) > std::numeric_limits<long double>::epsilon() *
+							  (1.0L + std::abs(DT)))
 			? expm1Complex(-DT) / (2.0L * D)
 			: cplx(-T / 2.0L)
 		};
@@ -453,7 +453,7 @@ namespace uv
 		// Rescued intermediates for gradient path
 
 		// exp(-DT)
-		const cplx eDT{ ::std::exp(-DT) };
+		const cplx eDT{ std::exp(-DT) };
 
 		// g := (betaMinusD)/(betaPlusD)
 		const cplx g{ betaMinusD / betaPlusD };
@@ -470,7 +470,7 @@ namespace uv
 		// Return full CFData
 		return
 		{
-			::std::exp(A + v0 * B),                     // psi(u) := exp( A + v0 * B )
+			std::exp(A + v0 * B),                     // psi(u) := exp( A + v0 * B )
 			A,                                          // A := (kappa*theta/sigma^2)*( r*T − 2*log(1 − r*y) )
 			B,                                          // B := u(u+i)*y / (1 − r*y)
 			beta,                                       // beta := kappa − sigma*rho*(i*u)
@@ -490,7 +490,7 @@ namespace uv
 			invQ,                                       // 1 / Q
 			invQ * invQ,                                // 1 / Q^2
 			R,                                          // R := 1 − g
-			betaMinusD * T - 2.0L * ::std::log(Q / R),  // S := (beta−D)*T − 2*log(Q/R)
+			betaMinusD * T - 2.0L * std::log(Q / R),  // S := (beta−D)*T − 2*log(Q/R)
 			(1.0L - eDT) * invQ,                        // fracB := (1 − eDT) / Q
 			betaPlusD * betaPlusD,                      // denomG := (beta + D)^2
 			betaMinusD * invSigma2                      // betaMinusD / sigma^2

@@ -12,7 +12,7 @@ namespace uv
     //--------------------------------------------------------------------------
     // ErrorCode → string
     //--------------------------------------------------------------------------
-    ::std::string_view to_string(ErrorCode c) noexcept
+    std::string_view to_string(ErrorCode c) noexcept
     {
         using E = ErrorCode;
         switch (c) {
@@ -29,12 +29,12 @@ namespace uv
     //--------------------------------------------------------------------------
     // UnifiedVolError internals
     //--------------------------------------------------------------------------
-    ::std::string UnifiedVolError::make_what(
+    std::string UnifiedVolError::make_what(
         ErrorCode code,
-        ::std::string_view msg,
-        ::std::source_location loc)
+        std::string_view msg,
+        std::source_location loc)
     {
-        ::std::ostringstream os;
+        std::ostringstream os;
         os << '[' << to_string(code) << "] " << msg
             << " @ " << loc.file_name() << ':' << loc.line();
         return os.str();
@@ -42,9 +42,9 @@ namespace uv
 
     UnifiedVolError::UnifiedVolError(
         ErrorCode code,
-        ::std::string_view message,
-        ::std::source_location loc)
-        : ::std::runtime_error(make_what(code, message, loc))
+        std::string_view message,
+        std::source_location loc)
+        : std::runtime_error(make_what(code, message, loc))
         , code_(code)
         , file_(loc.file_name())
         , function_(loc.function_name())
@@ -53,8 +53,8 @@ namespace uv
     }
 
     ErrorCode UnifiedVolError::code() const noexcept { return code_; }
-    const ::std::string& UnifiedVolError::file() const noexcept { return file_; }
-    const ::std::string& UnifiedVolError::function() const noexcept { return function_; }
+    const std::string& UnifiedVolError::file() const noexcept { return file_; }
+    const std::string& UnifiedVolError::function() const noexcept { return function_; }
     unsigned UnifiedVolError::line() const noexcept { return line_; }
 
     //--------------------------------------------------------------------------
@@ -62,8 +62,8 @@ namespace uv
     //--------------------------------------------------------------------------
     [[noreturn]] void raise(
         ErrorCode code,
-        ::std::string_view message,
-        ::std::source_location loc)
+        std::string_view message,
+        std::source_location loc)
     {
         throw UnifiedVolError(code, message, loc);
     }

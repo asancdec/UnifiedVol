@@ -1,5 +1,5 @@
 /**
-* HestonCalibrator.cpp
+* heston_calibrator.cpp
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -7,9 +7,9 @@
 
 #include <array>
 
-namespace uv
+namespace uv::heston_calibrator::detail
 {
-	::std::array<double, 5> HestonCalibrator::initGuess() noexcept
+	std::array<double, 5> initGuess() noexcept
 	{
 		return
 		{
@@ -21,7 +21,7 @@ namespace uv
 		};
 	}
 
-	::std::array<double, 5> HestonCalibrator::lowerBounds() noexcept
+	std::array<double, 5> lowerBounds() noexcept
 	{
 		return
 		{
@@ -34,7 +34,7 @@ namespace uv
 
 	}
 
-	::std::array<double, 5> HestonCalibrator::upperBounds() noexcept
+	std::array<double, 5> upperBounds() noexcept
 	{
 		return
 		{
@@ -45,5 +45,5 @@ namespace uv
 			0.5     // vo
 		};
 	}
-}
+} // namespace uv::heston_calibrator::detail
 

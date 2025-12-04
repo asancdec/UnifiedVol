@@ -1,9 +1,10 @@
-﻿#include "Utils/Data/CSVRead.hpp"
+﻿#include "Utils/Data/CSV/CSVRead.hpp"
 #include "Utils/Log.hpp"
 #include "Utils/StopWatch/StopWatch.hpp"
 #include "Core/VolSurface.hpp"
 #include "Core/MarketData.hpp"
 #include "Models/SVI/SVI.hpp"
+#include "Models/LocalVol/LocalVol.hpp"
 #include "Models/Heston/HestonPricer/HestonPricer.hpp"
 #include "Models/Heston/HestonConfig.hpp"
 #include "Models/Heston/HestonCalibrator/HestonCalibrator.hpp"
@@ -13,7 +14,6 @@
 #include "Math/Calibration/Ceres/CeresPolicy.hpp"
 #include "Math/Calibration/Ceres/CeresConfig.hpp"
 #include "Math/Interpolation/Interpolation.hpp"
-
 
 
 #include <chrono>
@@ -59,35 +59,7 @@ int main(int argc, char* argv[])
 
         // Generate volatility surface instance
         VolSurface mktVolSurf{ readVolSurface(path.string(), mktData) };
-        mktVolSurf.printTotVar();
-
-        // Get tenors (maturities) and the full transposed total variance matrix
-        const auto& tenors = mktVolSurf.maturities();
-        const auto& totvarMatrix = mktVolSurf.trasposedTotVar();
-
-        // Loop over each slice (each row of the transposed total variance matrix)
-        for (::std::size_t sliceIdx = 0; sliceIdx < totvarMatrix.size(); ++sliceIdx)
-        {
-            const auto& totvar = totvarMatrix[sliceIdx];
-
-            // Compute derivatives for this slice
-            // Set extrapolateEnd = true if you want the last slope repeated
-            auto dTotvar = uv::d1PieceWise(tenors, totvar, /*extrapolateEnd=*/true);
-
-            // ---- Print results ----
-            std::cout << "Slice " << sliceIdx << " derivatives (d w / d T):\n";
-
-            for (::std::size_t i = 0; i < dTotvar.size(); ++i)
-            {
-                std::cout << "  i = " << i
-                    << ", T = " << tenors[::std::min(i, tenors.size() - 1)]
-                    << ", dTotvar = " << dTotvar[i]
-                    << '\n';
-            }
-
-            std::cout << std::endl;
-        }
-
+        //mktVolSurf.printTotVar();
 
         // Initialize NLopt Calibrator instance
         CalibratorNLopt<5, nlopt::LD_SLSQP> nloptOptimizer
@@ -103,13 +75,18 @@ int main(int argc, char* argv[])
         };
 
         // Calibrate SVI surface
-        auto [slices, sviVolSurface] =  SVI::calibrate(mktVolSurf, nloptOptimizer);
+        auto [sviSlices, sviVolSurface] = svi::calibrate(mktVolSurf, nloptOptimizer);
+        sviVolSurface.printVol();
+
+        // Build the Local Volatility surface using SVI parameters
+        const VolSurface lvVolSurface{local_vol::build(sviVolSurface, sviSlices)};
+        lvVolSurface.printVol();
 
         // Initialize integration quadrature
         static constexpr std::size_t HestonNodes = 300;
         const TanHSinH<HestonNodes> quad{};
 
-        // Initialize Heston pricer instance
+        // Initialize HestonPricer instance
         HestonPricer hestonPricer
         {
             std::make_shared<const TanHSinH<HestonNodes>>(quad),
@@ -125,9 +102,9 @@ int main(int argc, char* argv[])
                 5,                                // Number of calibration parameters (kappa, theta, sigma, rho, v0)
                 CeresPolicy
                   <
-                    ::ceres::HuberLoss,            // Robust loss function type (Huber loss for outlier resistance)
-                    ::ceres::LEVENBERG_MARQUARDT,  // Trust region strategy (LM algorithm)
-                    ::ceres::DENSE_QR              // Linear solver type (dense QR decomposition for small problems)
+                    ceres::HuberLoss,            // Robust loss function type (Huber loss for outlier resistance)
+                    ceres::LEVENBERG_MARQUARDT,  // Trust region strategy (LM algorithm)
+                    ceres::DENSE_QR              // Linear solver type (dense QR decomposition for small problems)
                 >
             > ceresOptimizer
         { 
@@ -145,20 +122,19 @@ int main(int argc, char* argv[])
         };
 
         // Calibrate the Heston model
-        sviVolSurface.printVol();
-        //VolSurface hestonVolurface
-        //{ 
-        //    HestonCalibrator::calibrate
-        //    (
-        //        sviVolSurface,
-        //        hestonPricer,
-        //        ceresOptimizer
-        //    )
-        //};
-        //hestonVolurface.printVol();
+        VolSurface hestonVolurface
+        { 
+            heston_calibrator::calibrate
+            (
+                sviVolSurface,
+                hestonPricer,
+                ceresOptimizer
+            )
+        };
+        hestonVolurface.printBSCall();
 
         // End and log timer
-        timer.LogTime<::std::milli>();
+        timer.LogTime<std::milli>();
 
         return EXIT_SUCCESS;
     }

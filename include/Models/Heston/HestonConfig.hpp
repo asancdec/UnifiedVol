@@ -13,6 +13,6 @@ namespace uv
 	{
 		long double alphaItm;                                    // Damping parameter value when ln(F/K) >= 0
 		long double alphaOtm;                                    // Damping parameter value when ln(F/K) < 0 
-		double eps{ ::std::numeric_limits<double>::epsilon() };  // Machine Epsilon
+		double eps{ std::numeric_limits<double>::epsilon() };  // Machine Epsilon
 	};
 }

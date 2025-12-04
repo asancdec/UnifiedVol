@@ -12,20 +12,40 @@
 #include <iterator>   
 #include <vector>
 
-namespace uv
+namespace uv::svi
 {
-    ::std::array<double, 5> SVI::initGuess(const SliceData& slice) noexcept
+    double gk(double a, double b, double rho, double m, double sigma, double k) noexcept
+    {
+        double x{ k - m };                                          // x := k-m
+        double R{ std::hypot(x, sigma) };                           // R:= sqrt(x^2 + sigma^2)
+        double invR{ 1.0 / R };                                     // invR := 1 / R
+        double wk{ std::fma(b, (rho * x + R), a) };                 // w(k) = a + b*(rho*x + R)
+        double wkD1{ b * (rho + x * invR) };                        // w'(k) = b * (rho + x/R)
+        double wkD1Squared{ wkD1 * wkD1 };                          // w'(k)^2
+        double invRCubed{ invR * invR * invR };                     // 1/(R^3)
+        double sigmaSquared{ sigma * sigma };                       // sigma^2
+        double wkD2{ b * sigmaSquared * invRCubed };                // w''(k) = b * sigma^2 / R^3
+        double A{ 1.0 - 0.5 * k * wkD1 / wk };                      // A := 1 - k * w'/(2 * w)                        
+        double B{ (1.0 / wk) + 0.25 };                              // B := 1/w(k) + 1/4
+
+        return (A * A) - 0.25 * wkD1Squared * B + wkD2 * 0.5;
+    }
+} // namespace uv::svi
+
+namespace uv::svi::detail
+{
+    std::array<double, 5> initGuess(const SliceData& slice) noexcept
     {
         const double b{ 0.1 };
         const double rho{ -0.5 };
         const double m{ 0.1 };
         const double sigma{ 0.1 };
-        const double a{ slice.atmWT() - b * (-rho * m + ::std::hypot(m, sigma)) };
+        const double a{ slice.atmWT() - b * (-rho * m + std::hypot(m, sigma)) };
 
         return { a, b, rho, m, sigma };
     }
 
-    ::std::array<double, 5> SVI::lowerBounds(const SliceData& slice) noexcept
+    std::array<double, 5> lowerBounds(const SliceData& slice) noexcept
     {
         return
         {
@@ -37,7 +57,7 @@ namespace uv
         };
     }
 
-    ::std::array<double, 5> SVI::upperBounds(const SliceData& slice) noexcept
+    std::array<double, 5> upperBounds(const SliceData& slice) noexcept
     {
         return
         {
@@ -49,18 +69,18 @@ namespace uv
         };
     }
 
-    double SVI::wk(double a, double b, double rho, double m, double sigma, double k) noexcept
+    double wk(double a, double b, double rho, double m, double sigma, double k) noexcept
     {
         const double x{ k - m };                                     // x := k-m
-        return ::std::fma(b, (rho * x + ::std::hypot(x, sigma)), a);    // w(k) = a + b*(rho*x + sqrt(x^2 + sigma^2)) 
-    }
+        return std::fma(b, (rho * x + std::hypot(x, sigma)), a);     // w(k) = a + b*(rho*x + sqrt(x^2 + sigma^2)) 
+    } 
 
-    double SVI::gk(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept
+    double gk(const GKPrecomp& p) noexcept
     {
-        return (p.A * p.A) - 0.25 * p.wkD1Squared * p.B + p.wkD2 / 2.0;  // g(k) = A^2 - B * (w')^2 / 4 + w''/2
+        return (p.A * p.A) - 0.25 * p.wkD1Squared * p.B + p.wkD2 * 0.5;  // g(k) = A^2 - B * (w')^2 / 4 + w''/2
     }
 
-    ::std::array<double, 5> SVI::gkGrad(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept
+    std::array<double, 5> gkGrad(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept
     {
         // Precompute variables
         double invR5{ p.invRCubed * p.invR * p.invR };     // 1/R^5
@@ -72,7 +92,7 @@ namespace uv
         double dgdw2{ 0.5 };                                                                   // ∂g/∂w'' = 1/2
 
         // ---------- ∂w/∂θ ---------
-        ::std::array<double, 5> dw
+        std::array<double, 5> dw
         {
             1.0,                         // ∂w/∂a   = 1
             rho * p.x + p.R,             // ∂w/∂b   = ρ (k-m) + R
@@ -82,7 +102,7 @@ namespace uv
         };
 
         // ---------- ∂w′/∂θ ------
-        ::std::array<double, 5> dw1
+        std::array<double, 5> dw1
         {
             0.0,                                // ∂w′/∂a   = 0
             rho + p.x * p.invR,                 // ∂w′/∂b   = ρ + (k-m)/R
@@ -92,7 +112,7 @@ namespace uv
         };
 
         // ---------- ∂w″/∂θ ----------
-        ::std::array<double, 5> dw2
+        std::array<double, 5> dw2
         {
             0.0,                                                                 // ∂w″/∂a   = 0
             p.sigmaSquared * p.invRCubed,                                        // ∂w″/∂b   = σ^2 / R^3
@@ -102,7 +122,7 @@ namespace uv
         };
 
         // Chain rule: ∇g = (∂g/∂w)∇w + (∂g/∂w1)∇w1 + (∂g/∂w2)∇w2
-        ::std::array<double, 5> dg{};
+        std::array<double, 5> dg{};
         for (int j = 0; j < 5; ++j)
         {
             dg[j] = dgdw * dw[j] + dgdw1 * dw1[j] + dgdw2 * dw2[j];
@@ -110,15 +130,15 @@ namespace uv
         return dg;
     }
 
-    ::std::vector<double> SVI::makewKSlice(const ::std::vector<double>& kSlice,
+    std::vector<double> makewKSlice(const std::vector<double>& kSlice,
         double a, double b, double rho, double m, double sigma) noexcept
     {
-        ::std::vector<double> wKSlice;
+        std::vector<double> wKSlice;
         wKSlice.reserve(kSlice.size());
 
-        ::std::transform(
+        std::transform(
             kSlice.begin(), kSlice.end(),
-            ::std::back_inserter(wKSlice),
+            std::back_inserter(wKSlice),
             [a, b, rho, m, sigma](double k) noexcept
             {
                 return wk(a, b, rho, m, sigma, k);
@@ -126,4 +146,4 @@ namespace uv
 
         return wKSlice;
     }
-}
+} // namespace uv::svi::detail

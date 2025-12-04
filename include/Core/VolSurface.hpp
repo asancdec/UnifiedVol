@@ -9,6 +9,7 @@
 #include "Core/MarketData.hpp"
 
 #include <vector>
+#include <cstddef>
 
 namespace uv
 {
@@ -20,10 +21,10 @@ namespace uv
         // Member variables
         //--------------------------------------------------------------------------
 
-        ::std::vector<SliceData> slices_;         // 2D volatility grid: vols[maturity][maturity slice]
-        ::std::vector<double>    maturities_;     // Vector with different volatility surface maturities
-        ::std::size_t numMaturities_;             // Number of maturities
-        ::std::size_t numStrikes_;                // Number of strikes
+        std::vector<SliceData> slices_;         // 2D volatility grid: vols[maturity][maturity slice]
+        std::vector<double>    maturities_;     // Vector with different volatility surface maturities
+        std::size_t numMaturities_;             // Number of maturities
+        std::size_t numStrikes_;                // Number of strikes
 
     public:
 
@@ -31,9 +32,9 @@ namespace uv
         // Initialization
         //--------------------------------------------------------------------------
         VolSurface() = delete;
-        explicit VolSurface(const ::std::vector<double>& mny,
-            const ::std::vector<::std::vector<double>>& vols,
-            const ::std::vector<double>& maturities,
+        explicit VolSurface(const std::vector<double>& mny,
+            const std::vector<std::vector<double>>& vols,
+            const std::vector<double>& maturities,
             const MarketData& mktData);
 
         //--------------------------------------------------------------------------
@@ -49,13 +50,13 @@ namespace uv
         // Print Black-Scholes Call price surface
         void printBSCall() const noexcept;
 
-        // Return transposed matrix of total variance
-        ::std::vector<::std::vector<double>> trasposedTotVar() const noexcept;
+        // Return total variance matrix
+        std::vector<std::vector<double>> totVarMatrix() const noexcept;
 
         // Getters
-        ::std::vector<SliceData>& slices() noexcept;
-        const ::std::vector<double>& maturities() const noexcept;
-        ::std::size_t numMaturities() const noexcept;
-        ::std::size_t numStrikes() const noexcept;
+        std::vector<SliceData>& slices() noexcept;
+        const std::vector<double>& maturities() const noexcept;
+        std::size_t numMaturities() const noexcept;
+        std::size_t numStrikes() const noexcept;
     };
 }

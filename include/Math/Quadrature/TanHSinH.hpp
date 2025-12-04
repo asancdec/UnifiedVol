@@ -10,7 +10,7 @@
 
 namespace uv
 {
-	template <::std::size_t N>
+	template <std::size_t N>
 	class TanHSinH
 	{
 	private:
@@ -34,7 +34,7 @@ namespace uv
 		//--------------------------------------------------------------------------	
 
 		const long double     h_;            // Step size
-		::std::array<Node, N> nodes_;        // Nodes vector
+		std::array<Node, N> nodes_;        // Nodes vector
 
 		//--------------------------------------------------------------------------
 		// Math
@@ -59,8 +59,8 @@ namespace uv
 		long double integrateZeroToInf(F&& f) const noexcept;
 
 		// Evaluation of multiple numeric integrals
-		template<::std::size_t M, typename F >
-		::std::array<long double, M> integrateZeroToInfMulti(F&& f) const noexcept;
+		template<std::size_t M, typename F >
+		std::array<long double, M> integrateZeroToInfMulti(F&& f) const noexcept;
 
 		//--------------------------------------------------------------------------
 		// Utilities

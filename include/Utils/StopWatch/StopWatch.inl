@@ -19,15 +19,15 @@ namespace uv
         if (running_)
         {
             // If stopwatch is running, calculate the time since start
-            auto currentTime_ = ::std::chrono::high_resolution_clock::now();
+            auto currentTime_ = std::chrono::high_resolution_clock::now();
 
             // Return elapsed time
-            return ::std::chrono::duration<double, Period>(currentTime_ - startTime_).count();
+            return std::chrono::duration<double, Period>(currentTime_ - startTime_).count();
         }
         else
         {
             // If stopwatch is stopped calculate the elapsed time
-            return ::std::chrono::duration<double, Period>(endTime_ - startTime_).count();
+            return std::chrono::duration<double, Period>(endTime_ - startTime_).count();
         }
     }
 
@@ -38,11 +38,11 @@ namespace uv
 
         // Compile-time unit label
         constexpr const char* unit =
-            ::std::is_same_v<Period, ::std::milli> ? "ms" :
-            ::std::is_same_v<Period, ::std::micro> ? "µs" :
-            ::std::is_same_v<Period, ::std::nano> ? "ns" :
+            std::is_same_v<Period, std::milli> ? "ms" :
+            std::is_same_v<Period, std::micro> ? "µs" :
+            std::is_same_v<Period, std::nano> ? "ns" :
             "s";
 
-        UV_INFO(::std::format("Elapsed time: {:.6f} {}", dt, unit));
+        UV_INFO(std::format("Elapsed time: {:.6f} {}", dt, unit));
     }
 }

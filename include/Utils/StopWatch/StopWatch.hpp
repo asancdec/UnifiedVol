@@ -16,8 +16,8 @@ namespace uv
         //--------------------------------------------------------------------------
         // Member variables
         //--------------------------------------------------------------------------
-        ::std::chrono::high_resolution_clock::time_point startTime_;
-        ::std::chrono::high_resolution_clock::time_point endTime_;
+        std::chrono::high_resolution_clock::time_point startTime_;
+        std::chrono::high_resolution_clock::time_point endTime_;
         bool running_;
 
         //--------------------------------------------------------------------------
@@ -50,11 +50,11 @@ namespace uv
         void Reset() noexcept;
 
         // Returns the elapsed time
-        template <typename Period = ::std::ratio<1>>
+        template <typename Period = std::ratio<1>>
         double GetTime() const noexcept;
 
         // Log time
-        template <typename Period = ::std::ratio<1>>
+        template <typename Period = std::ratio<1>>
         void LogTime() const noexcept;
     };
 }

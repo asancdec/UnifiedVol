@@ -24,9 +24,9 @@ namespace uv
 
     Log::Log() = default;
 
-    void Log::setFile(::std::string_view filename)
+    void Log::setFile(std::string_view filename)
     {
-        namespace fs = ::std::filesystem;
+        namespace fs = std::filesystem;
 
         fs::path root = fs::current_path();
 
@@ -34,13 +34,13 @@ namespace uv
             root = root.parent_path();
 
         fs::path logDir = root / "logs";
-        ::std::error_code ec;
+        std::error_code ec;
         fs::create_directories(logDir, ec);
         UV_REQUIRE(!ec, ErrorCode::FileIO, "Failed to create logs directory: " + logDir.string());
 
         fs::path fullPath = logDir / filename;
 
-        file_.open(fullPath, ::std::ios::out | ::std::ios::app);
+        file_.open(fullPath, std::ios::out | std::ios::app);
         fileEnabled_ = file_.is_open();
 
         UV_REQUIRE(fileEnabled_, ErrorCode::FileIO, "Unable to open log file: " + fullPath.string());
@@ -51,15 +51,15 @@ namespace uv
         consoleEnabled_ = enabled;
     }
 
-    void Log::log(Level lvl, ::std::string_view msg)
+    void Log::log(Level lvl, std::string_view msg)
     {
-        using namespace ::std::chrono;
+        using namespace std::chrono;
 
         const auto now = system_clock::now();
         const auto tt = system_clock::to_time_t(now);
         const auto ms = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
 
-        ::std::tm tm{};
+        std::tm tm{};
 #if defined(_WIN32)
         localtime_s(&tm, &tt);
 #else
@@ -68,16 +68,16 @@ namespace uv
 
         const char* lvlStr = (lvl == Level::Info) ? "INFO" : "WARN";
 
-        ::std::ostringstream oss;
-        oss << '[' << ::std::put_time(&tm, "%Y-%m-%d %H:%M:%S")
-            << '.' << ::std::setw(3) << ::std::setfill('0') << ms.count() << ']'
+        std::ostringstream oss;
+        oss << '[' << std::put_time(&tm, "%Y-%m-%d %H:%M:%S")
+            << '.' << std::setw(3) << std::setfill('0') << ms.count() << ']'
             << '[' << lvlStr << "] " << msg << '\n';
 
-        const ::std::string line = oss.str();
+        const std::string line = oss.str();
 
         // Console output (toggle)
         if (consoleEnabled_) {
-            ::std::cout << line << ::std::flush;
+            std::cout << line << std::flush;
         }
 
         // File sink

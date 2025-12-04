@@ -18,17 +18,17 @@ namespace uv
         static Log& instance();
 
         // Enable file output (writes to <project_root>/logs/<path>).
-        void setFile(::std::string_view path);
+        void setFile(std::string_view path);
 
         // Enable or disable console output
         void enableConsole(bool enabled) noexcept;
 
         // Core logging API (prints to console; also to file if enabled).
-        void log(Level lvl, ::std::string_view msg);
+        void log(Level lvl, std::string_view msg);
 
     private:
         Log(); // private constructor to enforce singleton pattern
-        ::std::ofstream file_;
+        std::ofstream file_;
         bool fileEnabled_{ false };
         bool consoleEnabled_{ true };
     };

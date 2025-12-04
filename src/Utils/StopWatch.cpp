@@ -17,7 +17,7 @@ namespace uv
             running_ = true;
 
             // Set startTime to now
-            startTime_ = ::std::chrono::high_resolution_clock::now();
+            startTime_ = std::chrono::high_resolution_clock::now();
         }
     }
 
@@ -26,7 +26,7 @@ namespace uv
         if (running_)
         {
             // Set the endTime to now
-            endTime_ = ::std::chrono::high_resolution_clock::now();
+            endTime_ = std::chrono::high_resolution_clock::now();
 
             // Stop
             running_ = false;
@@ -37,7 +37,7 @@ namespace uv
     {
         // Reset all private variables
         running_ = false;
-        startTime_ = ::std::chrono::high_resolution_clock::time_point();
-        endTime_ = ::std::chrono::high_resolution_clock::time_point();
+        startTime_ = std::chrono::high_resolution_clock::time_point();
+        endTime_ = std::chrono::high_resolution_clock::time_point();
     }
 }

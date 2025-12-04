@@ -22,7 +22,7 @@
 namespace uv
 {	
 
-	template <::std::size_t N>
+	template <std::size_t N>
 	class HestonPricer
 	{
 	private:
@@ -30,8 +30,8 @@ namespace uv
 		//--------------------------------------------------------------------------
 		// Private member variables
 		//--------------------------------------------------------------------------
-		::std::optional<HestonParams> params_;
-		::std::shared_ptr<const TanHSinH<N>> quad_;
+		std::optional<HestonParams> params_;
+		std::shared_ptr<const TanHSinH<N>> quad_;
 		const HestonConfig config_;
 
 		//--------------------------------------------------------------------------
@@ -83,7 +83,7 @@ namespace uv
 		// Initialization
 		//--------------------------------------------------------------------------
 		HestonPricer() = delete;
-		explicit HestonPricer(::std::shared_ptr<const TanHSinH<N>> quad,
+		explicit HestonPricer(std::shared_ptr<const TanHSinH<N>> quad,
 			const HestonConfig& config);
 
 		//--------------------------------------------------------------------------
@@ -109,7 +109,7 @@ namespace uv
 			long double K) const;
 
 		// Calculate price and parameter gradient for the calibration
-		::std::array<double, 6> callPriceWithGradient(long double kappa,
+		std::array<double, 6> callPriceWithGradient(long double kappa,
 			long double theta,
 			long double sigma,
 			long double rho,
@@ -123,7 +123,7 @@ namespace uv
 		// Setters
 		//--------------------------------------------------------------------------
 		template <typename T>
-		void setHestonParams(const ::std::array<T, 5>& params) noexcept;
+		void setHestonParams(const std::array<T, 5>& params) noexcept;
 	};
 }
 

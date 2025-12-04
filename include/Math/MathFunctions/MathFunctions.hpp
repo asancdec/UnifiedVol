@@ -12,7 +12,7 @@ namespace uv
 {
     // Numerically stable evaluation of log(1 + z) for complex arguments.
     template <typename T>
-    ::std::complex<T> log1pComplex(const ::std::complex<T>& z) noexcept;
+    std::complex<T> log1pComplex(const std::complex<T>& z) noexcept;
 
     // cosm1(b) := cos(b) - 1 = -2 sin²(b / 2)
     template <typename T>
@@ -20,7 +20,7 @@ namespace uv
 
     // expm1Complex(z) := e^z - 1 (stable for small |z|)
     template <typename T>
-    ::std::complex<T> expm1Complex(const ::std::complex<T>& z) noexcept;
+    std::complex<T> expm1Complex(const std::complex<T>& z) noexcept;
 
     // Normal cumulative density function
     template <typename T>
@@ -62,7 +62,7 @@ namespace uv
         double S,
         double K,
         bool isCall = true,
-        double ftolAbs = ::std::numeric_limits<double>::epsilon(),
+        double ftolAbs = std::numeric_limits<double>::epsilon(),
         unsigned int maxEval = 100) noexcept;
 }
 

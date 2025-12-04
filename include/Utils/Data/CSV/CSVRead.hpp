@@ -23,6 +23,6 @@ namespace uv
  * @param filename Path to the CSV file.
  * @return VolSurface Object containing the strikes, maturities, and implied volatilities.
  */
-VolSurface readVolSurface(const ::std::string& filename, const MarketData& mktData);
+VolSurface readVolSurface(const std::string& filename, const MarketData& mktData);
 }
 

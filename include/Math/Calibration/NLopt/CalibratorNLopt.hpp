@@ -16,7 +16,7 @@
 namespace uv
 {
 
-    template <::std::size_t N, ::nlopt::algorithm Algo>
+    template <std::size_t N, nlopt::algorithm Algo>
     class CalibratorNLopt
     {
     private:
@@ -32,13 +32,13 @@ namespace uv
         //--------------------------------------------------------------------------	
         // Config & engine
         NLoptConfig<N>      config_;
-        ::nlopt::opt        opt_;
+        nlopt::opt        opt_;
         StopWatch           timer_;
 
         // Bounds & guess
-        ::std::array<double, N> lowerBounds_;
-        ::std::array<double, N> upperBounds_;
-        ::std::array<double, N> initGuess_;
+        std::array<double, N> lowerBounds_;
+        std::array<double, N> upperBounds_;
+        std::array<double, N> initGuess_;
 
         // Objective state
         NloptFunction userFn_;
@@ -66,9 +66,9 @@ namespace uv
         // Calibration
         //--------------------------------------------------------------------------	
         // Set Initial Guess and Bounds
-        void setGuessBounds(::std::array<double, N> initGuess,
-            ::std::array<double, N> lowerBounds,
-            ::std::array<double, N> upperBounds) noexcept;
+        void setGuessBounds(std::array<double, N> initGuess,
+            std::array<double, N> lowerBounds,
+            std::array<double, N> upperBounds) noexcept;
 
         // Add inequality constraints
         void addInequalityConstraint(NloptFunction c, void* data) noexcept;
@@ -77,7 +77,7 @@ namespace uv
         void setMinObjective(NloptFunction f, void* data) noexcept;
 
         // Run calibration	
-        ::std::vector<double> optimize() noexcept;
+        std::vector<double> optimize() noexcept;
 
         //--------------------------------------------------------------------------
         // Getters

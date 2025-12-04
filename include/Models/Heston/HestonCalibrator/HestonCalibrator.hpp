@@ -1,5 +1,5 @@
 /**
-* HestonCalibrator.hpp
+* heston_calibrator.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -13,46 +13,41 @@
 #include <array>
 #include <cstddef>  
 
-namespace uv
+namespace uv::heston_calibrator
 {
-	class HestonCalibrator
-	{
-	private:
+	//--------------------------------------------------------------------------
+	// Calibration
+	//--------------------------------------------------------------------------
 
+	// Main calibration function
+	template <std::size_t N, typename Policy>
+	static VolSurface calibrate(const VolSurface& mktVolSurf,
+		HestonPricer<N>& pricer,
+		CalibratorCeres<5, Policy>& calibrator);
+
+	namespace detail
+	{
 		//--------------------------------------------------------------------------
 		// Forward declarations
 		//--------------------------------------------------------------------------
+
 		// Residue functor per call price
-		template <::std::size_t N>
+		template <std::size_t N>
 		struct PriceResidualJac;
 
 		//--------------------------------------------------------------------------
 		// Initial guess and bounds
 		//--------------------------------------------------------------------------
+
 		// Initial guess
-		static ::std::array<double, 5> initGuess() noexcept;
+		std::array<double, 5> initGuess() noexcept;
 
 		// Lower bounds
-		static ::std::array<double, 5> lowerBounds() noexcept;
+		std::array<double, 5> lowerBounds() noexcept;
 
 		// Upper bounds
-		static ::std::array<double, 5> upperBounds() noexcept;
-
-	public:
-
-		//--------------------------------------------------------------------------
-		// Initialization
-		//--------------------------------------------------------------------------
-		HestonCalibrator() = default;
-
-		//--------------------------------------------------------------------------
-		// Calibration
-		//--------------------------------------------------------------------------
-		template <::std::size_t N, typename Policy>
-		static VolSurface calibrate(const VolSurface& mktVolSurf,
-			HestonPricer<N>& pricer,
-			CalibratorCeres<5, Policy>& calibrator);
-	};
-}
+		std::array<double, 5> upperBounds() noexcept;
+	} //  namespace detail
+} // namespace uv::heston_calibrator
 
 #include "HestonCalibrator.inl"

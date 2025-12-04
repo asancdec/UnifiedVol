@@ -9,7 +9,7 @@
 
 namespace uv
 {
-	using cplx = ::std::complex<long double>;
+	using cplx = std::complex<long double>;
 
 	struct CFData
 	{
