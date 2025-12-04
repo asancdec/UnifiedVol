@@ -18,15 +18,16 @@ namespace uv
         // Member variables
         //--------------------------------------------------------------------------
 
-        double T_;                           // slice maturity
-        double F_;                           // forward price
-        ::std::vector<double> mny_;          // plain moneyness (K/S)
-        ::std::vector<double> logFM_;        // log-forward moneyness log(K/F)
-        ::std::vector<double> vol_;          // volatilities 
-        ::std::vector<double> wT_;           // total variance (vol²T) 
-        ::std::vector<double> K_;            // strikes vector
-        ::std::vector<double> callBS_;       // value of European call options
-        MarketData mktData_;                 // market data struct
+        double T_;                           // Slice maturity
+        double F_;                           // Forward price
+        ::std::vector<double> mny_;          // Plain moneyness (K/S)
+        ::std::vector<double> logFM_;        // Log-forward moneyness log(K/F)
+        ::std::vector<double> vol_;          // Volatilities 
+        ::std::vector<double> wT_;           // Total variance (vol²T) 
+        ::std::vector<double> K_;            // Strikes vector
+        ::std::vector<double> callBS_;       // Value of European call options
+        MarketData mktData_;                 // Market data struct
+        ::std::size_t numStrikes_;           // Number of strikes
 
     public:
 
@@ -64,6 +65,7 @@ namespace uv
 
         double T() const noexcept;
         double F() const noexcept;
+        ::std::size_t numStrikes() const noexcept;
         double r() const noexcept;
         const ::std::vector<double>& mny() const noexcept;
         const ::std::vector<double>& logFM() const noexcept;

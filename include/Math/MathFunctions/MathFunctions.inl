@@ -11,7 +11,7 @@
 namespace uv
 {
     template <typename T>
-    inline ::std::complex<T> log1pComplex(const ::std::complex<T>& z) noexcept
+    ::std::complex<T> log1pComplex(const ::std::complex<T>& z) noexcept
     {
         // a := Re(z),  b := Im(z)
         const T a{ ::std::real(z) };
@@ -34,7 +34,7 @@ namespace uv
     }
 
     template <typename T>
-    inline T cosm1(T b) noexcept 
+    T cosm1(T b) noexcept 
     {
         // cosm1(b) := cos(b) - 1 = -2 sin²(b / 2)
         // Accurate for small |b| to avoid cancellation in cos(b) - 1
@@ -43,7 +43,7 @@ namespace uv
     }
 
     template <typename T>
-    inline ::std::complex<T> expm1Complex(const ::std::complex<T>& z) noexcept 
+    ::std::complex<T> expm1Complex(const ::std::complex<T>& z) noexcept 
     {   
         // expm1Complex(z) := e^z - 1 (stable for small |z|)
         // Uses compensated form when |z| < 1 to reduce cancellation
@@ -73,20 +73,20 @@ namespace uv
 
 
     template <typename T>
-    inline T normalCDF(T x) noexcept
+    T normalCDF(T x) noexcept
     {
         return ::std::erfc(-x / ::std::sqrt(T(2.0))) * T(0.5);
     }
 
     template <typename T>
-    inline T normalPDF(T x) noexcept
+    T normalPDF(T x) noexcept
     {
         constexpr T invSqrt2Pi{ T(1.0) / ::std::sqrt(T(2.0) * ::std::numbers::pi_v<T>)};
         return invSqrt2Pi * ::std::exp(-T(0.5) * x * x);
     }
 
     template <typename T>
-    inline T d1BS(T t,
+    T d1BS(T t,
         T r,
         T q,
         T vol,
@@ -97,7 +97,7 @@ namespace uv
     }
 
     template <typename T>
-    inline T blackScholes(T t,
+    T blackScholes(T t,
         T r,
         T q,
         T vol,
@@ -119,7 +119,7 @@ namespace uv
     }
 
     template <typename T>
-    inline T vegaBS(T d1,
+    T vegaBS(T d1,
         T t,
         T q,
         T S) noexcept
@@ -128,7 +128,7 @@ namespace uv
     }
 
     template <typename T>
-    inline T volgaBS(T vega,
+    T volgaBS(T vega,
         T d1,
         T t,
         T vol) noexcept

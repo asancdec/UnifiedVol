@@ -48,7 +48,7 @@ namespace uv
 	};
 
 	template <::std::size_t N, typename Policy>
-	inline VolSurface HestonCalibrator::calibrate(const VolSurface& mktVolSurf,
+	VolSurface HestonCalibrator::calibrate(const VolSurface& mktVolSurf,
 		HestonPricer<N>& pricer,
 		CalibratorCeres<5, Policy>& calibrator)
 	{

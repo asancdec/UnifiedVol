@@ -15,7 +15,7 @@
 namespace uv
 {
 	template <::std::size_t N>
-	inline HestonPricer<N>::HestonPricer(::std::shared_ptr<const TanHSinH<N>> quad,
+	HestonPricer<N>::HestonPricer(::std::shared_ptr<const TanHSinH<N>> quad,
 		const HestonConfig& config) :
 		quad_(::std::move(quad)),
 		config_(config)
@@ -30,7 +30,7 @@ namespace uv
 	}
 
 	template <::std::size_t N>
-	inline double HestonPricer<N>::callPrice(long double kappa,
+	double HestonPricer<N>::callPrice(long double kappa,
 		long double theta,
 		long double sigma,
 		long double rho,
@@ -83,7 +83,7 @@ namespace uv
 	}
 
 	template <::std::size_t N>
-	inline double HestonPricer<N>::callPrice(long double T,
+	double HestonPricer<N>::callPrice(long double T,
 		long double F,
 		long double r,
 		long double K) const
@@ -109,7 +109,7 @@ namespace uv
 	}
 
 	template <::std::size_t N>
-	inline ::std::array<double, 6> HestonPricer<N>::callPriceWithGradient(long double kappa,
+	::std::array<double, 6> HestonPricer<N>::callPriceWithGradient(long double kappa,
 		long double theta,
 		long double sigma,
 		long double rho,
@@ -284,7 +284,7 @@ namespace uv
 
 	template <::std::size_t N>
 	template <typename T>
-	inline void HestonPricer<N>::setHestonParams(const ::std::array<T, 5>& params) noexcept
+	void HestonPricer<N>::setHestonParams(const ::std::array<T, 5>& params) noexcept
 	{
 		params_ = HestonParams
 		{
@@ -297,7 +297,7 @@ namespace uv
 	}
 
 	template <::std::size_t N>
-	inline long double HestonPricer<N>::getResidues(long double alpha,
+	long double HestonPricer<N>::getResidues(long double alpha,
 		const long double F,
 		const long double K) noexcept
 	{
@@ -306,14 +306,14 @@ namespace uv
 	}
 
 	template <::std::size_t N>
-	inline long double HestonPricer<N>::getAlpha(long double w) const noexcept
+	long double HestonPricer<N>::getAlpha(long double w) const noexcept
 	{
 		if (w >= 0.0) return config_.alphaItm;
 		else return config_.alphaOtm;
 	}
 
 	template <::std::size_t N>
-	inline long double HestonPricer<N>::getPhi(long double kappa,
+	long double HestonPricer<N>::getPhi(long double kappa,
 		long double theta,
 		long double sigma,
 		long double rho,
@@ -326,7 +326,7 @@ namespace uv
 	}
 
 	template <::std::size_t N>
-	inline cplx HestonPricer<N>::charFunction(long double kappa,
+	cplx HestonPricer<N>::charFunction(long double kappa,
 		long double theta,
 		long double sigma,
 		long double rho,
@@ -383,7 +383,7 @@ namespace uv
 	}
 
 	template <::std::size_t N>
-	inline CFData HestonPricer<N>::charFunctionCal(long double kappa,
+	CFData HestonPricer<N>::charFunctionCal(long double kappa,
 		long double theta,
 		long double sigma,
 		long double rho,

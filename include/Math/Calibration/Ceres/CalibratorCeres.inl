@@ -15,7 +15,7 @@
 namespace uv
 {
     template <::std::size_t N, typename Policy>
-    inline CalibratorCeres<N, Policy>::CalibratorCeres(const CeresConfig<N>& config) : config_(config) {}
+    CalibratorCeres<N, Policy>::CalibratorCeres(const CeresConfig<N>& config) : config_(config) {}
 
     template <::std::size_t N, typename Policy>
     void CalibratorCeres<N, Policy>::setGuessBounds(const ::std::array<double, N>& initGuess,
@@ -42,7 +42,7 @@ namespace uv
     }
 
     template <std::size_t N, typename Policy>
-    inline void CalibratorCeres<N, Policy>::addAnalyticResidual(::std::unique_ptr<::ceres::CostFunction> cf) noexcept
+    void CalibratorCeres<N, Policy>::addAnalyticResidual(::std::unique_ptr<::ceres::CostFunction> cf) noexcept
     {
         problem_.AddResidualBlock
         (
@@ -53,7 +53,7 @@ namespace uv
     }
 
     template <::std::size_t N, typename Policy>
-    inline ::std::array<double, N> CalibratorCeres<N, Policy>::optimize()
+    ::std::array<double, N> CalibratorCeres<N, Policy>::optimize()
     {   
         // Set calibration options
         ::ceres::Solver::Options options;

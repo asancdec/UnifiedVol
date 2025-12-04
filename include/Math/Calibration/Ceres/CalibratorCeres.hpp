@@ -44,7 +44,7 @@ namespace uv
 			const ::std::array<double, N>& upperBounds) noexcept;
 		
 		// Set differentiation cost function
-		inline void addAnalyticResidual(::std::unique_ptr<::ceres::CostFunction> cf) noexcept;
+		void addAnalyticResidual(::std::unique_ptr<::ceres::CostFunction> cf) noexcept;
 
 		// Solve the problem
 		::std::array<double, N> optimize();

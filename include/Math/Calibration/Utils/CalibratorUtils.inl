@@ -12,7 +12,7 @@
 namespace uv
 {
 	template <::std::size_t N>
-	inline void clamp(::std::array<double, N>& initGuess,
+	void clamp(::std::array<double, N>& initGuess,
 		const ::std::array<double, N>& lowerBounds,
 		const ::std::array<double, N>& upperBounds,
         const ::std::array<::std::string_view, N>& paramNames) noexcept
@@ -34,7 +34,7 @@ namespace uv
 	}
 
     template <::std::size_t N>
-    inline void warnBoundsHit(std::span<double> x,
+    void warnBoundsHit(std::span<double> x,
         const std::array<double, N>& lowerBounds,
         const std::array<double, N>& upperBounds,
         const std::array<std::string_view, N>& paramNames) noexcept
@@ -65,7 +65,7 @@ namespace uv
     }
 
     template <::std::size_t N>
-    inline void logResults(std::span<double> x,
+    void logResults(std::span<double> x,
         const ::std::array<::std::string_view, N>& paramNames,
         double sse,
         unsigned iterCount,

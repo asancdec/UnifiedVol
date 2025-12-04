@@ -19,7 +19,7 @@
 namespace uv
 {
 	template <::std::size_t N>
-	inline TanHSinH<N>::TanHSinH() :
+	TanHSinH<N>::TanHSinH() :
 		h_
 		(
 			// Define optimal step size using a heuristic rule
@@ -45,7 +45,7 @@ namespace uv
 
 	template <::std::size_t N>
 	template<::std::size_t M, typename F >
-	inline ::std::array<long double, M> TanHSinH<N>::integrateZeroToInfMulti(F&& f) const noexcept
+	::std::array<long double, M> TanHSinH<N>::integrateZeroToInfMulti(F&& f) const noexcept
 	{
 		// Define numerical limit
 		constexpr long double eps{ ::std::numeric_limits<long double>::epsilon() };
@@ -158,7 +158,7 @@ namespace uv
 
 	template <::std::size_t N>
 	template<typename F>
-	inline long double TanHSinH<N>::integrateZeroToInf(F&& f) const noexcept
+	long double TanHSinH<N>::integrateZeroToInf(F&& f) const noexcept
 	{
 		// Define numerical limit
 		constexpr long double eps{ ::std::numeric_limits<long double>::epsilon() };
@@ -226,7 +226,7 @@ namespace uv
 
 
 	template <::std::size_t N>
-	inline void TanHSinH<N>::printGrid() const noexcept
+	void TanHSinH<N>::printGrid() const noexcept
 	{
 		constexpr int idxW = 6;
 		constexpr int colW = 24;
@@ -259,7 +259,7 @@ namespace uv
 	}
 
 	template <::std::size_t N>
-	inline TanHSinH<N>::Node TanHSinH<N>::generateNode(const long double nh) const noexcept
+	TanHSinH<N>::Node TanHSinH<N>::generateNode(const long double nh) const noexcept
 	{
 		// Calculate q term
 		const long double q{ ::std::exp(-::std::numbers::pi_v<long double> * ::std::sinh(nh)) };

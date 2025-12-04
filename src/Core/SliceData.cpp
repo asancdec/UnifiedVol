@@ -25,14 +25,15 @@ namespace uv
         T_(T),
         mny_(mny),
         vol_(vol),
-        mktData_(mktData)
+        mktData_(mktData),
+        numStrikes_(mny_.size())
     {
         // Check matching dimensions
         UV_REQUIRE(
-            vol_.size() == mny_.size(),
+            vol_.size() == numStrikes_,
             ErrorCode::InvalidArgument,
             "SliceData::constructor size mismatch: vol_.size() = " + ::std::to_string(vol_.size()) +
-            ", mny_.size() = " + ::std::to_string(mny_.size())
+            ", numStrikes_ = " + ::std::to_string(numStrikes_)
         );
 
         // Check for positive maturity
@@ -61,7 +62,7 @@ namespace uv
         F_ = S * ::std::exp((r - q) * T_);
 
         // Set the strikes vector
-        K_.resize(mny_.size());
+        K_.resize(numStrikes_);
         ::std::transform(mny_.begin(), mny_.end(), K_.begin(),
             [S](double mny)
             {
@@ -69,7 +70,7 @@ namespace uv
             });
 
         // Convert plain strikes K into log-moneyness log(K/F)
-        logFM_.resize(K_.size());
+        logFM_.resize(numStrikes_);
         ::std::transform(K_.begin(), K_.end(), logFM_.begin(),
             [F = F_](double K)
             {
@@ -77,7 +78,7 @@ namespace uv
             });
 
         // Convert implied volatility into total variance
-        wT_.resize(vol_.size());
+        wT_.resize(numStrikes_);
         ::std::transform(vol_.begin(), vol_.end(), wT_.begin(),
             [T = T_](double vol)
             {
@@ -85,8 +86,8 @@ namespace uv
             });
 
         // Calculate Call Black-Scholes price
-        callBS_.resize(vol_.size());
-        for (::std::size_t i = 0; i < vol_.size(); ++i)
+        callBS_.resize(numStrikes_);
+        for (::std::size_t i = 0; i < numStrikes_; ++i)
         {
             callBS_[i] = blackScholes
             (
@@ -123,9 +124,8 @@ namespace uv
 
     double SliceData::atmWT() const noexcept
     {
-        const ::std::size_t n{ (::std::min)(logFM_.size(), wT_.size()) };
         const double* first{ logFM_.data() };
-        const double* last{ first + n };
+        const double* last{ first + numStrikes_};
         const double* it = ::std::min_element(first, last, [](double a, double b)
             {
                 return ::std::abs(a) < ::std::abs(b);
@@ -141,6 +141,11 @@ namespace uv
     double SliceData::F() const noexcept
     {
         return F_;
+    }
+
+    ::std::size_t SliceData::numStrikes() const noexcept
+    {
+        return numStrikes_;
     }
 
     double SliceData::r() const noexcept
@@ -181,12 +186,12 @@ namespace uv
     void SliceData::setWT(const ::std::vector<double>& wT)
     {
         // Check matching size
-        UV_REQUIRE(wT.size() == wT_.size(), ErrorCode::InvalidArgument,
+        UV_REQUIRE(wT.size() == numStrikes_, ErrorCode::InvalidArgument,
             "SliceData::setWT size mismatch: got " + ::std::to_string(wT.size()) +
-            ", expected " + ::std::to_string(wT_.size()));
+            ", expected " + ::std::to_string(numStrikes_));
 
         // Validate all total variances are non-negative before mutating state
-        for (std::size_t i = 0; i < wT.size(); ++i)
+        for (std::size_t i = 0; i < numStrikes_; ++i)
         {
             UV_REQUIRE(wT[i] >= 0.0, ErrorCode::InvalidArgument,
                 "SliceData::setWT: negative total variance at index " + ::std::to_string(i) +
@@ -197,7 +202,7 @@ namespace uv
         wT_ = wT;
 
         // Recalculate volatility per strike: sigma = sqrt(w/T)
-        for (size_t i = 0; i < wT_.size(); ++i)
+        for (size_t i = 0; i < numStrikes_; ++i)
         {
             vol_[i] = ::std::sqrt(wT_[i] / T_);
         }
@@ -207,7 +212,7 @@ namespace uv
         double q{ mktData_.q };
         double S{ mktData_.S };
 
-        for (::std::size_t i = 0; i < vol_.size(); ++i)
+        for (::std::size_t i = 0; i < numStrikes_; ++i)
         {
             callBS_[i] = blackScholes
             (
@@ -225,9 +230,9 @@ namespace uv
     void SliceData::setCallBS(const ::std::vector<double>& callBS)
     {
         // Check matching size
-        UV_REQUIRE(callBS.size() == callBS_.size(), ErrorCode::InvalidArgument,
+        UV_REQUIRE(callBS.size() == numStrikes_, ErrorCode::InvalidArgument,
             "SliceData::setCallBS size mismatch: got " + ::std::to_string(callBS.size()) +
-            ", expected " + ::std::to_string(callBS_.size()));
+            ", expected " + ::std::to_string(numStrikes_));
 
         // All option prices must be positive
         for (std::size_t i = 0; i < callBS.size(); ++i)
@@ -241,7 +246,7 @@ namespace uv
         callBS_ = callBS;
 
         // Recalculate volatility and total variance
-        for (size_t i = 0; i < callBS_.size(); ++i)
+        for (size_t i = 0; i < numStrikes_; ++i)
         {   
             double vol
             {

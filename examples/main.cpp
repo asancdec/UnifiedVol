@@ -12,6 +12,9 @@
 #include "Math/Quadrature/TanHSinH.hpp"
 #include "Math/Calibration/Ceres/CeresPolicy.hpp"
 #include "Math/Calibration/Ceres/CeresConfig.hpp"
+#include "Math/Interpolation/Interpolation.hpp"
+
+
 
 #include <chrono>
 #include <filesystem>
@@ -56,7 +59,35 @@ int main(int argc, char* argv[])
 
         // Generate volatility surface instance
         VolSurface mktVolSurf{ readVolSurface(path.string(), mktData) };
-        mktVolSurf.printVol();
+        mktVolSurf.printTotVar();
+
+        // Get tenors (maturities) and the full transposed total variance matrix
+        const auto& tenors = mktVolSurf.maturities();
+        const auto& totvarMatrix = mktVolSurf.trasposedTotVar();
+
+        // Loop over each slice (each row of the transposed total variance matrix)
+        for (::std::size_t sliceIdx = 0; sliceIdx < totvarMatrix.size(); ++sliceIdx)
+        {
+            const auto& totvar = totvarMatrix[sliceIdx];
+
+            // Compute derivatives for this slice
+            // Set extrapolateEnd = true if you want the last slope repeated
+            auto dTotvar = uv::d1PieceWise(tenors, totvar, /*extrapolateEnd=*/true);
+
+            // ---- Print results ----
+            std::cout << "Slice " << sliceIdx << " derivatives (d w / d T):\n";
+
+            for (::std::size_t i = 0; i < dTotvar.size(); ++i)
+            {
+                std::cout << "  i = " << i
+                    << ", T = " << tenors[::std::min(i, tenors.size() - 1)]
+                    << ", dTotvar = " << dTotvar[i]
+                    << '\n';
+            }
+
+            std::cout << std::endl;
+        }
+
 
         // Initialize NLopt Calibrator instance
         CalibratorNLopt<5, nlopt::LD_SLSQP> nloptOptimizer
@@ -109,22 +140,22 @@ int main(int argc, char* argv[])
                 { "kappa", "theta", "sigma", "rho", "v0" },      // Parameter names
                 1e-16,                                           // Gradient tolerance
                 1.0,                                             // Loss scaling parameter   
-                true                                             // Logs the full Ceres calibration report 
+                false                                            // Logs the full Ceres calibration report 
             }
         };
 
         // Calibrate the Heston model
         sviVolSurface.printVol();
-        VolSurface hestonVolurface
-        { 
-            HestonCalibrator::calibrate
-            (
-                sviVolSurface,
-                hestonPricer,
-                ceresOptimizer
-            )
-        };
-        hestonVolurface.printVol();
+        //VolSurface hestonVolurface
+        //{ 
+        //    HestonCalibrator::calibrate
+        //    (
+        //        sviVolSurface,
+        //        hestonPricer,
+        //        ceresOptimizer
+        //    )
+        //};
+        //hestonVolurface.printVol();
 
         // End and log timer
         timer.LogTime<::std::milli>();

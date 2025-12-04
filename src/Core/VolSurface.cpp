@@ -18,11 +18,42 @@ namespace uv
         const ::std::vector<::std::vector<double>>& vols,
         const ::std::vector<double>& maturities,
         const MarketData& mktData)
-        : maturities_(maturities)
-    {
-        // Build slices
-        slices_.reserve(maturities.size());
-        for (size_t i = 0; i < maturities.size(); ++i)
+        : maturities_(maturities),
+        numMaturities_(maturities_.size())
+    {   
+        // ---------- Sanity checks ------
+        
+        // Number of volatility slices (one per maturity)
+        const ::std::size_t dim0{ vols.size()};
+
+        // Validate that the volatility matrix provides one slice per maturity
+        UV_REQUIRE(
+            dim0 == numMaturities_,
+            ErrorCode::InvalidArgument,
+            "VolSurface: number of vol slices (" + ::std::to_string(dim0) +
+            ") does not match number of maturities (" + ::std::to_string(numMaturities_) + ")"
+        );
+
+        // Number of strikes in the strike grid (must be consistent across slices)
+        const ::size_t dim1{ mny.size() };
+
+        // Validate that each volatility slice has the same number of strikes
+        for (::size_t i = 0; i < dim0; ++i)
+        {
+            const ::size_t t{ vols[i].size() };
+            UV_REQUIRE(
+                t == dim1,
+                ErrorCode::InvalidArgument,
+                "VolSurface: inconsistent strike dimension — expected " +
+                ::std::to_string(t) + " strikes, but slice " + ::std::to_string(i) +
+                " has " + ::std::to_string(dim1)
+            );
+        }
+
+        // ---------- Initialize member variables ------
+        numStrikes_ = dim1;
+        slices_.reserve(numMaturities_);
+        for (size_t i = 0; i < numMaturities_; ++i)
         {
             slices_.emplace_back
             (
@@ -46,7 +77,7 @@ namespace uv
         oss << '\n';
 
         // Each maturity row
-        for (size_t i = 0; i < slices_.size(); ++i)
+        for (size_t i = 0; i < numMaturities_; ++i)
         {
             oss << ::std::fixed << ::std::setprecision(2) << maturities_[i] << '\t';
 
@@ -71,7 +102,7 @@ namespace uv
         oss << '\n';
 
         // Each maturity row
-        for (size_t i = 0; i < slices_.size(); ++i)
+        for (size_t i = 0; i < numMaturities_; ++i)
         {
             oss << ::std::fixed << ::std::setprecision(2) << maturities_[i] << '\t';
 
@@ -96,7 +127,7 @@ namespace uv
         oss << '\n';
 
         // Each maturity row
-        for (size_t i = 0; i < slices_.size(); ++i)
+        for (size_t i = 0; i < numMaturities_; ++i)
         {
             oss << ::std::fixed << ::std::setprecision(2) << maturities_[i] << '\t';
 
@@ -108,21 +139,25 @@ namespace uv
         UV_INFO(oss.str());
     }
 
-    ::std::size_t VolSurface::numStrikes() const
+    ::std::vector<::std::vector<double>> VolSurface::trasposedTotVar() const noexcept
     {
-        // Extract the number of strikes in the first slice
-        const ::std::size_t n{ slices_.front().logFM().size() };
+        // Output: [numStrikes x numMaturities]
+        ::std::vector<::std::vector<double>> transposedMatrix(
+            numStrikes_, ::std::vector<double>(numMaturities_)
+        );
 
-        // Check that every slice has the same number of strikes
-        for (::std::size_t i = 1; i < slices_.size(); ++i)
+        // Populate transposed matrix
+        for (::std::size_t j = 0; j < numMaturities_; ++j)
         {
-            const ::std::size_t ni{ slices_[i].logFM().size() };
-            UV_REQUIRE(ni == n, ErrorCode::InvalidArgument,
-                "numStrikes(): inconsistent k-grid length — slice 0 has " +
-                ::std::to_string(n) + " strikes, slice " + ::std::to_string(i) +
-                " has " + ::std::to_string(ni));
+            const ::std::vector<double> wT{ slices_[j].wT() };
+
+            for (::std::size_t i = 0; i < numStrikes_; ++i)
+            {
+                // transpose: [i][j] = original[j][i]
+                transposedMatrix[i][j] = wT[i];
+            }
         }
-        return n;
+        return transposedMatrix;
     }
 
     ::std::vector<SliceData>& VolSurface::slices() noexcept
@@ -135,8 +170,14 @@ namespace uv
         return maturities_;
     }
 
-    size_t VolSurface::numSlices() const noexcept
+    ::std::size_t VolSurface::numMaturities() const noexcept
     {
-        return slices_.size();
+        return numMaturities_;
     }
+
+    ::std::size_t VolSurface::numStrikes() const noexcept
+    {
+        return numStrikes_;
+    }
+
 }

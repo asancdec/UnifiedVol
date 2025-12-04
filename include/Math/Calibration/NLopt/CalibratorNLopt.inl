@@ -8,7 +8,7 @@
 namespace uv
 {
     template <::std::size_t N, ::nlopt::algorithm Algo>
-    inline CalibratorNLopt<N, Algo>::CalibratorNLopt(const NLoptConfig<N>& config) :
+    CalibratorNLopt<N, Algo>::CalibratorNLopt(const NLoptConfig<N>& config) :
         config_(config), opt_(Algo, N), timer_(),
         lowerBounds_(), upperBounds_(), initGuess_(),
         userFn_(nullptr), userData_(nullptr), iterCount_(0U) 
@@ -18,13 +18,13 @@ namespace uv
     }
 
     template <::std::size_t N, ::nlopt::algorithm Algo>
-    inline CalibratorNLopt<N, Algo> CalibratorNLopt<N, Algo>::fresh() const noexcept
+    CalibratorNLopt<N, Algo> CalibratorNLopt<N, Algo>::fresh() const noexcept
     {
         return CalibratorNLopt<N, Algo>{ config_ };
     }
 
     template <::std::size_t N, ::nlopt::algorithm Algo>
-    inline void CalibratorNLopt<N, Algo>::setGuessBounds(::std::array<double, N> initGuess,
+    void CalibratorNLopt<N, Algo>::setGuessBounds(::std::array<double, N> initGuess,
         ::std::array<double, N> lowerBounds,
         ::std::array<double, N> upperBounds) noexcept
     {
@@ -42,7 +42,7 @@ namespace uv
     }
 
     template <::std::size_t N, ::nlopt::algorithm Algo>
-    inline double CalibratorNLopt<N, Algo>::ObjectiveThunk(unsigned n, const double* x, double* grad, void* p) noexcept
+    double CalibratorNLopt<N, Algo>::ObjectiveThunk(unsigned n, const double* x, double* grad, void* p) noexcept
     {
         auto* self = static_cast<CalibratorNLopt<N, Algo>*>(p);
         ++self->iterCount_;
@@ -50,7 +50,7 @@ namespace uv
     }
 
     template <::std::size_t N, ::nlopt::algorithm Algo>
-    inline void CalibratorNLopt<N, Algo>::addInequalityConstraint(
+    void CalibratorNLopt<N, Algo>::addInequalityConstraint(
         NloptFunction c,
         void* data) noexcept
     {
@@ -58,7 +58,7 @@ namespace uv
     }
 
     template <::std::size_t N, ::nlopt::algorithm Algo>
-    inline void CalibratorNLopt<N, Algo>::setMinObjective(NloptFunction f, void* data) noexcept
+    void CalibratorNLopt<N, Algo>::setMinObjective(NloptFunction f, void* data) noexcept
     {
         iterCount_ = 0U;
         userFn_ = f;
@@ -69,7 +69,7 @@ namespace uv
     }
 
     template <::std::size_t N, ::nlopt::algorithm Algo>
-    inline ::std::vector<double> CalibratorNLopt<N, Algo>::optimize() noexcept
+    ::std::vector<double> CalibratorNLopt<N, Algo>::optimize() noexcept
     {
         // Copy initial guess to working vector
         ::std::vector<double> x(initGuess_.cbegin(), initGuess_.cend());
@@ -107,13 +107,13 @@ namespace uv
     }
 
     template <::std::size_t N, ::nlopt::algorithm Algo>
-    inline const double& CalibratorNLopt<N, Algo>::eps() const noexcept
+    const double& CalibratorNLopt<N, Algo>::eps() const noexcept
     {
         return config_.eps;
     }
 
     template <::std::size_t N, ::nlopt::algorithm Algo>
-    inline double CalibratorNLopt<N, Algo>::tol() const noexcept
+    double CalibratorNLopt<N, Algo>::tol() const noexcept
     {
         return config_.tol;
     }

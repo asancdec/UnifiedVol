@@ -22,6 +22,8 @@ namespace uv
 
         ::std::vector<SliceData> slices_;         // 2D volatility grid: vols[maturity][maturity slice]
         ::std::vector<double>    maturities_;     // Vector with different volatility surface maturities
+        ::std::size_t numMaturities_;             // Number of maturities
+        ::std::size_t numStrikes_;                // Number of strikes
 
     public:
 
@@ -47,12 +49,13 @@ namespace uv
         // Print Black-Scholes Call price surface
         void printBSCall() const noexcept;
 
-        // Return number of strikes
-        ::std::size_t numStrikes() const;
+        // Return transposed matrix of total variance
+        ::std::vector<::std::vector<double>> trasposedTotVar() const noexcept;
 
         // Getters
         ::std::vector<SliceData>& slices() noexcept;
         const ::std::vector<double>& maturities() const noexcept;
-        size_t numSlices() const noexcept;
+        ::std::size_t numMaturities() const noexcept;
+        ::std::size_t numStrikes() const noexcept;
     };
 }
