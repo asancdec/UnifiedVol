@@ -1,11 +1,11 @@
 /**
-* CalibratorNLopt.hpp
+* Calibrator.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
 #pragma once
 
-#include "Math/Calibration/NLopt/NLoptConfig.hpp"
+#include "Calibration/NLopt/Config.hpp"
 #include "Utils/Aux/StopWatch.hpp"
 
 #include <nlopt.hpp>
@@ -13,11 +13,11 @@
 #include <array>
 #include <cstddef>
 
-namespace uv
+namespace uv::cal::nlopt
 {
 
-    template <std::size_t N, nlopt::algorithm Algo>
-    class CalibratorNLopt
+    template <std::size_t N, ::nlopt::algorithm Algo>
+    class Calibrator
     {
     private:
 
@@ -31,8 +31,8 @@ namespace uv
         // Member variables
         //--------------------------------------------------------------------------	
         // Config & engine
-        NLoptConfig<N>    config_;
-        nlopt::opt        opt_;
+        Config<N>    config_;
+        ::nlopt::opt      opt_;
         utils::StopWatch  timer_;
 
         // Bounds & guess
@@ -56,11 +56,11 @@ namespace uv
         // Initialization
         //--------------------------------------------------------------------------
         // Constructors
-        CalibratorNLopt() = delete;
-        explicit CalibratorNLopt(const NLoptConfig<N>& config);
+        Calibrator() = delete;
+        explicit Calibrator(const Config<N>& config);
 
         // Return new calibrator object with same settings
-        CalibratorNLopt<N, Algo> fresh() const noexcept;
+        Calibrator<N, Algo> fresh() const noexcept;
 
         //--------------------------------------------------------------------------
         // Calibration
@@ -87,4 +87,4 @@ namespace uv
     };
 }
 
-#include "CalibratorNLopt.inl"
+#include "Calibrator.inl"

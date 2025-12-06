@@ -18,7 +18,7 @@
 namespace uv::utils
 {
 
-VolSurface readVolSurface(const std::string& filename, const MarketData& mktData)
+core::VolSurface readVolSurface(const std::string& filename, const core::MarketData& mktData)
 {
     // Open the CSV file for reading
     std::ifstream file(filename);
@@ -181,6 +181,6 @@ VolSurface readVolSurface(const std::string& filename, const MarketData& mktData
     }
 
     // Construct VolSurface using the MarketData-based ctor
-    return VolSurface(mny, vols, tenors, mktData);
+    return core::VolSurface(mny, vols, tenors, mktData);
 }
 }

@@ -8,7 +8,7 @@
 #include <concepts>
 #include <vector>
 
-namespace uv
+namespace uv::math
 {
 	/**
 	 * @brief Cubic Hermite interpolation with precomputed tangent slopes.

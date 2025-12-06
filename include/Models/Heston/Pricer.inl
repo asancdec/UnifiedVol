@@ -4,7 +4,7 @@
 */
 
 #include "Utils/Aux/Errors.hpp"    
-#include "Math/MathFunctions/MathFunctions.hpp"
+#include "Math/Functions.hpp"
 
 #include <utility>   
 #include <complex>  
@@ -15,7 +15,7 @@
 namespace uv::models::heston
 {
 	template <std::size_t N>
-	Pricer<N>::Pricer(std::shared_ptr<const TanHSinH<N>> quad,
+	Pricer<N>::Pricer(std::shared_ptr<const math::TanHSinH<N>> quad,
 		const Config& config) :
 		quad_(std::move(quad)),
 		config_(config)
@@ -365,7 +365,7 @@ namespace uv::models::heston
 		cplx y
 		{
 			(std::norm(D) > std::numeric_limits<long double>::epsilon() * (1.0L + std::abs(DT)))
-			? expm1Complex(-DT) / (2.0L * D)
+			? math::expm1Complex(-DT) / (2.0L * D)
 			: cplx(-T / 2.0L)
 		};
 
@@ -373,7 +373,7 @@ namespace uv::models::heston
 		const cplx ry{ r * y };
 
 		// A := (κ * theta / sigma^2) * (r * T − 2 * log1p(−r * y))
-		const cplx A{(kappa * theta / sigma2) * (r * T - 2.0L * log1pComplex<long double>(-ry))	};
+		const cplx A{(kappa * theta / sigma2) * (r * T - 2.0L * math::log1pComplex<long double>(-ry))	};
 
 		// B := u * (u + i) * y / (1 − r * y)
 		const cplx B{ uu * y / (1.0L - ry) };
@@ -431,7 +431,7 @@ namespace uv::models::heston
 		{
 			(std::norm(D) > std::numeric_limits<long double>::epsilon() *
 							  (1.0L + std::abs(DT)))
-			? expm1Complex(-DT) / (2.0L * D)
+			? math::expm1Complex(-DT) / (2.0L * D)
 			: cplx(-T / 2.0L)
 		};
 
@@ -445,7 +445,7 @@ namespace uv::models::heston
 		const cplx kFac{ kappaTheta * invSigma2 };
 
 		// A := (kappa*theta/sigma^2) * (r*T − 2 log(1 - r*y))
-		const cplx A{ kFac * (betaMinusD * T - 2.0L * log1pComplex<long double>(-ry)) };
+		const cplx A{ kFac * (betaMinusD * T - 2.0L * math::log1pComplex<long double>(-ry)) };
 
 		// B := u(u+i)*y / (1 − r*y)
 		const cplx B{ uu * y / (1.0L - ry) };

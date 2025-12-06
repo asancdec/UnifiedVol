@@ -1,9 +1,9 @@
 ﻿/**
-* CalibratorCeres.hpp
+* Calibrator.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
-#include "Math/Calibration/Utils/CalibratorUtils.hpp"
+#include "Utils/Aux/Helpers.hpp"
 #include "Utils/IO/ConsoleRedirect.hpp"
 #include "Utils/IO/Log.hpp"
 
@@ -12,13 +12,13 @@
 #include <format>    
 #include <algorithm>
 
-namespace uv
+namespace uv::cal::ceres
 {
     template <std::size_t N, typename Policy>
-    CalibratorCeres<N, Policy>::CalibratorCeres(const CeresConfig<N>& config) : config_(config) {}
+    Calibrator<N, Policy>::Calibrator(const Config<N>& config) : config_(config) {}
 
     template <std::size_t N, typename Policy>
-    void CalibratorCeres<N, Policy>::setGuessBounds(const std::array<double, N>& initGuess,
+    void Calibrator<N, Policy>::setGuessBounds(const std::array<double, N>& initGuess,
         const std::array<double, N>& lowerBounds,
         const std::array<double, N>& upperBounds) noexcept
     {
@@ -28,7 +28,7 @@ namespace uv
         upperBounds_ = upperBounds;
 
         // Clamp initial guess within upper and lower bounds
-        clamp<N>(x_, lowerBounds_, upperBounds_, config_.paramNames);
+        utils::clamp<N>(x_, lowerBounds_, upperBounds_, config_.paramNames);
 
         // Set initial guess
         problem_.AddParameterBlock(x_.data(), static_cast<int>(N));
@@ -42,7 +42,7 @@ namespace uv
     }
 
     template <std::size_t N, typename Policy>
-    void CalibratorCeres<N, Policy>::addAnalyticResidual(std::unique_ptr<ceres::CostFunction> cf) noexcept
+    void Calibrator<N, Policy>::addAnalyticResidual(std::unique_ptr<::ceres::CostFunction> cf) noexcept
     {
         problem_.AddResidualBlock
         (
@@ -53,10 +53,10 @@ namespace uv
     }
 
     template <std::size_t N, typename Policy>
-    std::array<double, N> CalibratorCeres<N, Policy>::optimize()
+    std::array<double, N> Calibrator<N, Policy>::optimize()
     {   
         // Set calibration options
-        ceres::Solver::Options options;
+        ::ceres::Solver::Options options;
         options.trust_region_strategy_type = Policy::trustRegionStrategy; 
         options.linear_solver_type         = Policy::linearSolver;         
         options.max_num_iterations         = config_.maxEval;            
@@ -67,21 +67,21 @@ namespace uv
         
        
         // Capture Ceres' progress output and redirect it to the unified UV logger
-        ceres::Solver::Summary summary;
+        ::ceres::Solver::Summary summary;
         {
             // Enable live Ceres iteration table only if verbose mode is on
             utils::ConsoleRedirect capture;
             options.minimizer_progress_to_stdout = config_.verbose;
 
             // Solve the problem
-            ceres::Solve(options, &problem_, &summary);
+            ::ceres::Solve(options, &problem_, &summary);
 
             // Print final solver report if verbose mode is on
             if (config_.verbose)  UV_INFO(summary.FullReport());
         }
 
         // Warn if upper or lower bounds are touched
-        warnBoundsHit
+        utils::warnBoundsHit
         (
             x_,
             lowerBounds_,
@@ -90,15 +90,15 @@ namespace uv
         );
 
         // Log calibration results 
-        logResults
+        utils::logResults
         (
             x_,                                                     // Parameters
             config_.paramNames,                                     // Parameter names
             summary.final_cost * 2.0,                               // SSE
             summary.iterations.size(),                              // Iterations
             summary.total_time_in_seconds * 1000.0,                 // Elapsed [ms]
-            (summary.termination_type == ceres::CONVERGENCE ||
-                summary.termination_type == ceres::USER_SUCCESS)  // Success flag
+            (summary.termination_type == ::ceres::CONVERGENCE ||
+                summary.termination_type == ::ceres::USER_SUCCESS)  // Success flag
         );
 
         // Return calibrated parameters

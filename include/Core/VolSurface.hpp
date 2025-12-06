@@ -11,7 +11,7 @@
 #include <vector>
 #include <cstddef>
 
-namespace uv
+namespace uv::core
 {
     class VolSurface
     {

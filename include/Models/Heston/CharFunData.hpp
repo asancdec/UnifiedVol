@@ -5,12 +5,10 @@
 
 #pragma once
 
-#include <complex>
+#include "Utils/Types/Types.hpp"
 
 namespace uv::models::heston
 {
-	using cplx = std::complex<long double>;
-
 	struct CharFunData
 	{
 		// Original CF outputs

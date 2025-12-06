@@ -9,12 +9,12 @@
 #include "Models/Heston/Pricer.hpp"
 #include "Models/Heston/Config.hpp"
 #include "Models/Heston/Calibrator.hpp"
-#include "Utils/Aux/Errors.hpp"      
-#include "Math/MathFunctions/MathFunctions.hpp"
-#include "Math/Quadrature/TanHSinH.hpp"
-#include "Math/Calibration/Ceres/CeresPolicy.hpp"
-#include "Math/Calibration/Ceres/CeresConfig.hpp"
-#include "Math/Interpolation/Interpolation.hpp"
+#include "Utils/Aux/Errors.hpp"    
+#include "Math/Functions.hpp"
+#include "Math/Quadratures/TanHSinH.hpp"
+#include "Calibration/Ceres/Policy.hpp"
+#include "Calibration/Ceres/Config.hpp"
+#include "Math/Interpolation.hpp"
 
 
 #include <chrono>
@@ -34,6 +34,9 @@
 using namespace uv;
 using namespace models;
 using namespace utils;
+using namespace core;
+using namespace math;
+
 
 int main(int argc, char* argv[])
 {
@@ -67,9 +70,9 @@ int main(int argc, char* argv[])
 
 
         // Initialize NLopt Calibrator instance
-        CalibratorNLopt<5, nlopt::LD_SLSQP> nloptOptimizer
+        cal::nlopt::Calibrator<5, nlopt::LD_SLSQP> nloptOptimizer
         {
-            NLoptConfig<5>
+            cal::nlopt::Config<5>
             {
                 1e-12,                             // eps
                 1e-9,                              // tol
@@ -102,10 +105,10 @@ int main(int argc, char* argv[])
         };
 
         // Initialize Ceres calibrator instance
-        CalibratorCeres
+        cal::ceres::Calibrator
             <
                 5,                                // Number of calibration parameters (kappa, theta, sigma, rho, v0)
-                CeresPolicy
+            cal::ceres::Policy
                   <
                     ceres::HuberLoss,            // Robust loss function type (Huber loss for outlier resistance)
                     ceres::LEVENBERG_MARQUARDT,  // Trust region strategy (LM algorithm)
@@ -113,7 +116,7 @@ int main(int argc, char* argv[])
                 >
             > ceresOptimizer
         { 
-            CeresConfig<5>
+            cal::ceres::Config<5>
             {   
                 
                 1000,                                            // Max evaluations

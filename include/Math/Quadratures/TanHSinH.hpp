@@ -8,7 +8,7 @@
 #include <array>
 #include <cstddef>
 
-namespace uv
+namespace uv::math
 {
 	template <std::size_t N>
 	class TanHSinH

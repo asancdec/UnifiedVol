@@ -16,13 +16,13 @@
 
 namespace uv::models::svi
 {
-    template <nlopt::algorithm Algo>
-    std::tuple<std::vector<SVISlice>, VolSurface> calibrate(const VolSurface& mktVolSurf,
-        const CalibratorNLopt<5, Algo>& prototype,
+    template <::nlopt::algorithm Algo>
+    std::tuple<std::vector<SVISlice>, core::VolSurface> calibrate(const core::VolSurface& mktVolSurf,
+        const cal::nlopt::Calibrator<5, Algo>& prototype,
         bool isValidateResults)
     {
         // Copy market volatility surface
-        VolSurface sviVolSurf{ mktVolSurf };
+        core::VolSurface sviVolSurf{ mktVolSurf };
 
         // Initialize vectors
         std::vector<SVISlice> sviSlices;
@@ -37,7 +37,7 @@ namespace uv::models::svi
             const std::vector<double>& wKSlice{ slice.wT() };
 
             // Initialize calibrator instance
-            CalibratorNLopt<5, Algo> calibrator{ prototype.fresh() };
+            cal::nlopt::Calibrator calibrator{ prototype.fresh() };
 
             // Set initial guess and bounds
             calibrator.setGuessBounds
@@ -154,8 +154,8 @@ namespace uv::models::svi::detail
         }
     };
 
-    template <nlopt::algorithm Algo>
-    void addWMinConstraint(CalibratorNLopt<5, Algo>& calibrator) noexcept
+    template <::nlopt::algorithm Algo>
+    void addWMinConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator) noexcept
     {
         const double* epsPtr{ &calibrator.eps() };
 
@@ -187,15 +187,15 @@ namespace uv::models::svi::detail
                     grad[4] = -b * S;                 // -∂wMin/∂sigma
                 }
 
-                // Enforce wMin ≥ eps  ⇔  c(x) = eps - wMin ≤ 0
+                // Enforce wMin ≥ eps  c(x) = eps - wMin ≤ 0
                 return eps - wMin;
             },
             const_cast<double*>(epsPtr) // nlopt API takes void*
         );
     }
 
-    template <nlopt::algorithm Algo>
-    void addMaxSlopeConstraint(CalibratorNLopt<5, Algo>& calibrator) noexcept
+    template <::nlopt::algorithm Algo>
+    void addMaxSlopeConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator) noexcept
     {
         // Right wing: b*(1 + rho) <= 2
         calibrator.addInequalityConstraint(
@@ -243,8 +243,8 @@ namespace uv::models::svi::detail
         );
     }
 
-    template <nlopt::algorithm Algo>
-    void addCalendarConstraint(CalibratorNLopt<5, Algo>& calibrator,
+    template <::nlopt::algorithm Algo>
+    void addCalendarConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator,
         std::vector<ConstraintCtx>& contexts) noexcept
     {
         // For each k, add one no calendar arbitrage constraint
@@ -290,8 +290,8 @@ namespace uv::models::svi::detail
         }
     }
 
-    template <nlopt::algorithm Algo>
-    void addConvexityConstraint(CalibratorNLopt<5, Algo>& calibrator, std::vector<double>& kStorage) noexcept
+    template <::nlopt::algorithm Algo>
+    void addConvexityConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator, std::vector<double>& kStorage) noexcept
     {
         // For each k, add one convexity constraint g(k) ≥ 0
         for (std::size_t i = 0; i < kStorage.size(); ++i)
@@ -331,8 +331,8 @@ namespace uv::models::svi::detail
         }
     }
 
-    template <nlopt::algorithm Algo>
-    void setMinObjective(CalibratorNLopt<5, Algo>& calibrator, const ObjCtx& obj) noexcept
+    template <::nlopt::algorithm Algo>
+    void setMinObjective(cal::nlopt::Calibrator<5, Algo>& calibrator, const ObjCtx& obj) noexcept
     {
         calibrator.setMinObjective(
             +[](unsigned n, const double* x, double* grad, void* data) -> double
@@ -401,9 +401,9 @@ namespace uv::models::svi::detail
         );
     }
 
-    template <nlopt::algorithm Algo>
+    template <::nlopt::algorithm Algo>
     void evalCal(const SVISlice& sviSlice,
-        const CalibratorNLopt<5, Algo>& calibrator,
+        const cal::nlopt::Calibrator<5, Algo>& calibrator,
         const std::vector<double>& kSlice,
         const std::vector<double>& wKPrevSlice) noexcept
     {

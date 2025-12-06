@@ -5,8 +5,8 @@
 
 
 #include "Models/LocalVol/LocalVol.hpp"
-#include "Utils/Aux/Errors.hpp"    "
-#include "Math/Interpolation/Interpolation.hpp"
+#include "Utils/Aux/Errors.hpp"
+#include "Math/Interpolation.hpp"
 #include "Utils/Aux/Helpers.hpp"
 #include "Models/SVI/SVI.hpp"
 #include "Core/SliceData.hpp"
@@ -20,7 +20,7 @@ using namespace uv;
 
 namespace uv::localvol
 {
-	VolSurface buildSurface(const VolSurface& volSurface,
+	core::VolSurface buildSurface(const core::VolSurface& volSurface,
 		const Vector<models::svi::SVISlice>& sviSlices)
 	{
 
@@ -74,11 +74,11 @@ namespace uv::localvol
 
 
 		// Copy the volatility surface object
-		VolSurface lvVolSurf{ volSurface };
+		core::VolSurface lvVolSurf{ volSurface };
 
 
 		// Extract volatility surface slices (will be modified in place)
-		std::vector<SliceData>& volSlices{ lvVolSurf.slices()};
+		std::vector<core::SliceData>& volSlices{ lvVolSurf.slices()};
 
 		// Calculate and set local total volatility variance
 		for (std::size_t i = 0; i < numTenors; ++i)
@@ -87,7 +87,7 @@ namespace uv::localvol
 			std::vector<double> localTotVar(numStrikes);
 
 			// Extract volatility surface slice
-			SliceData& volSlice{volSlices[i]};
+			core::SliceData& volSlice{volSlices[i]};
 
 			// Extract logFM
 			const std::vector<double>& logFM {volSlice.logFM()};
@@ -141,7 +141,7 @@ namespace uv::localvol::detail
 		for (std::size_t i = 0; i < numStrikes; ++i)
 		{
 			// Calculates piecewise derivatives
-			dwdT[i] = pchipDerivatives(tenors, totVarT[i]);
+			dwdT[i] = math::pchipDerivatives(tenors, totVarT[i]);
 		}
 
 		// Transpose the dw/dT matrix

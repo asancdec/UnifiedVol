@@ -1,5 +1,5 @@
 ﻿/**
-* NLoptConfig.hpp
+* Config.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -9,10 +9,10 @@
 #include <string_view>
 #include <cstddef>
 
-namespace uv
+namespace uv::cal::nlopt
 {
 	template <std::size_t N>
-	struct NLoptConfig
+	struct Config
 	{
 		double eps;                                       // Small epsilon used for inequality tolerances
 		double tol;                                       // Constraint tolerance passed to NLopt (|c(x)| ≤ tol considered satisfied)

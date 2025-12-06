@@ -3,7 +3,7 @@
 * Author: Alvaro Sanchez de Carlos
 */
 
-#include "Math/MathFunctions/MathFunctions.hpp"
+#include "Math/Functions.hpp"
 #include "Core/SliceData.hpp"
 #include "Utils/Aux/Errors.hpp"    
 #include "Utils/IO/Log.hpp"
@@ -17,7 +17,7 @@
 #include <iomanip>
 #include <string> 
 
-namespace uv
+namespace uv::core
 {
     SliceData::SliceData(double T,
         const std::vector<double>& mny,
@@ -90,7 +90,7 @@ namespace uv
         callBS_.resize(numStrikes_);
         for (std::size_t i = 0; i < numStrikes_; ++i)
         {
-            callBS_[i] = blackScholes
+            callBS_[i] = math::blackScholes
             (
                 T_,
                 r,
@@ -215,7 +215,7 @@ namespace uv
 
         for (std::size_t i = 0; i < numStrikes_; ++i)
         {
-            callBS_[i] = blackScholes
+            callBS_[i] = math::blackScholes
             (
                 T_,
                 r,
@@ -251,7 +251,7 @@ namespace uv
         {   
             double vol
             {
-                impliedVolBS
+                math::impliedVolBS
                 (
                     callBS_[i],
                     T_,

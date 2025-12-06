@@ -4,7 +4,7 @@
 */
 
 #include "Core/VolSurface.hpp"
-#include "Utils/Aux/Errors.hpp"    "
+#include "Utils/Aux/Errors.hpp"
 #include "Utils/IO/Log.hpp"
 
 #include <iomanip>
@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <string>
 
-namespace uv 
+namespace uv::core
 {
     VolSurface::VolSurface(const std::vector<double>& mny,
         const std::vector<std::vector<double>>& vols,

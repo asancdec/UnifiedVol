@@ -1,5 +1,5 @@
 ﻿/**
-* CeresConfig.hpp
+* Config.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -9,10 +9,10 @@
 #include <string_view>
 #include <cstddef>
 
-namespace uv
+namespace uv::cal::ceres
 {
 	template <std::size_t N>
-	struct CeresConfig
+	struct Config
     {
         unsigned maxEval;                                 // Maximum number of iterations / function evaluations
         double functionTol;                               // Function tolerance → stop when relative cost improvement < threshold

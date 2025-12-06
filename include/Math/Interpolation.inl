@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <iostream>
 
-namespace uv
+namespace uv::math
 {
 	template <std::floating_point T>
 	T interpolateCubicHermiteSpline(const T x,
@@ -266,7 +266,7 @@ namespace uv
 		);
 
 		// Right endpoint
-		dydx.back() = pchipEndpointSlope<T>(
+		dydx.back() = math::pchipEndpointSlope<T>(
 			h[numSteps - 1],   // h1 = xs[n-1] - xs[n-2]
 			h[numSteps - 2],   // h2 = xs[n-2] - xs[n-3]
 			S[numSteps - 1],   // S1 = (ys[n-1] - ys[n-2]) / h1

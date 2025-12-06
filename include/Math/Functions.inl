@@ -1,5 +1,5 @@
 ﻿/**
-* MathFunctions.inl
+* Functions.inl
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -8,7 +8,7 @@
 #include <cmath>
 #include <numbers>
 
-namespace uv
+namespace uv::math
 {
     template <typename T>
     std::complex<T> log1pComplex(const std::complex<T>& z) noexcept

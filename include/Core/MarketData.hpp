@@ -5,7 +5,7 @@
 
 #pragma once
 
-namespace uv
+namespace uv::core
 {
 	struct MarketData
 	{

@@ -1,39 +1,39 @@
 /**
-* CalibratorCeres.hpp
+* Calibrator.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
 #pragma once
 
-#include "Math/Calibration/Ceres/CeresConfig.hpp"
-#include "CeresPolicy.hpp"
+#include "Calibration/Ceres/Config.hpp"
+#include "Policy.hpp"
 
 #include <ceres/ceres.h>
 #include <array>
 
-namespace uv
+namespace uv::cal::ceres
 {
-	template <std::size_t N, typename Policy = CeresPolicy<>>
-	class CalibratorCeres
+	template <std::size_t N, typename Policy = Policy<>>
+	class Calibrator
 	{
 	private:
 
 		//--------------------------------------------------------------------------
 		// Member variables
 		//--------------------------------------------------------------------------
-		CeresConfig<N> config_;                // Calibration configuration
+		Config<N> config_;                // Calibration configuration
 		std::array<double, N> lowerBounds_;  // Lower parameter bounds
 		std::array<double, N> upperBounds_;  // Upper parameter bounds
 		std::array<double, N> x_;            // Parameter block
-		ceres::Problem problem_;             // Ceres problem instance
+		::ceres::Problem problem_;           // Ceres problem instance
 
 	public:
 
 		//--------------------------------------------------------------------------
 		// Initialization
 		//--------------------------------------------------------------------------
-		CalibratorCeres() = delete;
-		explicit CalibratorCeres(const CeresConfig<N>& config);
+		Calibrator() = delete;
+		explicit Calibrator(const Config<N>& config);
 
 		//--------------------------------------------------------------------------
 		// Calibration
@@ -44,11 +44,11 @@ namespace uv
 			const std::array<double, N>& upperBounds) noexcept;
 		
 		// Set differentiation cost function
-		void addAnalyticResidual(std::unique_ptr<ceres::CostFunction> cf) noexcept;
+		void addAnalyticResidual(std::unique_ptr<::ceres::CostFunction> cf) noexcept;
 
 		// Solve the problem
 		std::array<double, N> optimize();
 	};
 }
 
-#include "CalibratorCeres.inl"
+#include "Calibrator.inl"

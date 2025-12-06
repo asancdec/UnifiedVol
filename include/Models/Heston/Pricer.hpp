@@ -8,7 +8,7 @@
 #include "Models/Heston/Params.hpp"
 #include "Models/Heston/Config.hpp"
 #include "Models/Heston/CharFunData.hpp"
-#include "Math/Quadrature/TanHSinH.hpp"
+#include "Math/Quadratures/TanHSinH.hpp"
 #include "Core/VolSurface.hpp"
 
 #include <complex>     
@@ -31,7 +31,7 @@ namespace uv::models::heston
 		// Private member variables
 		//--------------------------------------------------------------------------
 		std::optional<Params> params_;
-		std::shared_ptr<const TanHSinH<N>> quad_;
+		std::shared_ptr<const math::TanHSinH<N>> quad_;
 		const Config config_;
 
 		//--------------------------------------------------------------------------
@@ -83,7 +83,7 @@ namespace uv::models::heston
 		// Initialization
 		//--------------------------------------------------------------------------
 		Pricer() = delete;
-		explicit Pricer(std::shared_ptr<const TanHSinH<N>> quad,
+		explicit Pricer(std::shared_ptr<const math::TanHSinH<N>> quad,
 			const Config& config);
 
 		//--------------------------------------------------------------------------

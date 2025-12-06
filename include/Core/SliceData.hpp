@@ -8,7 +8,7 @@
 #include "Core/MarketData.hpp"
 #include <vector>
 
-namespace uv
+namespace uv::core
 {
     class SliceData
     {

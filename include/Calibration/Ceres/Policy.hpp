@@ -1,5 +1,5 @@
 /**
-* CeresPolicy.hpp
+* Policy.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -9,22 +9,22 @@
 #include <memory>
 #include <type_traits>
 
-namespace uv
+namespace uv::cal::ceres
 {
     template    
     <
     typename LossType = void,
-    ceres::TrustRegionStrategyType TrustRegionStrategy = ceres::LEVENBERG_MARQUARDT,
-    ceres::LinearSolverType LinearSolver = ceres::DENSE_QR
+    ::ceres::TrustRegionStrategyType TrustRegionStrategy = ::ceres::LEVENBERG_MARQUARDT,
+    ::ceres::LinearSolverType LinearSolver = ::ceres::DENSE_QR
     >
-    struct CeresPolicy
+    struct Policy
     {
         // Solver configuration
-        static constexpr ceres::TrustRegionStrategyType trustRegionStrategy = TrustRegionStrategy;
-        static constexpr ceres::LinearSolverType linearSolver = LinearSolver;
+        static constexpr ::ceres::TrustRegionStrategyType trustRegionStrategy = TrustRegionStrategy;
+        static constexpr ::ceres::LinearSolverType linearSolver = LinearSolver;
 
         // Build the loss or return nullptr when Loss=void
-        static std::unique_ptr<ceres::LossFunction> makeLoss(double lossParam)
+        static std::unique_ptr<::ceres::LossFunction> makeLoss(double lossParam)
         {
             if constexpr (std::is_same_v<LossType, void>) 
             {

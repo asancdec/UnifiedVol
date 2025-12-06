@@ -11,12 +11,12 @@
 namespace uv::models::heston::calibrator
 {
 	template <std::size_t N, typename Policy>
-	VolSurface calibrate(const VolSurface& mktVolSurf,
+	core::VolSurface calibrate(const core::VolSurface& mktVolSurf,
 		Pricer<N>& pricer,
-		CalibratorCeres<5, Policy>& calibrator)
+		cal::ceres::Calibrator<5, Policy>& calibrator)
 	{
 		// Copy market volatility surface
-		VolSurface hestonVolSurf{ mktVolSurf };
+		core::VolSurface hestonVolSurf{ mktVolSurf };
 
 		// Set initial guess, lower and upper bounds
 		calibrator.setGuessBounds

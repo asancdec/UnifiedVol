@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <complex>
 #include <vector>
 
 namespace uv
@@ -15,6 +16,8 @@ namespace uv
 
     template <typename T>
     using Matrix = std::vector<std::vector<T>>;
+
+    using cplx = std::complex<long double>;
 
     template <typename From, typename To>
     Vector<To> convertVector(const Vector<From>& input);

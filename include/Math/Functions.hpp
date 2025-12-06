@@ -1,5 +1,5 @@
 ﻿/**
-* MathFunctions.hpp
+* Functions.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -8,7 +8,7 @@
 #include <complex>
 #include <limits>
 
-namespace uv  
+namespace uv::math
 {
     // Numerically stable evaluation of log(1 + z) for complex arguments.
     template <typename T>
@@ -66,4 +66,4 @@ namespace uv
         unsigned int maxEval = 100) noexcept;
 }
 
-#include "MathFunctions.inl"
+#include "Functions.inl"

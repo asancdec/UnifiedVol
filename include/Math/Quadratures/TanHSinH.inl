@@ -2,8 +2,7 @@
 * TanHSinH.inl
 * Author: Alvaro Sanchez de Carlos
 */
-
-#include "Math/Quadrature/TanHSinH.hpp"              
+           
 #include "Utils/IO/Log.hpp"                             
 
 #include <boost/math/special_functions/lambert_w.hpp>
@@ -16,7 +15,7 @@
 #include <iostream>
 #include <bitset>
 
-namespace uv
+namespace uv::math
 {
 	template <std::size_t N>
 	TanHSinH<N>::TanHSinH() :

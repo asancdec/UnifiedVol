@@ -7,7 +7,7 @@
 
 #include "Models/Heston/Pricer.hpp"
 #include "Models/Heston/Params.hpp"
-#include "Math/Calibration/Ceres/CalibratorCeres.hpp"
+#include "Calibration/Ceres/Calibrator.hpp"
 #include "Core/VolSurface.hpp"
 
 #include <array>
@@ -21,9 +21,9 @@ namespace uv::models::heston::calibrator
 
 	// Main calibration function
 	template <std::size_t N, typename Policy>
-	static VolSurface calibrate(const VolSurface& mktVolSurf,
+	static core::VolSurface calibrate(const core::VolSurface& mktVolSurf,
 		Pricer<N>& pricer,
-		CalibratorCeres<5, Policy>& calibrator);
+		cal::ceres::Calibrator<5, Policy>& calibrator);
 
 	namespace detail
 	{

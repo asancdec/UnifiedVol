@@ -12,7 +12,7 @@
 namespace uv::localvol
 {	
 	// Build local volatility surface from SVI parameters
-	VolSurface buildSurface(const VolSurface& volSurface, 
+	core::VolSurface buildSurface(const core::VolSurface& volSurface,
 		const Vector<models::svi::SVISlice>& sviSlices);
 
 	namespace detail

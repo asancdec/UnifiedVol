@@ -34,7 +34,7 @@ namespace uv::models::svi
 
 namespace uv::models::svi::detail
 {
-    std::array<double, 5> initGuess(const SliceData& slice) noexcept
+    std::array<double, 5> initGuess(const core::SliceData& slice) noexcept
     {
         const double b{ 0.1 };
         const double rho{ -0.5 };
@@ -45,7 +45,7 @@ namespace uv::models::svi::detail
         return { a, b, rho, m, sigma };
     }
 
-    std::array<double, 5> lowerBounds(const SliceData& slice) noexcept
+    std::array<double, 5> lowerBounds(const core::SliceData& slice) noexcept
     {
         return
         {
@@ -57,7 +57,7 @@ namespace uv::models::svi::detail
         };
     }
 
-    std::array<double, 5> upperBounds(const SliceData& slice) noexcept
+    std::array<double, 5> upperBounds(const core::SliceData& slice) noexcept
     {
         return
         {

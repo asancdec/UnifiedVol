@@ -1,14 +1,14 @@
 /**
-* MathFunctions.inl
+* Functions.inl
 * Author: Alvaro Sanchez de Carlos
 */
 
-#include "Math/MathFunctions/MathFunctions.hpp"
+#include "Math/Functions.hpp"
 
 #include <algorithm>
 #include <format>
 
-namespace uv
+namespace uv::math
 {
     double impliedVolBS(double mktPriceBS,
         double t,
