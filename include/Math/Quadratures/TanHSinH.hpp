@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "Utils/Types.hpp"
+
 #include <array>
 #include <cstddef>
 
@@ -20,28 +22,28 @@ namespace uv::math
 		//--------------------------------------------------------------------------	
 		struct Node
 		{
-			long double w;              // weight value
-			long double y;              // yn term
-			long double x;              // abscissas value
-			long double factorRight;    // scaling term RHS
-			long double inputRight;     // transformed input RHS
-			long double factorLeft;     // scaling term LHS
-			long double inputLeft;      // transformed input LHS
+			Real w;              // weight value
+			Real y;              // yn term
+			Real x;              // abscissas value
+			Real factorRight;    // scaling term RHS
+			Real inputRight;     // transformed input RHS
+			Real factorLeft;     // scaling term LHS
+			Real inputLeft;      // transformed input LHS
 		};
 
       	//--------------------------------------------------------------------------
 		// Member variables
 		//--------------------------------------------------------------------------	
 
-		const long double     h_;            // Step size
-		std::array<Node, N> nodes_;        // Nodes vector
+		const Real       h_;            // Step size
+		std::array<Node, N> nodes_;     // Nodes vector
 
 		//--------------------------------------------------------------------------
 		// Math
 		//--------------------------------------------------------------------------
 
 		// Fixed Tanh-Sinh rule node (returns struct with weight and abscissas value)
-		Node generateNode(const long double nh) const noexcept;
+		Node generateNode(const Real nh) const noexcept;
 
 	public:
 
@@ -56,11 +58,11 @@ namespace uv::math
 
 		// Evaluation a function's numeric integral
 		template<typename F>
-		long double integrateZeroToInf(F&& f) const noexcept;
+		Real integrateZeroToInf(F&& f) const noexcept;
 
 		// Evaluation of multiple numeric integrals
 		template<std::size_t M, typename F >
-		std::array<long double, M> integrateZeroToInfMulti(F&& f) const noexcept;
+		std::array<Real, M> integrateZeroToInfMulti(F&& f) const noexcept;
 
 		//--------------------------------------------------------------------------
 		// Utilities

@@ -18,7 +18,7 @@
         "VCPKG_TARGET_TRIPLET": "x64-linux"
       },
       "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+        "microsoft.com/VisualStudioSettings/CMake/Real(1.0)": {
           "hostOS": [ "Linux" ],
           "wslDistribution": "Ubuntu-22.04"
         }

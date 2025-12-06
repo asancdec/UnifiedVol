@@ -18,7 +18,7 @@
 
 using namespace uv;
 
-namespace uv::localvol
+namespace uv::models::localvol
 {
 	core::VolSurface buildSurface(const core::VolSurface& volSurface,
 		const Vector<models::svi::SVISlice>& sviSlices)
@@ -42,14 +42,14 @@ namespace uv::localvol
 
 		// ---------- Check matching tenors ----------
 
-		const Vector<double>& tenors{ volSurface.tenors() };
+		const Vector<Real>& tenors{ volSurface.tenors() };
 
 		for (std::size_t i = 0; i < numTenors; ++i)
 		{
-			const double volTenor{ tenors[i] };
-			const double sviTenor{ sviSlices[i].T };
+			const Real volTenor{ tenors[i] };
+			const Real sviTenor{ sviSlices[i].T };
 
-			// Throw 
+			// Throw if suface and SVI tenors do not match
 			UV_REQUIRE
 			(
 				std::abs(volTenor - sviTenor) < 1e-12,	// tolerance
@@ -61,92 +61,82 @@ namespace uv::localvol
 			);
 		}
 
-		// ---------- Calculate dw/dT matrix ------
+		// ---------- Calculate local total variance matrix ----------
 
-		const Matrix<double> dwdT
-		{
-			detail::dwdT
+		const Matrix<Real> localtoVar
+		{ 
+			detail::localTotVar
 			(
-				tenors, 
-				volSurface.totVarMatrix()
+				tenors,                          
+				volSurface.logFMMatrix(),    // Log(F/K) strikes
+				volSurface.totVarMatrix(),   // Total variance
+				sviSlices
 			)
 		};
 
+		// ---------- Build the volatility surface object ----------
 
-		// Copy the volatility surface object
-		core::VolSurface lvVolSurf{ volSurface };
-
-
-		// Extract volatility surface slices (will be modified in place)
+		// NOTE: Copy the input volatility surface
+		core::VolSurface lvVolSurf{ volSurface };   
 		std::vector<core::SliceData>& volSlices{ lvVolSurf.slices()};
 
-		// Calculate and set local total volatility variance
-		for (std::size_t i = 0; i < numTenors; ++i)
-		{
-			// Temporary vector to store local total variance calculations
-			std::vector<double> localTotVar(numStrikes);
-
-			// Extract volatility surface slice
-			core::SliceData& volSlice{volSlices[i]};
-
-			// Extract logFM
-			const std::vector<double>& logFM {volSlice.logFM()};
-
-			// Extract SVI slice data
-			const models::svi::SVISlice& sviSlice{ sviSlices[i]};
-
-			// Extract parameters
-			const double a{ sviSlice.a };
-			const double b{ sviSlice.b };
-			const double rho{ sviSlice.rho };
-			const double m{ sviSlice.m };
-			const double sigma{ sviSlice.sigma };
-			const double T{ sviSlice.T };
-
-			for (std::size_t j = 0; j < numStrikes; ++j)
-			{
-				localTotVar[j] = dwdT[i][j] * T / models::svi::gk(a, b, rho, m, sigma, logFM[j]);
-			}
-
-			// Set local total variance
-			volSlice.setWT(localTotVar);
-		}
+		for (std::size_t i = 0; i < numTenors; ++i) volSlices[i].setWT(localtoVar[i]);
 
 		return lvVolSurf;
 	}
 
-} // namespace uv::localvol
+} // namespace uv::models::localvol
 
-namespace uv::localvol::detail
+namespace uv::models::localvol::detail
 {	
-	using namespace uv;
-
-	Matrix<double> dwdT(const std::vector<double>& tenors, 
-		const std::vector<std::vector<double>>& totVarMatrix) noexcept
+	Matrix<Real> localTotVar(const Vector<Real>& tenors,
+		const Matrix<Real>& logFM,
+		const Matrix<Real>& totVar,
+		const Vector<svi::SVISlice>& sviSlices)
 	{
-		// Extract the number of tenors
-		const std::size_t numTenors{ tenors.size()};
+		// ---------- Initialize data ----------
 
-		// Extract the number of strikes
-		const std::size_t numStrikes{ totVarMatrix[0].size()};
+		const std::size_t numTenors{ tenors.size() };
+		const std::size_t numStrikes{ totVar[0].size() };
+		Matrix<Real> dwdT(numStrikes, Vector<Real>(numTenors));
+		Matrix<Real> results(numTenors, Vector<Real>(numStrikes));
 
-		// Generate dw/dT matrix to store results
-		std::vector<std::vector<double>> dwdT(numStrikes, std::vector<double>(numTenors));
+		// ---------- Calculate dw/dT matrix ----------
 
-		// Transpose total variance matrix 
-		// Rows of tenors and columns of strikes
-		const std::vector<std::vector<double>> totVarT{ utils::transposeMatrix(totVarMatrix) };
+		const Matrix<Real> totVarT{ utils::transposeMatrix(totVar) };
 
-		// Calculate dw/dT
 		for (std::size_t i = 0; i < numStrikes; ++i)
 		{
-			// Calculates piecewise derivatives
 			dwdT[i] = math::pchipDerivatives(tenors, totVarT[i]);
 		}
 
-		// Transpose the dw/dT matrix
-		// Rows of strikes and columns of tenors
-		return utils::transposeMatrix(dwdT);
+		// Transpose back into original dimensions
+		dwdT = utils::transposeMatrix(dwdT);
+
+		// ---------- Local total variance from SVI ----------
+
+		for (std::size_t i = 0; i < numTenors; ++i)
+		{
+			// ---------- SVI data ----------
+
+			const svi::SVISlice& sviSlice{ sviSlices[i] };
+			const Real a{ sviSlice.a };
+			const Real b{ sviSlice.b };
+			const Real rho{ sviSlice.rho };
+			const Real m{ sviSlice.m };
+			const Real sigma{ sviSlice.sigma };
+			const Real T{ sviSlice.T };
+
+			// ---------- Gatheral-style local total variance ----------
+
+			for (std::size_t j = 0; j < numStrikes; ++j)
+			{
+				const Real gk{ svi::gk(a, b, rho, m, sigma, logFM[i][j]) };
+				results[i][j] = dwdT[i][j] * T / gk;
+			}
+		}
+
+		return results;
 	}
 
-} // namespace uv::localvol
+} // uv::models::localvol::detail

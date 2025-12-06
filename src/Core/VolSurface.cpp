@@ -14,9 +14,9 @@
 
 namespace uv::core
 {
-    VolSurface::VolSurface(const std::vector<double>& mny,
-        const std::vector<std::vector<double>>& vols,
-        const std::vector<double>& tenors,
+    VolSurface::VolSurface(const Vector<Real>& mny,
+        const Matrix<Real>& vols,
+        const Vector<Real>& tenors,
         const MarketData& mktData)
         : tenors_(tenors),
         numTenors_(tenors.size())
@@ -50,7 +50,7 @@ namespace uv::core
             );
         }
 
-        // ---------- Initialize member variables ------
+        // ---------- Initialize member variables ----------
         numStrikes_ = dim1;
         slices_.reserve(numTenors_);
         for (size_t i = 0; i < numTenors_; ++i)
@@ -139,13 +139,13 @@ namespace uv::core
         UV_INFO(oss.str());
     }
 
-    std::vector<std::vector<double>> VolSurface::totVarMatrix() const noexcept
+    Matrix<Real> VolSurface::totVarMatrix() const noexcept
     {
         // Allocate matrix:
         // outer dimension = tenors (rows)
         // inner dimension = strikes (columns)        
-        std::vector<std::vector<double>> matrix(
-            numTenors_, std::vector<double>(numStrikes_)
+        Matrix<Real> matrix(
+            numTenors_, Vector<Real>(numStrikes_)
         );
 
         // Populate total variance slices
@@ -158,12 +158,32 @@ namespace uv::core
         return matrix;
     }
 
+    // Return the logFM matrix
+    Matrix<Real> VolSurface::logFMMatrix() const noexcept
+    {
+        // Allocate matrix:
+        // outer dimension = tenors (rows)
+        // inner dimension = strikes (columns)        
+        Matrix<Real> matrix(
+            numTenors_, Vector<Real>(numStrikes_)
+        );
+
+        // Populate total variance slices
+        for (std::size_t i = 0; i < numTenors_; ++i)
+        {
+            // Extract total variance slice at tenor i
+            matrix[i] = slices_[i].logFM();
+        }
+
+        return matrix;
+    }
+
     std::vector<SliceData>& VolSurface::slices() noexcept
     {
         return slices_;
     }
 
-    const std::vector<double>& VolSurface::tenors() const noexcept
+    const Vector<Real>& VolSurface::tenors() const noexcept
     {
         return tenors_;
     }

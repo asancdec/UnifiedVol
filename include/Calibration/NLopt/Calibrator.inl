@@ -1,17 +1,23 @@
 /**
-* Calibrator.inl
+* double.inl
 * Author: Alvaro Sanchez de Carlos
 */
 
-#include "Utils/Aux/Helpers.hpp"
+#include "Calibration/Utils.hpp"
 
 namespace uv::cal::nlopt
 {
     template <std::size_t N, ::nlopt::algorithm Algo>
     Calibrator<N, Algo>::Calibrator(const Config<N>& config) :
-        config_(config), opt_(Algo, N), timer_(),
-        lowerBounds_(), upperBounds_(), initGuess_(),
-        userFn_(nullptr), userData_(nullptr), iterCount_(0U) 
+        config_(config), 
+        opt_(Algo, N), 
+        timer_(),
+        lowerBounds_(),
+        upperBounds_(), 
+        initGuess_(),
+        userFn_(nullptr), 
+        userData_(nullptr), 
+        iterCount_(0U) 
     {
         opt_.set_ftol_rel(config_.ftolRel); 
         opt_.set_maxeval(config_.maxEval);
@@ -29,7 +35,7 @@ namespace uv::cal::nlopt
         std::array<double, N> upperBounds) noexcept
     {
         // Clamp initial guess within upper and lower bounds
-        utils::clamp<N>(initGuess, lowerBounds, upperBounds, config_.paramNames);
+        clamp<N>(initGuess, lowerBounds, upperBounds, config_.paramNames);
 
         // Store arrays
         initGuess_ = initGuess;
@@ -37,8 +43,8 @@ namespace uv::cal::nlopt
         upperBounds_ = upperBounds;
 
         // Configure NLopt with bounds and tolerances
-        opt_.set_lower_bounds(std::vector<double>(lowerBounds_.begin(), lowerBounds_.end()));
-        opt_.set_upper_bounds(std::vector<double>(upperBounds_.begin(), upperBounds_.end()));
+        opt_.set_lower_bounds(Vector<double>(lowerBounds_.begin(), lowerBounds_.end()));
+        opt_.set_upper_bounds(Vector<double>(upperBounds_.begin(), upperBounds_.end()));
     }
 
     template <std::size_t N, ::nlopt::algorithm Algo>
@@ -69,10 +75,10 @@ namespace uv::cal::nlopt
     }
 
     template <std::size_t N, ::nlopt::algorithm Algo>
-    std::vector<double> Calibrator<N, Algo>::optimize() noexcept
+    Vector<double> Calibrator<N, Algo>::optimize() noexcept
     {
         // Copy initial guess to working vector
-        std::vector<double> x(initGuess_.cbegin(), initGuess_.cend());
+        Vector<double> x(initGuess_.cbegin(), initGuess_.cend());
         double sse{ 0.0 };
 
         // Start timer
@@ -85,7 +91,7 @@ namespace uv::cal::nlopt
         timer_.StopStopWatch();
 
         // Warn if upper or lower bounds are touched
-        utils::warnBoundsHit
+        warnBoundsHit
         (
             x,
             lowerBounds_,
@@ -94,13 +100,13 @@ namespace uv::cal::nlopt
         );
 
         // Log calibration results 
-        utils::logResults(
+        logResults(
             x,                                       // Parameters
             config_.paramNames,                      // Parameter names
             sse,                                     // SSE
             iterCount_,                              // Iterations
             timer_.GetTime<std::milli>(),            // Elapsed [ms]
-            (successCode > ::nlopt::FAILURE)           // Success flag
+            (successCode > ::nlopt::FAILURE)         // Success flag
         );
 
         return x;

@@ -10,8 +10,8 @@
 
 namespace uv::math
 {
-    template <typename T>
-    std::complex<T> log1pComplex(const std::complex<T>& z) noexcept
+    template <std::floating_point T>
+    Complex<T> log1pComplex(const Complex<T>& z) noexcept
     {
         // a := Re(z),  b := Im(z)
         const T a{ std::real(z) };
@@ -30,25 +30,21 @@ namespace uv::math
         }
 
         // General case: ln(1 + z)
-        return std::log(std::complex<T>(T(1) + a, b));
+        return std::log(Complex<T>(T(1) + a, b));
     }
 
-    template <typename T>
+    template <std::floating_point T>
     T cosm1(T b) noexcept 
     {
         // cosm1(b) := cos(b) - 1 = -2 sin²(b / 2)
-        // Accurate for small |b| to avoid cancellation in cos(b) - 1
         const T s{ std::sin(b * T(0.5)) };
         return T(-2) * s * s;                
     }
 
-    template <typename T>
-    std::complex<T> expm1Complex(const std::complex<T>& z) noexcept 
+    template <std::floating_point T>
+    Complex<T> expm1Complex(const Complex<T>& z) noexcept 
     {   
-        // expm1Complex(z) := e^z - 1 (stable for small |z|)
-        // Uses compensated form when |z| < 1 to reduce cancellation
-
-        // If |z| < 1 → use numerically stable expansion
+        // If |z| < 1 : use numerically stable expansion
         if (std::abs(z) < T(1))
         {
             // a := Re(z),  b := Im(z)
@@ -61,7 +57,6 @@ namespace uv::math
             // em1 := e^a - 1 (accurate near 0)
             const T em1{ std::expm1(a) };
 
-            // Return:
             // Re := em1 * (cm1 + 1) + cm1
             // Im := sin(b) * e^a
             return { em1 * (cm1 + T(1)) + cm1, std::sin(b) * std::exp(a) };
@@ -71,21 +66,20 @@ namespace uv::math
         return std::exp(z) - T(1);
     }
 
-
-    template <typename T>
+    template <std::floating_point T>
     T normalCDF(T x) noexcept
     {
         return std::erfc(-x / std::sqrt(T(2.0))) * T(0.5);
     }
 
-    template <typename T>
+    template <std::floating_point T>
     T normalPDF(T x) noexcept
     {
-        constexpr T invSqrt2Pi{ T(1.0) / std::sqrt(T(2.0) * std::numbers::pi_v<T>)};
+        constexpr T invSqrt2Pi{ T(1.0) / std::sqrt(T(2.0) * std::numbers::pi_v<T>) };
         return invSqrt2Pi * std::exp(-T(0.5) * x * x);
     }
 
-    template <typename T>
+    template <std::floating_point T>
     T d1BS(T t,
         T r,
         T q,
@@ -96,7 +90,7 @@ namespace uv::math
         return std::fma(t, (r - q + vol * vol * T(0.5)), std::log(S / K)) / (std::sqrt(t) * vol);
     }
 
-    template <typename T>
+    template <std::floating_point T>
     T blackScholes(T t,
         T r,
         T q,
@@ -118,7 +112,7 @@ namespace uv::math
         }
     }
 
-    template <typename T>
+    template <std::floating_point T>
     T vegaBS(T d1,
         T t,
         T q,
@@ -127,7 +121,7 @@ namespace uv::math
         return S * std::exp(-q * t) * normalPDF(d1) * std::sqrt(t);
     }
 
-    template <typename T>
+    template <std::floating_point T>
     T volgaBS(T vega,
         T d1,
         T t,
@@ -136,4 +130,4 @@ namespace uv::math
         T d2{ std::fma(-vol, std::sqrt(t), d1) };
         return vega * (d1 * d2) / vol;
     }
-}
+}  // namespace uv::math

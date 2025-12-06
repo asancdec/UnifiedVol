@@ -8,10 +8,11 @@
 #include "Core/VolSurface.hpp"
 #include "Calibration/NLopt/Calibrator.hpp"
 #include "Models/SVI/SVISlice.hpp"
+#include "Utils/Types.hpp"
 
 #include <nlopt.hpp> 
+#include <concepts>
 #include <array>      
-#include <vector>
 #include <tuple>
 
 namespace uv::models::svi
@@ -27,7 +28,7 @@ namespace uv::models::svi
 		bool isValidateResults = true);
 
 	// g(k) standard function
-	double gk(double a, double b, double rho, double m, double sigma, double k) noexcept;
+	double gk(Real a, Real b, Real rho, Real m, Real sigma, Real k) noexcept;
 
 	namespace detail
 	{
@@ -56,7 +57,7 @@ namespace uv::models::svi
 		// Calibration
 		//--------------------------------------------------------------------------
 
-		// Define the minimum total variance constraint: wMin ≥ 0.0 
+		// Define the minimum total variance constraint: wMin ≥ 0.0
 		template <::nlopt::algorithm Algo>
 		void addWMinConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator) noexcept;
 
@@ -68,9 +69,9 @@ namespace uv::models::svi
 		template <::nlopt::algorithm Algo>
 		void addCalendarConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator, std::vector<ConstraintCtx>& contexts) noexcept;
 
-		// Add no butterfly arbitrage constraints g(k) ≥ 0.0 
+		// Add no butterfly arbitrage constraints g(k) ≥ 0.0
 		template <::nlopt::algorithm Algo>
-		void addConvexityConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator, std::vector<double>& kStorage) noexcept;
+		void addConvexityConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator, Vector<double>& kStorage) noexcept;
 
 		// Add objective function with analytical gradient
 		template <::nlopt::algorithm Algo>
@@ -97,12 +98,14 @@ namespace uv::models::svi
 		template <::nlopt::algorithm Algo>
 		void evalCal(const SVISlice& sviSlice,
 			const cal::nlopt::Calibrator<5, Algo>& calibrator,
-			const std::vector<double>& kSlice,
-			const std::vector<double>& wKPrevSlice) noexcept;
+			const Vector<double>& kSlice,
+			const Vector<double>& wKPrevSlice) noexcept;
 
 		// Make a wK slice
-		std::vector<double> makewKSlice(const std::vector<double>& kSlice,
-			double a, double b, double rho, double m, double sigma) noexcept;
+		template <std::floating_point T>
+		Vector<T> makewKSlice(const Vector<T>& kSlice,
+			T a, T b, T rho, T m, T sigma) noexcept;
+
 	} // namespace detail
 } 
 

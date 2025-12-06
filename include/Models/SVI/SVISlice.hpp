@@ -5,15 +5,17 @@
 
 #pragma once
 
+#include "Utils/Types.hpp"
+
 namespace uv::models::svi
 {
 	struct SVISlice
 	{
-		double T;
-		double a;
-		double b;
-		double rho;
-		double m;
-		double sigma;
+		Real T;
+		Real a;
+		Real b;
+		Real rho;
+		Real m;
+		Real sigma;
 	};
 }

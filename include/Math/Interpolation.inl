@@ -17,9 +17,9 @@ namespace uv::math
 {
 	template <std::floating_point T>
 	T interpolateCubicHermiteSpline(const T x,
-		const std::vector<T>& xs,
-		const std::vector<T>& ys,
-		const std::vector<T>& dydx
+		const Vector<T>& xs,
+		const Vector<T>& ys,
+		const Vector<T>& dydx
 	)
 	{
 		// ---------- Check matching dimensions ----------
@@ -109,8 +109,8 @@ namespace uv::math
 		// ---------- Calculate step sizes and secant slopes ----------
 
 		const std::size_t numSteps{ xsSize - 1 };
-		std::vector<T> h(numSteps);                   // Step sizes
-		std::vector<T> S(numSteps);			          // Secant slopes
+		Vector<T> h(numSteps);                   // Step sizes
+		Vector<T> S(numSteps);			        // Secant slopes
 
 		for (std::size_t i = 0; i < numSteps; ++i)
 		{
@@ -121,8 +121,8 @@ namespace uv::math
 
 		// ---------- Second and third order coefficients ----------
 
-		std::vector<T> c2s(numSteps);      // Second order
-		std::vector<T> c3s(numSteps);	   // Third order
+		Vector<T> c2s(numSteps);      // Second order
+		Vector<T> c3s(numSteps);	   // Third order
 
 		for (std::size_t i = 0; i < numSteps; ++i)
 		{
@@ -156,8 +156,8 @@ namespace uv::math
 	}
 
 	template <std::floating_point T>
-	std::vector<T> pchipDerivatives(const std::vector<T>& xs,
-		const std::vector<T>& ys)
+	Vector<T> pchipDerivatives(const Vector<T>& xs,
+		const Vector<T>& ys)
 	{
 		// ---------- Check matching dimensions ----------
 		
@@ -214,14 +214,14 @@ namespace uv::math
 		{
 			// Compute and return single secant slope
 			const T S{ (ys[1] - ys[0]) / (xs[1] - xs[0]) };
-			return std::vector<T>{ S, S };
+			return Vector<T>{ S, S };
 		}
 
 		// ---------- Calculate step sizes and secant slopes ----------
 	
 		const std::size_t numSteps{xsSize - 1};
-		std::vector<T> h(numSteps);                   // Step sizes
-		std::vector<T> S(numSteps);			          // Secant slopes
+		Vector<T> h(numSteps);                   // Step sizes
+		Vector<T> S(numSteps);			          // Secant slopes
 
 		for (std::size_t i = 0; i < numSteps; ++i)
 		{	
@@ -232,7 +232,7 @@ namespace uv::math
 
 		// ---------- Calculate middle derivatives ----------
 
-		std::vector<T> dydx(xsSize);          // All initialized to zero
+		Vector<T> dydx(xsSize);          // All initialized to zero
 
 		for (std::size_t i = 1; i < numSteps; ++i)
 		{	

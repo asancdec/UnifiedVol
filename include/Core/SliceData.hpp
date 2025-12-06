@@ -6,7 +6,7 @@
 #pragma once
 
 #include "Core/MarketData.hpp"
-#include <vector>
+#include "Utils/Types.hpp"
 
 namespace uv::core
 {
@@ -18,14 +18,14 @@ namespace uv::core
         // Member variables
         //--------------------------------------------------------------------------
 
-        double T_;                         // Slice maturity
-        double F_;                         // Forward price
-        std::vector<double> mny_;          // Plain moneyness (K/S)
-        std::vector<double> logFM_;        // Log-forward moneyness log(K/F)
-        std::vector<double> vol_;          // Volatilities 
-        std::vector<double> wT_;           // Total variance (vol²T) 
-        std::vector<double> K_;            // Strikes vector
-        std::vector<double> callBS_;       // Value of European call options
+        Real T_;                         // Slice maturity
+        Real F_;                         // Forward price
+        Vector<Real> mny_;          // Plain moneyness (K/S)
+        Vector<Real> logFM_;        // Log-forward moneyness log(K/F)
+        Vector<Real> vol_;          // Volatilities 
+        Vector<Real> wT_;           // Total variance (vol²T) 
+        Vector<Real> K_;            // Strikes vector
+        Vector<Real> callBS_;       // Value of European call options
         MarketData mktData_;               // Market data struct
         std::size_t numStrikes_;           // Number of strikes
 
@@ -35,9 +35,9 @@ namespace uv::core
         // Initialization
         //--------------------------------------------------------------------------   
         SliceData() = delete;
-        explicit SliceData(double T,
-            const std::vector<double>& mny,
-            const std::vector<double>& vol,
+        explicit SliceData(Real T,
+            const Vector<Real>& mny,
+            const Vector<Real>& vol,
             const MarketData& mktData);
 
         //--------------------------------------------------------------------------
@@ -45,40 +45,40 @@ namespace uv::core
         //--------------------------------------------------------------------------
 
         // Determine minimum total variance
-        double minWT() const noexcept;
+        Real minWT() const noexcept;
 
         // Determine maximum total variance
-        double maxWT() const noexcept;
+        Real maxWT() const noexcept;
 
         // Determine minimum log-forward moneyness
-        double minLogFM() const noexcept;
+        Real minLogFM() const noexcept;
 
         // Determine maximum log-forward moneyness
-        double maxLogFM() const noexcept;
+        Real maxLogFM() const noexcept;
 
         // Return ATM total variance
-        double atmWT() const noexcept;
+        Real atmWT() const noexcept;
 
         //--------------------------------------------------------------------------
         // Getters
         //--------------------------------------------------------------------------
 
-        double T() const noexcept;
-        double F() const noexcept;
+        Real T() const noexcept;
+        Real F() const noexcept;
         std::size_t numStrikes() const noexcept;
-        double r() const noexcept;
-        const std::vector<double>& mny() const noexcept;
-        const std::vector<double>& logFM() const noexcept;
-        const std::vector<double>& vol() const noexcept;
-        const std::vector<double>& wT() const noexcept;
-        const std::vector<double>& K() const noexcept;
-        const std::vector<double>& callBS() const noexcept;
+        Real r() const noexcept;
+        const Vector<Real>& mny() const noexcept;
+        const Vector<Real>& logFM() const noexcept;
+        const Vector<Real>& vol() const noexcept;
+        const Vector<Real>& wT() const noexcept;
+        const Vector<Real>& K() const noexcept;
+        const Vector<Real>& callBS() const noexcept;
 
 
         //--------------------------------------------------------------------------
         // Setters
         //--------------------------------------------------------------------------
-        void setWT(const std::vector<double>& wT);
-        void setCallBS(const std::vector<double>& callBS);
+        void setWT(const Vector<Real>& wT);
+        void setCallBS(const Vector<Real>& callBS);
     };
 }

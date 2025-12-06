@@ -3,7 +3,7 @@
 * Author: Alvaro Sanchez de Carlos
 */
            
-#include "Utils/IO/Log.hpp"                             
+#include "Utils/IO/Log.hpp"     
 
 #include <boost/math/special_functions/lambert_w.hpp>
 #include <numbers>                                  
@@ -24,9 +24,9 @@ namespace uv::math
 			// Define optimal step size using a heuristic rule
 			boost::math::lambert_w0
 			(
-				2.0L * std::numbers::pi_v<long double> *static_cast<long double>(N)
+				Real(Real(2.0)) * std::numbers::pi_v<Real> * Real(N)
 			)
-			/ static_cast<long double>(N)
+			/ Real(N)
 		)
 	{	
 		// Sanity checks at compile-time
@@ -38,19 +38,22 @@ namespace uv::math
 		// Calculate and store node values
 		for (unsigned int n = 0; n < N; ++n)
 		{
-			nodes_[n] = generateNode(static_cast<long double>(n) * h_);
+			nodes_[n] = generateNode(Real(n) * h_);
 		}
 	}
 
 	template <std::size_t N>
 	template<std::size_t M, typename F >
-	std::array<long double, M> TanHSinH<N>::integrateZeroToInfMulti(F&& f) const noexcept
+	std::array<Real, M> TanHSinH<N>::integrateZeroToInfMulti(F&& f) const noexcept
 	{
 		// Define numerical limit
-		constexpr long double eps{ std::numeric_limits<long double>::epsilon() };
+		constexpr Real eps{ std::numeric_limits<Real>::epsilon() };
 
 		// Accumulated sums
-		std::array<long double, M>  sR0{ 0.0L }, sR1{ 0.0L }, sL0{ 0.0L }, sL1{ 0.0L };
+		std::array<Real, M>  sR0{ Real(Real(0.0))},
+			sR1{ Real(Real(0.0))},
+			sL0{ Real(Real(0.0))},
+			sL1{ Real(Real(0.0))};
 
 		// Bit sets to indicate when done
 		std::bitset<M> actR0, actR1, actL0, actL1;
@@ -68,9 +71,9 @@ namespace uv::math
 			if (!anyA && !anyB) break;
 
 			// Only evaluate func if at least one component needs it
-			std::array<long double, M> ta;
-			std::array<long double, M> tb;
-			long double fa{ 0.0L }, fb{ 0.0L };
+			std::array<Real, M> ta;
+			std::array<Real, M> tb;
+			Real fa{ Real(Real(0.0)) }, fb{ Real(Real(0.0)) };
 			if (anyA)
 			{
 				const Node& a{ nodes_[i] };
@@ -90,14 +93,14 @@ namespace uv::math
 				if (anyA && actR0.test(m))
 				{
 					// Early exit check (first)
-					long double term{ fa * ta[m] };
+					Real term{ fa * ta[m] };
 					if (std::fabs(term) <= std::fabs(sR0[m] * eps)) actR0.reset(m);
 					else sR0[m] += term;
 				}
 				if (anyB && actR1.test(m))
 				{
 					// Early exit check (second)
-					long double term{ fb * tb[m] };
+					Real term{ fb * tb[m] };
 					if (std::fabs(term) <= std::fabs(sR1[m] * eps)) actR1.reset(m);
 					else sR1[m] += term;
 				}
@@ -113,9 +116,9 @@ namespace uv::math
 			if (!anyA && !anyB) break;
 
 			// Only evaluate func if at least one component needs it
-			std::array<long double, M> ta;
-			std::array<long double, M> tb;
-			long double fa{0.0L}, fb{ 0.0L };
+			std::array<Real, M> ta;
+			std::array<Real, M> tb;
+			Real fa{ Real(Real(0.0)) }, fb{ Real(Real(0.0)) };
 			if (anyA)
 			{
 				const Node& a{ nodes_[i] };
@@ -135,14 +138,14 @@ namespace uv::math
 				if (anyA && actL0.test(m))
 				{
 					// Early exit check (first)
-					long double term{ fa * ta[m] };
+					Real term{ fa * ta[m] };
 					if (std::fabs(term) <= std::fabs(sL0[m] * eps)) actL0.reset(m);
 					else sL0[m] += term;
 				}
 				if (anyB && actL1.test(m))
 				{
 					// Early exit check (second)
-					long double term{ fb * tb[m] };
+					Real term{ fb * tb[m] };
 					if (std::fabs(term) <= std::fabs(sL1[m] * eps)) actL1.reset(m);
 					else sL1[m] += term;
 				}
@@ -150,20 +153,20 @@ namespace uv::math
 		}
 
 		// Accumulate and return the total sum
-		std::array<long double, M> out{};
+		std::array<Real, M> out{};
 		for (std::size_t m = 0; m < M; ++m) out[m] = sR0[m] + sR1[m] + sL0[m] + sL1[m];
 		return out;
 	}
 
 	template <std::size_t N>
 	template<typename F>
-	long double TanHSinH<N>::integrateZeroToInf(F&& f) const noexcept
+	Real TanHSinH<N>::integrateZeroToInf(F&& f) const noexcept
 	{
 		// Define numerical limit
-		constexpr long double eps{ std::numeric_limits<long double>::epsilon() };
+		constexpr Real eps{ std::numeric_limits<Real>::epsilon() };
 
 		// Accumulated sums
-		long double sR0{ 0.0L }, sR1{ 0.0L }, sL0{ 0.0L }, sL1{ 0.0L };
+		Real sR0{ Real(Real(0.0)) }, sR1{ Real(Real(0.0)) }, sL0{ Real(Real(0.0)) }, sL1{ Real(Real(0.0)) };
 
 		// Define forwarded callable
 		auto&& func = std::forward<F>(f);
@@ -176,7 +179,7 @@ namespace uv::math
 			const Node& b{ nodes_[i + 1] };
 
 			// u(x) * w  (first)
-			const long double ta{ a.factorRight * static_cast<long double>(func(a.inputRight)) };
+			const Real ta{ a.factorRight * func(a.inputRight) };
 
 			// Early exit check (first)
 			if (std::fabs(ta) <= std::fabs(sR0 * eps)) break;
@@ -185,7 +188,7 @@ namespace uv::math
 			sR0 += ta;
 
 			// u(x) * w  (second)
-			const long double tb{ b.factorRight * static_cast<long double>(func(b.inputRight)) };
+			const Real tb{ b.factorRight * func(b.inputRight)};
 
 			// Early exit check (second)
 			if (std::fabs(tb) <= std::fabs(sR1 * eps)) break;
@@ -201,7 +204,7 @@ namespace uv::math
 			const Node& b{ nodes_[i + 1] };
 
 			// u(x) * w  (first)
-			const long double ta{ a.factorLeft * static_cast<long double>(func(a.inputLeft)) };
+			const Real ta{ a.factorLeft * func(a.inputLeft) };
 
 			// Early exit check (first)
 			if (std::fabs(ta) <= std::fabs(sL0 * eps)) break;
@@ -210,7 +213,7 @@ namespace uv::math
 			sL0 += ta;
 
 			// u(x) * w  (second)
-			const long double tb{ b.factorLeft * static_cast<long double>(func(b.inputLeft)) };
+			const Real tb{ b.factorLeft * func(b.inputLeft) };
 
 			// Early exit check (second)
 			if (std::fabs(tb) <= std::fabs(sL1 * eps)) break;
@@ -258,35 +261,35 @@ namespace uv::math
 	}
 
 	template <std::size_t N>
-	TanHSinH<N>::Node TanHSinH<N>::generateNode(const long double nh) const noexcept
+	TanHSinH<N>::Node TanHSinH<N>::generateNode(const Real nh) const noexcept
 	{
 		// Calculate q term
-		const long double q{ std::exp(-std::numbers::pi_v<long double> * std::sinh(nh)) };
+		const Real q{ std::exp(-std::numbers::pi_v<Real> * std::sinh(nh)) };
 
 		// 1 / (1 + q)
-		const long double qInv{ 1.0L / (1.0L + q) };
+		const Real qInv{ Real(Real(1.0)) / (Real(Real(1.0)) + q) };
 
 		// Calculate y term
-		const long double y{ 2.0L * q * qInv };
+		const Real y{ Real(Real(2.0)) * q * qInv };
 
 		// Calculate w
-		const long double w{ qInv * y * std::numbers::pi_v<long double>*std::cosh(nh) };
+		const Real w{ qInv * y * std::numbers::pi_v<Real>*std::cosh(nh) };
 
-		// 2.0 - y
-		const long double twoMinusY{ 2.0L - y };
+		// Real(2.0) - y
+		const Real twoMinusY{ Real(Real(2.0)) - y };
 
 		// w * h
-		const long double wh{w * h_};
+		const Real wh{w * h_};
 		
 		// Calculate and return Node struct
 		return
 		{
 			w,                                                                // weight value
 			y,                                                                // yn term
-			(1.0L - q) * qInv,                                                // abscissas value
-			wh * 2.0L / (y * y),                                              // scaling term RHS
+			(Real(Real(1.0)) - q) * qInv,                                                // abscissas value
+			wh * Real(Real(2.0)) / (y * y),                                              // scaling term RHS
 			twoMinusY / y,												      // transformed input RHS
-			wh * 2.0L / (twoMinusY * twoMinusY),                              // scaling term LHS
+			wh * Real(Real(2.0)) / (twoMinusY * twoMinusY),                              // scaling term LHS
 			y / twoMinusY 												      // transformed input LHS
 		};
 	}

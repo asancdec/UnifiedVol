@@ -9,7 +9,8 @@
 #include "Models/Heston/Pricer.hpp"
 #include "Models/Heston/Config.hpp"
 #include "Models/Heston/Calibrator.hpp"
-#include "Utils/Aux/Errors.hpp"    
+#include "Utils/Aux/Errors.hpp"
+#include "Utils/Types.hpp"
 #include "Math/Functions.hpp"
 #include "Math/Quadratures/TanHSinH.hpp"
 #include "Calibration/Ceres/Policy.hpp"
@@ -22,7 +23,6 @@
 #include <iostream>
 #include <iomanip>
 #include <string_view>
-#include <vector>
 #include <numeric>
 #include <cassert>
 #include <utility>
@@ -42,9 +42,9 @@ int main(int argc, char* argv[])
 {
     try
     {
-        // Choose the CSV path:
-        //  - If the user passed a command-line argument, use that path (argv[1]).
-        //  - Otherwise, fall back to your default CSV inside the repo.
+        // ---------- Configurations ----------
+        
+        // Choose the CSV path
         const std::filesystem::path path = (argc > 1) ?
             std::filesystem::path{ argv[1] } :
             std::filesystem::path{ "data/inputs/VolSurface_SPY_04072011.csv"};
@@ -57,79 +57,77 @@ int main(int argc, char* argv[])
         StopWatch timer;
         timer.StartStopWatch();
 
-        // Define market data
+        // ---------- Market data ----------
+
         MarketData mktData
-        { 0.0,          // r
-          0.0,          // q
-          485.77548     // S
+        { 
+          Real(0.0),          // r
+          Real(0.0),          // q
+          Real(485.77548)     // S
         };
 
-        // Generate volatility surface instance
         VolSurface mktVolSurf{ readVolSurface(path.string(), mktData) };
         //mktVolSurf.printTotVar(); 
 
+        // ---------- SVI Calibration ----------
 
-        // Initialize NLopt Calibrator instance
-        cal::nlopt::Calibrator<5, nlopt::LD_SLSQP> nloptOptimizer
+        cal::nlopt::Calibrator<5, nlopt::LD_SLSQP> nloptCalibrator
         {
             cal::nlopt::Config<5>
             {
-                1e-12,                             // eps
-                1e-9,                              // tol
-                1e-10,                             // ftolRel
-                10000,                             // maxEval
-                { "a", "b", "rho", "m", "sigma" }  // Parameter names 
+                1e-12,                            
+                1e-9,                              
+                1e-10,                            
+                10000,                             
+                { "a", "b", "rho", "m", "sigma" }   
             }
         };
 
-        // Calibrate SVI surface
-        auto [sviSlices, sviVolSurface] = svi::calibrate(mktVolSurf, nloptOptimizer);
+        auto [sviSlices, sviVolSurface] = svi::calibrate(mktVolSurf, nloptCalibrator);
         sviVolSurface.printVol();
 
-        // Build the Local Volatility surface using SVI parameters
+        // ---------- Build Local Volatility surface ----------
+
         const VolSurface lvVolSurface{localvol::buildSurface(sviVolSurface, sviSlices)};
         lvVolSurface.printVol();
 
-        // Initialize integration quadrature
+        // BP()
+
+        // ---------- Heston model calibration ----------
+
         static constexpr std::size_t HestonNodes = 300;
         const TanHSinH<HestonNodes> quad{};
-
-        // Initialize Pricer instance
+        
         heston::Pricer hestonPricer
         {
             std::make_shared<const TanHSinH<HestonNodes>>(quad),
             {
-                -2.0,
-                2.0
+                Real(-2.0),   // Damping parameter ITM
+                Real(2.0)     // Damping parameter OTM
             }
         };
 
-        // Initialize Ceres calibrator instance
-        cal::ceres::Calibrator
-            <
-                5,                                // Number of calibration parameters (kappa, theta, sigma, rho, v0)
-            cal::ceres::Policy
-                  <
-                    ceres::HuberLoss,            // Robust loss function type (Huber loss for outlier resistance)
-                    ceres::LEVENBERG_MARQUARDT,  // Trust region strategy (LM algorithm)
-                    ceres::DENSE_QR              // Linear solver type (dense QR decomposition for small problems)
+        cal::ceres::Calibrator<5, cal::ceres::Policy
+                <
+                    ceres::HuberLoss,             
+                    ceres::LEVENBERG_MARQUARDT,   
+                    ceres::DENSE_QR               
                 >
             > ceresOptimizer
         { 
             cal::ceres::Config<5>
             {   
                 
-                1000,                                            // Max evaluations
-                1e-16,                                           // Function tolerance
-                1e-16,                                           // Parameter tolerance
-                { "kappa", "theta", "sigma", "rho", "v0" },      // Parameter names
-                1e-16,                                           // Gradient tolerance
-                1.0,                                             // Loss scaling parameter   
-                false                                            // Logs the full Ceres calibration report 
+                1000,                                          
+                1e-16,                                        
+                1e-16,                                         
+                { "kappa", "theta", "sigma", "rho", "v0" },      
+                1e-16,                                           
+                1.0,                                               
+                false                                           
             }
         };
 
-        // Calibrate the Heston model
         VolSurface hestonVolurface
         { 
             heston::calibrator::calibrate
@@ -139,9 +137,11 @@ int main(int argc, char* argv[])
                 ceresOptimizer
             )
         };
-        hestonVolurface.printBSCall();
 
-        // End and log timer
+        hestonVolurface.printVol();
+
+        // ---------- Outputs ----------
+
         timer.LogTime<std::milli>();
 
         return EXIT_SUCCESS;
@@ -166,18 +166,18 @@ int main(int argc, char* argv[])
 
 
 //{
-//    const double kappa = 5.0;
-//    const double theta = 0.045324;
-//    const double sigma = 2.606662;
-//    const double rho = -0.759016;
-//    const double v0 = 0.371132;
-//    double S = 485.77548;
-//    double T = 3.0;
-//    const double r = 0.0;
-//    const double q = 0.0;
+//    const Real kappa = Real(5.0);
+//    const Real theta = 0.045324;
+//    const Real sigma = 2.606662;
+//    const Real rho = -0.759016;
+//    const Real v0 = 0.371132;
+//    Real S = 485.77548;
+//    Real T = Real(3.0);
+//    const Real r = Real(0.0);
+//    const Real q = Real(0.0);
 //
 //    const SliceData& sliceData = sviVolSurface.slices().back();
-//    const std::vector<double>& strikes = sliceData.K();
+//    const Vector<Real>& strikes = sliceData.K();
 //    //std::cout << std::fixed << std::setprecision(17);
 //
 //    for (std::size_t i = 0; i < strikes.size(); ++i)
@@ -199,19 +199,19 @@ int main(int argc, char* argv[])
 //
 //
 //// Parameters where Heston = BS
-//const double kappa = 1.0;     // irrelevant if sigma = 0
-//const double theta = 0.04;    // variance = 0.04 -> vol = 0.2
-//const double sigma = 1e-15;    // almost zero -> constant variance
+//const Real kappa = Real(1.0);     // irrelevant if sigma = 0
+//const Real theta = 0.04;    // variance = 0.04 -> vol = 0.2
+//const Real sigma = 1e-15;    // almost zero -> constant variance
 //
-//const double rho = 0.0;
-//const double v0 = theta;   // constant variance
-//double S = 100.0;
-//const double K = 100.0;
-//double T = 1.0;
-//const double r = 0.02;
-//const double q = 0.0;
+//const Real rho = Real(0.0);
+//const Real v0 = theta;   // constant variance
+//Real S = Real(100.0);
+//const Real K = Real(100.0);
+//Real T = Real(1.0);
+//const Real r = 0.02;
+//const Real q = Real(0.0);
 //
-//double hestonPrice;
+//Real hestonPrice;
 //
 //for (int i = 0; i < 2; ++i)
 //{
@@ -230,7 +230,7 @@ int main(int argc, char* argv[])
 //
 //
 //
-//const double bsPrice = blackScholes(T, r, q, std::sqrt(theta), S, K);
+//const Real bsPrice = blackScholes(T, r, q, std::sqrt(theta), S, K);
 //std::cout << std::setprecision(17);
 //std::cout << "Heston price: " << hestonPrice << "\n";
 //std::cout << "BS price:     " << bsPrice << "\n";
@@ -243,8 +243,8 @@ int main(int argc, char* argv[])
 //std::cout << "❌ Mismatch — check integrand or scaling.\n";
 //
 //
-//T = 0.0;
-//S = 105.0;
+//T = Real(0.0);
+//S = Real(105.0);
 //
 //
 //hestonPrice = hestonPricer.callPrice(
@@ -259,8 +259,8 @@ int main(int argc, char* argv[])
 //    K
 //);
 //
-//const double intrinsic = std::max(S - K, 0.0);
-//const double diff = std::abs(hestonPrice - intrinsic);
+//const Real intrinsic = std::max(S - K, Real(0.0));
+//const Real diff = std::abs(hestonPrice - intrinsic);
 //
 //std::cout << "\n--- T → 0 Limit Test ---\n";
 //std::cout << "Heston Price  : " << hestonPrice << '\n';

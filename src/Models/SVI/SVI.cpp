@@ -10,23 +10,22 @@
 #include <cmath>      
 #include <format>     
 #include <iterator>   
-#include <vector>
 
 namespace uv::models::svi
 {
-    double gk(double a, double b, double rho, double m, double sigma, double k) noexcept
+    double gk(Real a, Real b, Real rho, Real m, Real sigma, Real k) noexcept
     {
-        double x{ k - m };                                          // x := k-m
-        double R{ std::hypot(x, sigma) };                           // R:= sqrt(x^2 + sigma^2)
-        double invR{ 1.0 / R };                                     // invR := 1 / R
-        double wk{ std::fma(b, (rho * x + R), a) };                 // w(k) = a + b*(rho*x + R)
-        double wkD1{ b * (rho + x * invR) };                        // w'(k) = b * (rho + x/R)
-        double wkD1Squared{ wkD1 * wkD1 };                          // w'(k)^2
-        double invRCubed{ invR * invR * invR };                     // 1/(R^3)
-        double sigmaSquared{ sigma * sigma };                       // sigma^2
-        double wkD2{ b * sigmaSquared * invRCubed };                // w''(k) = b * sigma^2 / R^3
-        double A{ 1.0 - 0.5 * k * wkD1 / wk };                      // A := 1 - k * w'/(2 * w)                        
-        double B{ (1.0 / wk) + 0.25 };                              // B := 1/w(k) + 1/4
+        Real x{ k - m };                                          // x := k-m
+        Real R{ std::hypot(x, sigma) };                           // R:= sqrt(x^2 + sigma^2)
+        Real invR{ 1.0 / R };                                     // invR := 1 / R
+        Real wk{ std::fma(b, (rho * x + R), a) };                 // w(k) = a + b*(rho*x + R)
+        Real wkD1{ b * (rho + x * invR) };                        // w'(k) = b * (rho + x/R)
+        Real wkD1Squared{ wkD1 * wkD1 };                          // w'(k)^2
+        Real invRCubed{ invR * invR * invR };                     // 1/(R^3)
+        Real sigmaSquared{ sigma * sigma };                       // sigma^2
+        Real wkD2{ b * sigmaSquared * invRCubed };                // w''(k) = b * sigma^2 / R^3
+        Real A{ 1.0 - 0.5 * k * wkD1 / wk };                      // A := 1 - k * w'/(2 * w)                        
+        Real B{ (1.0 / wk) + 0.25 };                              // B := 1/w(k) + 1/4
 
         return (A * A) - 0.25 * wkD1Squared * B + wkD2 * 0.5;
     }
@@ -40,7 +39,7 @@ namespace uv::models::svi::detail
         const double rho{ -0.5 };
         const double m{ 0.1 };
         const double sigma{ 0.1 };
-        const double a{ slice.atmWT() - b * (-rho * m + std::hypot(m, sigma)) };
+        const double a{ double(slice.atmWT()) - b * (-rho * m + std::hypot(m, sigma)) };
 
         return { a, b, rho, m, sigma };
     }
@@ -49,11 +48,11 @@ namespace uv::models::svi::detail
     {
         return
         {
-            -10.0,                       // a
-            0.001,                       // b            
-            -0.9999,                     // rho
-            5.0 * slice.minLogFM(),      // m
-            0.01                         // sigma
+            -10.0,                               // a
+            0.001,                                // b            
+            -0.9999,                             // rho
+            5.0 * double(slice.minLogFM()),      // m
+            0.01                                   // sigma
         };
     }
 
@@ -61,11 +60,11 @@ namespace uv::models::svi::detail
     {
         return
         {
-        slice.maxWT(),              // a
-        2.0,                        // b
-        0.9999,                     // rho
-        5.0 * slice.maxLogFM(),     // m
-        10.0                        // sigma
+        double(slice.maxWT()),              // a
+        2.0,                                // b
+        0.9999,                             // rho
+        5.0 * double(slice.maxLogFM()),     // m
+        10.0                                // sigma
         };
     }
 
@@ -128,22 +127,5 @@ namespace uv::models::svi::detail
             dg[j] = dgdw * dw[j] + dgdw1 * dw1[j] + dgdw2 * dw2[j];
         }
         return dg;
-    }
-
-    std::vector<double> makewKSlice(const std::vector<double>& kSlice,
-        double a, double b, double rho, double m, double sigma) noexcept
-    {
-        std::vector<double> wKSlice;
-        wKSlice.reserve(kSlice.size());
-
-        std::transform(
-            kSlice.begin(), kSlice.end(),
-            std::back_inserter(wKSlice),
-            [a, b, rho, m, sigma](double k) noexcept
-            {
-                return wk(a, b, rho, m, sigma, k);
-            });
-
-        return wKSlice;
     }
 } // namespace uv::models::svi::detail

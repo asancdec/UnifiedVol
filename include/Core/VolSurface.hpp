@@ -7,8 +7,8 @@
 
 #include "Core/SliceData.hpp"
 #include "Core/MarketData.hpp"
+#include "Utils/Types.hpp"
 
-#include <vector>
 #include <cstddef>
 
 namespace uv::core
@@ -22,7 +22,7 @@ namespace uv::core
         //--------------------------------------------------------------------------
 
         std::vector<SliceData> slices_;         // 2D volatility grid: vols[maturity][tenors slice]
-        std::vector<double>    tenors_;         // Vector with different volatility surface tenors
+        Vector<Real>    tenors_;         // Vector with different volatility surface tenors
 
         std::size_t numTenors_;                 // Number of tenors in years
         std::size_t numStrikes_;                // Number of strikes
@@ -34,9 +34,9 @@ namespace uv::core
         //--------------------------------------------------------------------------
 
         VolSurface() = delete;
-        explicit VolSurface(const std::vector<double>& mny,
-            const std::vector<std::vector<double>>& vols,
-            const std::vector<double>& tenors,
+        explicit VolSurface(const Vector<Real>& mny,
+            const Matrix<Real>& vols,
+            const Vector<Real>& tenors,
             const MarketData& mktData);
 
         //--------------------------------------------------------------------------
@@ -53,11 +53,14 @@ namespace uv::core
         void printBSCall() const noexcept;
 
         // Return total variance matrix
-        std::vector<std::vector<double>> totVarMatrix() const noexcept;
+        Matrix<Real> totVarMatrix() const noexcept;
+
+        // Return the logFM matrix
+        Matrix<Real> logFMMatrix() const noexcept;
 
         // Getters
         std::vector<SliceData>& slices() noexcept;
-        const std::vector<double>& tenors() const noexcept;
+        const Vector<Real>& tenors() const noexcept;
         std::size_t numTenors() const noexcept;
         std::size_t numStrikes() const noexcept;
     };

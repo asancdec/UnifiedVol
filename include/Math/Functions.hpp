@@ -5,33 +5,157 @@
 
 #pragma once
 
-#include <complex>
-#include <limits>
+#include "Utils/Types.hpp"
+
+#include <concepts>
 
 namespace uv::math
 {
-    // Numerically stable evaluation of log(1 + z) for complex arguments.
-    template <typename T>
-    std::complex<T> log1pComplex(const std::complex<T>& z) noexcept;
+    /**
+     * @brief Numerically stable complex log1p: log(1 + z).
+     *
+     * Implements the robust complex logarithm formulation from Appendix A of
+     * Andersen–Lake, specialized to log(1 + z) for z = a + i b.
+     *
+     * The function uses a small-box branch when both real and imaginary parts
+     * are small:
+     *
+     *   - If |a|, |b| < 1/2:
+     *       Re(log(1 + z)) = 0.5 * log1p(a^2 + 2a + b^2)
+     *       Im(log(1 + z)) = atan2(b, 1 + a)
+     *
+     *     This avoids catastrophic cancellation in log(1 + z) when z is close
+     *     to zero.
+     *
+     *   - Otherwise:
+     *       log(1 + z) = std::log(1 + z)
+     *
+     * @tparam T  Floating-point type (e.g. float, double).
+     * @param z   Complex argument.
+     *
+     * @return log(1 + z) evaluated in a numerically robust way.
+     *
+     * ### REFERENCES
+     * - L. Andersen, M. Lake (2018), *Robust High-Precision Option Pricing by
+     *   Fourier Transforms: Contour Deformations and Double-Exponential
+     *   Quadrature*, Bank of America Merrill Lynch, Appendix A.
+     */
+    template <std::floating_point T>
+    Complex<T> log1pComplex(const Complex<T>& z) noexcept;
 
-    // cosm1(b) := cos(b) - 1 = -2 sin²(b / 2)
-    template <typename T>
+    /**
+     * @brief Numerically stable evaluation of cos(b) - 1.
+     *
+     * Implements the cosm1 helper used in Appendix A of Andersen–Lake:
+     *
+     *   cosm1(b) = cos(b) - 1 = -2 sin²(b / 2),
+     *
+     * which replaces the naïve expression cos(b) - 1 that suffers severe
+     * cancellation when |b| is small.
+     *
+     * @tparam T  Floating-point type.
+     * @param b   Real argument.
+     *
+     * @return cos(b) - 1, computed in a cancellation-resistant form.
+     *
+     * ### REFERENCES
+     * - L. Andersen, M. Lake (2018), *Robust High-Precision Option Pricing by
+     *   Fourier Transforms: Contour Deformations and Double-Exponential
+     *   Quadrature*, Appendix A.
+     */
+    template <std::floating_point T>
     T cosm1(T b) noexcept;
 
-    // expm1Complex(z) := e^z - 1 (stable for small |z|)
-    template <typename T>
-    std::complex<T> expm1Complex(const std::complex<T>& z) noexcept;
+    /**
+     * @brief Numerically stable complex expm1: exp(z) - 1.
+     *
+     * Implements the robust complex expm1 from Appendix A of Andersen–Lake:
+     * for z = a + i b, use a small-|z| branch when |z| < 1 and fall back to
+     * exp(z) - 1 otherwise.
+     *
+     * For |z| < 1:
+     *
+     *   - Use cosm1(b) := cos(b) - 1 (stable for small b),
+     *   - Use em1 := expm1(a) = e^a - 1 (stable for small a),
+     *
+     *   and compute
+     *
+     *     Re(expm1(z)) = em1 * (cm1 + 1) + cm1
+     *     Im(expm1(z)) = sin(b) * e^a
+     *
+     *   where cm1 = cosm1(b).
+     *
+     * For |z| >= 1:
+     *
+     *     expm1(z) = std::exp(z) - 1.
+     *
+     * This avoids catastrophic cancellation in exp(z) - 1 when z is close to
+     * zero and is particularly important in Fourier-based option pricing
+     * algorithms where many complex exponentials are evaluated near the origin.
+     *
+     * @tparam T  Floating-point type (e.g. float, double).
+     * @param z   Complex argument.
+     *
+     * @return exp(z) - 1 evaluated in a numerically robust way.
+     *
+     * ### REFERENCES
+     * - L. Andersen, M. Lake (2018), *Robust High-Precision Option Pricing by
+     *   Fourier Transforms: Contour Deformations and Double-Exponential
+     *   Quadrature*, Appendix A.
+     */
+    template <std::floating_point T>
+    Complex<T> expm1Complex(const Complex<T>& z) noexcept;
 
-    // Normal cumulative density function
-    template <typename T>
+    /**
+     * @brief Standard normal cumulative distribution function Φ(x).
+     *
+     * Computes:
+     *      Φ(x) = P(Z ≤ x),  Z ~ N(0, 1).
+     *
+     * @tparam T Floating-point type.
+     * @param x  Evaluation point.
+     * @return   Standard normal CDF at x.
+     */
+    template <std::floating_point T>
     T normalCDF(T x) noexcept;
 
-    // Normal probability density function
-    template <typename T>
+    /**
+     * @brief Standard normal probability density function φ(x).
+     *
+     * Computes:
+     *      φ(x) = (1 / sqrt(2π)) * exp(-0.5 * x²).
+     *
+     * @tparam T Floating-point type.
+     * @param x  Evaluation point.
+     * @return   Standard normal PDF at x.
+     */
+    template <std::floating_point T>
     T normalPDF(T x) noexcept;
 
-    // Black-Scholes pricing
-    template <typename T>
+    /**
+     * @brief Black–Scholes European option price.
+     *
+     * Computes the value of a European call or put option under
+     * the Black–Scholes model with continuous dividend yield:
+     *
+     *   Call:
+     *      C = S e^{-q t} Φ(d1) − K e^{-r t} Φ(d2)
+     *
+     *   Put:
+     *      P = K e^{-r t} Φ(-d2) − S e^{-q t} Φ(-d1)
+     *
+     * @tparam T   Floating-point type.
+     * @param t    Time to maturity (years).
+     * @param r    Risk-free rate (continuous compounding).
+     * @param q    Dividend yield (continuous compounding).
+     * @param vol  Volatility σ.
+     * @param S    Spot price.
+     * @param K    Strike price.
+     * @param isCall True for call, false for put.
+     *
+     * @return Option price (call or put).
+     */
+    template <std::floating_point T>
     T blackScholes(T t,
         T r,
         T q,
@@ -40,30 +164,97 @@ namespace uv::math
         T K,
         bool isCall = true) noexcept;
 
-    // Black-Scholes Vega
-    template <typename T>
+    /**
+     * @brief Black–Scholes Vega (∂Price / ∂σ).
+     *
+     * Computes:
+     *      Vega = S e^{-q t} φ(d1) sqrt(t).
+     *
+     * Identical for calls and puts under the Black–Scholes model.
+     *
+     * @tparam T Floating-point type.
+     * @param d1 Black–Scholes d1 term.
+     * @param t  Time to maturity (years).
+     * @param q  Dividend yield (continuous compounding).
+     * @param S  Spot price.
+     *
+     * @return Vega in price units per unit volatility.
+     */
+    template <std::floating_point T>
     T vegaBS(T d1,
         T t,
         T q,
         T S) noexcept;
 
-    // Black-Scholes Volga
-    template <typename T>
+    /**
+     * @brief Black–Scholes Volga (Vomma): ∂²Price / ∂σ².
+     *
+     * Computes:
+     *      Volga = Vega * (d1 * d2 / σ),
+     *   where d2 = d1 − σ sqrt(t).
+     *
+     * Identical for calls and puts under the Black–Scholes model.
+     *
+     * @tparam T   Floating-point type.
+     * @param vega Precomputed Black–Scholes Vega.
+     * @param d1   Black–Scholes d1 term.
+     * @param t    Time to maturity (years).
+     * @param vol  Volatility σ.
+     *
+     * @return Volga (second volatility derivative).
+     */
+    template <std::floating_point T>
     T volgaBS(T vega,
         T d1,
         T t,
         T vol) noexcept;
 
-    // Calculate implied volatility using Halley's method
-    double impliedVolBS(double mktPriceBS,
-        double t,
-        double r,
-        double q,
-        double S,
-        double K,
-        bool isCall = true,
-        double ftolAbs = std::numeric_limits<double>::epsilon(),
-        unsigned int maxEval = 100) noexcept;
-}
+    /**
+     * @brief Compute the Black–Scholes implied volatility using Halley's method.
+     *
+     * This function returns the volatility σ such that the Black–Scholes price
+     * matches a given market price. It solves for the root of
+     *
+     *      f(σ) = BS(σ) – market price
+     *
+     * using an iterative Halley update:
+     *
+     *      σ_{n+1} = σ_n - 2 f f' / ( 2 (f')² - f f'' ),
+     *
+     * where f' is the Vega (∂BS/∂σ) and f'' is the Volga (∂²BS/∂σ²).
+     *
+     * ### Arguments
+     * @param mktPriceBS Market option price under Black–Scholes assumptions.
+     * @param T          Time to maturity (in years), must be positive.
+     * @param r          Flat risk-free rate (continuously compounded).
+     * @param q          Continuous dividend yield.
+     * @param S          Spot price of the underlying, must be positive.
+     * @param K          Option strike, must be positive.
+     * @param isCall     True for a call, false for a put.
+     *
+     * ### Returns
+     * Implied volatility σ such that BS(σ) ≈ mktPriceBS.
+     *
+     * ### Algorithm
+     * - Initial guess uses a log-moneyness heuristic:
+     *       σ0 = sqrt(2 |log(F/K)| / T),
+     *   where F = S · exp((r − q) T).
+     * - Halley's method iterates up to 100 evaluations with a tolerance of 1e-14.
+     * - Convergence is checked using a relative/absolute condition on price residual.
+     *
+     * ### Complexity
+     * O(maxIter) Black–Scholes evaluations and Greeks per call (typically < 1 µs).
+
+     * @warning Produces warnings (UV_WARN) if convergence fails within the
+     *          maximum number of iterations.
+     */
+    Real impliedVolBS(Real mktPriceBS,
+        Real T,
+        Real r,
+        Real q,
+        Real S,
+        Real K,
+        bool isCall = true);
+} // namespace uv::math
 
 #include "Functions.inl"

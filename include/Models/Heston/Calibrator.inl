@@ -30,11 +30,13 @@ namespace uv::models::heston::calibrator
 		for (const auto& slice : hestonVolSurf.slices())
 		{
 			// Extract slice parameters
-			const double T{ slice.T() };
-			const double F{ slice.F() };
-			const double r{ slice.r() };
-			const std::vector<double>& K{ slice.K() };
-			const std::vector<double>& callPriceMkt(slice.callBS());
+			const double T{ double(slice.T()) };
+			const double F{ double(slice.F()) };
+			const double r{ double(slice.r() )};
+			Vector<double> Kcopy{ slice.K().cbegin(), slice.K().cend() };
+			const Vector<double>& K{ Kcopy };
+			Vector<double> callPriceMktCopy{ slice.callBS().cbegin(), slice.callBS().cend() };
+			const Vector<double>& callPriceMkt{ callPriceMktCopy };
 
 			for (std::size_t i = 0; i < K.size(); ++i)
 			{
@@ -55,11 +57,11 @@ namespace uv::models::heston::calibrator
 		for (auto& slice : hestonVolSurf.slices())
 		{
 			// Extract slice parameters
-			const double T{ slice.T() };
-			const double F{ slice.F() };
-			const double r{ slice.r() };
-			const std::vector<double>& K{ slice.K() };
-			std::vector<double> modelCall(K.size());
+			const Real T{ slice.T() };
+			const Real F{ slice.F() };
+			const Real r{ slice.r() };
+			const Vector<Real>& K{ slice.K() };
+			Vector<Real> modelCall(K.size());
 
 			// Fill modelCall with call prices for each strike
 			std::transform
@@ -67,7 +69,7 @@ namespace uv::models::heston::calibrator
 				K.begin(),
 				K.end(),
 				modelCall.begin(),
-				[T, F, r, &pricer](double Ki) noexcept { return pricer.callPrice(T, F, r, Ki); }
+				[T, F, r, &pricer](Real Ki) noexcept { return pricer.callPrice(T, F, r, Ki); }
 			);
 
 			// Store the calculated prices in the volatility surface object
@@ -101,16 +103,16 @@ namespace uv::models::heston::calibrator::detail
 				p[0], p[1], p[2], p[3], p[4], T_, F_, r_, K_
 			);
 
-			residuals[0] = static_cast<double>(pg[0] - callPriceMkt_);
+			residuals[0] = double(pg[0] - callPriceMkt_);
 
 			if (jacobians && jacobians[0]) 
 			{
-				double* J = jacobians[0];  
-				J[0] = static_cast<double>(pg[1]);
-				J[1] = static_cast<double>(pg[2]);
-				J[2] = static_cast<double>(pg[3]);
-				J[3] = static_cast<double>(pg[4]);
-				J[4] = static_cast<double>(pg[5]);
+				double* J = jacobians[0];
+				J[0] = double(pg[1]);
+				J[1] = double(pg[2]);
+				J[2] = double(pg[3]);
+				J[3] = double(pg[4]);
+				J[4] = double(pg[5]);
 			}
 			return true;
 		}

@@ -1,5 +1,5 @@
 /**
-* Calibrator.hpp
+* double.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -9,7 +9,6 @@
 #include "Utils/Aux/StopWatch.hpp"
 
 #include <nlopt.hpp>
-#include <vector>
 #include <array>
 #include <cstddef>
 
@@ -31,7 +30,7 @@ namespace uv::cal::nlopt
         // Member variables
         //--------------------------------------------------------------------------	
         // Config & engine
-        Config<N>    config_;
+        Config<N>         config_;
         ::nlopt::opt      opt_;
         utils::StopWatch  timer_;
 
@@ -77,7 +76,7 @@ namespace uv::cal::nlopt
         void setMinObjective(NloptFunction f, void* data) noexcept;
 
         // Run calibration	
-        std::vector<double> optimize() noexcept;
+        Vector<double> optimize() noexcept;
 
         //--------------------------------------------------------------------------
         // Getters

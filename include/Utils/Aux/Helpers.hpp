@@ -5,45 +5,20 @@
 
 #pragma once
 
-#include "Utils/IO/Log.hpp"
-
-#include <format>
-#include <algorithm>
-#include <string> 
-#include <vector>
-#include <array>
-#include <cstddef>
-#include <string_view>
-#include <span>
+#include "Utils/Types.hpp"
 
 namespace uv::utils
 {
-	// Transposes matrix (vector of vectors)
+    /**
+     * @brief Transpose a dense matrix stored as a vector of row vectors.
+     *
+     * @tparam T        Element type.
+     * @param  input    Matrix with shape [numRows][numCols].
+     * @return          Transposed matrix with shape [numCols][numRows].
+     */
 	template <typename T>
-	std::vector<std::vector<T>> transposeMatrix(const std::vector<std::vector<T>>& input);
+	Matrix<T> transposeMatrix(const Matrix<T>& input);
 
-    // Clamp initial guess within upper and lower bounds
-    template <std::size_t N>
-    void clamp(std::array<double, N>& initGuess,
-        const std::array<double, N>& lowerBounds,
-        const std::array<double, N>& upperBounds,
-        const std::array<std::string_view, N>& paramNames) noexcept;
-
-    // Warn if upper or lower bounds are touched
-    template <std::size_t N>
-    void warnBoundsHit(std::span<double> x,
-        const std::array<double, N>& lowerBounds,
-        const std::array<double, N>& upperBounds,
-        const std::array<std::string_view, N>& paramNames) noexcept;
-
-    // Log calibration results 
-    template <std::size_t N>
-    void logResults(std::span<double> x,
-        const std::array<std::string_view, N>& paramNames,
-        double sse,
-        unsigned iterCount,
-        double elapsedMs,
-        bool isSuccess) noexcept;
 }
 
 #include "Helpers.inl"

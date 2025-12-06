@@ -5,8 +5,9 @@
 
 #pragma once
 
+#include "Utils/Types.hpp"
+
 #include <concepts>
-#include <vector>
 
 namespace uv::math
 {
@@ -67,9 +68,9 @@ namespace uv::math
 	 */
 	template <std::floating_point T>
 	T interpolateCubicHermiteSpline(const T xs,
-		const std::vector<T>& x,
-		const std::vector<T>& y,
-		const std::vector<T>& dydx
+		const Vector<T>& x,
+		const Vector<T>& y,
+		const Vector<T>& dydx
 		);
 
 	/**
@@ -121,7 +122,7 @@ namespace uv::math
 	 * @note Complexity: O(N), no global solves or matrix factorizations.
 	 */
 	template <std::floating_point T>
-	std::vector<T> pchipDerivatives(const Vector<T>& xs,
+	Vector<T> pchipDerivatives(const Vector<T>& xs,
 		const Vector<T>& ys);
 
 	/**

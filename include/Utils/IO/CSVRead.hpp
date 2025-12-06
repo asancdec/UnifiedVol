@@ -7,7 +7,6 @@
 
 #include "Core/VolSurface.hpp"
 
-#include <vector>
 #include <string>
 
 namespace uv::utils

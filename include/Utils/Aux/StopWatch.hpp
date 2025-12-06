@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "Utils/Types.hpp"
+
 #include <chrono>
 
 namespace uv::utils
@@ -51,7 +53,7 @@ namespace uv::utils
 
         // Returns the elapsed time
         template <typename Period = std::ratio<1>>
-        double GetTime() const noexcept;
+        Real GetTime() const noexcept;
 
         // Log time
         template <typename Period = std::ratio<1>>

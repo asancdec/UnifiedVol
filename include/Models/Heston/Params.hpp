@@ -5,14 +5,16 @@
 
 #pragma once
 
+#include "Utils/Types.hpp"
+
 namespace uv::models::heston
 {
 	struct Params
 	{
-		long double kappa;  // Mean reversion speed
-		long double theta;  // Long term variance
-		long double sigma;  // Volatility of variance
-		long double rho;    // Correlation
-		long double v0;     // Initial variance
+		Real kappa;  // Mean reversion speed
+		Real theta;  // Long term variance
+		Real sigma;  // Volatility of variance
+		Real rho;    // Correlation
+		Real v0;     // Initial variance
 	};
 }

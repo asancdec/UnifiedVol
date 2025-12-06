@@ -12,7 +12,6 @@
 #include <format>     
 #include <limits>    
 #include <utility>     
-#include <vector>     
 
 namespace uv::models::svi
 {
@@ -27,14 +26,14 @@ namespace uv::models::svi
         // Initialize vectors
         std::vector<SVISlice> sviSlices;
         sviSlices.reserve(sviVolSurf.numTenors());
-        std::vector<double> wkSlice(sviVolSurf.numStrikes(), 0.0);
+        Vector<double> wkSlice(sviVolSurf.numStrikes(), 0.0);
 
         // Calibrate each slice
         for (auto& slice : sviVolSurf.slices())
         {
-            // Constant references to slice data
-            const std::vector<double>& kSlice{ slice.logFM() };
-            const std::vector<double>& wKSlice{ slice.wT() };
+            // Extract and convert data
+            const Vector<double> wKSlice{slice.wT().cbegin(), slice.wT().cend() };
+            const Vector<double> kSlice{slice.logFM().cbegin(), slice.logFM().cend()};
 
             // Initialize calibrator instance
             cal::nlopt::Calibrator calibrator{ prototype.fresh() };
@@ -70,7 +69,7 @@ namespace uv::models::svi
             detail::addCalendarConstraint(calibrator, contexts);
 
             // Enforce convexity constraints: g(k) ≥ 0
-            std::vector<double> kStorage{ kSlice };
+            Vector<double> kStorage{ kSlice };
             detail::addConvexityConstraint(calibrator, kStorage);
 
             // Objective function contexts
@@ -80,15 +79,15 @@ namespace uv::models::svi
             detail::setMinObjective(calibrator, obj);
 
             // Solve the optimization problem
-            std::vector<double> params{ calibrator.optimize() };
+            Vector<double> params{ calibrator.optimize() };
 
             // Extract calibration results
-            double T{ slice.T() };
-            double a{ params[0] };
-            double b{ params[1] };
-            double rho{ params[2] };
-            double m{ params[3] };
-            double sigma{ params[4] };
+            Real T{ slice.T() };
+            Real a{ Real(params[0]) };
+            Real b{ Real(params[1]) };
+            Real rho{ Real(params[2]) };
+            Real m{ Real(params[3]) };
+            Real sigma{ Real(params[4]) };
 
             SVISlice sviSlice{ T, a, b, rho, m, sigma };
 
@@ -99,10 +98,13 @@ namespace uv::models::svi
             sviSlices.emplace_back(std::move(sviSlice));
 
             // Update calculated variances use them on the next slice calibration
-            wkSlice = detail::makewKSlice(kSlice, a, b, rho, m, sigma);
+            wkSlice = detail::makewKSlice<double>(kSlice, double(a), double(b), double(rho), double(m), double(sigma));
+
+            // Make a local copy first
+            Vector<Real> wtCopy{ wkSlice.begin(), wkSlice.end() };
 
             // Set the slice of the calibrated volatility surface
-            slice.setWT(wkSlice);
+            slice.setWT(wtCopy);
         }
         return { std::move(sviSlices), std::move(sviVolSurf) };
     }
@@ -114,7 +116,7 @@ namespace uv::models::svi::detail
     {
         const double* k;     // Pointer to log-forward moneyness
         const double* wK;    // Pointer to total variance
-        std::size_t   n;   // Number of points
+        std::size_t   n;     // Number of points
     };
 
     struct ConstraintCtx
@@ -140,17 +142,17 @@ namespace uv::models::svi::detail
 
         explicit GKPrecomp(double a, double b, double rho, double m, double sigma, double k) noexcept
         {
-            this->x = k - m;                                          // x := k-m
-            this->R = std::hypot(x, sigma);                         // R:= sqrt(x^2 + sigma^2)
-            this->invR = 1.0 / R;                                     // invR := 1 / R
-            this->wk = std::fma(b, (rho * x + R), a);               // w(k) = a + b*(rho*x + R)
-            this->wkD1 = b * (rho + x * invR);                        // w'(k) = b * (rho + x/R)
-            this->wkD1Squared = wkD1 * wkD1;                          // w'(k)^2
-            this->invRCubed = invR * invR * invR;                     // 1/(R^3)
-            this->sigmaSquared = sigma * sigma;                       // sigma^2
-            this->wkD2 = b * sigmaSquared * invRCubed;                // w''(k) = b * sigma^2 / R^3
-            this->A = 1.0 - 0.5 * k * wkD1 / wk;                      // A := 1 - k * w'/(2 * w)                        
-            this->B = (1.0 / wk) + 0.25;                              // B := 1/w(k) + 1/4
+            this->x = k - m;                                      // x := k-m
+            this->R = std::hypot(x, sigma);                      // R:= sqrt(x^2 + sigma^2)
+            this->invR = 1.0 / R;                                // invR := 1 / R
+            this->wk = std::fma(b, (rho * x + R), a);            // w(k) = a + b*(rho*x + R)
+            this->wkD1 = b * (rho + x * invR);                   // w'(k) = b * (rho + x/R)
+            this->wkD1Squared = wkD1 * wkD1;                     // w'(k)^2
+            this->invRCubed = invR * invR * invR;                // 1/(R^3)
+            this->sigmaSquared = sigma * sigma;                  // sigma^2
+            this->wkD2 = b * sigmaSquared * invRCubed;           // w''(k) = b * sigma^2 / R^3
+            this->A = 1.0 - 0.5 * k * wkD1 / wk;                 // A := 1 - k * w'/(2 * w)                        
+            this->B = (1.0 / wk) + 0.25;                         // B := 1/w(k) + 1/4
         }
     };
 
@@ -166,25 +168,25 @@ namespace uv::models::svi::detail
                 const double eps{ *static_cast<const double*>(data) };
 
                 // Extract variables
-                const double a = x[0];
-                const double b = x[1];
-                const double rho = x[2];
-                const double sigma = x[4];
+                const double a{ x[0] };
+                const double b{ x[1] };
+                const double rho{ x[2] };
+                const double sigma{ x[4] };
 
                 // Precompute
-                const double S = std::sqrt(1.0 - rho * rho);
+                const double S{ std::sqrt(1.0 - rho * rho) };
 
                 // w_min = a + b * sigma * sqrt(1 - rho^2)
-                const double wMin = std::fma(b, sigma * S, a);
+                const double wMin{ std::fma(b, sigma * S, a) };
 
                 if (grad)
                 {
                     // c(x) = eps - wMin  =>  ∇c = -∇wMin
-                    grad[0] = -1.0;                   // -∂wMin/∂a
-                    grad[1] = -sigma * S;             // -∂wMin/∂b
-                    grad[2] = b * sigma * (rho / S);  // -∂wMin/∂rho (since ∂S/∂rho = -rho/S)
-                    grad[3] = 0.0;                    // -∂wMin/∂m
-                    grad[4] = -b * S;                 // -∂wMin/∂sigma
+                    grad[0] = -1.0;                         // -∂wMin/∂a
+                    grad[1] = -sigma * S;                   // -∂wMin/∂b
+                    grad[2] = -b * sigma * (rho / S);       // -∂wMin/∂rho (since ∂S/∂rho = -rho/S)
+                    grad[3] = 0.0;                          // -∂wMin/∂m
+                    grad[4] = -b * S;                       // -∂wMin/∂sigma
                 }
 
                 // Enforce wMin ≥ eps  c(x) = eps - wMin ≤ 0
@@ -291,7 +293,7 @@ namespace uv::models::svi::detail
     }
 
     template <::nlopt::algorithm Algo>
-    void addConvexityConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator, std::vector<double>& kStorage) noexcept
+    void addConvexityConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator, Vector<double>& kStorage) noexcept
     {
         // For each k, add one convexity constraint g(k) ≥ 0
         for (std::size_t i = 0; i < kStorage.size(); ++i)
@@ -404,15 +406,15 @@ namespace uv::models::svi::detail
     template <::nlopt::algorithm Algo>
     void evalCal(const SVISlice& sviSlice,
         const cal::nlopt::Calibrator<5, Algo>& calibrator,
-        const std::vector<double>& kSlice,
-        const std::vector<double>& wKPrevSlice) noexcept
+        const Vector<double>& kSlice,
+        const Vector<double>& wKPrevSlice) noexcept
     {
         // Extract parameters
-        const double a{ sviSlice.a };
-        const double b{ sviSlice.b };
-        const double rho{ sviSlice.rho };
-        const double m{ sviSlice.m };
-        const double sigma{ sviSlice.sigma };
+        const double a{ double(sviSlice.a) };
+        const double b{ double(sviSlice.b) };
+        const double rho{ double(sviSlice.rho) };
+        const double m{ double(sviSlice.m) };
+        const double sigma{ double(sviSlice.sigma) };
 
         // Extract config attributes
         const double eps{ calibrator.eps() };
@@ -479,5 +481,23 @@ namespace uv::models::svi::detail
                 "(violations {} / {}, tol = {:.2e}, eps = {:.2e})",
                 minMargin, kAtWorst, nCalViol, kSlice.size(),
                 tol, eps));
+    }
+
+    template<std::floating_point T>
+    Vector<T> makewKSlice(const Vector<T>& kSlice,
+        T a, T b, T rho, T m, T sigma) noexcept
+    {
+        Vector<T> wKSlice;
+        wKSlice.reserve(kSlice.size());
+
+        std::transform(
+            kSlice.begin(), kSlice.end(),
+            std::back_inserter(wKSlice),
+            [a, b, rho, m, sigma](T k) noexcept
+            {
+                return wk(a, b, rho, m, sigma, k);
+            });
+
+        return wKSlice;
     }
 } 

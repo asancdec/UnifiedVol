@@ -5,14 +5,16 @@
 
 #pragma once
 
+#include "Utils/Types.hpp"
+
 #include <limits>
 
 namespace uv::models::heston
 {
 	struct Config
 	{
-		long double alphaItm;                                    // Damping parameter value when ln(F/K) >= 0
-		long double alphaOtm;                                    // Damping parameter value when ln(F/K) < 0 
-		double eps{ std::numeric_limits<double>::epsilon() };  // Machine Epsilon
+		Real alphaItm;                                    // Damping parameter value when ln(F/K) >= 0
+		Real alphaOtm;                                    // Damping parameter value when ln(F/K) < 0 
+		Real eps{ std::numeric_limits<Real>::epsilon() };  // Machine Epsilon
 	};
 }

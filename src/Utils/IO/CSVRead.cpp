@@ -13,7 +13,6 @@
 #include <iostream>
 #include <cctype>
 #include <string>
-#include <vector>
 
 namespace uv::utils
 {
@@ -35,7 +34,7 @@ core::VolSurface readVolSurface(const std::string& filename, const core::MarketD
             while (!s.empty() && issp(static_cast<unsigned char>(s.back())))  s.pop_back();
         };
 
-    auto parseCell = [&](const std::string& raw, double& out, bool strict = true) -> bool
+    auto parseCell = [&](const std::string& raw, Real& out, bool strict = true) -> bool
         {
             std::string s = raw;
             trim(s);
@@ -88,12 +87,12 @@ core::VolSurface readVolSurface(const std::string& filename, const core::MarketD
         raise(ErrorCode::DataFormat, "Header must have at least 2 columns (blank/label + one moneyness)");
     }
 
-    std::vector<double> mny;
+    Vector<Real> mny;
     mny.reserve(header.size() - 1);
 
     for (std::size_t j = 1; j < header.size(); ++j) // skip first header cell
     {
-        double v{};
+        Real v{};
         if (!parseCell(header[j], v, /*strict=*/true))
             raise(ErrorCode::DataFormat, "Non-numeric moneyness at header col " + std::to_string(j + 1));
         mny.push_back(v);
@@ -107,8 +106,8 @@ core::VolSurface readVolSurface(const std::string& filename, const core::MarketD
     // --------------------------------------------------------------------------
     // Read data rows: maturity, vol_1, vol_2, ..., vol_N
     // --------------------------------------------------------------------------
-    std::vector<double> tenors{};
-    std::vector<std::vector<double>> vols{};
+    Vector<Real> tenors{};
+    Matrix<Real> vols{};
 
     std::size_t lineNo = 1; // already consumed header
     while (std::getline(file, line))
@@ -126,7 +125,7 @@ core::VolSurface readVolSurface(const std::string& filename, const core::MarketD
         }
 
         // First column is maturity
-        double T{};
+        Real T{};
         if (!parseCell(cells[0], T, /*strict=*/true))
         {
             raise(ErrorCode::DataFormat, "Missing/invalid maturity at row " + std::to_string(lineNo));
@@ -141,11 +140,11 @@ core::VolSurface readVolSurface(const std::string& filename, const core::MarketD
                 std::to_string(mny.size()));
         }
 
-        std::vector<double> row;
+        Vector<Real> row;
         row.reserve(mny.size());
         for (std::size_t j = 0; j < mny.size(); ++j)
         {
-            double sigma{};
+            Real sigma{};
             if (!parseCell(cells[1 + j], sigma, /*strict=*/true))
             {
                 raise(ErrorCode::DataFormat,

@@ -3,7 +3,7 @@
 * Author: Alvaro Sanchez de Carlos
 */
 
-#include "Utils/Aux/Helpers.hpp"
+#include "Calibration/Utils.hpp"
 #include "Utils/IO/ConsoleRedirect.hpp"
 #include "Utils/IO/Log.hpp"
 
@@ -28,7 +28,7 @@ namespace uv::cal::ceres
         upperBounds_ = upperBounds;
 
         // Clamp initial guess within upper and lower bounds
-        utils::clamp<N>(x_, lowerBounds_, upperBounds_, config_.paramNames);
+        clamp<N>(x_, lowerBounds_, upperBounds_, config_.paramNames);
 
         // Set initial guess
         problem_.AddParameterBlock(x_.data(), static_cast<int>(N));
@@ -81,7 +81,7 @@ namespace uv::cal::ceres
         }
 
         // Warn if upper or lower bounds are touched
-        utils::warnBoundsHit
+        warnBoundsHit
         (
             x_,
             lowerBounds_,
@@ -90,13 +90,13 @@ namespace uv::cal::ceres
         );
 
         // Log calibration results 
-        utils::logResults
+        logResults
         (
             x_,                                                     // Parameters
             config_.paramNames,                                     // Parameter names
-            summary.final_cost * 2.0,                               // SSE
+            summary.final_cost * double(2.0),                               // SSE
             summary.iterations.size(),                              // Iterations
-            summary.total_time_in_seconds * 1000.0,                 // Elapsed [ms]
+            summary.total_time_in_seconds * double(1000.0),                 // Elapsed [ms]
             (summary.termination_type == ::ceres::CONVERGENCE ||
                 summary.termination_type == ::ceres::USER_SUCCESS)  // Success flag
         );

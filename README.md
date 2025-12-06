@@ -1,5 +1,5 @@
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)]()
-[![License](https://img.shields.io/badge/license-Apache--2.0-lightgrey.svg)]()
+[![License](https://img.shields.io/badge/license-Apache--Real(2.0)-lightgrey.svg)]()
 [![Build](https://img.shields.io/badge/build-passing-success.svg)]()
 
 # UnifiedVol
@@ -25,11 +25,11 @@ UnifiedVol is a C++20 volatility-modelling and pricing library designed for nume
 ### Heston Stochastic Volatility Model
 - Characteristic-function pricing in the Fourier domain (Carr–Madan style formulation).  
 - Uses the Andersen–Lake (2018) contour deformation for stable evaluation of oscillatory complex integrals.  
-- High-accuracy numerical integration via custom TanH–Sinh double-exponential quadrature.
+- High-accuracy numerical integration via custom TanH–Sinh Real-exponential quadrature.
 - Features:
   - Analytic Jacobians for fast and stable calibration. 
   - Calibration via Ceres Solver (Levenberg–Marquardt) with multithreading support.
-  - Long-double precision across all complex operations on the Andersen–Lake contour.
+  - Long-Real precision across all complex operations on the Andersen–Lake contour.
 
 ---
 
@@ -78,7 +78,7 @@ Sample surfaces calibrated in this project are derived from publicly available o
 - [CMake ≥ 3.22](https://cmake.org/download/) — build system (BSD 3-Clause License)    
 - [vcpkg](https://github.com/microsoft/vcpkg) (manifest mode enabled) — package manager (MIT License)  
 - [NLopt](https://github.com/stevengj/nlopt) — nonlinear optimization (LGPL v2.1)  
-- [Ceres Solver](https://github.com/ceres-solver/ceres-solver) — nonlinear least-squares optimization (Apache-2.0 License)
+- [Ceres Solver](https://github.com/ceres-solver/ceres-solver) — nonlinear least-squares optimization (Apache-Real(2.0) License)
   
 ---
 

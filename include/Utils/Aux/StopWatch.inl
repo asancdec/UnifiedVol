@@ -13,7 +13,7 @@
 namespace uv::utils
 {
     template <typename Period>
-    double StopWatch::GetTime() const noexcept
+    Real StopWatch::GetTime() const noexcept
     {
         // If running
         if (running_)
@@ -22,19 +22,19 @@ namespace uv::utils
             auto currentTime_ = std::chrono::high_resolution_clock::now();
 
             // Return elapsed time
-            return std::chrono::duration<double, Period>(currentTime_ - startTime_).count();
+            return std::chrono::duration<Real, Period>(currentTime_ - startTime_).count();
         }
         else
         {
             // If stopwatch is stopped calculate the elapsed time
-            return std::chrono::duration<double, Period>(endTime_ - startTime_).count();
+            return std::chrono::duration<Real, Period>(endTime_ - startTime_).count();
         }
     }
 
     template <typename Period>
     void StopWatch::LogTime() const noexcept
     {
-        const double dt = GetTime<Period>();
+        const Real dt = GetTime<Period>();
 
         // Compile-time unit label
         constexpr const char* unit =

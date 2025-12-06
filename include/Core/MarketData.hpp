@@ -5,12 +5,14 @@
 
 #pragma once
 
+#include "Utils/Types.hpp"
+
 namespace uv::core
 {
 	struct MarketData
 	{
-		double r; // continuously compounded risk-free rate
-		double q; // continuously compounded dividend yield
-		double S; // spot price
+		Real r; // continuously compounded risk-free rate
+		Real q; // continuously compounded dividend yield
+		Real S; // spot price
 	};
 }
