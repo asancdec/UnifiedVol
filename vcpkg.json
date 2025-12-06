@@ -1,10 +1,11 @@
 {
   "name": "unifiedvol",
-  "version-string": "0.Real(1.0)",
+  "version-string": "0.1.0",
   "builtin-baseline": "4bb07a326d9b9bce3703272a509e5bc25dd9cfd5",
   "dependencies": [
     "nlopt",
     "ceres",
-    "boost-math"
+    "boost-math",
+    "pybind11"
   ]
 }

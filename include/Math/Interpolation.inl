@@ -110,7 +110,7 @@ namespace uv::math
 
 		const std::size_t numSteps{ xsSize - 1 };
 		Vector<T> h(numSteps);                   // Step sizes
-		Vector<T> S(numSteps);			        // Secant slopes
+		Vector<T> S(numSteps);			         // Secant slopes
 
 		for (std::size_t i = 0; i < numSteps; ++i)
 		{
@@ -122,7 +122,7 @@ namespace uv::math
 		// ---------- Second and third order coefficients ----------
 
 		Vector<T> c2s(numSteps);      // Second order
-		Vector<T> c3s(numSteps);	   // Third order
+		Vector<T> c3s(numSteps);	  // Third order
 
 		for (std::size_t i = 0; i < numSteps; ++i)
 		{

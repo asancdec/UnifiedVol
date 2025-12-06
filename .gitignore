@@ -1,5 +1,5 @@
 ###############################################################################
-# UnifiedVol – C++ / CMake / vcpkg / Ninja / Visual Studio (WSL) gitignore
+# UnifiedVol – C++ / CMake / vcpkg / Ninja / Visual Studio (WSL) gitignore 
 ###############################################################################
 
 # ───────────────────────────────
@@ -70,7 +70,7 @@ logs/
 *.csv~
 data/outputs/
 # keep input examples if desired
-!data/inputs/**
+!data/**
 
 # ───────────────────────────────
 #  Temporary or saved build state
