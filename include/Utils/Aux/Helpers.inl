@@ -1,13 +1,13 @@
 /*
-* Aux.hpp
+* Helpers.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
-#include "Errors/Errors.hpp"
+#include "Utils/Aux/Errors.hpp"    
 
 #include <string>
 
-namespace uv
+namespace uv::utils
 {
 	template <typename T>
 	std::vector<std::vector<T>> transposeMatrix(const std::vector<std::vector<T>>& input)

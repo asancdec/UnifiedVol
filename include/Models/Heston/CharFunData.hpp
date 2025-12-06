@@ -1,5 +1,5 @@
 ﻿/**
-* CFData.hpp
+* CharFunData.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -7,11 +7,11 @@
 
 #include <complex>
 
-namespace uv
+namespace uv::models::heston
 {
 	using cplx = std::complex<long double>;
 
-	struct CFData
+	struct CharFunData
 	{
 		// Original CF outputs
 		cplx psi;                 // psi(u) := exp( A + v0 * B )

@@ -1,5 +1,5 @@
 /**
-* HestonConfig.hpp
+* Config.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -7,9 +7,9 @@
 
 #include <limits>
 
-namespace uv
+namespace uv::models::heston
 {
-	struct HestonConfig
+	struct Config
 	{
 		long double alphaItm;                                    // Damping parameter value when ln(F/K) >= 0
 		long double alphaOtm;                                    // Damping parameter value when ln(F/K) < 0 

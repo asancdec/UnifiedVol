@@ -3,8 +3,8 @@
 * Author: Alvaro Sanchez de Carlos
 */
 
-#include "Utils/Log.hpp"
-#include "Errors/Errors.hpp"
+#include "Utils/IO/Log.hpp"
+#include "Utils/Aux/Errors.hpp"    
 
 #include <iostream>
 #include <iomanip>
@@ -13,7 +13,7 @@
 #include <sstream>
 #include <filesystem>
 
-namespace uv 
+namespace uv
 {
 
     Log& Log::instance()

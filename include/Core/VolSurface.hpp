@@ -21,9 +21,10 @@ namespace uv
         // Member variables
         //--------------------------------------------------------------------------
 
-        std::vector<SliceData> slices_;         // 2D volatility grid: vols[maturity][maturity slice]
-        std::vector<double>    maturities_;     // Vector with different volatility surface maturities
-        std::size_t numMaturities_;             // Number of maturities
+        std::vector<SliceData> slices_;         // 2D volatility grid: vols[maturity][tenors slice]
+        std::vector<double>    tenors_;         // Vector with different volatility surface tenors
+
+        std::size_t numTenors_;                 // Number of tenors in years
         std::size_t numStrikes_;                // Number of strikes
 
     public:
@@ -31,10 +32,11 @@ namespace uv
         //--------------------------------------------------------------------------
         // Initialization
         //--------------------------------------------------------------------------
+
         VolSurface() = delete;
         explicit VolSurface(const std::vector<double>& mny,
             const std::vector<std::vector<double>>& vols,
-            const std::vector<double>& maturities,
+            const std::vector<double>& tenors,
             const MarketData& mktData);
 
         //--------------------------------------------------------------------------
@@ -55,8 +57,8 @@ namespace uv
 
         // Getters
         std::vector<SliceData>& slices() noexcept;
-        const std::vector<double>& maturities() const noexcept;
-        std::size_t numMaturities() const noexcept;
+        const std::vector<double>& tenors() const noexcept;
+        std::size_t numTenors() const noexcept;
         std::size_t numStrikes() const noexcept;
     };
 }

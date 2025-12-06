@@ -70,5 +70,5 @@ namespace uv
  // Guard macro for quick checks (throws UnifiedVolError when cond is false)
 #define UV_REQUIRE(cond, code, message) \
         do { if (!(cond)) raise((code), (message)); } while (0)
-} // namespace uv
+}
 

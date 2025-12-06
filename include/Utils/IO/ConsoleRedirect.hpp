@@ -5,13 +5,13 @@
 
 #pragma once
 
-#include "Utils/Log.hpp"
+#include "Utils/IO/Log.hpp"
 
 #include <iostream>   
 #include <sstream>     
 #include <string>       
 
-namespace uv
+namespace uv::utils
 {
 
     struct ConsoleRedirect

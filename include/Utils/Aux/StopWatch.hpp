@@ -7,7 +7,7 @@
 
 #include <chrono>
 
-namespace uv
+namespace uv::utils
 {
     class StopWatch
     {

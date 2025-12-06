@@ -6,7 +6,7 @@
 #pragma once
 
 #include "Math/Calibration/NLopt/NLoptConfig.hpp"
-#include "Utils/StopWatch/StopWatch.hpp"
+#include "Utils/Aux/StopWatch.hpp"
 
 #include <nlopt.hpp>
 #include <vector>
@@ -31,9 +31,9 @@ namespace uv
         // Member variables
         //--------------------------------------------------------------------------	
         // Config & engine
-        NLoptConfig<N>      config_;
+        NLoptConfig<N>    config_;
         nlopt::opt        opt_;
-        StopWatch           timer_;
+        utils::StopWatch  timer_;
 
         // Bounds & guess
         std::array<double, N> lowerBounds_;

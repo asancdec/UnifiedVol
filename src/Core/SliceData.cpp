@@ -5,8 +5,8 @@
 
 #include "Math/MathFunctions/MathFunctions.hpp"
 #include "Core/SliceData.hpp"
-#include "Errors/Errors.hpp"
-#include "Utils/Log.hpp"
+#include "Utils/Aux/Errors.hpp"    
+#include "Utils/IO/Log.hpp"
 
 #include <cmath>
 #include <numbers>

@@ -12,7 +12,7 @@
 #include <iterator>   
 #include <vector>
 
-namespace uv::svi
+namespace uv::models::svi
 {
     double gk(double a, double b, double rho, double m, double sigma, double k) noexcept
     {
@@ -30,9 +30,9 @@ namespace uv::svi
 
         return (A * A) - 0.25 * wkD1Squared * B + wkD2 * 0.5;
     }
-} // namespace uv::svi
+} // namespace uv::models::svi
 
-namespace uv::svi::detail
+namespace uv::models::svi::detail
 {
     std::array<double, 5> initGuess(const SliceData& slice) noexcept
     {
@@ -146,4 +146,4 @@ namespace uv::svi::detail
 
         return wKSlice;
     }
-} // namespace uv::svi::detail
+} // namespace uv::models::svi::detail

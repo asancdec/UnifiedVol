@@ -1,9 +1,9 @@
 ﻿/**
-* HestonPricer.inl
+* Pricer.inl
 * Author: Alvaro Sanchez de Carlos
 */
 
-#include "Errors/Errors.hpp"
+#include "Utils/Aux/Errors.hpp"    
 #include "Math/MathFunctions/MathFunctions.hpp"
 
 #include <utility>   
@@ -12,11 +12,11 @@
 #include <numbers>  
 #include <limits>
 
-namespace uv
+namespace uv::models::heston
 {
 	template <std::size_t N>
-	HestonPricer<N>::HestonPricer(std::shared_ptr<const TanHSinH<N>> quad,
-		const HestonConfig& config) :
+	Pricer<N>::Pricer(std::shared_ptr<const TanHSinH<N>> quad,
+		const Config& config) :
 		quad_(std::move(quad)),
 		config_(config)
 	{
@@ -30,7 +30,7 @@ namespace uv
 	}
 
 	template <std::size_t N>
-	double HestonPricer<N>::callPrice(long double kappa,
+	double Pricer<N>::callPrice(long double kappa,
 		long double theta,
 		long double sigma,
 		long double rho,
@@ -47,10 +47,10 @@ namespace uv
 		const long double alpha(getAlpha(w));
 
 		// Calculate residues
-		const long double R{ HestonPricer<N>::getResidues(alpha, F, K) };
+		const long double R{ Pricer<N>::getResidues(alpha, F, K) };
 
 		// Determine phi
-		const long double phi{ HestonPricer<N>::getPhi(kappa, theta, sigma, rho, v0, T, w) };
+		const long double phi{ Pricer<N>::getPhi(kappa, theta, sigma, rho, v0, T, w) };
 
 		// Precomputations
 		constexpr cplx i(0.0L, 1.0L);
@@ -69,7 +69,7 @@ namespace uv
 				const cplx hMinusI{ h - i };
 
 				// Evaluate characteristic function at h(x) - i
-				const cplx psi{ HestonPricer<N>::charFunction(kappa, theta, sigma, rho, v0, T, hMinusI) };
+				const cplx psi{ Pricer<N>::charFunction(kappa, theta, sigma, rho, v0, T, hMinusI) };
 
 				// Calculate and return integrand
 				return std::real(std::exp(x * c) * psi / (hMinusI * h) * onePlusITanPhi);
@@ -83,7 +83,7 @@ namespace uv
 	}
 
 	template <std::size_t N>
-	double HestonPricer<N>::callPrice(long double T,
+	double Pricer<N>::callPrice(long double T,
 		long double F,
 		long double r,
 		long double K) const
@@ -93,11 +93,11 @@ namespace uv
 		(
 			(params_.has_value()),
 			ErrorCode::InvalidArgument,
-			"HestonPricer::callPrice: Heston parameters not set. Call setHestonParams(...) first."
+			"Pricer::callPrice: Heston parameters not set. Call setParams(...) first."
 		);
 
 		// Dereference optional
-		const HestonParams& params{ *params_ };
+		const Params& params{ *params_ };
 
 		// Pass class instance parameters into the generic pricing function
 		return callPrice(params.kappa,
@@ -109,7 +109,7 @@ namespace uv
 	}
 
 	template <std::size_t N>
-	std::array<double, 6> HestonPricer<N>::callPriceWithGradient(long double kappa,
+	std::array<double, 6> Pricer<N>::callPriceWithGradient(long double kappa,
 		long double theta,
 		long double sigma,
 		long double rho,
@@ -126,10 +126,10 @@ namespace uv
 		const long double alpha(getAlpha(w));
 
 		// Calculate residues
-		const long double R{ HestonPricer<N>::getResidues(alpha, F, K) };
+		const long double R{ Pricer<N>::getResidues(alpha, F, K) };
 
 		// Determine phi
-		const long double phi{ HestonPricer<N>::getPhi(kappa, theta, sigma, rho, v0, T, w) };
+		const long double phi{ Pricer<N>::getPhi(kappa, theta, sigma, rho, v0, T, w) };
 
 		// Precomputations
 		constexpr cplx i(0.0L, 1.0L);
@@ -146,9 +146,9 @@ namespace uv
 				const cplx kernel{ std::exp(x * c) * onePlusITanPhi / (hMinusI * h) };
 
 				// Characteristic function and cached intermediates
-				const CFData cfData
+				const CharFunData cfData
 				{
-					HestonPricer<N>::charFunctionCal(kappa, theta, sigma, rho, v0, T, hMinusI)
+					Pricer<N>::charFunctionCal(kappa, theta, sigma, rho, v0, T, hMinusI)
 				};
 
 				// Reuse intermediates
@@ -284,9 +284,9 @@ namespace uv
 
 	template <std::size_t N>
 	template <typename T>
-	void HestonPricer<N>::setHestonParams(const std::array<T, 5>& params) noexcept
+	void Pricer<N>::setParams(const std::array<T, 5>& params) noexcept
 	{
-		params_ = HestonParams
+		params_ = Params
 		{
 			static_cast<long double>(params[0]), // kappa
 			static_cast<long double>(params[1]), // theta
@@ -297,7 +297,7 @@ namespace uv
 	}
 
 	template <std::size_t N>
-	long double HestonPricer<N>::getResidues(long double alpha,
+	long double Pricer<N>::getResidues(long double alpha,
 		const long double F,
 		const long double K) noexcept
 	{
@@ -306,14 +306,14 @@ namespace uv
 	}
 
 	template <std::size_t N>
-	long double HestonPricer<N>::getAlpha(long double w) const noexcept
+	long double Pricer<N>::getAlpha(long double w) const noexcept
 	{
 		if (w >= 0.0) return config_.alphaItm;
 		else return config_.alphaOtm;
 	}
 
 	template <std::size_t N>
-	long double HestonPricer<N>::getPhi(long double kappa,
+	long double Pricer<N>::getPhi(long double kappa,
 		long double theta,
 		long double sigma,
 		long double rho,
@@ -326,7 +326,7 @@ namespace uv
 	}
 
 	template <std::size_t N>
-	cplx HestonPricer<N>::charFunction(long double kappa,
+	cplx Pricer<N>::charFunction(long double kappa,
 		long double theta,
 		long double sigma,
 		long double rho,
@@ -383,7 +383,7 @@ namespace uv
 	}
 
 	template <std::size_t N>
-	CFData HestonPricer<N>::charFunctionCal(long double kappa,
+	CharFunData Pricer<N>::charFunctionCal(long double kappa,
 		long double theta,
 		long double sigma,
 		long double rho,
@@ -467,7 +467,7 @@ namespace uv
 		// R := 1 - g
 		const cplx R{ 1.0L - g };
 
-		// Return full CFData
+		// Return full CharFunData
 		return
 		{
 			std::exp(A + v0 * B),                     // psi(u) := exp( A + v0 * B )

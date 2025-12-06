@@ -5,7 +5,7 @@
 
 #pragma once
 
-namespace uv
+namespace uv::models::svi
 {
 	struct SVISlice
 	{

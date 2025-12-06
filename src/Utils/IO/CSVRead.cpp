@@ -3,8 +3,8 @@
 * Author: Alvaro Sanchez de Carlos
 */
 
-#include "Errors/Errors.hpp"       
-#include "Utils/Data/CSV/CSVRead.hpp"
+#include "Utils/Aux/Errors.hpp"       
+#include "Utils/IO/CSVRead.hpp"
 #include "Core/MarketData.hpp"
 #include "Core/VolSurface.hpp"
 
@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-namespace uv
+namespace uv::utils
 {
 
 VolSurface readVolSurface(const std::string& filename, const MarketData& mktData)
@@ -107,7 +107,7 @@ VolSurface readVolSurface(const std::string& filename, const MarketData& mktData
     // --------------------------------------------------------------------------
     // Read data rows: maturity, vol_1, vol_2, ..., vol_N
     // --------------------------------------------------------------------------
-    std::vector<double> maturities{};
+    std::vector<double> tenors{};
     std::vector<std::vector<double>> vols{};
 
     std::size_t lineNo = 1; // already consumed header
@@ -155,17 +155,17 @@ VolSurface readVolSurface(const std::string& filename, const MarketData& mktData
             row.push_back(sigma);
         }
 
-        maturities.push_back(T);
+        tenors.push_back(T);
         vols.push_back(std::move(row));
     }
 
-    if (maturities.empty())
+    if (tenors.empty())
     {
         raise(ErrorCode::DataFormat, "CSV file has no data rows: " + filename);
     }
 
     // Final sanity: shapes must match
-    if (vols.size() != maturities.size())
+    if (vols.size() != tenors.size())
     {
         raise(ErrorCode::DataFormat, "Internal error: vols rows != maturities count");
     }
@@ -181,6 +181,6 @@ VolSurface readVolSurface(const std::string& filename, const MarketData& mktData
     }
 
     // Construct VolSurface using the MarketData-based ctor
-    return VolSurface(mny, vols, maturities, mktData);
+    return VolSurface(mny, vols, tenors, mktData);
 }
 }

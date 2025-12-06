@@ -3,7 +3,7 @@
 * Author: Alvaro Sanchez de Carlos
 */
 
-#include "Utils/Log.hpp"
+#include "Utils/IO/Log.hpp"
 
 #include <algorithm>   
 #include <array>       
@@ -14,7 +14,7 @@
 #include <utility>     
 #include <vector>     
 
-namespace uv::svi
+namespace uv::models::svi
 {
     template <nlopt::algorithm Algo>
     std::tuple<std::vector<SVISlice>, VolSurface> calibrate(const VolSurface& mktVolSurf,
@@ -26,7 +26,7 @@ namespace uv::svi
 
         // Initialize vectors
         std::vector<SVISlice> sviSlices;
-        sviSlices.reserve(sviVolSurf.numMaturities());
+        sviSlices.reserve(sviVolSurf.numTenors());
         std::vector<double> wkSlice(sviVolSurf.numStrikes(), 0.0);
 
         // Calibrate each slice
@@ -106,9 +106,9 @@ namespace uv::svi
         }
         return { std::move(sviSlices), std::move(sviVolSurf) };
     }
-} // namespace uv::svi
+} // namespace uv::models::svi
 
-namespace uv::svi::detail
+namespace uv::models::svi::detail
 {
     struct ObjCtx
     {
@@ -480,4 +480,4 @@ namespace uv::svi::detail
                 minMargin, kAtWorst, nCalViol, kSlice.size(),
                 tol, eps));
     }
-} // namespace uv::SVI::detail
+} 

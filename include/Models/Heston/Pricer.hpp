@@ -1,13 +1,13 @@
 ﻿/**
-* HestonPricer.hpp
+* Pricer.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
 #pragma once
 
-#include "Models/Heston/HestonParams.hpp"
-#include "Models/Heston/HestonConfig.hpp"
-#include "Models/Heston/HestonPricer/CFData.hpp"
+#include "Models/Heston/Params.hpp"
+#include "Models/Heston/Config.hpp"
+#include "Models/Heston/CharFunData.hpp"
 #include "Math/Quadrature/TanHSinH.hpp"
 #include "Core/VolSurface.hpp"
 
@@ -19,20 +19,20 @@
 #include <tuple>
 
 
-namespace uv
+namespace uv::models::heston
 {	
 
 	template <std::size_t N>
-	class HestonPricer
+	class Pricer
 	{
 	private:
 
 		//--------------------------------------------------------------------------
 		// Private member variables
 		//--------------------------------------------------------------------------
-		std::optional<HestonParams> params_;
+		std::optional<Params> params_;
 		std::shared_ptr<const TanHSinH<N>> quad_;
-		const HestonConfig config_;
+		const Config config_;
 
 		//--------------------------------------------------------------------------
 		// Pricing
@@ -69,7 +69,7 @@ namespace uv
 		//--------------------------------------------------------------------------
 		// Returns a struct of precalculated variables for efficient gradient computation
 		// Albrecher, H., P. Mayer, W. Schoutens, and J. Tistaert (2007)
-		static CFData charFunctionCal(long double  kappa,
+		static CharFunData charFunctionCal(long double  kappa,
 			long double theta,
 			long double sigma,
 			long double rho,
@@ -82,9 +82,9 @@ namespace uv
 		//--------------------------------------------------------------------------
 		// Initialization
 		//--------------------------------------------------------------------------
-		HestonPricer() = delete;
-		explicit HestonPricer(std::shared_ptr<const TanHSinH<N>> quad,
-			const HestonConfig& config);
+		Pricer() = delete;
+		explicit Pricer(std::shared_ptr<const TanHSinH<N>> quad,
+			const Config& config);
 
 		//--------------------------------------------------------------------------
 		// Pricing
@@ -123,8 +123,8 @@ namespace uv
 		// Setters
 		//--------------------------------------------------------------------------
 		template <typename T>
-		void setHestonParams(const std::array<T, 5>& params) noexcept;
+		void setParams(const std::array<T, 5>& params) noexcept;
 	};
 }
 
-#include "HestonPricer.inl"
+#include "Pricer.inl"

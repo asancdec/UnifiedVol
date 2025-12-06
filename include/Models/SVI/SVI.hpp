@@ -14,7 +14,7 @@
 #include <vector>
 #include <tuple>
 
-namespace uv::svi
+namespace uv::models::svi
 {
 	//--------------------------------------------------------------------------
 	// Calibration
@@ -104,6 +104,6 @@ namespace uv::svi
 		std::vector<double> makewKSlice(const std::vector<double>& kSlice,
 			double a, double b, double rho, double m, double sigma) noexcept;
 	} // namespace detail
-} // namespace uv::svi
+} 
 
 #include "SVI.inl"

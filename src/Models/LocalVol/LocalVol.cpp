@@ -3,10 +3,11 @@
 * Author: Alvaro Sanchez de Carlos
 */
 
+
 #include "Models/LocalVol/LocalVol.hpp"
-#include "Errors/Errors.hpp"
+#include "Utils/Aux/Errors.hpp"    "
 #include "Math/Interpolation/Interpolation.hpp"
-#include "Utils/Data/Aux/Aux.hpp"
+#include "Utils/Aux/Helpers.hpp"
 #include "Models/SVI/SVI.hpp"
 #include "Core/SliceData.hpp"
 
@@ -17,52 +18,64 @@
 
 using namespace uv;
 
-namespace uv::local_vol
+namespace uv::localvol
 {
-	VolSurface build(const VolSurface& volSurface, const std::vector<SVISlice>& sviSlices)
+	VolSurface buildSurface(const VolSurface& volSurface,
+		const Vector<models::svi::SVISlice>& sviSlices)
 	{
-		// ---------- Sanity checks ------
+
+		// ---------- Check matching dimensions ----------
 		
-		// Extract the number of tenors
-		const std::size_t numTenors{ volSurface.numMaturities() };
-
-		// Extract the number of strikes
+		const std::size_t numTenors{ volSurface.numTenors() };
 		const std::size_t numStrikes{ volSurface.numStrikes() };
+		const std::size_t numSlices{ sviSlices.size() };
 
-		// Ensure matching dimensions
-		UV_REQUIRE(
-			numTenors == sviSlices.size(),
+		// Throw if dimensions do not match
+		UV_REQUIRE
+		(
+			numTenors == numSlices,
 			ErrorCode::InvalidArgument,
-			"LocalVol: number of maturities (" + std::to_string(numTenors) +
+			"build: number of tenors (" + std::to_string(numTenors) +
 			") does not match number of SVI slices (" +
-			std::to_string(sviSlices.size()) + ")"
+			std::to_string(numSlices) + ")"
 		);
+
+		// ---------- Check matching tenors ----------
+
+		const Vector<double>& tenors{ volSurface.tenors() };
+
+		for (std::size_t i = 0; i < numTenors; ++i)
+		{
+			const double volTenor{ tenors[i] };
+			const double sviTenor{ sviSlices[i].T };
+
+			// Throw 
+			UV_REQUIRE
+			(
+				std::abs(volTenor - sviTenor) < 1e-12,	// tolerance
+				ErrorCode::InvalidArgument, 
+				"localvol::build: tenor mismatch at index " 
+				+ std::to_string(i) +
+				" — volSurface tenor = " + std::to_string(volTenor) +
+				", SVI tenor = " + std::to_string(sviTenor)
+			);
+		}
+
+		// ---------- Calculate dw/dT matrix ------
+
+		const Matrix<double> dwdT
+		{
+			detail::dwdT
+			(
+				tenors, 
+				volSurface.totVarMatrix()
+			)
+		};
+
 
 		// Copy the volatility surface object
 		VolSurface lvVolSurf{ volSurface };
 
-		// Extract volatility surface tenors
-		const std::vector<double>& tenors{ lvVolSurf.maturities() };
-
-		// Ensure volatility surface has the same maturities as the SVI parameters
-		for (std::size_t i = 0; i < numTenors; ++i)
-		{
-			const double volMat{ tenors[i] };
-			const double sviMat{ sviSlices[i].T };
-
-			UV_REQUIRE(
-				std::abs(volMat - sviMat) < 1e-12,
-				ErrorCode::InvalidArgument,
-				"LocalVol::build: maturity mismatch at index " + std::to_string(i) +
-				" — volSurface maturity = " + std::to_string(volMat) +
-				", SVI maturity = " + std::to_string(sviMat)
-			);
-		}
-
-		// ---------- Calculate local total variance ------
-
-		// Calculate dw/dT matrix
-		const std::vector<std::vector<double>> dwdT{detail::dwdT(tenors, lvVolSurf.totVarMatrix())};
 
 		// Extract volatility surface slices (will be modified in place)
 		std::vector<SliceData>& volSlices{ lvVolSurf.slices()};
@@ -80,7 +93,7 @@ namespace uv::local_vol
 			const std::vector<double>& logFM {volSlice.logFM()};
 
 			// Extract SVI slice data
-			const SVISlice& sviSlice{ sviSlices[i]};
+			const models::svi::SVISlice& sviSlice{ sviSlices[i]};
 
 			// Extract parameters
 			const double a{ sviSlice.a };
@@ -92,9 +105,7 @@ namespace uv::local_vol
 
 			for (std::size_t j = 0; j < numStrikes; ++j)
 			{
-				localTotVar[j] = dwdT[i][j] * T / svi::gk(a, b, rho, m, sigma, logFM[j]);
-
-				//std::cout << dwdT[i][j] << "\n";
+				localTotVar[j] = dwdT[i][j] * T / models::svi::gk(a, b, rho, m, sigma, logFM[j]);
 			}
 
 			// Set local total variance
@@ -104,13 +115,13 @@ namespace uv::local_vol
 		return lvVolSurf;
 	}
 
-} // namespace uv::local_vol
+} // namespace uv::localvol
 
-namespace uv::local_vol::detail
+namespace uv::localvol::detail
 {	
 	using namespace uv;
 
-	std::vector<std::vector<double>> dwdT(const std::vector<double>& tenors, 
+	Matrix<double> dwdT(const std::vector<double>& tenors, 
 		const std::vector<std::vector<double>>& totVarMatrix) noexcept
 	{
 		// Extract the number of tenors
@@ -124,18 +135,18 @@ namespace uv::local_vol::detail
 
 		// Transpose total variance matrix 
 		// Rows of tenors and columns of strikes
-		const std::vector<std::vector<double>> totVarT{ transposeMatrix(totVarMatrix) };
+		const std::vector<std::vector<double>> totVarT{ utils::transposeMatrix(totVarMatrix) };
 
 		// Calculate dw/dT
 		for (std::size_t i = 0; i < numStrikes; ++i)
 		{
 			// Calculates piecewise derivatives
-			dwdT[i] = d1PieceWise<double>(tenors, totVarT[i], /*extrapolateEnd=*/true);
+			dwdT[i] = pchipDerivatives(tenors, totVarT[i]);
 		}
 
 		// Transpose the dw/dT matrix
 		// Rows of strikes and columns of tenors
-		return transposeMatrix(dwdT);
+		return utils::transposeMatrix(dwdT);
 	}
 
-} // namespace uv::local_vol
+} // namespace uv::localvol

@@ -1,13 +1,13 @@
 /**
-* HestonParams.hpp
+* Params.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
 #pragma once
 
-namespace uv
+namespace uv::models::heston
 {
-	struct HestonParams
+	struct Params
 	{
 		long double kappa;  // Mean reversion speed
 		long double theta;  // Long term variance

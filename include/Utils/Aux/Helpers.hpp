@@ -1,5 +1,5 @@
 /*
-* Aux.hpp
+* Helpers.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -7,11 +7,11 @@
 
 #include <vector>
 
-namespace uv
+namespace uv::utils
 {
 	// Transposes matrix (vector of vectors)
 	template <typename T>
 	std::vector<std::vector<T>> transposeMatrix(const std::vector<std::vector<T>>& input);
 }
 
-#include "Aux.inl"
+#include "Helpers.inl"

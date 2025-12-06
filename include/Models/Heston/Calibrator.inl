@@ -1,5 +1,5 @@
 ﻿/**
-* heston_calibrator.inl
+* Calibrator.inl
 * Author: Alvaro Sanchez de Carlos
 */
 
@@ -8,11 +8,11 @@
 #include <memory>
 #include <algorithm>
 
-namespace uv::heston_calibrator
+namespace uv::models::heston::calibrator
 {
 	template <std::size_t N, typename Policy>
 	VolSurface calibrate(const VolSurface& mktVolSurf,
-		HestonPricer<N>& pricer,
+		Pricer<N>& pricer,
 		CalibratorCeres<5, Policy>& calibrator)
 	{
 		// Copy market volatility surface
@@ -48,8 +48,8 @@ namespace uv::heston_calibrator
 			}
 		}
 
-		// Calibrate HestonPricer parameters
-		pricer.setHestonParams(calibrator.optimize());
+		// Calibrate Pricer parameters
+		pricer.setParams(calibrator.optimize());
 
 		// Fill in the calibrated volatility surface
 		for (auto& slice : hestonVolSurf.slices())
@@ -75,19 +75,19 @@ namespace uv::heston_calibrator
 		}
 		return hestonVolSurf;  // RVO C++20
 	}
-} // namespace uv::heston_calibrator
+} // namespace uv::models::heston_calibrator
 
-namespace uv::heston_calibrator::detail
+namespace uv::models::heston::calibrator::detail
 {   
 	template <std::size_t N>
 	struct PriceResidualJac final
 		: public ceres::SizedCostFunction<1, 5> 
 	{
 		const double T_, F_, r_, K_, callPriceMkt_;
-		const HestonPricer<N>* pricer_; 
+		const Pricer<N>* pricer_; 
 
 		PriceResidualJac(double T, double F, double r, double K, double callPriceMkt,
-			const HestonPricer<N>& pricer) noexcept
+			const Pricer<N>& pricer) noexcept
 			: T_(T), F_(F), r_(r), K_(K), callPriceMkt_(callPriceMkt), pricer_(&pricer) {}
 
 		bool Evaluate(double const* const* parameters,
@@ -115,4 +115,4 @@ namespace uv::heston_calibrator::detail
 			return true;
 		}
 	};
-} // namespace uv::heston_calibrator::detail
+} // namespace uv::models::heston::calibrator::detail

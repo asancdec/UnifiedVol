@@ -6,18 +6,20 @@
 #pragma once
 
 #include "Core/VolSurface.hpp"
+#include "Utils/Types/Types.hpp"
 #include "Models/SVI/SVISlice.hpp"
 
-namespace uv::local_vol
+namespace uv::localvol
 {	
 	// Build local volatility surface from SVI parameters
-	VolSurface build(const VolSurface& volSurface, const std::vector<SVISlice>& sviSlices);
+	VolSurface buildSurface(const VolSurface& volSurface, 
+		const Vector<models::svi::SVISlice>& sviSlices);
 
 	namespace detail
 	{	
 		// Calculate total variance first derivative w.r.t. time using piecewise derivatives
-		std::vector<std::vector<double>> dwdT(const std::vector<double>& tenors,
-			const std::vector<std::vector<double>>& totVarMatrix) noexcept;
+		Matrix<double> dwdT(const Vector<double>& tenors,
+			const Matrix<double>& totVarMatrix) noexcept;
 	}
 
-} // uv::local_vol
+} // uv::localvol

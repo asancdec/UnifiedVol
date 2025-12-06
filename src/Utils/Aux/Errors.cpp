@@ -3,9 +3,9 @@
 * Author: Alvaro Sanchez de Carlos
 */
 
-#include "Errors/Errors.hpp"
+#include "Utils/Aux/Errors.hpp"
 
-#include <sstream>  
+#include <sstream>
 
 namespace uv
 {
@@ -14,14 +14,13 @@ namespace uv
     //--------------------------------------------------------------------------
     std::string_view to_string(ErrorCode c) noexcept
     {
-        using E = ErrorCode;
         switch (c) {
-        case E::InvalidArgument:  return "InvalidArgument";
-        case E::OutOfRange:       return "OutOfRange";
-        case E::FileIO:           return "FileIO";
-        case E::NotImplemented:   return "NotImplemented";
-        case E::DataFormat:       return "DataFormat";
-        case E::CalibrationError: return "CalibrationError";
+        case ErrorCode::InvalidArgument:  return "InvalidArgument";
+        case ErrorCode::OutOfRange:       return "OutOfRange";
+        case ErrorCode::FileIO:           return "FileIO";
+        case ErrorCode::NotImplemented:   return "NotImplemented";
+        case ErrorCode::DataFormat:       return "DataFormat";
+        case ErrorCode::CalibrationError: return "CalibrationError";
         default:                  return "Unknown";
         }
     }
@@ -68,4 +67,4 @@ namespace uv
         throw UnifiedVolError(code, message, loc);
     }
 
-} // namespace uv
+}

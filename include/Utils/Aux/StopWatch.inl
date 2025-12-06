@@ -5,12 +5,12 @@
 
 #pragma once
 
-#include "Utils/Log.hpp"
+#include "Utils/IO/Log.hpp"
 
 #include <format>
 #include <type_traits>
 
-namespace uv
+namespace uv::utils
 {
     template <typename Period>
     double StopWatch::GetTime() const noexcept

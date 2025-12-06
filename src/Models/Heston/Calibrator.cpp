@@ -1,13 +1,13 @@
 /**
-* heston_calibrator.cpp
+* HestonCalibrator.cpp
 * Author: Alvaro Sanchez de Carlos
 */
 
-#include "Models/Heston/HestonCalibrator/HestonCalibrator.hpp"
+#include "Models/Heston/Calibrator.hpp"
 
 #include <array>
 
-namespace uv::heston_calibrator::detail
+namespace uv::models::heston::calibrator::detail
 {
 	std::array<double, 5> initGuess() noexcept
 	{
@@ -45,5 +45,5 @@ namespace uv::heston_calibrator::detail
 			0.5     // vo
 		};
 	}
-} // namespace uv::heston_calibrator::detail
+} // namespace uv::models::heston_calibrator::detail
 

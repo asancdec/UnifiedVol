@@ -4,8 +4,8 @@
 */
 
 #include "Math/Calibration/Utils/CalibratorUtils.hpp"
-#include "Utils/ConsoleRedirect.hpp"
-#include "Utils/Log.hpp"
+#include "Utils/IO/ConsoleRedirect.hpp"
+#include "Utils/IO/Log.hpp"
 
 #include <memory>
 #include <iomanip>   
@@ -70,7 +70,7 @@ namespace uv
         ceres::Solver::Summary summary;
         {
             // Enable live Ceres iteration table only if verbose mode is on
-            ConsoleRedirect capture;
+            utils::ConsoleRedirect capture;
             options.minimizer_progress_to_stdout = config_.verbose;
 
             // Solve the problem

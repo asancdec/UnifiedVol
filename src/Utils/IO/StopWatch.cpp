@@ -3,9 +3,9 @@
 * Author: Alvaro Sanchez de Carlos
 */
 
-#include "Utils/StopWatch/StopWatch.hpp"
+#include "Utils/Aux/StopWatch.hpp"
 
-namespace uv
+namespace uv::utils
 {
     StopWatch::StopWatch() : startTime_(), endTime_(), running_(false) {}
 

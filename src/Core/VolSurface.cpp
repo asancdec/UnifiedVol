@@ -4,8 +4,8 @@
 */
 
 #include "Core/VolSurface.hpp"
-#include "Errors/Errors.hpp"
-#include "Utils/Log.hpp"
+#include "Utils/Aux/Errors.hpp"    "
+#include "Utils/IO/Log.hpp"
 
 #include <iomanip>
 #include <sstream>
@@ -16,10 +16,10 @@ namespace uv
 {
     VolSurface::VolSurface(const std::vector<double>& mny,
         const std::vector<std::vector<double>>& vols,
-        const std::vector<double>& maturities,
+        const std::vector<double>& tenors,
         const MarketData& mktData)
-        : maturities_(maturities),
-        numMaturities_(maturities_.size())
+        : tenors_(tenors),
+        numTenors_(tenors.size())
     {   
         // ---------- Sanity checks ------
         
@@ -28,10 +28,10 @@ namespace uv
 
         // Validate that the volatility matrix provides one slice per maturity
         UV_REQUIRE(
-            dim0 == numMaturities_,
+            dim0 == numTenors_,
             ErrorCode::InvalidArgument,
             "VolSurface: number of vol slices (" + std::to_string(dim0) +
-            ") does not match number of maturities (" + std::to_string(numMaturities_) + ")"
+            ") does not match number of tenors (" + std::to_string(numTenors_) + ")"
         );
 
         // Number of strikes in the strike grid (must be consistent across slices)
@@ -52,12 +52,12 @@ namespace uv
 
         // ---------- Initialize member variables ------
         numStrikes_ = dim1;
-        slices_.reserve(numMaturities_);
-        for (size_t i = 0; i < numMaturities_; ++i)
+        slices_.reserve(numTenors_);
+        for (size_t i = 0; i < numTenors_; ++i)
         {
             slices_.emplace_back
             (
-                SliceData(maturities_[i],
+                SliceData(tenors_[i],
                     mny,
                     vols[i],
                     mktData)
@@ -76,10 +76,10 @@ namespace uv
             oss << std::fixed << std::setprecision(2) << m << '\t';
         oss << '\n';
 
-        // Each maturity row
-        for (size_t i = 0; i < numMaturities_; ++i)
+        // Each tenor row
+        for (size_t i = 0; i < numTenors_; ++i)
         {
-            oss << std::fixed << std::setprecision(2) << maturities_[i] << '\t';
+            oss << std::fixed << std::setprecision(2) << tenors_[i] << '\t';
 
             for (const auto& v : slices_[i].vol())
                 oss << std::fixed << std::setprecision(5) << v << '\t';
@@ -101,10 +101,10 @@ namespace uv
             oss << std::fixed << std::setprecision(2) << m << '\t';
         oss << '\n';
 
-        // Each maturity row
-        for (size_t i = 0; i < numMaturities_; ++i)
+        // Each tenor row
+        for (size_t i = 0; i < numTenors_; ++i)
         {
-            oss << std::fixed << std::setprecision(2) << maturities_[i] << '\t';
+            oss << std::fixed << std::setprecision(2) << tenors_[i] << '\t';
 
             for (const auto& v : slices_[i].wT())
                 oss << std::fixed << std::setprecision(5) << v << '\t';
@@ -126,10 +126,10 @@ namespace uv
             oss << std::fixed << std::setprecision(2) << m << '\t';
         oss << '\n';
 
-        // Each maturity row
-        for (size_t i = 0; i < numMaturities_; ++i)
+        // Each tenor row
+        for (size_t i = 0; i < numTenors_; ++i)
         {
-            oss << std::fixed << std::setprecision(2) << maturities_[i] << '\t';
+            oss << std::fixed << std::setprecision(2) << tenors_[i] << '\t';
 
             for (const auto& v : slices_[i].callBS())
                 oss << std::fixed << std::setprecision(3) << v << '\t';
@@ -142,16 +142,16 @@ namespace uv
     std::vector<std::vector<double>> VolSurface::totVarMatrix() const noexcept
     {
         // Allocate matrix:
-        // outer dimension = maturities (rows)
+        // outer dimension = tenors (rows)
         // inner dimension = strikes (columns)        
         std::vector<std::vector<double>> matrix(
-            numMaturities_, std::vector<double>(numStrikes_)
+            numTenors_, std::vector<double>(numStrikes_)
         );
 
         // Populate total variance slices
-        for (std::size_t i = 0; i < numMaturities_; ++i)
+        for (std::size_t i = 0; i < numTenors_; ++i)
         {
-            // Extract total variance slice at maturity i
+            // Extract total variance slice at tenor i
             matrix[i] = slices_[i].wT();
         }
 
@@ -163,14 +163,14 @@ namespace uv
         return slices_;
     }
 
-    const std::vector<double>& VolSurface::maturities() const noexcept
+    const std::vector<double>& VolSurface::tenors() const noexcept
     {
-        return maturities_;
+        return tenors_;
     }
 
-    std::size_t VolSurface::numMaturities() const noexcept
+    std::size_t VolSurface::numTenors() const noexcept
     {
-        return numMaturities_;
+        return numTenors_;
     }
 
     std::size_t VolSurface::numStrikes() const noexcept

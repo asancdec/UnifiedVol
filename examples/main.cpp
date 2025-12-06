@@ -1,14 +1,15 @@
-﻿#include "Utils/Data/CSV/CSVRead.hpp"
-#include "Utils/Log.hpp"
-#include "Utils/StopWatch/StopWatch.hpp"
+﻿#include "Utils/IO/CSVRead.hpp"
+#include "Utils/IO/Log.hpp"
+#include "Utils/Aux/Helpers.hpp"
+#include "Utils/Aux/StopWatch.hpp"
 #include "Core/VolSurface.hpp"
 #include "Core/MarketData.hpp"
 #include "Models/SVI/SVI.hpp"
 #include "Models/LocalVol/LocalVol.hpp"
-#include "Models/Heston/HestonPricer/HestonPricer.hpp"
-#include "Models/Heston/HestonConfig.hpp"
-#include "Models/Heston/HestonCalibrator/HestonCalibrator.hpp"
-#include "Errors/Errors.hpp"  
+#include "Models/Heston/Pricer.hpp"
+#include "Models/Heston/Config.hpp"
+#include "Models/Heston/Calibrator.hpp"
+#include "Utils/Aux/Errors.hpp"      
 #include "Math/MathFunctions/MathFunctions.hpp"
 #include "Math/Quadrature/TanHSinH.hpp"
 #include "Math/Calibration/Ceres/CeresPolicy.hpp"
@@ -29,7 +30,10 @@
 #include <limits>
 #include <memory>
 
+
 using namespace uv;
+using namespace models;
+using namespace utils;
 
 int main(int argc, char* argv[])
 {
@@ -80,15 +84,15 @@ int main(int argc, char* argv[])
         sviVolSurface.printVol();
 
         // Build the Local Volatility surface using SVI parameters
-        const VolSurface lvVolSurface{local_vol::build(sviVolSurface, sviSlices)};
+        const VolSurface lvVolSurface{localvol::buildSurface(sviVolSurface, sviSlices)};
         lvVolSurface.printVol();
 
         // Initialize integration quadrature
         static constexpr std::size_t HestonNodes = 300;
         const TanHSinH<HestonNodes> quad{};
 
-        // Initialize HestonPricer instance
-        HestonPricer hestonPricer
+        // Initialize Pricer instance
+        heston::Pricer hestonPricer
         {
             std::make_shared<const TanHSinH<HestonNodes>>(quad),
             {
@@ -125,7 +129,7 @@ int main(int argc, char* argv[])
         // Calibrate the Heston model
         VolSurface hestonVolurface
         { 
-            heston_calibrator::calibrate
+            heston::calibrator::calibrate
             (
                 sviVolSurface,
                 hestonPricer,

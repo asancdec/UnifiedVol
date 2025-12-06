@@ -4,7 +4,7 @@
 */
 
 #include "Math/Quadrature/TanHSinH.hpp"              
-#include "Utils/Log.hpp"                             
+#include "Utils/IO/Log.hpp"                             
 
 #include <boost/math/special_functions/lambert_w.hpp>
 #include <numbers>                                  

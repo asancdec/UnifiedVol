@@ -1,19 +1,19 @@
 /**
-* heston_calibrator.hpp
+* Calibrator.hpp
 * Author: Alvaro Sanchez de Carlos
 */
 
 #pragma once
 
-#include "Models/Heston/HestonPricer/HestonPricer.hpp"
-#include "Models/Heston/HestonParams.hpp"
+#include "Models/Heston/Pricer.hpp"
+#include "Models/Heston/Params.hpp"
 #include "Math/Calibration/Ceres/CalibratorCeres.hpp"
 #include "Core/VolSurface.hpp"
 
 #include <array>
 #include <cstddef>  
 
-namespace uv::heston_calibrator
+namespace uv::models::heston::calibrator
 {
 	//--------------------------------------------------------------------------
 	// Calibration
@@ -22,7 +22,7 @@ namespace uv::heston_calibrator
 	// Main calibration function
 	template <std::size_t N, typename Policy>
 	static VolSurface calibrate(const VolSurface& mktVolSurf,
-		HestonPricer<N>& pricer,
+		Pricer<N>& pricer,
 		CalibratorCeres<5, Policy>& calibrator);
 
 	namespace detail
@@ -48,6 +48,6 @@ namespace uv::heston_calibrator
 		// Upper bounds
 		std::array<double, 5> upperBounds() noexcept;
 	} //  namespace detail
-} // namespace uv::heston_calibrator
+}
 
-#include "HestonCalibrator.inl"
+#include "Calibrator.inl"
