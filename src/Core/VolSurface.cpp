@@ -1,7 +1,27 @@
-/**
-* VolSurface.cpp
-* Author: Alvaro Sanchez de Carlos
-*/
+// SPDX-License-Identifier: Apache-2.0
+/*
+ * File:        VolSurface.cpp
+ * Author:      Alvaro Sanchez de Carlos
+ * Created:     2025-12-08
+ *
+ * Description:
+ *   [Brief description of what this file declares or implements.]
+ *
+ * Copyright (c) 2025 Alvaro Sanchez de Carlos
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under this License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the LICENSE for the specific language governing permissions and
+ * limitations under this License.
+ */
+
 
 #include "Core/VolSurface.hpp"
 #include "Utils/Aux/Errors.hpp"
@@ -21,7 +41,7 @@ namespace uv::core
         : tenors_(tenors),
         numTenors_(tenors.size())
     {   
-        // ---------- Sanity checks ------
+        // ---------- Sanity checks ----------
         
         // Number of volatility slices (one per maturity)
         const std::size_t dim0{ vols.size()};
@@ -51,7 +71,7 @@ namespace uv::core
         }
 
         // ---------- Initialize member variables ----------
-        numStrikes_ = dim1;
+
         slices_.reserve(numTenors_);
         for (size_t i = 0; i < numTenors_; ++i)
         {
@@ -63,6 +83,10 @@ namespace uv::core
                     mktData)
             );
         }
+
+        numStrikes_ = dim1;
+        strikes_.resize(numStrikes_);
+        strikes_ = slices_[0].K();
     }
 
     void VolSurface::printVol() const noexcept
@@ -107,6 +131,7 @@ namespace uv::core
             oss << std::fixed << std::setprecision(2) << tenors_[i] << '\t';
 
             for (const auto& v : slices_[i].wT())
+
                 oss << std::fixed << std::setprecision(5) << v << '\t';
 
             oss << '\n';
@@ -132,7 +157,7 @@ namespace uv::core
             oss << std::fixed << std::setprecision(2) << tenors_[i] << '\t';
 
             for (const auto& v : slices_[i].callBS())
-                oss << std::fixed << std::setprecision(3) << v << '\t';
+                oss << std::fixed << std::setprecision(7) << v << '\t';
 
             oss << '\n';
         }
@@ -158,7 +183,25 @@ namespace uv::core
         return matrix;
     }
 
-    // Return the logFM matrix
+    Matrix<Real> VolSurface::volMatrix() const noexcept
+    {
+        // Allocate matrix:
+        // outer dimension = tenors (rows)
+        // inner dimension = strikes (columns)        
+        Matrix<Real> matrix(
+            numTenors_, Vector<Real>(numStrikes_)
+        );
+
+        // Populate total variance slices
+        for (std::size_t i = 0; i < numTenors_; ++i)
+        {
+            // Extract total variance slice at tenor i
+            matrix[i] = slices_[i].vol();
+        }
+
+        return matrix;
+    }
+
     Matrix<Real> VolSurface::logFMMatrix() const noexcept
     {
         // Allocate matrix:
@@ -186,6 +229,11 @@ namespace uv::core
     const Vector<Real>& VolSurface::tenors() const noexcept
     {
         return tenors_;
+    }
+
+    const Vector<Real>& VolSurface::strikes() const noexcept
+    {
+        return strikes_;
     }
 
     std::size_t VolSurface::numTenors() const noexcept

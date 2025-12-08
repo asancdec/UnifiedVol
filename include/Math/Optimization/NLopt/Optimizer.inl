@@ -1,14 +1,34 @@
-/**
-* double.inl
-* Author: Alvaro Sanchez de Carlos
-*/
+// SPDX-License-Identifier: Apache-2.0
+/*
+ * File:        double.inl
+ * Author:      Alvaro Sanchez de Carlos
+ * Created:     2025-12-08
+ *
+ * Description:
+ *   [Brief description of what this file declares or implements.]
+ *
+ * Copyright (c) 2025 Alvaro Sanchez de Carlos
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under this License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the LICENSE for the specific language governing permissions and
+ * limitations under this License.
+ */
 
-#include "Calibration/Utils.hpp"
 
-namespace uv::cal::nlopt
+#include "Math/Optimization/Functions.hpp"
+
+namespace uv::math::opt::nlopt
 {
     template <std::size_t N, ::nlopt::algorithm Algo>
-    Calibrator<N, Algo>::Calibrator(const Config<N>& config) :
+    Optimizer<N, Algo>::Optimizer(const Config<N>& config) :
         config_(config), 
         opt_(Algo, N), 
         timer_(),
@@ -24,13 +44,13 @@ namespace uv::cal::nlopt
     }
 
     template <std::size_t N, ::nlopt::algorithm Algo>
-    Calibrator<N, Algo> Calibrator<N, Algo>::fresh() const noexcept
+    Optimizer<N, Algo> Optimizer<N, Algo>::fresh() const noexcept
     {
-        return Calibrator<N, Algo>{ config_ };
+        return Optimizer<N, Algo>{ config_ };
     }
 
     template <std::size_t N, ::nlopt::algorithm Algo>
-    void Calibrator<N, Algo>::setGuessBounds(std::array<double, N> initGuess,
+    void Optimizer<N, Algo>::setGuessBounds(std::array<double, N> initGuess,
         std::array<double, N> lowerBounds,
         std::array<double, N> upperBounds) noexcept
     {
@@ -48,15 +68,15 @@ namespace uv::cal::nlopt
     }
 
     template <std::size_t N, ::nlopt::algorithm Algo>
-    double Calibrator<N, Algo>::ObjectiveThunk(unsigned n, const double* x, double* grad, void* p) noexcept
+    double Optimizer<N, Algo>::ObjectiveThunk(unsigned n, const double* x, double* grad, void* p) noexcept
     {
-        auto* self = static_cast<Calibrator<N, Algo>*>(p);
+        auto* self = static_cast<Optimizer<N, Algo>*>(p);
         ++self->iterCount_;
         return self->userFn_ ? self->userFn_(n, x, grad, self->userData_) : 0.0;
     }
 
     template <std::size_t N, ::nlopt::algorithm Algo>
-    void Calibrator<N, Algo>::addInequalityConstraint(
+    void Optimizer<N, Algo>::addInequalityConstraint(
         NloptFunction c,
         void* data) noexcept
     {
@@ -64,18 +84,18 @@ namespace uv::cal::nlopt
     }
 
     template <std::size_t N, ::nlopt::algorithm Algo>
-    void Calibrator<N, Algo>::setMinObjective(NloptFunction f, void* data) noexcept
+    void Optimizer<N, Algo>::setMinObjective(NloptFunction f, void* data) noexcept
     {
         iterCount_ = 0U;
         userFn_ = f;
         userData_ = data;
 
         // Route NLopt callback into this instance
-        opt_.set_min_objective(&Calibrator<N, Algo>::ObjectiveThunk, this);
+        opt_.set_min_objective(&Optimizer<N, Algo>::ObjectiveThunk, this);
     }
 
     template <std::size_t N, ::nlopt::algorithm Algo>
-    Vector<double> Calibrator<N, Algo>::optimize() noexcept
+    Vector<double> Optimizer<N, Algo>::optimize() noexcept
     {
         // Copy initial guess to working vector
         Vector<double> x(initGuess_.cbegin(), initGuess_.cend());
@@ -113,13 +133,13 @@ namespace uv::cal::nlopt
     }
 
     template <std::size_t N, ::nlopt::algorithm Algo>
-    const double& Calibrator<N, Algo>::eps() const noexcept
+    const double& Optimizer<N, Algo>::eps() const noexcept
     {
         return config_.eps;
     }
 
     template <std::size_t N, ::nlopt::algorithm Algo>
-    double Calibrator<N, Algo>::tol() const noexcept
+    double Optimizer<N, Algo>::tol() const noexcept
     {
         return config_.tol;
     }

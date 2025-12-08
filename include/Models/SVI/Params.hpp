@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * File:        MarketData.hpp
+ * File:        Params.hpp
  * Author:      Alvaro Sanchez de Carlos
  * Created:     2025-12-08
  *
@@ -27,12 +27,15 @@
 
 #include "Utils/Types.hpp"
 
-namespace uv::core
+namespace uv::models::svi
 {
-	struct MarketData
+	struct Params
 	{
-		Real r; // continuously compounded risk-free rate
-		Real q; // continuously compounded dividend yield
-		Real S; // spot price
+		Real T;
+		Real a;
+		Real b;
+		Real rho;
+		Real m;
+		Real sigma;
 	};
 }

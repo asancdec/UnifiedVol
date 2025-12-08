@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * File:        MarketData.hpp
- * Author:      Alvaro Sanchez de Carlos
+ * File:        PDEs.hpp
+ * Author:      Álvaro Sánchez de Carlos
  * Created:     2025-12-08
  *
  * Description:
  *   [Brief description of what this file declares or implements.]
  *
- * Copyright (c) 2025 Alvaro Sanchez de Carlos
+ * Copyright (c) 2025 Álvaro Sánchez de Carlos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,16 +23,13 @@
  */
 
 
-#pragma once
-
-#include "Utils/Types.hpp"
-
-namespace uv::core
-{
-	struct MarketData
-	{
-		Real r; // continuously compounded risk-free rate
-		Real q; // continuously compounded dividend yield
-		Real S; // spot price
-	};
-}
+//#pragma once
+//
+//#include "Utils/Types.hpp"
+//
+//namespace uv::math::pde
+//{
+//
+//	generateGrid
+//
+//} // namespace uv::math::pde

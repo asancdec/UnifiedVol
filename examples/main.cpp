@@ -1,20 +1,45 @@
-﻿#include "Utils/IO/CSVRead.hpp"
+﻿// SPDX-License-Identifier: Apache-2.0
+/*
+ * File:        Pricer.hpp
+ * Author:      Alvaro Sanchez de Carlos
+ * Created:     2025-12-08
+ *
+ * Description:
+ *   [Brief description of what this file declares or implements.]
+ *
+ * Copyright (c) 2025 Alvaro Sanchez de Carlos
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under this License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the LICENSE for the specific language governing permissions and
+ * limitations under this License.
+ */
+
+#include "Utils/IO/CSVRead.hpp"
 #include "Utils/IO/Log.hpp"
-#include "Utils/Aux/Helpers.hpp"
+#include "Core/Functions.hpp"
 #include "Utils/Aux/StopWatch.hpp"
 #include "Core/VolSurface.hpp"
 #include "Core/MarketData.hpp"
-#include "Models/SVI/SVI.hpp"
-#include "Models/LocalVol/LocalVol.hpp"
+#include "Models/SVI/Functions.hpp"
+#include "Models/LocalVol/Functions.hpp"
 #include "Models/Heston/Pricer.hpp"
 #include "Models/Heston/Config.hpp"
 #include "Models/Heston/Calibrator.hpp"
+#include "Models/LocalVol/Pricer.hpp"
 #include "Utils/Aux/Errors.hpp"
 #include "Utils/Types.hpp"
 #include "Math/Functions.hpp"
 #include "Math/Quadratures/TanHSinH.hpp"
-#include "Calibration/Ceres/Policy.hpp"
-#include "Calibration/Ceres/Config.hpp"
+#include "Math/Optimization/Ceres/Policy.hpp"
+#include "Math/Optimization/Ceres/Config.hpp"
 #include "Math/Interpolation.hpp"
 
 
@@ -59,21 +84,21 @@ int main(int argc, char* argv[])
 
         // ---------- Market data ----------
 
-        MarketData mktData
+        MarketData marketData
         { 
           Real(0.0),          // r
           Real(0.0),          // q
           Real(485.77548)     // S
         };
 
-        VolSurface mktVolSurf{ readVolSurface(path.string(), mktData) };
-        //mktVolSurf.printTotVar(); 
+        VolSurface mktVolSurf{ readVolSurface(path.string(), marketData) };
+        //mktVolSurf.printVol();
 
         // ---------- SVI Calibration ----------
 
-        cal::nlopt::Calibrator<5, nlopt::LD_SLSQP> nloptCalibrator
+        opt::nlopt::Optimizer<5, nlopt::LD_SLSQP> nloptOptimizer
         {
-            cal::nlopt::Config<5>
+            opt::nlopt::Config<5>
             {
                 1e-12,                            
                 1e-9,                              
@@ -83,13 +108,22 @@ int main(int argc, char* argv[])
             }
         };
 
-        auto [sviSlices, sviVolSurface] = svi::calibrate(mktVolSurf, nloptCalibrator);
-        sviVolSurface.printVol();
+        auto [sviSlices, sviVolSurface] = svi::calibrate(mktVolSurf, nloptOptimizer);
+        //sviVolSurface.printBSCall();
 
         // ---------- Build Local Volatility surface ----------
 
-        const VolSurface lvVolSurface{localvol::buildSurface(sviVolSurface, sviSlices)};
-        lvVolSurface.printVol();
+        const VolSurface localVolSurface{localvol::buildSurface(sviVolSurface, sviSlices)};
+        localVolSurface.printVol();
+
+        auto prices = localvol::priceCall
+        (
+            localVolSurface,
+            marketData,
+            20,
+            20,
+            3
+            );
 
         // BP()
 
@@ -107,7 +141,7 @@ int main(int argc, char* argv[])
             }
         };
 
-        cal::ceres::Calibrator<5, cal::ceres::Policy
+        opt::ceres::Optimizer<5, opt::ceres::Policy
                 <
                     ceres::HuberLoss,             
                     ceres::LEVENBERG_MARQUARDT,   
@@ -115,7 +149,7 @@ int main(int argc, char* argv[])
                 >
             > ceresOptimizer
         { 
-            cal::ceres::Config<5>
+            opt::ceres::Config<5>
             {   
                 
                 1000,                                          
@@ -128,17 +162,17 @@ int main(int argc, char* argv[])
             }
         };
 
-        VolSurface hestonVolurface
-        { 
-            heston::calibrator::calibrate
-            (
-                sviVolSurface,
-                hestonPricer,
-                ceresOptimizer
-            )
-        };
+        //VolSurface hestonVolurface
+        //{ 
+        //    heston::calibrator::calibrate
+        //    (
+        //        sviVolSurface,
+        //        hestonPricer,
+        //        ceresOptimizer
+        //    )
+        //};
 
-        hestonVolurface.printVol();
+        //hestonVolurface.printVol();
 
         // ---------- Outputs ----------
 

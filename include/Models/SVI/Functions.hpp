@@ -1,19 +1,41 @@
-﻿/**
-* SVI.hpp
-* Author: Alvaro Sanchez de Carlos
-*/
+﻿// SPDX-License-Identifier: Apache-2.0
+/*
+ * File:        Functions.hpp
+ * Author:      Alvaro Sanchez de Carlos
+ * Created:     2025-12-08
+ *
+ * Description:
+ *   [Brief description of what this file declares or implements.]
+ *
+ * Copyright (c) 2025 Alvaro Sanchez de Carlos
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under this License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the LICENSE for the specific language governing permissions and
+ * limitations under this License.
+ */
+
 
 #pragma once
 
 #include "Core/VolSurface.hpp"
-#include "Calibration/NLopt/Calibrator.hpp"
-#include "Models/SVI/SVISlice.hpp"
+#include "Math/Optimization/NLopt/Optimizer.hpp"
+#include "Models/SVI/Params.hpp"
 #include "Utils/Types.hpp"
 
 #include <nlopt.hpp> 
 #include <concepts>
 #include <array>      
 #include <tuple>
+
+namespace opt = uv::math::opt;
 
 namespace uv::models::svi
 {
@@ -23,8 +45,8 @@ namespace uv::models::svi
 
 	// Main calibration function
 	template <::nlopt::algorithm Algo>
-	std::tuple<std::vector<SVISlice>, core::VolSurface> calibrate(const core::VolSurface& mktVolSurf,
-		const cal::nlopt::Calibrator<5, Algo>& prototype,
+	std::tuple<std::vector<Params>, core::VolSurface> calibrate(const core::VolSurface& mktVolSurf,
+		const opt::nlopt::Optimizer<5, Algo>& prototype,
 		bool isValidateResults = true);
 
 	// g(k) standard function
@@ -59,23 +81,23 @@ namespace uv::models::svi
 
 		// Define the minimum total variance constraint: wMin ≥ 0.0
 		template <::nlopt::algorithm Algo>
-		void addWMinConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator) noexcept;
+		void addWMinConstraint(opt::nlopt::Optimizer<5, Algo>& optimizer) noexcept;
 
 		// Add Roger Lee left wing and right wing max slope constraints
 		template <::nlopt::algorithm Algo>
-		void addMaxSlopeConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator) noexcept;
+		void addMaxSlopeConstraint(opt::nlopt::Optimizer<5, Algo>& optimizer) noexcept;
 
 		// Add no calendar spread arbitrage constraint: Wk_current ≥ Wk_previous
 		template <::nlopt::algorithm Algo>
-		void addCalendarConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator, std::vector<ConstraintCtx>& contexts) noexcept;
+		void addCalendarConstraint(opt::nlopt::Optimizer<5, Algo>& optimizer, std::vector<ConstraintCtx>& contexts) noexcept;
 
 		// Add no butterfly arbitrage constraints g(k) ≥ 0.0
 		template <::nlopt::algorithm Algo>
-		void addConvexityConstraint(cal::nlopt::Calibrator<5, Algo>& calibrator, Vector<double>& kStorage) noexcept;
+		void addConvexityConstraint(opt::nlopt::Optimizer<5, Algo>& optimizer, Vector<double>& kStorage) noexcept;
 
 		// Add objective function with analytical gradient
 		template <::nlopt::algorithm Algo>
-		void setMinObjective(cal::nlopt::Calibrator<5, Algo>& calibrator, const ObjCtx& obj) noexcept;
+		void setMinObjective(opt::nlopt::Optimizer<5, Algo>& optimizer, const ObjCtx& obj) noexcept;
 
 		//--------------------------------------------------------------------------
 		// Math functions
@@ -96,8 +118,8 @@ namespace uv::models::svi
 
 		// Check calibration results
 		template <::nlopt::algorithm Algo>
-		void evalCal(const SVISlice& sviSlice,
-			const cal::nlopt::Calibrator<5, Algo>& calibrator,
+		void evalCal(const Params& sviSlice,
+			const opt::nlopt::Optimizer<5, Algo>& optimizer,
 			const Vector<double>& kSlice,
 			const Vector<double>& wKPrevSlice) noexcept;
 
@@ -109,4 +131,4 @@ namespace uv::models::svi
 	} // namespace detail
 } 
 
-#include "SVI.inl"
+#include "Functions.inl"

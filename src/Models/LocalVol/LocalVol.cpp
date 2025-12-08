@@ -1,15 +1,36 @@
+// SPDX-License-Identifier: Apache-2.0
 /*
-* LocalVol.cpp
-* Author: Alvaro Sanchez de Carlos
-*/
+ * File:        Functions.cpp
+ * Author:      Álvaro Sánchez de Carlos
+ * Created:     2025-12-08
+ *
+ * Description:
+ *   [Brief description of what this file declares or implements.]
+ *
+ * Copyright (c) 2025 Álvaro Sánchez de Carlos
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under this License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the LICENSE for the specific language governing permissions and
+ * limitations under this License.
+ */
 
 
-#include "Models/LocalVol/LocalVol.hpp"
+
+#include "Models/LocalVol/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
 #include "Math/Interpolation.hpp"
-#include "Utils/Aux/Helpers.hpp"
-#include "Models/SVI/SVI.hpp"
+#include "Core/Functions.hpp"
+#include "Models/SVI/Functions.hpp"
 #include "Core/SliceData.hpp"
+#include "Models/LocalVol/Pricer.hpp"
 
 #include <cstddef>
 #include <string>
@@ -21,14 +42,14 @@ using namespace uv;
 namespace uv::models::localvol
 {
 	core::VolSurface buildSurface(const core::VolSurface& volSurface,
-		const Vector<models::svi::SVISlice>& sviSlices)
+		const Vector<models::svi::Params>& paramsSVI)
 	{
 
 		// ---------- Check matching dimensions ----------
 		
 		const std::size_t numTenors{ volSurface.numTenors() };
 		const std::size_t numStrikes{ volSurface.numStrikes() };
-		const std::size_t numSlices{ sviSlices.size() };
+		const std::size_t numSlices{ paramsSVI.size() };
 
 		// Throw if dimensions do not match
 		UV_REQUIRE
@@ -47,9 +68,9 @@ namespace uv::models::localvol
 		for (std::size_t i = 0; i < numTenors; ++i)
 		{
 			const Real volTenor{ tenors[i] };
-			const Real sviTenor{ sviSlices[i].T };
+			const Real sviTenor{ paramsSVI[i].T };
 
-			// Throw if suface and SVI tenors do not match
+			// Throw if surface and SVI tenors do not match
 			UV_REQUIRE
 			(
 				std::abs(volTenor - sviTenor) < 1e-12,	// tolerance
@@ -70,7 +91,7 @@ namespace uv::models::localvol
 				tenors,                          
 				volSurface.logFMMatrix(),    // Log(F/K) strikes
 				volSurface.totVarMatrix(),   // Total variance
-				sviSlices
+				paramsSVI
 			)
 		};
 
@@ -85,6 +106,34 @@ namespace uv::models::localvol
 		return lvVolSurf;
 	}
 
+	Vector<Real> priceCall(const core::VolSurface& localVolSurface,
+		const core::MarketData& marketData,
+		const std::size_t NT,
+		const std::size_t NS,
+		const unsigned int X)
+	{
+		// ---------- Initialization ----------
+
+		Pricer pricer
+		(
+			localVolSurface.tenors(),
+			localVolSurface.strikes(),
+			marketData,
+			NT,
+			NS,
+			X
+		);
+
+		// ---------- Pricing ----------
+
+		return pricer.priceCall
+		(
+			localVolSurface.volMatrix(),
+			localVolSurface.tenors(),
+			localVolSurface.strikes()
+		);
+	}
+
 } // namespace uv::models::localvol
 
 namespace uv::models::localvol::detail
@@ -92,7 +141,7 @@ namespace uv::models::localvol::detail
 	Matrix<Real> localTotVar(const Vector<Real>& tenors,
 		const Matrix<Real>& logFM,
 		const Matrix<Real>& totVar,
-		const Vector<svi::SVISlice>& sviSlices)
+		const Vector<svi::Params>& paramsSVI)
 	{
 		// ---------- Initialize data ----------
 
@@ -103,7 +152,7 @@ namespace uv::models::localvol::detail
 
 		// ---------- Calculate dw/dT matrix ----------
 
-		const Matrix<Real> totVarT{ utils::transposeMatrix(totVar) };
+		const Matrix<Real> totVarT{ uv::core::transposeMatrix(totVar) };
 
 		for (std::size_t i = 0; i < numStrikes; ++i)
 		{
@@ -111,7 +160,7 @@ namespace uv::models::localvol::detail
 		}
 
 		// Transpose back into original dimensions
-		dwdT = utils::transposeMatrix(dwdT);
+		dwdT = uv::core::transposeMatrix(dwdT);
 
 		// ---------- Local total variance from SVI ----------
 
@@ -119,7 +168,7 @@ namespace uv::models::localvol::detail
 		{
 			// ---------- SVI data ----------
 
-			const svi::SVISlice& sviSlice{ sviSlices[i] };
+			const svi::Params& sviSlice{ paramsSVI[i] };
 			const Real a{ sviSlice.a };
 			const Real b{ sviSlice.b };
 			const Real rho{ sviSlice.rho };

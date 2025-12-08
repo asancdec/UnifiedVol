@@ -1,7 +1,27 @@
-﻿/**
-* Bindings.cpp
-* Author: Alvaro Sanchez de Carlos
-*/
+﻿// SPDX-License-Identifier: Apache-2.0
+/*
+ * File:        Bindings.cpp
+ * Author:      Alvaro Sanchez de Carlos
+ * Created:     2025-12-08
+ *
+ * Description:
+ *   [Brief description of what this file declares or implements.]
+ *
+ * Copyright (c) 2025 Alvaro Sanchez de Carlos
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under this License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the LICENSE for the specific language governing permissions and
+ * limitations under this License.
+ */
+
 
 #include "Math/Interpolation.hpp"
 #include "Utils/Types.hpp"
@@ -16,11 +36,11 @@ PYBIND11_MODULE(interp, m)
     m.def(
         "interpolate_cubic_hermite",
         [](double x,
-            const uv::Vector<uv::Real>& xs,
-            const uv::Vector<uv::Real>& ys,
-            const uv::Vector<uv::Real>& dydx)
+            const std::vector<long double>& xs,
+            const std::vector<long double>& ys,
+            const std::vector<long double>& dydx)
         {
-            return uv::math::interpolateCubicHermiteSpline<uv::Real>(x, xs, ys, dydx);
+            return uv::math::interpolateCubicHermiteSpline<long double>(x, xs, ys, dydx);
         },
         R"pbdoc(
         Cubic Hermite interpolation with precomputed slopes.
@@ -72,4 +92,47 @@ PYBIND11_MODULE(interp, m)
           https://en.wikipedia.org/wiki/Monotone_cubic_interpolation
         )pbdoc"
         );
+
+    m.def(
+        "pchip_derivatives",
+        [](const std::vector<long double>& xs,
+            const std::vector<long double>& ys)
+        {
+            return uv::math::pchipDerivatives<long double>(xs, ys);
+        },
+        R"pbdoc(
+        Compute PCHIP (monotone cubic Hermite) derivative estimates
+        for a 1D sequence of points (xs, ys).
+
+        Given strictly increasing knot positions xs and corresponding function
+        values ys, this returns first-derivative estimates dydx suitable for use
+        in cubic Hermite interpolation.
+
+        This slope selection reproduces the MATLAB PCHIP / Fritsch–Carlson
+        shape-preserving cubic interpolation and guarantees:
+
+        * C¹ continuity
+        * No spurious overshoots
+        * Local monotonicity preservation
+        * Endpoint slope correction and clamping
+
+        Parameters
+        ----------
+        xs : Sequence[float]
+            Strictly increasing x-grid (knot locations).
+        ys : Sequence[float]
+            Function values at each knot.
+
+        Returns
+        -------
+        list[float]
+            Derivative estimates dydx at each knot.
+
+        Notes
+        -----
+        - Requires len(xs) == len(ys) >= 2.
+        - This does **not** perform interpolation — use `interpolate_cubic_hermite`
+          with xs, ys, dydx to evaluate the spline.
+        )pbdoc"
+    );
 }

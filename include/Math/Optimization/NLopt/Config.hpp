@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: Apache-2.0
+﻿// SPDX-License-Identifier: Apache-2.0
 /*
- * File:        MarketData.hpp
+ * File:        Config.hpp
  * Author:      Alvaro Sanchez de Carlos
  * Created:     2025-12-08
  *
@@ -26,13 +26,19 @@
 #pragma once
 
 #include "Utils/Types.hpp"
+#include <array>    
+#include <string_view>
+#include <cstddef>
 
-namespace uv::core
+namespace uv::math::opt::nlopt
 {
-	struct MarketData
+	template <std::size_t N>
+	struct Config
 	{
-		Real r; // continuously compounded risk-free rate
-		Real q; // continuously compounded dividend yield
-		Real S; // spot price
+		double eps;                                       // Small epsilon used for inequality tolerances
+		double tol;                                       // Constraint tolerance passed to NLopt (|c(x)| ≤ tol considered satisfied)
+		double ftolRel;                                   // Relative stopping criterion for objective improvement (NLopt ftol_rel)
+		unsigned int maxEval;                             // Maximum number of function evaluations allowed during optimization
+		std::array<std::string_view, N> paramNames;       // Parameter names
 	};
 }

@@ -23,8 +23,8 @@ target_include_directories(UnifiedVol PUBLIC
 )
 
 # --- Dependencies (via vcpkg, CONFIG mode) ---
-find_package(NLopt CONFIG REQUIRED)       # provides NLopt::nlopt
-find_package(Ceres CONFIG REQUIRED)       # provides Ceres::ceres 
+find_package(NLopt CONFIG REQUIRED)            # provides NLopt::nlopt
+find_package(Ceres CONFIG REQUIRED)            # provides Ceres::ceres 
 find_package(Boost CONFIG REQUIRED COMPONENTS math)  # Boost::math, Boost::boost
 
 target_link_libraries(UnifiedVol PUBLIC
@@ -66,9 +66,14 @@ if(UNIFIEDVOL_BUILD_PYTHON)
     ${CMAKE_SOURCE_DIR}/src
   )
 
-  # Put the compiled Python module next to your Python sources
+  # Put the compiled Python module in the *build* tree, under <build>/python
   set_target_properties(interp PROPERTIES
     PREFIX ""  # avoid libinterp.so, just interp*.so
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/python"
+    LIBRARY_OUTPUT_DIRECTORY          "${CMAKE_BINARY_DIR}/python"
+    LIBRARY_OUTPUT_DIRECTORY_RELEASE  "${CMAKE_BINARY_DIR}/python"
+    LIBRARY_OUTPUT_DIRECTORY_DEBUG    "${CMAKE_BINARY_DIR}/python"
   )
+
+  message(STATUS "interp module will be written to: ${CMAKE_BINARY_DIR}/python")
+
 endif()

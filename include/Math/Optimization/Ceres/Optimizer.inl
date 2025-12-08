@@ -1,9 +1,29 @@
-﻿/**
-* Calibrator.hpp
-* Author: Alvaro Sanchez de Carlos
-*/
+﻿// SPDX-License-Identifier: Apache-2.0
+/*
+ * File:        Optimizer.hpp
+ * Author:      Alvaro Sanchez de Carlos
+ * Created:     2025-12-08
+ *
+ * Description:
+ *   [Brief description of what this file declares or implements.]
+ *
+ * Copyright (c) 2025 Alvaro Sanchez de Carlos
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under this License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the LICENSE for the specific language governing permissions and
+ * limitations under this License.
+ */
 
-#include "Calibration/Utils.hpp"
+
+#include "Math/Optimization/Functions.hpp"
 #include "Utils/IO/ConsoleRedirect.hpp"
 #include "Utils/IO/Log.hpp"
 
@@ -12,13 +32,14 @@
 #include <format>    
 #include <algorithm>
 
-namespace uv::cal::ceres
+namespace uv::math::opt::ceres
 {
     template <std::size_t N, typename Policy>
-    Calibrator<N, Policy>::Calibrator(const Config<N>& config) : config_(config) {}
+    Optimizer<N, Policy>::Optimizer(const Config<N>& config) : 
+        config_(config) {}
 
     template <std::size_t N, typename Policy>
-    void Calibrator<N, Policy>::setGuessBounds(const std::array<double, N>& initGuess,
+    void Optimizer<N, Policy>::setGuessBounds(const std::array<double, N>& initGuess,
         const std::array<double, N>& lowerBounds,
         const std::array<double, N>& upperBounds) noexcept
     {
@@ -42,7 +63,7 @@ namespace uv::cal::ceres
     }
 
     template <std::size_t N, typename Policy>
-    void Calibrator<N, Policy>::addAnalyticResidual(std::unique_ptr<::ceres::CostFunction> cf) noexcept
+    void Optimizer<N, Policy>::addAnalyticResidual(std::unique_ptr<::ceres::CostFunction> cf) noexcept
     {
         problem_.AddResidualBlock
         (
@@ -53,7 +74,7 @@ namespace uv::cal::ceres
     }
 
     template <std::size_t N, typename Policy>
-    std::array<double, N> Calibrator<N, Policy>::optimize()
+    std::array<double, N> Optimizer<N, Policy>::optimize()
     {   
         // Set calibration options
         ::ceres::Solver::Options options;
@@ -94,9 +115,9 @@ namespace uv::cal::ceres
         (
             x_,                                                     // Parameters
             config_.paramNames,                                     // Parameter names
-            summary.final_cost * double(2.0),                               // SSE
+            summary.final_cost * double(2.0),                       // SSE
             summary.iterations.size(),                              // Iterations
-            summary.total_time_in_seconds * double(1000.0),                 // Elapsed [ms]
+            summary.total_time_in_seconds * double(1000.0),         // Elapsed [ms]
             (summary.termination_type == ::ceres::CONVERGENCE ||
                 summary.termination_type == ::ceres::USER_SUCCESS)  // Success flag
         );

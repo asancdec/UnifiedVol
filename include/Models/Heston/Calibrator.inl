@@ -1,7 +1,27 @@
-﻿/**
-* Calibrator.inl
-* Author: Alvaro Sanchez de Carlos
-*/
+﻿// SPDX-License-Identifier: Apache-2.0
+/*
+ * File:        Calibrator.inl
+ * Author:      Alvaro Sanchez de Carlos
+ * Created:     2025-12-08
+ *
+ * Description:
+ *   [Brief description of what this file declares or implements.]
+ *
+ * Copyright (c) 2025 Alvaro Sanchez de Carlos
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under this License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the LICENSE for the specific language governing permissions and
+ * limitations under this License.
+ */
+
 
 #include <ceres/ceres.h>
 
@@ -13,13 +33,13 @@ namespace uv::models::heston::calibrator
 	template <std::size_t N, typename Policy>
 	core::VolSurface calibrate(const core::VolSurface& mktVolSurf,
 		Pricer<N>& pricer,
-		cal::ceres::Calibrator<5, Policy>& calibrator)
+		opt::ceres::Optimizer<5, Policy>& optimizer)
 	{
 		// Copy market volatility surface
 		core::VolSurface hestonVolSurf{ mktVolSurf };
 
 		// Set initial guess, lower and upper bounds
-		calibrator.setGuessBounds
+		optimizer.setGuessBounds
 		(
 			detail::initGuess(),
 			detail::lowerBounds(),
@@ -40,7 +60,7 @@ namespace uv::models::heston::calibrator
 
 			for (std::size_t i = 0; i < K.size(); ++i)
 			{
-				calibrator.addAnalyticResidual
+				optimizer.addAnalyticResidual
 				(
 					std::make_unique<detail::PriceResidualJac<N>>
 					(
@@ -51,7 +71,7 @@ namespace uv::models::heston::calibrator
 		}
 
 		// Calibrate Pricer parameters
-		pricer.setParams(calibrator.optimize());
+		pricer.setParams(optimizer.optimize());
 
 		// Fill in the calibrated volatility surface
 		for (auto& slice : hestonVolSurf.slices())
