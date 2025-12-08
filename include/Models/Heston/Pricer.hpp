@@ -28,7 +28,6 @@
 #include "Utils/Types.hpp"
 #include "Models/Heston/Params.hpp"
 #include "Models/Heston/Config.hpp"
-#include "Models/Heston/CharFunData.hpp"
 #include "Math/Quadratures/TanHSinH.hpp"
 #include "Core/VolSurface.hpp"
 
@@ -45,6 +44,40 @@ namespace uv::models::heston
 	class Pricer
 	{
 	private:
+
+		//--------------------------------------------------------------------------
+		// Internal struct to save intermediate calculations
+		//--------------------------------------------------------------------------
+		struct CharFunCache
+		{
+			// Original CF outputs
+			Complex<Real> psi;                 // psi(u) := exp( A + v0 * B )
+			Complex<Real> A;                   // A := (kappa*theta/sigma^2)*( r*T − 2*log(1 − r*y) )
+			Complex<Real> B;                   // B := u(u+i)*y / (1 − r*y)
+			Complex<Real> beta;                // beta := kappa − sigma*rho*(i*u)
+			Complex<Real> D;                   // D := sqrt( beta^2 + sigma^2*u(u+i) )
+			Complex<Real> DT;                  // DT := D*T
+			Complex<Real> betaPlusD;           // beta + D
+			Complex<Real> betaMinusD;          // beta − D  (stable)
+			Complex<Real> ui;                  // ui := u*i
+			Complex<Real> kFac;                // kFac := (kappa*theta)/sigma^2
+			Real invSigma2;					   // 1 / sigma^2
+			Real kappaTheta;				   // kappa * theta
+			Real sigma2;					   // sigma^2
+
+			// Rescued intermediates (for gradient path)
+			Complex<Real> uu;                  // uu := u(u+i)
+			Complex<Real> eDT;                 // eDT := exp( −DT )
+			Complex<Real> g;                   // g := (beta−D)/(beta+D)
+			Complex<Real> Q;                   // Q := 1 − g*eDT
+			Complex<Real> invQ;                // 1 / Q
+			Complex<Real> invQ2;               // 1 / Q^2
+			Complex<Real> R;                   // R := 1 − g
+			Complex<Real> S;                   // S := (beta−D)*T − 2*log(Q/R)
+			Complex<Real> fracB;               // fracB := (1 − eDT) / Q
+			Complex<Real> denomG;              // denomG := (beta + D)^2
+			Complex<Real> betaMinusDinvSigma2; // (betaMinusD)/sigma^2
+		};
 
 		//--------------------------------------------------------------------------
 		// Private member variables
@@ -88,7 +121,7 @@ namespace uv::models::heston
 		//--------------------------------------------------------------------------
 		// Returns a struct of precalculated variables for efficient gradient computation
 		// Albrecher, H., P. Mayer, W. Schoutens, and J. Tistaert (2007)
-		static CharFunData charFunctionCal(Real  kappa,
+		static CharFunCache charFunctionCal(Real  kappa,
 			Real theta,
 			Real sigma,
 			Real rho,

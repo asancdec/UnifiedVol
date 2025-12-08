@@ -275,6 +275,7 @@ namespace uv::math
         Real S,
         Real K,
         bool isCall = true);
+
 } // namespace uv::math
 
 #include "Functions.inl"

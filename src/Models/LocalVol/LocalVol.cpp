@@ -27,6 +27,7 @@
 #include "Models/LocalVol/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
 #include "Math/Interpolation.hpp"
+#include "Math/Functions.hpp"
 #include "Core/Functions.hpp"
 #include "Models/SVI/Functions.hpp"
 #include "Core/SliceData.hpp"
@@ -89,7 +90,7 @@ namespace uv::models::localvol
 			detail::localTotVar
 			(
 				tenors,                          
-				volSurface.logFMMatrix(),    // Log(F/K) strikes
+				volSurface.logKFMatrix(),    // Log(F/K) strikes
 				volSurface.totVarMatrix(),   // Total variance
 				paramsSVI
 			)
@@ -106,31 +107,34 @@ namespace uv::models::localvol
 		return lvVolSurf;
 	}
 
-	Vector<Real> priceCall(const core::VolSurface& localVolSurface,
+	Vector<Real> price(const core::VolSurface& localVolSurface,
 		const core::MarketData& marketData,
 		const std::size_t NT,
-		const std::size_t NS,
+		const std::size_t NF,
 		const unsigned int X)
 	{
 		// ---------- Initialization ----------
 
+		Vector<Real> surfaceTenors{ localVolSurface.tenors() };
+		Vector<Real> sufaceStrikes{ localVolSurface.strikes()};
+
 		Pricer pricer
 		(
-			localVolSurface.tenors(),
-			localVolSurface.strikes(),
+			surfaceTenors,
+			sufaceStrikes,
 			marketData,
 			NT,
-			NS,
+			NF,
 			X
 		);
 
 		// ---------- Pricing ----------
 
-		return pricer.priceCall
+		return pricer.price
 		(
-			localVolSurface.volMatrix(),
-			localVolSurface.tenors(),
-			localVolSurface.strikes()
+			localVolSurface.varMatrix(),
+			surfaceTenors,
+			sufaceStrikes
 		);
 	}
 
@@ -139,7 +143,7 @@ namespace uv::models::localvol
 namespace uv::models::localvol::detail
 {	
 	Matrix<Real> localTotVar(const Vector<Real>& tenors,
-		const Matrix<Real>& logFM,
+		const Matrix<Real>& logKF,
 		const Matrix<Real>& totVar,
 		const Vector<svi::Params>& paramsSVI)
 	{
@@ -156,7 +160,7 @@ namespace uv::models::localvol::detail
 
 		for (std::size_t i = 0; i < numStrikes; ++i)
 		{
-			dwdT[i] = math::pchipDerivatives(tenors, totVarT[i]);
+			dwdT[i] = math::interp::pchipDerivatives(tenors, totVarT[i]);
 		}
 
 		// Transpose back into original dimensions
@@ -180,7 +184,7 @@ namespace uv::models::localvol::detail
 
 			for (std::size_t j = 0; j < numStrikes; ++j)
 			{
-				const Real gk{ svi::gk(a, b, rho, m, sigma, logFM[i][j]) };
+				const Real gk{ svi::gk(a, b, rho, m, sigma, logKF[i][j]) };
 				results[i][j] = dwdT[i][j] * T / gk;
 			}
 		}

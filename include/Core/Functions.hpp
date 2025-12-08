@@ -54,4 +54,69 @@ namespace uv::core
         const size_t steps
     ) noexcept;
 
+    /**
+     * @brief Compute first forward differences of a vector.
+     *
+     * This function returns a vector containing the element-wise
+     * forward differences of the input vector `v`, defined as
+     * @f$ d[i] = v[i+1] - v[i] @f$ for all valid indices.
+     *
+     * ### Example
+     * Input:  `[v0, v1, v2, v3]`
+     * Output: `[v1 - v0, v2 - v1, v3 - v2]`
+     *
+     * @param v Input vector.
+     * @return A vector of size `v.size() - 1` containing forward differences.
+     *     
+     */
+    Vector<Real> diff(const Vector<Real>& v);
+
+    /**
+     * @brief Return a new vector with every element multiplied by a scalar.
+     *
+     * @param v Input vector (unchanged).
+     * @param x Scalar multiplier.
+     * @return A vector where each element equals `v[i] * x`.
+     */
+    Vector<Real> multiply(const Vector<Real>& v,
+        const Real x) noexcept;
+
+    /**
+     * @brief Add a scalar value to every element of a matrix.
+     *
+     * @param A Input matrix.
+     * @param x Scalar value to add to each matrix element.
+     * @return A matrix where each entry equals <tt>A[i][j] + x</tt>.
+     */
+    Matrix<Real> add(const Matrix<Real>& A,
+        const Real x) noexcept;
+
+    /**
+     * @brief Compute the element-wise (Hadamard) product of two vectors.
+     *
+     * @param a First input vector.
+     * @param b Second input vector.
+     * @return A vector where each element equals <tt>a[i] * b[i]</tt>.
+     */
+    Vector<Real> hadamard(const Vector<Real>& a, const Vector<Real>& b);
+
+    /**
+     * @brief Compute the element-wise (Hadamard) product of a matrix and a vector.
+     *
+     * @param A Input matrix of size `A.size() x A[0].size()`.
+     * @param b Input vector whose size must match the number of columns of @p A.
+     * @return A new matrix where each row is the Hadamard product of a row of @p A and @p b.
+     */
+    Matrix<Real> hadamard(const Matrix<Real>& A,
+        const Vector<Real>& b);
+
+    /**
+     * @brief Compute the element-wise (Hadamard) product of two matrices.
+     *
+     * @return A matrix of the same size as `A` and `B`, where each element is the
+     *         Hadamard (element-wise) product of the corresponding elements of `A` and `B`.
+     */
+    Matrix<Real> hadamard(const Matrix<Real>& A,
+        const Matrix<Real>& B);
+
 } // namespace uv::core

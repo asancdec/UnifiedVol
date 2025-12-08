@@ -23,8 +23,8 @@
  */
 
 
-#include "Utils/IO/Log.hpp"
-#include "Utils/Aux/Errors.hpp"      
+#include "Utils/Aux/Errors.hpp"  
+#include "Core/Functions.hpp"
 
 #include <cstddef>
 #include <cmath>
@@ -33,26 +33,82 @@
 #include <algorithm>
 #include <iostream>
 
-namespace uv::math
+namespace uv::math::interp
 {
 	template <std::floating_point T>
-	T interpolateCubicHermiteSpline(const T x,
+	Vector<T> pchipInterp(const Vector<T>& x,
+		const Vector<T>& xs,
+		const Vector<T>& ys)
+	{
+		return hermiteSplineInterp
+		(
+			x,
+			xs,
+			ys,
+			pchipDerivatives(xs, ys)
+		);
+	};
+
+	template <std::floating_point T>
+	Matrix<T> pchipInterp2D(const Vector<T>& x,   
+		const Vector<T>& y,  
+		const Vector<T>& xs,   
+		const Vector<T>& ys, 
+		const Matrix<T>& zs)    
+	{
+
+		// ---------- Interpolate across rows ----------
+
+		const Matrix<T> tmp
+		{
+			details::pchipInterpRows
+			(
+				x,
+				xs,
+				zs
+			) 
+		};
+
+		// ---------- Interpolate across columns ----------
+
+		const Matrix<T> tmpT
+		{
+			details::pchipInterpRows
+			(
+				y,
+				ys,
+				uv::core::transposeMatrix(tmp)
+			)
+		};
+
+		return uv::core::transposeMatrix(tmpT);
+	}
+
+	template <std::floating_point T>
+	Vector<T> hermiteSplineInterp(const Vector<T>& x,
 		const Vector<T>& xs,
 		const Vector<T>& ys,
-		const Vector<T>& dydx
-	)
+		const Vector<T>& dydx)
 	{
 		// ---------- Check matching dimensions ----------
 
+		const std::size_t xSize{ x.size() };
 		const std::size_t xsSize{ xs.size() };
 		const std::size_t ysSize{ ys.size() };
 		const std::size_t dSize{ dydx.size() };
+
+		// Throw if x is empty
+		UV_REQUIRE(
+			xSize > 0,
+			ErrorCode::InvalidArgument,
+			"hermiteSplineInterp: x vector is empty"
+		);
 
 		// Throw if sizes do not match
 		UV_REQUIRE(
 			(xsSize == ysSize) && (xsSize == dSize),
 			ErrorCode::InvalidArgument,
-			"interpolateCubicHermiteSpline: size mismatch — "
+			"hermiteSplineInterp: size mismatch — "
 			"xs vector has " + std::to_string(xsSize) +
 			" elements, ys vector has " + std::to_string(ysSize) +
 			" elements, dydx vector has " + std::to_string(dSize) + " elements"
@@ -60,10 +116,10 @@ namespace uv::math
 
 		// ---------- Special cases  ----------
 
-		if (xsSize == 0) return T(0);   // No elements
-		if (xsSize == 1) return ys[0];  // One element
+		if (xsSize == 0)  return Vector<T>(x.size(), T(0));   // No elements
+		if (xsSize == 1)  return Vector<T>(x.size(), ys[0]);  // One element
 
-		// ---------- Check strictly monotonically increasing x values ----------
+		// ---------- Check strictly monotonically increasing xs values ----------
 
 		bool isMonotonic{ true };
 		std::size_t violIndex{ 0 };
@@ -83,48 +139,11 @@ namespace uv::math
 			isMonotonic,
 			ErrorCode::InvalidArgument,
 			std::format(
-				"interpolateCubicHermiteSpline: x vector must be strictly increasing "
+				"hermiteSplineInterp: xs vector must be strictly increasing "
 				"(violation at index {}: xs[i-1] = {:.6g}, xs[i] = {:.6g})",
 				violIndex, xs[violIndex - 1], xs[violIndex]
 			)
 		);
-
-		// ---------- Out of bounds ----------
-
-		const T xsMin{ xs.front() };
-		const T xsMax{ xs.back() };
-
-		// To the left
-		if (x < xsMin)
-		{
-			UV_WARN(
-				true,
-				std::format(
-					"interpolateCubicHermiteSpline: x = {:.4f} out of bounds -> clamped to {:.4f} "
-					"(xsmin = {:.4f}, xsmax = {:.4f})",
-					x, xsMin, xsMin, xsMax
-				)
-			);
-
-			// Flat extrapolation
-			return ys.front();
-		}
-
-		// To the right
-		if (x > xsMax)
-		{
-			UV_WARN(
-				true,
-				std::format(
-					"interpolateCubicHermiteSpline: x = {:.4f} out of bounds -> clamped to {:.4f} "
-					"(xsmin = {:.4f}, xsmax = {:.4f})",
-					x, xsMax, xsMin, xsMax
-				)
-			);
-
-			// Flat extrapolation
-			return ys.back();
-		}
 
 		// ---------- Calculate step sizes and secant slopes ----------
 
@@ -146,33 +165,63 @@ namespace uv::math
 
 		for (std::size_t i = 0; i < numSteps; ++i)
 		{
-			const T c1{ dydx[i]};          // Tangent slope
+			const T c1{ dydx[i] };          // Tangent slope
 			const T m{ S[i] };		       // Secant slope
 			const T invH{ T(1) / h[i] };
 			const T common{ c1 + dydx[i + 1] - T(2) * m };
-			
+
 			c2s[i] = (m - c1 - common) * invH;
-		    c3s[i] = (common * invH * invH);
+			c3s[i] = (common * invH * invH);
 		}
 
-		// ---------- Search for index ----------
+		// ---------- Interpolate ----------
 
-		// Distance from first element to iterator at upper bound
-		auto it = std::upper_bound(xs.begin(), xs.end(), x);
-		std::size_t idx{ static_cast<std::size_t>(std::distance(xs.begin(), it)) };
+		Vector<T> y(xSize);
+		const T xsMin{ xs.front() };
+		const T xsMax{ xs.back() };
 
-		// NOTE: indices start from 0
-		if (idx >= xsSize) idx = numSteps - 1; 
-		else --idx;						
+		for (std::size_t i = 0; i < xSize; ++i)
+		{
+			// ---------- Out of bounds ----------
+			const T xi{x[i]};
 
-		// ---------- Calculate interpolated value ----------
+			// Left bounds
+			if (xi < xsMin)
+			{	
+				// Flat extrapolation
+				y[i] = ys.front();
+				continue;
+			}	
 
-		const T dx{ x - xs[idx] };
+			// Right bounds
+			if (xi > xsMax)
+			{
+				// Flat extrapolation
+				y[i] = ys.back();
+				continue;
+			}
 
-		return ys[idx]
-			+ dydx[idx] * dx
-			+ c2s[idx] * dx * dx
-			+ c3s[idx] * dx * dx * dx;
+			// ---------- Search for index ----------
+
+			// Distance from first element to iterator at upper bound
+			auto it = std::upper_bound(xs.begin(), xs.end(), xi);
+			std::size_t idx{ static_cast<std::size_t>(std::distance(xs.begin(), it)) };
+
+			// NOTE: indices start from 0
+			if (idx >= xsSize) idx = numSteps - 1;
+			else --idx;
+
+			// ---------- Calculate interpolated value ----------
+
+			const T dx{ xi - xs[idx] };
+
+			y[i] = ys[idx]
+				+ dydx[idx] * dx
+				+ c2s[idx] * dx * dx
+				+ c3s[idx] * dx * dx * dx;
+		}
+
+		return y;
 	}
 
 	template <std::floating_point T>
@@ -240,7 +289,7 @@ namespace uv::math
 		// ---------- Calculate step sizes and secant slopes ----------
 	
 		const std::size_t numSteps{xsSize - 1};
-		Vector<T> h(numSteps);                   // Step sizes
+		Vector<T> h(numSteps);                    // Step sizes
 		Vector<T> S(numSteps);			          // Secant slopes
 
 		for (std::size_t i = 0; i < numSteps; ++i)
@@ -278,7 +327,7 @@ namespace uv::math
 		// ---------- Calculate edge derivatives ----------
 
 		// Left endpoint
-		dydx[0] = pchipEndpointSlope<T>(
+		dydx[0] = details::pchipEndpointSlope<T>(
 			h[0],      // h1 = xs[1] - xs[0]
 			h[1],      // h2 = xs[2] - xs[1]
 			S[0],      // S1 = (ys[1] - ys[0]) / h1
@@ -286,7 +335,7 @@ namespace uv::math
 		);
 
 		// Right endpoint
-		dydx.back() = math::pchipEndpointSlope<T>(
+		dydx.back() = details::pchipEndpointSlope<T>(
 			h[numSteps - 1],   // h1 = xs[n-1] - xs[n-2]
 			h[numSteps - 2],   // h2 = xs[n-2] - xs[n-3]
 			S[numSteps - 1],   // S1 = (ys[n-1] - ys[n-2]) / h1
@@ -295,7 +344,11 @@ namespace uv::math
 
 		return dydx;
 	}
+}  // namespace uv::math::interp
 
+
+namespace uv::math::interp::details
+{
 	template <std::floating_point T>
 	T pchipEndpointSlope(const T h1,
 		const T h2,
@@ -319,5 +372,31 @@ namespace uv::math
 			d = T(3) * S1;
 		}
 		return d;
+	}
+
+	template <std::floating_point T>
+	Matrix<T> pchipInterpRows(const Vector<T>& x,
+		const Vector<T>& xs,
+		const Matrix<T>& ys)
+	{
+		const std::size_t ysSize{ ys.size() };
+		const std::size_t xSize{ x.size() };
+
+		// ---------- Allocate ----------
+
+		Matrix<T> result
+		(
+			ysSize,            // Same rows
+			Vector<T>(xSize)   // New columns
+		);
+
+		// ---------- Interpolate across rows ----------
+
+		for (std::size_t i = 0; i < ysSize; ++i)
+		{
+			result[i] = pchipInterp(x, xs, ys[i]);
+		}
+
+		return result;
 	}
 }

@@ -24,9 +24,11 @@
 
 
 #include "Utils/IO/Log.hpp"
+#include "Utils/Aux/Errors.hpp"
 
 #include <cmath>
 #include <numbers>
+#include <string>
 
 namespace uv::math
 {
@@ -150,4 +152,5 @@ namespace uv::math
         T d2{ std::fma(-vol, std::sqrt(t), d1) };
         return vega * (d1 * d2) / vol;
     }
+
 }  // namespace uv::math

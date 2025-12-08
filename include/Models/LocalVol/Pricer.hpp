@@ -36,23 +36,43 @@ namespace uv::models::localvol
 	{
 	private:
 
-		// Data to price
+
+		// ---------- Data to price ----------
+
 		Vector<Real> tenors_;				// Tenors 
 		Vector<Real> strikes_;				// Strikes
 
-		// Market data
+		// ---------- Market data ----------
+
 		Real S_;							// Spot price
 		Real r_;							// Risk-free rate
 		Real q_;							// Dividend yield
 
-		// Grid dimensions
+		// ---------- Grid dimensions ----------
+
 		const std::size_t NT_;				// Time points
-		const std::size_t NS_;				// Spot points
+		const std::size_t NS_;				// Spot  points
 
-		// PDE grids
+		// ---------- Main PDE grids ----------
+
 		Vector<Real> timeGrid_;				// Time grid
+		Vector<Real> dTGrid_;               // Time step grid
 		Vector<Real> spotGrid_;				// Spot grid
+		Vector<Real> dSGrid_;               // Spot step grid
 
+		// ---------- Cached PDE grids ----------
+
+		Vector<Real> pdeInitCond_;          // PDE initial condition
+		Matrix<Real> pdeDrift_;             // Drift term := (r - q) * S_i
+		// NOTE: missing local variance term
+		Vector<Real> pdeDiffusion_;         // Diffusion term := 0.5 * S_i^2
+
+
+		// ---------- Routines for constructor ----------
+
+		void validateInputs();
+		void initPDEMainGrids(const Real X);
+		void initPDECachedGrids();
 
 	public:
 
@@ -76,7 +96,7 @@ namespace uv::models::localvol
 
 		// ---------- Pricing ----------
 
-		Vector<Real> priceCall(const Matrix<Real>& localVol,
+		Vector<Real> price(const Matrix<Real>& localVar,
 			const Vector<Real>& surfaceTenors,
 			const Vector<Real>& surfaceStrikes);
 

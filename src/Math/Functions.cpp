@@ -75,14 +75,14 @@ namespace uv::math
         // ---------- Initial guess ----------
 
         // Log(F/K)
-        const Real logFM{ std::log((S * std::exp((r - q) * T)) / K) };
+        const Real logKF{ std::log((S * std::exp((r - q) * T)) / K) };
 
         // Heuristic guess
         const Real volGuess
         {
-            (std::fabs(logFM) < Real(1e-6))
+            (std::fabs(logKF) < Real(1e-6))
                 ? Real(0.3)
-                : std::sqrt(Real(2.0) * std::fabs(logFM) / T)
+                : std::sqrt(Real(2.0) * std::fabs(logKF) / T)
         };
 
         // Clamp bounds

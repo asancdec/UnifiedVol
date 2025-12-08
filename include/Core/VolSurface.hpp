@@ -79,8 +79,11 @@ namespace uv::core
         // Return total variance matrix
         Matrix<Real> volMatrix() const noexcept;
 
-        // Return the logFM matrix
-        Matrix<Real> logFMMatrix() const noexcept;
+        // Return variance matrix
+        Matrix<Real> varMatrix() const noexcept;
+
+        // Return the logKF matrix
+        Matrix<Real> logKFMatrix() const noexcept;
 
         // Getters
         std::vector<SliceData>& slices() noexcept;

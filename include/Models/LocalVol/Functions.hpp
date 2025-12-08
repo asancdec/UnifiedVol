@@ -55,24 +55,24 @@ namespace uv::models::localvol
 		const Vector<models::svi::Params>& paramsSVI);
 
 	/**
-	 * @brief Price a European call option surface using a local volatility model.
+	 * @brief Price an option payoff using a local volatility model.
 	 *
 	 * This function constructs a local volatility pricer with the supplied market data
-	 * and grid configuration, and computes call option prices for the full set of
+	 * and grid configuration, and computes option prices for the full set of
 	 * strikes and maturities defined in the input volatility surface.
 	 *
 	 * @param localVolSurface  Calibrated local volatility surface (tenors, strikes, vol matrix).
 	 * @param marketData       Spot, rate, and dividend yield used for pricing.
 	 * @param NT               Number of time grid points for the PDE solver.
-	 * @param NS               Number of spot grid points for the PDE solver.
+	 * @param NF               Number of forward grid points for the PDE solver.
 	 * @param X                Spot upper-bound multiplier (domain scaling parameter).
 	 *
 	 * @return Vector<Real>    Matrix-flattened call prices consistent with the given surface.
 	 */
-	Vector<Real> priceCall(const core::VolSurface& localVolSurface,
+	Vector<Real> price(const core::VolSurface& localVolSurface,
 		const core::MarketData& marketData,
 		const std::size_t NT,
-		const std::size_t NS,
+		const std::size_t NF,
 		const unsigned int X = 3);
 
 	namespace detail
@@ -94,7 +94,7 @@ namespace uv::models::localvol
 		 * @param tenors
 		 *     Vector of tenor values of size N.
 		 *
-		 * @param logFM
+		 * @param logKF
 		 *     N×M matrix of log-moneyness values log(F/K). Dimensions must match
 		 *     `totVar`.
 		 *
@@ -113,7 +113,7 @@ namespace uv::models::localvol
 		 *     No extrapolation is performed beyond the provided tenor grid.
 		 */
         Matrix<Real> localTotVar(const Vector<Real>& tenors,
-            const Matrix<Real>& logFM,
+            const Matrix<Real>& logKF,
             const Matrix<Real>& totVarMatrix,
             const Vector<svi::Params>& paramsSVI);
 	}

@@ -30,6 +30,7 @@
 #include "Core/MarketData.hpp"
 #include "Models/SVI/Functions.hpp"
 #include "Models/LocalVol/Functions.hpp"
+#include "Math/PDE/Functions.hpp"
 #include "Models/Heston/Pricer.hpp"
 #include "Models/Heston/Config.hpp"
 #include "Models/Heston/Calibrator.hpp"
@@ -116,7 +117,7 @@ int main(int argc, char* argv[])
         const VolSurface localVolSurface{localvol::buildSurface(sviVolSurface, sviSlices)};
         localVolSurface.printVol();
 
-        auto prices = localvol::priceCall
+        auto prices = localvol::price
         (
             localVolSurface,
             marketData,

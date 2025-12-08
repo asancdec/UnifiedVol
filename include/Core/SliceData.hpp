@@ -41,7 +41,7 @@ namespace uv::core
         Real T_;                    // Slice maturity
         Real F_;                    // Forward price
         Vector<Real> mny_;          // Plain moneyness (K/S)
-        Vector<Real> logFM_;        // Log-forward moneyness log(K/F)
+        Vector<Real> logKF_;        // Log-forward moneyness log(K/F)
         Vector<Real> vol_;          // Volatilities 
         Vector<Real> wT_;           // Total variance (vol²T) 
         Vector<Real> K_;            // Strikes vector
@@ -88,7 +88,7 @@ namespace uv::core
         std::size_t numStrikes() const noexcept;
         Real r() const noexcept;
         const Vector<Real>& mny() const noexcept;
-        const Vector<Real>& logFM() const noexcept;
+        const Vector<Real>& logKF() const noexcept;
         const Vector<Real>& vol() const noexcept;
         const Vector<Real>& wT() const noexcept;
         const Vector<Real>& K() const noexcept;

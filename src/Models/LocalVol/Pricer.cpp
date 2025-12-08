@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+﻿// SPDX-License-Identifier: Apache-2.0
 /*
  * File:        Pricer.cpp
  * Author:      Alvaro Sanchez de Carlos
@@ -24,15 +24,23 @@
 
 #include "Models/LocalVol/Pricer.hpp"
 #include "Utils/Aux/Errors.hpp"
+#include "Math/Interpolation.hpp"
+#include "Math/PDE/Functions.hpp"
 #include "Core/Functions.hpp"
 
 #include <algorithm>   
-#include <string>     
+#include <string>    
+#include <utility>
+#include <cmath>
 
 #include <iostream>
 
 namespace uv::models::localvol
 {
+    // Erase later
+    using namespace uv;
+    using namespace uv::core;
+
     Pricer::Pricer(const Vector<Real>& tenors,
         const Vector<Real>& strikes,
         const uv::core::MarketData marketData,
@@ -47,38 +55,111 @@ namespace uv::models::localvol
         NT_(NT),
         NS_(NS)
     {
-        // ---------- Check sorted tenors ----------
+        validateInputs();
+        initPDEMainGrids(X);
+        initPDECachedGrids();
+    }
 
+    Vector<Real> Pricer::price(const Matrix<Real>& localVar,
+        const Vector<Real>& surfaceTenors,
+        const Vector<Real>& surfaceStrikes)
+    {
+        // ---------- Interpolate local vol ----------
+
+        // Tensor spline PCHIP product
+        const Matrix<Real> lvGrid
+        {
+            uv::math::interp::pchipInterp2D
+            (
+                spotGrid_,
+                timeGrid_,
+                surfaceStrikes,
+                surfaceTenors,
+                localVar
+            )
+        };
+
+        // ---------- Fokker Plank PDE ----------
+
+        // Complete diffusion term with local var
+        Matrix<Real> diffusion
+        {
+            uv::core::hadamard
+            (
+                lvGrid,
+                pdeDiffusion_
+            )
+        };
+
+        // Solve the PDE
+        Matrix<Real> pdf
+        {
+            uv::math::pde::fokkerPlankSolve
+            (
+               pdeInitCond_,
+               dTGrid_,
+               dSGrid_,
+               pdeDrift_,
+               diffusion
+            )
+        };
+        
+
+        return surfaceTenors;
+    }
+
+    void Pricer::validateInputs()
+    {
+       // Sorted tenors
         UV_REQUIRE(
             std::is_sorted(tenors_.begin(), tenors_.end()),
             ErrorCode::InvalidArgument,
             "Pricer: tenors must be non-decreasing"
         );
 
-        // ---------- Check sorted strikes ----------
-        
+        // Sorted strikes
         UV_REQUIRE(
             std::is_sorted(strikes_.begin(), strikes_.end()),
             ErrorCode::InvalidArgument,
             "Pricer: strikes must be strictly increasing"
         );
-
-        // ---------- Generate grids ----------
-
-        timeGrid_ = uv::core::generateGrid(Real(0.0), tenors.back(), NT);
-        spotGrid_ = uv::core::generateGrid(Real(0.0), S_ * Real(X), NS);
     }
 
-    Vector<Real> Pricer::priceCall(const Matrix<Real>& localVol,
-        const Vector<Real>& surfaceTenors,
-        const Vector<Real>& surfaceStrikes)
+    void Pricer::initPDEMainGrids(const Real X)
     {
-        // ---------- Interpolate local vol ----------
+        // Time axis
+        const Real maxT{ tenors_.back() };
+        timeGrid_ = uv::core::generateGrid(Real(0.0), maxT, NT_);
+        dTGrid_ = uv::core::diff(timeGrid_);
 
-        const Matrix<Real> lvGrid{};
-        
-        return surfaceTenors;
+        // Forward axis
+        const Real maxS{ S_ * Real(X) }; 
+        spotGrid_ = uv::core::generateGrid(Real(0.0), maxS, NS_);
+        dSGrid_ = uv::core::diff(spotGrid_);
     }
+
+    void Pricer::initPDECachedGrids()
+    {
+        // Initial condition
+        // Approximation to pdf at t=0
+        pdeInitCond_ = uv::math::pde::fokkerPlankInit(S_, spotGrid_);
+
+        // Drift: (r - q) * S_i
+        pdeDrift_ = Matrix<Real>
+        (
+            NT_,
+            uv::core::multiply(spotGrid_, (r_ - q_))
+        );
+
+        // Diffusion: 0.5 * S_i^2
+        pdeDiffusion_ = uv::core::multiply
+        (
+            uv::core::hadamard(spotGrid_, spotGrid_),
+            Real(0.5)
+        );
+    }
+
+
 
 
 } // namespace uv::models::localvol

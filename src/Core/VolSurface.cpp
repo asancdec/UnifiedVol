@@ -24,6 +24,7 @@
 
 
 #include "Core/VolSurface.hpp"
+#include "Core/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
 #include "Utils/IO/Log.hpp"
 
@@ -202,7 +203,17 @@ namespace uv::core
         return matrix;
     }
 
-    Matrix<Real> VolSurface::logFMMatrix() const noexcept
+    Matrix<Real> VolSurface::varMatrix() const noexcept
+    {
+        
+        // Extract vol matrix
+        Matrix<Real> vol{ volMatrix() };
+
+        // Square volatilites
+        return hadamard(vol, vol);
+    }
+
+    Matrix<Real> VolSurface::logKFMatrix() const noexcept
     {
         // Allocate matrix:
         // outer dimension = tenors (rows)
@@ -215,7 +226,7 @@ namespace uv::core
         for (std::size_t i = 0; i < numTenors_; ++i)
         {
             // Extract total variance slice at tenor i
-            matrix[i] = slices_[i].logFM();
+            matrix[i] = slices_[i].logKF();
         }
 
         return matrix;

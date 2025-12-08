@@ -165,7 +165,7 @@ namespace uv::models::heston
 				const Complex<Real> kernel{ std::exp(x * c) * onePlusITanPhi / (hMinusI * h) };
 
 				// Characteristic function and cached intermediates
-				const CharFunData cfData
+				const CharFunCache cfData
 				{
 					Pricer<N>::charFunctionCal(kappa, theta, sigma, rho, v0, T, hMinusI)
 				};
@@ -402,7 +402,7 @@ namespace uv::models::heston
 	}
 
 	template <std::size_t N>
-	CharFunData Pricer<N>::charFunctionCal(Real kappa,
+	Pricer<N>::CharFunCache Pricer<N>::charFunctionCal(Real kappa,
 		Real theta,
 		Real sigma,
 		Real rho,
@@ -486,7 +486,7 @@ namespace uv::models::heston
 		// R := 1 - g
 		const Complex<Real> R{ Real(Real(1.0)) - g };
 
-		// Return full CharFunData
+		// Return full CharFunCache
 		return
 		{
 			std::exp(A + v0 * B),									 // psi(u) := exp( A + v0 * B )

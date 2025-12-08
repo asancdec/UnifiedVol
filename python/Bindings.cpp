@@ -35,7 +35,7 @@ PYBIND11_MODULE(interp, m)
 {
     m.def(
         "interpolate_cubic_hermite",
-        [](double x,
+        [](const std::vector<long double> x,
             const std::vector<long double>& xs,
             const std::vector<long double>& ys,
             const std::vector<long double>& dydx)
@@ -47,27 +47,27 @@ PYBIND11_MODULE(interp, m)
 
         Given node locations `xs`, function values `ys`, and first-derivative estimates
         `dydx` at each node, this function evaluates the C¹-continuous cubic Hermite
-        interpolant at a query point `x`.
+        interpolant at a collection of query points `x`.
 
-        On each interval [x[i], x[i+1]], the interpolant is a cubic polynomial
+        On each interval [xs[i], xs[i+1]], the interpolant is a cubic polynomial
 
-            H(x) = y[i]
-                   + d[i] * Δx
+            H(t) = y[i]
+                   + d[i]  * Δx
                    + c2[i] * (Δx)²
                    + c3[i] * (Δx)³
 
-        where Δx = x - x[i], and the coefficients are computed locally from the node
+        where Δx = t - xs[i], and the coefficients are computed locally from the node
         spacing and slopes. No global system is solved.
 
-        The interpolation is clamped outside the data range:
+        Extrapolation outside the data range is clamped:
 
         * For x < xs[0], the value ys[0] is returned.
         * For x > xs[-1], the value ys[-1] is returned.
 
         Parameters
         ----------
-        x : float
-            Query point at which to evaluate the interpolant.
+        x : Sequence[float]
+            Query points at which to evaluate the interpolant.
         xs : Sequence[float]
             Strictly increasing x-grid (knot locations).
         ys : Sequence[float]
@@ -77,14 +77,15 @@ PYBIND11_MODULE(interp, m)
 
         Returns
         -------
-        float
-            Interpolated value at x.
+        Sequence[float]
+            Interpolated values at each query point in `x`.
 
         Notes
         -----
         - Requires len(xs) == len(ys) == len(dydx) >= 2.
-        - The method is local: each interval is computed independently.
+        - Local method: each interval is computed independently; no global solve.
         - Function value and first derivative are continuous across all knots.
+        - Complexity: O(N) preprocessing + O(M log N) evaluation for M = len(x).
 
         References
         ----------

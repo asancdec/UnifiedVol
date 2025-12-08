@@ -91,8 +91,8 @@ namespace uv::core
             });
 
         // Convert plain strikes K into log-moneyness log(K/F)
-        logFM_.resize(numStrikes_);
-        std::transform(K_.begin(), K_.end(), logFM_.begin(),
+        logKF_.resize(numStrikes_);
+        std::transform(K_.begin(), K_.end(), logKF_.begin(),
             [F = F_](Real K)
             {
                 return std::log(K / F);
@@ -135,17 +135,17 @@ namespace uv::core
 
     Real SliceData::minLogFM() const noexcept
     {
-        return *std::min_element(logFM_.begin(), logFM_.end());
+        return *std::min_element(logKF_.begin(), logKF_.end());
     }
 
     Real SliceData::maxLogFM() const noexcept
     {
-        return *std::max_element(logFM_.begin(), logFM_.end());
+        return *std::max_element(logKF_.begin(), logKF_.end());
     }
 
     Real SliceData::atmWT() const noexcept
     {
-        const Real* first{ logFM_.data() };
+        const Real* first{ logKF_.data() };
         const Real* last{ first + numStrikes_};
         const Real* it = std::min_element(first, last, [](Real a, Real b)
             {
@@ -179,9 +179,9 @@ namespace uv::core
         return mny_;
     }
 
-    const Vector<Real>& SliceData::logFM() const noexcept
+    const Vector<Real>& SliceData::logKF() const noexcept
     {
-        return logFM_;
+        return logKF_;
     }
 
     const Vector<Real>& SliceData::vol() const noexcept

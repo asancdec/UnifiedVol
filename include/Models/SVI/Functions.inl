@@ -53,7 +53,7 @@ namespace uv::models::svi
         {
             // Extract and convert data
             const Vector<double> wKSlice{slice.wT().cbegin(), slice.wT().cend() };
-            const Vector<double> kSlice{slice.logFM().cbegin(), slice.logFM().cend()};
+            const Vector<double> kSlice{slice.logKF().cbegin(), slice.logKF().cend()};
 
             // Initialize optimizer instance
             opt::nlopt::Optimizer optimizer{ prototype.fresh() };
