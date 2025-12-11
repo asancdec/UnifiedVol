@@ -158,7 +158,7 @@ namespace uv::core
             oss << std::fixed << std::setprecision(2) << tenors_[i] << '\t';
 
             for (const auto& v : slices_[i].callBS())
-                oss << std::fixed << std::setprecision(7) << v << '\t';
+                oss << std::fixed << std::setprecision(5) << v << '\t';
 
             oss << '\n';
         }

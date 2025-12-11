@@ -1,5 +1,5 @@
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)]()
-[![License](https://img.shields.io/badge/license-Apache--Real(2.0)-lightgrey.svg)]()
+[![License](https://img.shields.io/badge/license-Apache--2.0-lightgrey.svg)]()
 [![Build](https://img.shields.io/badge/build-passing-success.svg)]()
 
 # UnifiedVol

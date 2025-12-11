@@ -63,16 +63,20 @@ namespace uv::models::localvol
 		// ---------- Cached PDE grids ----------
 
 		Vector<Real> pdeInitCond_;          // PDE initial condition
-		Matrix<Real> pdeDrift_;             // Drift term := (r - q) * S_i
+		Matrix<Real> driftLikeTerm_;        // Cached drift like term 
 		// NOTE: missing local variance term
-		Vector<Real> pdeDiffusion_;         // Diffusion term := 0.5 * S_i^2
+		Vector<Real> diffusionLikeTerm_;    // Cached diffusion like term
 
 
 		// ---------- Routines for constructor ----------
 
-		void validateInputs();
+		void validateInputs() const;
 		void initPDEMainGrids(const Real X);
 		void initPDECachedGrids();
+
+		// ---------- PDE coefficients ----------
+
+		//uv::math::pde::TriDiag assembleCoefficients(const Matrix<Real>& lvGrid) const;
 
 	public:
 

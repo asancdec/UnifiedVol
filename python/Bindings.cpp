@@ -27,113 +27,111 @@
 #include "Utils/Types.hpp"
 
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <pybind11/numpy.h>
 
 namespace py = pybind11;
+using ld = long double;
 
-PYBIND11_MODULE(interp, m)
-{
-    m.def(
-        "interpolate_cubic_hermite",
-        [](const std::vector<long double> x,
-            const std::vector<long double>& xs,
-            const std::vector<long double>& ys,
-            const std::vector<long double>& dydx)
-        {
-            return uv::math::interpolateCubicHermiteSpline<long double>(x, xs, ys, dydx);
+
+static py::array_t<ld, py::array::c_style | py::array::forcecast>
+require_1d_ndarray(py::handle obj, const char* name) {
+    if (!py::isinstance<py::array>(obj))
+        throw py::type_error(std::string(name) + " must be a numpy.ndarray (1-D).");
+    auto arr = py::array_t<ld, py::array::c_style | py::array::forcecast>::ensure(obj);
+    if (!arr || arr.ndim() != 1)
+        throw py::value_error(std::string(name) + " must be a 1-D numpy.ndarray convertible to long double.");
+    return arr;
+}
+
+static py::array_t<ld, py::array::c_style | py::array::forcecast>
+require_2d_ndarray(py::handle obj, const char* name) {
+    if (!py::isinstance<py::array>(obj))
+        throw py::type_error(std::string(name) + " must be a numpy.ndarray (2-D).");
+    auto arr = py::array_t<ld, py::array::c_style | py::array::forcecast>::ensure(obj);
+    if (!arr || arr.ndim() != 2)
+        throw py::value_error(std::string(name) + " must be a 2-D numpy.ndarray convertible to long double.");
+    return arr;
+}
+
+static std::vector<ld> vec_from_1d(py::array_t<ld, py::array::c_style | py::array::forcecast> a) {
+    const ld* ptr = static_cast<const ld*>(a.data());
+    return std::vector<ld>(ptr, ptr + a.size());
+}
+
+static std::vector<std::vector<ld>> mat_from_2d(py::array_t<ld, py::array::c_style | py::array::forcecast> a) {
+    ssize_t r = a.shape(0), c = a.shape(1);
+    const ld* ptr = static_cast<const ld*>(a.data());
+    std::vector<std::vector<ld>> M(static_cast<size_t>(r), std::vector<ld>(static_cast<size_t>(c)));
+    for (ssize_t i = 0; i < r; ++i)
+        std::copy(ptr + i * c, ptr + i * c + c, M[static_cast<size_t>(i)].begin());
+    return M;
+}
+
+static py::array_t<ld> make_1d(py::ssize_t n, const std::vector<ld>& v) {
+    py::array_t<ld> out(n);
+    std::copy(v.data(), v.data() + v.size(), out.mutable_data());
+    return out;
+}
+
+static py::array_t<ld> make_2d(py::ssize_t r, py::ssize_t c, const std::vector<std::vector<ld>>& M) {
+    py::array_t<ld> out({ r, c });
+    ld* dst = out.mutable_data();
+    for (py::ssize_t i = 0; i < r; ++i)
+        std::copy(M[static_cast<size_t>(i)].begin(), M[static_cast<size_t>(i)].end(), dst + i * c);
+    return out;
+}
+
+PYBIND11_MODULE(interp, m) {
+    m.doc() = "Minimal numpy-only bindings for uv::math::interp";
+
+    m.def("pchip_interp",
+        [](py::handle x_obj, py::handle xs_obj, py::handle ys_obj) {
+            auto x = require_1d_ndarray(x_obj, "x");
+            auto xs = require_1d_ndarray(xs_obj, "xs");
+            auto ys = require_1d_ndarray(ys_obj, "ys");
+            auto out = uv::math::interp::pchipInterp<ld>(vec_from_1d(x), vec_from_1d(xs), vec_from_1d(ys));
+            return make_1d(x.size(), out);
         },
-        R"pbdoc(
-        Cubic Hermite interpolation with precomputed slopes.
+        py::arg("x"), py::arg("xs"), py::arg("ys"));
 
-        Given node locations `xs`, function values `ys`, and first-derivative estimates
-        `dydx` at each node, this function evaluates the C¹-continuous cubic Hermite
-        interpolant at a collection of query points `x`.
+    m.def("pchip_interp_2d",
+        [](py::handle x_obj, py::handle y_obj, py::handle xs_obj, py::handle ys_obj, py::handle zs_obj) {
+            auto x = require_1d_ndarray(x_obj, "x");
+            auto y = require_1d_ndarray(y_obj, "y");
+            auto xs = require_1d_ndarray(xs_obj, "xs");
+            auto ys = require_1d_ndarray(ys_obj, "ys");
+            auto zs = require_2d_ndarray(zs_obj, "zs");
 
-        On each interval [xs[i], xs[i+1]], the interpolant is a cubic polynomial
+            // shape check: zs must be (len(ys), len(xs))
+            if (zs.shape(0) != ys.size() || zs.shape(1) != xs.size())
+                throw py::value_error("zs shape must be (len(ys), len(xs)).");
 
-            H(t) = y[i]
-                   + d[i]  * Δx
-                   + c2[i] * (Δx)²
-                   + c3[i] * (Δx)³
+            auto out = uv::math::interp::pchipInterp2D<ld>(
+                vec_from_1d(x), vec_from_1d(y), vec_from_1d(xs), vec_from_1d(ys), mat_from_2d(zs)
+            );
 
-        where Δx = t - xs[i], and the coefficients are computed locally from the node
-        spacing and slopes. No global system is solved.
-
-        Extrapolation outside the data range is clamped:
-
-        * For x < xs[0], the value ys[0] is returned.
-        * For x > xs[-1], the value ys[-1] is returned.
-
-        Parameters
-        ----------
-        x : Sequence[float]
-            Query points at which to evaluate the interpolant.
-        xs : Sequence[float]
-            Strictly increasing x-grid (knot locations).
-        ys : Sequence[float]
-            Function values corresponding to `xs`.
-        dydx : Sequence[float]
-            First-derivative estimates at each x in `xs`.
-
-        Returns
-        -------
-        Sequence[float]
-            Interpolated values at each query point in `x`.
-
-        Notes
-        -----
-        - Requires len(xs) == len(ys) == len(dydx) >= 2.
-        - Local method: each interval is computed independently; no global solve.
-        - Function value and first derivative are continuous across all knots.
-        - Complexity: O(N) preprocessing + O(M log N) evaluation for M = len(x).
-
-        References
-        ----------
-        - Monotone cubic interpolation:
-          https://en.wikipedia.org/wiki/Monotone_cubic_interpolation
-        )pbdoc"
-        );
-
-    m.def(
-        "pchip_derivatives",
-        [](const std::vector<long double>& xs,
-            const std::vector<long double>& ys)
-        {
-            return uv::math::pchipDerivatives<long double>(xs, ys);
+            // result expected as matrix (rows=len(y), cols=len(x))
+            return make_2d(static_cast<py::ssize_t>(out.size()), static_cast<py::ssize_t>(out.empty() ? 0 : out[0].size()), out);
         },
-        R"pbdoc(
-        Compute PCHIP (monotone cubic Hermite) derivative estimates
-        for a 1D sequence of points (xs, ys).
+        py::arg("x"), py::arg("y"), py::arg("xs"), py::arg("ys"), py::arg("zs"));
 
-        Given strictly increasing knot positions xs and corresponding function
-        values ys, this returns first-derivative estimates dydx suitable for use
-        in cubic Hermite interpolation.
+    m.def("hermite_interp",
+        [](py::handle x_obj, py::handle xs_obj, py::handle ys_obj, py::handle dydx_obj) {
+            auto x = require_1d_ndarray(x_obj, "x");
+            auto xs = require_1d_ndarray(xs_obj, "xs");
+            auto ys = require_1d_ndarray(ys_obj, "ys");
+            auto ddx = require_1d_ndarray(dydx_obj, "dydx");
+            auto out = uv::math::interp::hermiteSplineInterp<ld>(vec_from_1d(x), vec_from_1d(xs), vec_from_1d(ys), vec_from_1d(ddx));
+            return make_1d(x.size(), out);
+        },
+        py::arg("x"), py::arg("xs"), py::arg("ys"), py::arg("dydx"));
 
-        This slope selection reproduces the MATLAB PCHIP / Fritsch–Carlson
-        shape-preserving cubic interpolation and guarantees:
-
-        * C¹ continuity
-        * No spurious overshoots
-        * Local monotonicity preservation
-        * Endpoint slope correction and clamping
-
-        Parameters
-        ----------
-        xs : Sequence[float]
-            Strictly increasing x-grid (knot locations).
-        ys : Sequence[float]
-            Function values at each knot.
-
-        Returns
-        -------
-        list[float]
-            Derivative estimates dydx at each knot.
-
-        Notes
-        -----
-        - Requires len(xs) == len(ys) >= 2.
-        - This does **not** perform interpolation — use `interpolate_cubic_hermite`
-          with xs, ys, dydx to evaluate the spline.
-        )pbdoc"
-    );
+    m.def("pchip_derivatives",
+        [](py::handle xs_obj, py::handle ys_obj) {
+            auto xs = require_1d_ndarray(xs_obj, "xs");
+            auto ys = require_1d_ndarray(ys_obj, "ys");
+            auto out = uv::math::interp::pchipDerivatives<ld>(vec_from_1d(xs), vec_from_1d(ys));
+            return make_1d(xs.size(), out);
+        },
+        py::arg("xs"), py::arg("ys"));
 }

@@ -138,6 +138,21 @@ namespace uv::core
         return result;
     }
 
+    Vector<Real> reciprocal(const Vector<Real>& v) noexcept
+    {
+        std::size_t vSize{ v.size() };
+
+        Vector<Real> result(vSize);
+
+        for (std::size_t i = 0; i < vSize; ++i)
+        {
+            result[i] = Real(1.0) / v[i];
+        }
+
+        return result;
+    }
+
+
     Matrix<Real> add(const Matrix<Real>& A,
         const Real x) noexcept
     {

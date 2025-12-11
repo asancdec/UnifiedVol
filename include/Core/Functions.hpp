@@ -82,6 +82,23 @@ namespace uv::core
         const Real x) noexcept;
 
     /**
+     * @brief Compute the element-wise reciprocal of a vector.
+     *
+     * This function returns a vector @p r such that
+     * @f[
+     *   r_i = \frac{1}{v_i}
+     * @f]
+     * for all valid indices.
+     *
+     * @param v Input vector.
+     * @return A new vector where each entry equals <tt>1 / v[i]</tt>.
+     *
+     * @note No range checking is performed; division by zero will result
+     *       in undefined behavior.
+     */
+    Vector<Real> reciprocal(const Vector<Real>& v) noexcept;
+
+    /**
      * @brief Add a scalar value to every element of a matrix.
      *
      * @param A Input matrix.

@@ -112,85 +112,160 @@ namespace uv::math::pde
         return p0;
     }
 
+    //Matrix<Real> fokkerPlankSolve(const Vector<Real>& pdeInitCond,
+    //    const Vector<Real>& dTGrid,
+    //    const Vector<Real>& dXGrid,
+    //    const TriDiag& coefficients)
+    //{
+    //    // ---------- Dimension checks ----------
 
-    Matrix<Real> fokkerPlankSolve(const Vector<Real>& pdeInitCond,
-        const Vector<Real>& dTGrid,
-        const Vector<Real>& dXGrid,
-        const Matrix<Real>& drift,
-        const Matrix<Real>& diffusion)
-    {
-        // ---------- Dimension checks ----------
+    //    const std::size_t nT{ drift.size() };
+    //    const std::size_t nX{ drift[0].size() };
 
-        const std::size_t nT{ drift.size() };
-        const std::size_t nX{ drift[0].size() };
+    //    UV_REQUIRE(
+    //        diffusion.size() == nT,
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: diffusion must have same number of rows as drift"
+    //    );
 
-        UV_REQUIRE(
-            diffusion.size() == nT,
-            ErrorCode::InvalidArgument,
-            "fokkerPlankSolve: diffusion must have same number of rows as drift"
-        );
+    //    UV_REQUIRE(
+    //        diffusion[0].size() == nX,
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: diffusion must have same number of columns as drift"
+    //    );
 
-        UV_REQUIRE(
-            diffusion[0].size() == nX,
-            ErrorCode::InvalidArgument,
-            "fokkerPlankSolve: diffusion must have same number of columns as drift"
-        );
+    //    UV_REQUIRE(
+    //        pdeInitCond.size() == nX,
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: pdeInitCond size must equal number of spatial points (got " +
+    //        std::to_string(pdeInitCond.size()) + " and " + std::to_string(nX) + ")"
+    //    );
 
-        UV_REQUIRE(
-            pdeInitCond.size() == nX,
-            ErrorCode::InvalidArgument,
-            "fokkerPlankSolve: pdeInitCond size must equal number of spatial points (got " +
-            std::to_string(pdeInitCond.size()) + " and " + std::to_string(nX) + ")"
-        );
+    //    UV_REQUIRE(
+    //        dTGrid.size() == (nT - 1),
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: dTGrid size must be nTimeLevels - 1 (got " +
+    //        std::to_string(dTGrid.size()) + " and " + std::to_string(nT - 1) + ")"
+    //    );
 
-        UV_REQUIRE(
-            dTGrid.size() == (nT - 1),
-            ErrorCode::InvalidArgument,
-            "fokkerPlankSolve: dTGrid size must be nTimeLevels - 1 (got " +
-            std::to_string(dTGrid.size()) + " and " + std::to_string(nT - 1) + ")"
-        );
+    //    UV_REQUIRE(
+    //        dXGrid.size() == (nX - 1),
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: dXGrid size must be nSpacePoints - 1 (got " +
+    //        std::to_string(dXGrid.size()) + " and " + std::to_string(nX - 1) + ")"
+    //    );
 
-        UV_REQUIRE(
-            dXGrid.size() == (nX - 1),
-            ErrorCode::InvalidArgument,
-            "fokkerPlankSolve: dXGrid size must be nSpacePoints - 1 (got " +
-            std::to_string(dXGrid.size()) + " and " + std::to_string(nX - 1) + ")"
-        );
+    //    // ---------- Math checks ----------
 
-        // ---------- Math checks ----------
+    //    UV_REQUIRE(
+    //        std::all_of(dTGrid.begin(), dTGrid.end(),
+    //            [](Real dt) { return dt > Real(0); }),
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: all time steps dTGrid must be strictly positive"
+    //    );
 
-        UV_REQUIRE(
-            std::all_of(dTGrid.begin(), dTGrid.end(),
-                [](Real dt) { return dt > Real(0); }),
-            ErrorCode::InvalidArgument,
-            "fokkerPlankSolve: all time steps dTGrid must be strictly positive"
-        );
+    //    UV_REQUIRE(
+    //        std::all_of(dXGrid.begin(), dXGrid.end(),
+    //            [](Real dx) { return dx > Real(0); }),
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: all space steps dXGrid must be strictly positive"
+    //    );
 
-        UV_REQUIRE(
-            std::all_of(dXGrid.begin(), dXGrid.end(),
-                [](Real dx) { return dx > Real(0); }),
-            ErrorCode::InvalidArgument,
-            "fokkerPlankSolve: all space steps dXGrid must be strictly positive"
-        );
+    //    UV_REQUIRE(
+    //        std::all_of(diffusion.begin(), diffusion.end(),
+    //            [](const Vector<Real>& row)
+    //            {
+    //                return std::all_of(row.begin(), row.end(),
+    //                    [](Real v) { return v >= Real(0); });
+    //            }),
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: diffusion coefficients must be non-negative"
+    //    );
 
-        UV_REQUIRE(
-            std::all_of(diffusion.begin(), diffusion.end(),
-                [](const Vector<Real>& row)
-                {
-                    return std::all_of(row.begin(), row.end(),
-                        [](Real v) { return v >= Real(0); });
-                }),
-            ErrorCode::InvalidArgument,
-            "fokkerPlankSolve: diffusion coefficients must be non-negative"
-        );
-
-        // ---------- Internal coefficients ----------
+    //    // ---------- Internal coefficients ----------
 
 
 
 
-        return diffusion;
-    }
+    //    return diffusion;
+    //}
+    //Matrix<Real> fokkerPlankSolve(const Vector<Real>& pdeInitCond,
+    //    const Vector<Real>& dTGrid,
+    //    const Vector<Real>& dXGrid,
+    //    const TriDiag& coefficients)
+    //{
+    //    // ---------- Dimension checks ----------
+
+    //    const std::size_t nT{ drift.size() };
+    //    const std::size_t nX{ drift[0].size() };
+
+    //    UV_REQUIRE(
+    //        diffusion.size() == nT,
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: diffusion must have same number of rows as drift"
+    //    );
+
+    //    UV_REQUIRE(
+    //        diffusion[0].size() == nX,
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: diffusion must have same number of columns as drift"
+    //    );
+
+    //    UV_REQUIRE(
+    //        pdeInitCond.size() == nX,
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: pdeInitCond size must equal number of spatial points (got " +
+    //        std::to_string(pdeInitCond.size()) + " and " + std::to_string(nX) + ")"
+    //    );
+
+    //    UV_REQUIRE(
+    //        dTGrid.size() == (nT - 1),
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: dTGrid size must be nTimeLevels - 1 (got " +
+    //        std::to_string(dTGrid.size()) + " and " + std::to_string(nT - 1) + ")"
+    //    );
+
+    //    UV_REQUIRE(
+    //        dXGrid.size() == (nX - 1),
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: dXGrid size must be nSpacePoints - 1 (got " +
+    //        std::to_string(dXGrid.size()) + " and " + std::to_string(nX - 1) + ")"
+    //    );
+
+    //    // ---------- Math checks ----------
+
+    //    UV_REQUIRE(
+    //        std::all_of(dTGrid.begin(), dTGrid.end(),
+    //            [](Real dt) { return dt > Real(0); }),
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: all time steps dTGrid must be strictly positive"
+    //    );
+
+    //    UV_REQUIRE(
+    //        std::all_of(dXGrid.begin(), dXGrid.end(),
+    //            [](Real dx) { return dx > Real(0); }),
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: all space steps dXGrid must be strictly positive"
+    //    );
+
+    //    UV_REQUIRE(
+    //        std::all_of(diffusion.begin(), diffusion.end(),
+    //            [](const Vector<Real>& row)
+    //            {
+    //                return std::all_of(row.begin(), row.end(),
+    //                    [](Real v) { return v >= Real(0); });
+    //            }),
+    //        ErrorCode::InvalidArgument,
+    //        "fokkerPlankSolve: diffusion coefficients must be non-negative"
+    //    );
+
+    //    // ---------- Internal coefficients ----------
+
+
+
+
+    //    return diffusion;
+    //}
 
 
 } // namespace uv::math::pde

@@ -64,7 +64,7 @@ namespace uv::models::localvol
 	 * @param localVolSurface  Calibrated local volatility surface (tenors, strikes, vol matrix).
 	 * @param marketData       Spot, rate, and dividend yield used for pricing.
 	 * @param NT               Number of time grid points for the PDE solver.
-	 * @param NF               Number of forward grid points for the PDE solver.
+	 * @param NS               Number of forward grid points for the PDE solver.
 	 * @param X                Spot upper-bound multiplier (domain scaling parameter).
 	 *
 	 * @return Vector<Real>    Matrix-flattened call prices consistent with the given surface.
@@ -72,7 +72,7 @@ namespace uv::models::localvol
 	Vector<Real> price(const core::VolSurface& localVolSurface,
 		const core::MarketData& marketData,
 		const std::size_t NT,
-		const std::size_t NF,
+		const std::size_t NS,
 		const unsigned int X = 3);
 
 	namespace detail

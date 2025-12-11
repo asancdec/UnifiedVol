@@ -27,6 +27,7 @@
 #include "Math/Interpolation.hpp"
 #include "Math/PDE/Functions.hpp"
 #include "Core/Functions.hpp"
+#include "Math/PDE/TriDiag.hpp"
 
 #include <algorithm>   
 #include <string>    
@@ -57,7 +58,7 @@ namespace uv::models::localvol
     {
         validateInputs();
         initPDEMainGrids(X);
-        initPDECachedGrids();
+        //initPDECachedGrids();
     }
 
     Vector<Real> Pricer::price(const Matrix<Real>& localVar,
@@ -81,34 +82,26 @@ namespace uv::models::localvol
 
         // ---------- Fokker Plank PDE ----------
 
-        // Complete diffusion term with local var
-        Matrix<Real> diffusion
-        {
-            uv::core::hadamard
-            (
-                lvGrid,
-                pdeDiffusion_
-            )
-        };
 
-        // Solve the PDE
-        Matrix<Real> pdf
-        {
-            uv::math::pde::fokkerPlankSolve
-            (
-               pdeInitCond_,
-               dTGrid_,
-               dSGrid_,
-               pdeDrift_,
-               diffusion
-            )
-        };
+
+        //// Solve the PDE
+        //Matrix<Real> pdf
+        //{
+        //    uv::math::pde::fokkerPlankSolve
+        //    (
+        //       pdeInitCond_,
+        //       dTGrid_,
+        //       dSGrid_,
+        //       pdeDrift_,
+        //       diffusion
+        //    )
+        //};
         
 
         return surfaceTenors;
     }
 
-    void Pricer::validateInputs()
+    void Pricer::validateInputs() const
     {
        // Sorted tenors
         UV_REQUIRE(
@@ -138,26 +131,61 @@ namespace uv::models::localvol
         dSGrid_ = uv::core::diff(spotGrid_);
     }
 
-    void Pricer::initPDECachedGrids()
-    {
-        // Initial condition
-        // Approximation to pdf at t=0
-        pdeInitCond_ = uv::math::pde::fokkerPlankInit(S_, spotGrid_);
+    //void Pricer::initPDECachedGrids()
+    //{
+    //    // Initial condition
+    //    // Approximation to pdf at t=0
+    //    pdeInitCond_ = uv::math::pde::fokkerPlankInit(S_, spotGrid_);
 
-        // Drift: (r - q) * S_i
-        pdeDrift_ = Matrix<Real>
-        (
-            NT_,
-            uv::core::multiply(spotGrid_, (r_ - q_))
-        );
+    //    //// Drift: (r - q) * S_i
+    //    //driftLikeTerm_ = Matrix<Real>
+    //    //(
+    //    //    NT_,
+    //    //    uv::core::hadamard
+    //    //    (
+    //    //        uv::core::multiply
+    //    //        (
+    //    //            spotGrid_[1:-1],
+    //    //            Real(0.5) * (r_ - q_)
+    //    //        ),
+    //    //        uv::core::reverse(dSGrid_[:-1])
+    //    //    )
+    //    //);
 
-        // Diffusion: 0.5 * S_i^2
-        pdeDiffusion_ = uv::core::multiply
-        (
-            uv::core::hadamard(spotGrid_, spotGrid_),
-            Real(0.5)
-        );
-    }
+
+
+    //    //// Diffusion: 0.5 * S_i^2
+    //    //pdeDiffusion_ = uv::core::multiply
+    //    //(
+    //    //    uv::core::hadamard(spotGrid_, spotGrid_),
+
+    //    //);
+    //}
+
+    //uv::math::pde::TriDiag Pricer::assembleCoefficients(const Matrix<Real>& lvGrid) const
+    //{
+
+    //    //// ---------- Diffusion term with local variance ----------
+
+    //    //// NOTE: local variance was missing in the precomputed 
+    //    //// diffusion term
+    //    //Matrix<Real> diffusion
+    //    //{
+    //    //    uv::core::hadamard
+    //    //    (
+    //    //        lvGrid,
+    //    //        pdeDiffusion_
+    //    //    )
+    //    //};
+
+    //    // ---------- Upper diagonal term ----------
+
+    //    //Matrix<Real>
+    //    //{
+
+    //    //};
+    //}
+
 
 
 

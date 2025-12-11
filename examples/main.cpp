@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
         // ---------- Build Local Volatility surface ----------
 
         const VolSurface localVolSurface{localvol::buildSurface(sviVolSurface, sviSlices)};
-        localVolSurface.printVol();
+        localVolSurface.printBSCall();
 
         auto prices = localvol::price
         (

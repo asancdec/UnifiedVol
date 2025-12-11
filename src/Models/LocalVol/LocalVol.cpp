@@ -110,7 +110,7 @@ namespace uv::models::localvol
 	Vector<Real> price(const core::VolSurface& localVolSurface,
 		const core::MarketData& marketData,
 		const std::size_t NT,
-		const std::size_t NF,
+		const std::size_t NS,
 		const unsigned int X)
 	{
 		// ---------- Initialization ----------
@@ -124,7 +124,7 @@ namespace uv::models::localvol
 			sufaceStrikes,
 			marketData,
 			NT,
-			NF,
+			NS,
 			X
 		);
 

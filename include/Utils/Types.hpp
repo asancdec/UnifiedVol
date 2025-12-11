@@ -39,7 +39,7 @@ namespace uv
      *     - `double` for speed
      *     - `long double` for precision
      */
-    using Real = double;
+    using Real = long double;
     static_assert(std::is_floating_point_v<Real>,
         "uv::Real must be a floating point type");
 
