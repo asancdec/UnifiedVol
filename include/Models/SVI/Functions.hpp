@@ -32,7 +32,8 @@
 
 #include <nlopt.hpp> 
 #include <concepts>
-#include <array>      
+#include <array>
+#include <vector>
 #include <tuple>
 
 namespace opt = uv::math::opt;
@@ -46,11 +47,11 @@ namespace uv::models::svi
 	// Main calibration function
 	template <::nlopt::algorithm Algo>
 	std::tuple<std::vector<Params>, core::VolSurface> calibrate(const core::VolSurface& mktVolSurf,
-		const opt::nlopt::Optimizer<5, Algo>& prototype,
+		const opt::nlopt::Optimizer<4, Algo>& prototype,
 		bool isValidateResults = true);
 
-	// g(k) standard function
-	double gk(Real a, Real b, Real rho, Real m, Real sigma, Real k) noexcept;
+	//// g(k) standard function
+	//double gk(Real a, Real b, Real rho, Real m, Real sigma, Real k) noexcept;
 
 	namespace detail
 	{
@@ -58,22 +59,23 @@ namespace uv::models::svi
 		// Forward declarations
 		//--------------------------------------------------------------------------
 
-		struct ConstraintCtx;
+		struct CalendarCtx;
 		struct ObjCtx;
 		struct GKPrecomp;
+		struct ConvexityCtx;
 
 		//--------------------------------------------------------------------------
 		// Initial guess and bounds
 		//--------------------------------------------------------------------------
 
 		// Initial guess
-		std::array<double, 5> initGuess(const core::SliceData& slice) noexcept;
+		std::array<double, 4> initGuess(const core::SliceData& slice) noexcept;
 
 		// Lower bounds
-		std::array<double, 5> lowerBounds(const core::SliceData& slice) noexcept;
+		std::array<double, 4> lowerBounds(const core::SliceData& slice) noexcept;
 
 		// Upper bounds
-		std::array<double, 5> upperBounds(const core::SliceData& slice) noexcept;
+		std::array<double, 4> upperBounds(const core::SliceData& slice) noexcept;
 
 		//--------------------------------------------------------------------------
 		// Calibration
@@ -81,23 +83,27 @@ namespace uv::models::svi
 
 		// Define the minimum total variance constraint: wMin ≥ 0.0
 		template <::nlopt::algorithm Algo>
-		void addWMinConstraint(opt::nlopt::Optimizer<5, Algo>& optimizer) noexcept;
+		void addWMinConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer);
+
+		// Add Roger Lee left wing and right wing min slope constraints
+		template <::nlopt::algorithm Algo>
+		void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer, double epsSlope);
 
 		// Add Roger Lee left wing and right wing max slope constraints
 		template <::nlopt::algorithm Algo>
-		void addMaxSlopeConstraint(opt::nlopt::Optimizer<5, Algo>& optimizer) noexcept;
+		void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer);
 
 		// Add no calendar spread arbitrage constraint: Wk_current ≥ Wk_previous
 		template <::nlopt::algorithm Algo>
-		void addCalendarConstraint(opt::nlopt::Optimizer<5, Algo>& optimizer, std::vector<ConstraintCtx>& contexts) noexcept;
+		void addCalendarConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer, std::vector<CalendarCtx>& contexts);
 
 		// Add no butterfly arbitrage constraints g(k) ≥ 0.0
 		template <::nlopt::algorithm Algo>
-		void addConvexityConstraint(opt::nlopt::Optimizer<5, Algo>& optimizer, Vector<double>& kStorage) noexcept;
+		void addConvexityConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer, ConvexityCtx& ctx);
 
 		// Add objective function with analytical gradient
 		template <::nlopt::algorithm Algo>
-		void setMinObjective(opt::nlopt::Optimizer<5, Algo>& optimizer, const ObjCtx& obj) noexcept;
+		void setMinObjective(opt::nlopt::Optimizer<4, Algo>& optimizer, const ObjCtx& obj);
 
 		//--------------------------------------------------------------------------
 		// Math functions
@@ -110,7 +116,7 @@ namespace uv::models::svi
 		double gk(const GKPrecomp& p) noexcept;
 
 		// ∇g(k)
-		std::array<double, 5> gkGrad(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept;
+		std::array<double, 4> gkGrad(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept;
 
 		//--------------------------------------------------------------------------
 		// Testing
@@ -119,7 +125,7 @@ namespace uv::models::svi
 		// Check calibration results
 		template <::nlopt::algorithm Algo>
 		void evalCal(const Params& sviSlice,
-			const opt::nlopt::Optimizer<5, Algo>& optimizer,
+			const opt::nlopt::Optimizer<4, Algo>& optimizer,
 			const Vector<double>& kSlice,
 			const Vector<double>& wKPrevSlice) noexcept;
 

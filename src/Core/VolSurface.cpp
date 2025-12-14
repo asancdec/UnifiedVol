@@ -122,7 +122,7 @@ namespace uv::core
         oss << "T\\k\t";
 
         // Header row (moneyness)
-        for (const auto& m : slices_[0].mny())
+        for (const auto& m : slices_[0].logKF())
             oss << std::fixed << std::setprecision(2) << m << '\t';
         oss << '\n';
 

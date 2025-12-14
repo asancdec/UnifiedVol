@@ -32,58 +32,55 @@
 
 namespace uv::models::svi
 {
-    double gk(Real a, Real b, Real rho, Real m, Real sigma, Real k) noexcept
-    {
-        Real x{ k - m };                                          // x := k-m
-        Real R{ std::hypot(x, sigma) };                           // R:= sqrt(x^2 + sigma^2)
-        Real invR{ 1.0 / R };                                     // invR := 1 / R
-        Real wk{ std::fma(b, (rho * x + R), a) };                 // w(k) = a + b*(rho*x + R)
-        Real wkD1{ b * (rho + x * invR) };                        // w'(k) = b * (rho + x/R)
-        Real wkD1Squared{ wkD1 * wkD1 };                          // w'(k)^2
-        Real invRCubed{ invR * invR * invR };                     // 1/(R^3)
-        Real sigmaSquared{ sigma * sigma };                       // sigma^2
-        Real wkD2{ b * sigmaSquared * invRCubed };                // w''(k) = b * sigma^2 / R^3
-        Real A{ 1.0 - 0.5 * k * wkD1 / wk };                      // A := 1 - k * w'/(2 * w)                        
-        Real B{ (1.0 / wk) + 0.25 };                              // B := 1/w(k) + 1/4
+    //double gk(Real a, Real b, Real rho, Real m, Real sigma, Real k) noexcept
+    //{
+    //    Real x{ k - m };                                          // x := k-m
+    //    Real R{ std::hypot(x, sigma) };                           // R:= sqrt(x^2 + sigma^2)
+    //    Real invR{ 1.0 / R };                                     // invR := 1 / R
+    //    Real wk{ std::fma(b, (rho * x + R), a) };                 // w(k) = a + b*(rho*x + R)
+    //    Real wkD1{ b * (rho + x * invR) };                        // w'(k) = b * (rho + x/R)
+    //    Real wkD1Squared{ wkD1 * wkD1 };                          // w'(k)^2
+    //    Real invRCubed{ invR * invR * invR };                     // 1/(R^3)
+    //    Real sigmaSquared{ sigma * sigma };                       // sigma^2
+    //    Real wkD2{ b * sigmaSquared * invRCubed };                // w''(k) = b * sigma^2 / R^3
+    //    Real A{ 1.0 - 0.5 * k * wkD1 / wk };                      // A := 1 - k * w'/(2 * w)                        
+    //    Real B{ (1.0 / wk) + 0.25 };                              // B := 1/w(k) + 1/4
 
-        return (A * A) - 0.25 * wkD1Squared * B + wkD2 * 0.5;
-    }
+    //    return (A * A) - 0.25 * wkD1Squared * B + wkD2 * 0.5;
+    //}
 } // namespace uv::models::svi
 
 namespace uv::models::svi::detail
 {
-    std::array<double, 5> initGuess(const core::SliceData& slice) noexcept
+    std::array<double, 4> initGuess(const core::SliceData& slice) noexcept
     {
         const double b{ 0.1 };
         const double rho{ -0.5 };
         const double m{ 0.1 };
         const double sigma{ 0.1 };
-        const double a{ double(slice.atmWT()) - b * (-rho * m + std::hypot(m, sigma)) };
 
-        return { a, b, rho, m, sigma };
+        return { b, rho, m, sigma };
     }
 
-    std::array<double, 5> lowerBounds(const core::SliceData& slice) noexcept
+    std::array<double, 4> lowerBounds(const core::SliceData& slice) noexcept
     {
         return
         {
-            -10.0,                               // a
-            0.001,                                // b            
+            0.001,                               // b            
             -0.9999,                             // rho
             5.0 * double(slice.minLogFM()),      // m
-            0.01                                   // sigma
+            0.01                                 // sigma
         };
     }
 
-    std::array<double, 5> upperBounds(const core::SliceData& slice) noexcept
+    std::array<double, 4> upperBounds(const core::SliceData& slice) noexcept
     {
         return
         {
-        double(slice.maxWT()),              // a
-        2.0,                                // b
-        0.9999,                             // rho
-        5.0 * double(slice.maxLogFM()),     // m
-        10.0                                // sigma
+            2.0,                                // b
+            0.9999,                             // rho
+            5.0 * double(slice.maxLogFM()),     // m
+            10.0                                // sigma
         };
     }
 
@@ -98,7 +95,7 @@ namespace uv::models::svi::detail
         return (p.A * p.A) - 0.25 * p.wkD1Squared * p.B + p.wkD2 * 0.5;  // g(k) = A^2 - B * (w')^2 / 4 + w''/2
     }
 
-    std::array<double, 5> gkGrad(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept
+    std::array<double, 4> gkGrad(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept
     {
         // Precompute variables
         double invR5{ p.invRCubed * p.invR * p.invR };     // 1/R^5
@@ -110,9 +107,8 @@ namespace uv::models::svi::detail
         double dgdw2{ 0.5 };                                                                   // ∂g/∂w'' = 1/2
 
         // ---------- ∂w/∂θ ---------
-        std::array<double, 5> dw
+        std::array<double, 4> dw
         {
-            1.0,                         // ∂w/∂a   = 1
             rho * p.x + p.R,             // ∂w/∂b   = ρ (k-m) + R
             b * p.x,                     // ∂w/∂ρ   = b (k-m)
             -b * (rho + p.x * p.invR),   // ∂w/∂m   = -b ( ρ + (k-m)/R )
@@ -120,9 +116,8 @@ namespace uv::models::svi::detail
         };
 
         // ---------- ∂w′/∂θ ------
-        std::array<double, 5> dw1
+        std::array<double, 4> dw1
         {
-            0.0,                                // ∂w′/∂a   = 0
             rho + p.x * p.invR,                 // ∂w′/∂b   = ρ + (k-m)/R
             b,                                  // ∂w′/∂ρ   = b
             -b * p.sigmaSquared * p.invRCubed,  // ∂w′/∂m   = -b * σ^2 / R^3
@@ -130,9 +125,8 @@ namespace uv::models::svi::detail
         };
 
         // ---------- ∂w″/∂θ ----------
-        std::array<double, 5> dw2
+        std::array<double, 4> dw2
         {
-            0.0,                                                                 // ∂w″/∂a   = 0
             p.sigmaSquared * p.invRCubed,                                        // ∂w″/∂b   = σ^2 / R^3
             0.0,                                                                 // ∂w″/∂ρ   = 0
             3.0 * b * p.sigmaSquared * p.x * invR5,                              // ∂w″/∂m   = 3 b σ^2 (k-m) / R^5
@@ -140,8 +134,8 @@ namespace uv::models::svi::detail
         };
 
         // Chain rule: ∇g = (∂g/∂w)∇w + (∂g/∂w1)∇w1 + (∂g/∂w2)∇w2
-        std::array<double, 5> dg{};
-        for (int j = 0; j < 5; ++j)
+        std::array<double, 4> dg{};
+        for (int j = 0; j < 4; ++j)
         {
             dg[j] = dgdw * dw[j] + dgdw1 * dw1[j] + dgdw2 * dw2[j];
         }

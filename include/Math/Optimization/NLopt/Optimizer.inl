@@ -24,22 +24,23 @@
 
 
 #include "Math/Optimization/Functions.hpp"
+#include "Utils/Aux/Errors.hpp"
 
 namespace uv::math::opt::nlopt
 {
     template <std::size_t N, ::nlopt::algorithm Algo>
     Optimizer<N, Algo>::Optimizer(const Config<N>& config) :
-        config_(config), 
-        opt_(Algo, N), 
+        config_(config),
+        opt_(Algo, N),
         timer_(),
         lowerBounds_(),
-        upperBounds_(), 
+        upperBounds_(),
         initGuess_(),
-        userFn_(nullptr), 
-        userData_(nullptr), 
-        iterCount_(0U) 
+        userFn_(nullptr),
+        userData_(nullptr),
+        iterCount_(0U)
     {
-        opt_.set_ftol_rel(config_.ftolRel); 
+        opt_.set_ftol_rel(config_.ftolRel);
         opt_.set_maxeval(config_.maxEval);
     }
 
@@ -133,6 +134,12 @@ namespace uv::math::opt::nlopt
     }
 
     template <std::size_t N, ::nlopt::algorithm Algo>
+    void Optimizer<N, Algo>::setUserValue(double v) noexcept
+    {
+        userValue_ = v;
+    }
+
+    template <std::size_t N, ::nlopt::algorithm Algo>
     const double& Optimizer<N, Algo>::eps() const noexcept
     {
         return config_.eps;
@@ -142,5 +149,18 @@ namespace uv::math::opt::nlopt
     double Optimizer<N, Algo>::tol() const noexcept
     {
         return config_.tol;
+    }
+
+    template <std::size_t N, ::nlopt::algorithm Algo>
+    const double& Optimizer<N, Algo>::userValue() const noexcept
+    {
+        UV_REQUIRE
+        (
+            userValue_.has_value(),
+            ErrorCode::InvalidArgument,
+            "Optimizer user value not set"
+        );
+
+        return *userValue_;
     }
 }

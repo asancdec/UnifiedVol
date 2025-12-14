@@ -33,10 +33,11 @@
 #include <array>
 #include <cstddef>  
 
-namespace opt = uv::math::opt;
-
 namespace uv::models::heston::calibrator
 {
+
+	namespace opt = uv::math::opt;
+
 	//--------------------------------------------------------------------------
 	// Calibration
 	//--------------------------------------------------------------------------

@@ -31,6 +31,7 @@
 
 #include <nlopt.hpp>
 #include <array>
+#include <optional>
 #include <cstddef>
 
 namespace uv::math::opt::nlopt
@@ -64,6 +65,9 @@ namespace uv::math::opt::nlopt
         NloptFunction userFn_;
         void* userData_;
         unsigned iterCount_;   
+
+        // Gerneric stroage
+        std::optional<double> userValue_;
 
         //--------------------------------------------------------------------------
         // Static variables
@@ -100,10 +104,16 @@ namespace uv::math::opt::nlopt
         Vector<double> optimize() noexcept;
 
         //--------------------------------------------------------------------------
+        // Setters
+        //--------------------------------------------------------------------------
+        void setUserValue(double v) noexcept;
+
+        //--------------------------------------------------------------------------
         // Getters
         //--------------------------------------------------------------------------
         const double& eps() const noexcept;
         double tol() const noexcept;
+        const double& userValue() const noexcept;
     };
 }
 

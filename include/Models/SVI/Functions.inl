@@ -33,11 +33,13 @@
 #include <limits>    
 #include <utility>     
 
+#include <iostream>
+
 namespace uv::models::svi
 {
     template <::nlopt::algorithm Algo>
     std::tuple<std::vector<Params>, core::VolSurface> calibrate(const core::VolSurface& mktVolSurf,
-        const opt::nlopt::Optimizer<5, Algo>& prototype,
+        const opt::nlopt::Optimizer<4, Algo>& prototype,
         bool isValidateResults)
     {
         // Copy market volatility surface
@@ -48,6 +50,8 @@ namespace uv::models::svi
         sviSlices.reserve(sviVolSurf.numTenors());
         Vector<double> wkSlice(sviVolSurf.numStrikes(), 0.0);
 
+        bool isFirstSlice{ true };
+
         // Calibrate each slice
         for (auto& slice : sviVolSurf.slices())
         {
@@ -57,6 +61,8 @@ namespace uv::models::svi
 
             // Initialize optimizer instance
             opt::nlopt::Optimizer optimizer{ prototype.fresh() };
+            optimizer.setUserValue(static_cast<double>(slice.atmWT()));
+            
 
             // Set initial guess and bounds
             optimizer.setGuessBounds
@@ -70,30 +76,70 @@ namespace uv::models::svi
             detail::addWMinConstraint(optimizer);
 
             // Enforce Roger Lee wing slope constraints
+            detail::addMinSlopeConstraint(optimizer, 1e-4);
             detail::addMaxSlopeConstraint(optimizer);
 
-            // Vector of constraints context
-            std::vector<detail::ConstraintCtx> contexts;
-            contexts.resize(kSlice.size());
-            for (std::size_t i = 0; i < kSlice.size(); ++i)
+            if (!isFirstSlice)
             {
-                contexts[i] = detail::ConstraintCtx
+                // Vector of constraints context
+                std::vector<detail::CalendarCtx> contexts;
+                contexts.resize(kSlice.size());
+
+                Params& prevParams{ sviSlices.back()};
+
+                // Evaluate
+                const double a{ double(prevParams.a) };
+                const double b{ double(prevParams.b) };
+                const double rho{ double(prevParams.rho) };
+                const double m{ double(prevParams.m) };
+                const double sigma{ double(prevParams.sigma) };
+
+
+                for (std::size_t i = 0; i < kSlice.size(); ++i)
                 {
-                    kSlice[i],
-                    wkSlice[i],
-                    optimizer.eps()
-                };
+                    // Extract preivous params
+                    const double k{ kSlice[i] };
+                    const double xi{ k - m };
+                    const double R{ std::hypot(xi, sigma) };
+
+                    const double wKPrev
+                    {
+                        a + b * (rho * xi + R)
+                    };
+                    contexts[i] = detail::CalendarCtx
+                    {
+                        k,
+                        wKPrev,
+                        optimizer.eps(),
+                        optimizer.userValue()
+                    };
+                }
+
+                // Enforce calendar spread arbitrage constraints: Wk_current ≥ Wk_previous
+                detail::addCalendarConstraint(optimizer, contexts);
             }
 
-            // Enforce calendar spread arbitrage constraints: Wk_current ≥ Wk_previous
-            detail::addCalendarConstraint(optimizer, contexts);
-
             // Enforce convexity constraints: g(k) ≥ 0
-            Vector<double> kStorage{ kSlice };
-            detail::addConvexityConstraint(optimizer, kStorage);
+            std::vector<detail::ConvexityCtx> convexityCtxs;
+            convexityCtxs.reserve(kSlice.size());
+            for (double k : kSlice)
+            {
+                convexityCtxs.push_back(
+                    detail::ConvexityCtx{
+                        k,
+                        optimizer.userValue()   // ATM total variance
+                    }
+                );
+
+                detail::addConvexityConstraint(
+                    optimizer,
+                    convexityCtxs.back()
+                );
+            }
+
 
             // Objective function contexts
-            detail::ObjCtx obj{ kSlice.data(), wKSlice.data(), kSlice.size() };
+            detail::ObjCtx obj{ kSlice.data(), wKSlice.data(), kSlice.size(), optimizer.userValue() };
 
             // Define objective function with analytical gradient
             detail::setMinObjective(optimizer, obj);
@@ -103,11 +149,16 @@ namespace uv::models::svi
 
             // Extract calibration results
             Real T{ slice.T() };
-            Real a{ Real(params[0]) };
-            Real b{ Real(params[1]) };
-            Real rho{ Real(params[2]) };
-            Real m{ Real(params[3]) };
-            Real sigma{ Real(params[4]) };
+            Real b{ Real(params[0]) };
+            Real rho{ Real(params[1]) };
+            Real m{ Real(params[2]) };
+            Real sigma{ Real(params[3]) };
+            const Real a
+            {
+                slice.atmWT() - b * (-rho * m + std::sqrt(m * m + sigma * sigma))
+            };
+
+            std::cout << "alpha" << a << "\n";
 
             Params sviSlice{ T, a, b, rho, m, sigma };
 
@@ -125,6 +176,8 @@ namespace uv::models::svi
 
             // Set the slice of the calibrated volatility surface
             slice.setWT(wtCopy);
+
+            isFirstSlice = false;
         }
         return { std::move(sviSlices), std::move(sviVolSurf) };
     }
@@ -137,13 +190,21 @@ namespace uv::models::svi::detail
         const double* k;     // Pointer to log-forward moneyness
         const double* wK;    // Pointer to total variance
         std::size_t   n;     // Number of points
+        const double atmWT;
     };
 
-    struct ConstraintCtx
+    struct CalendarCtx
     {
         double k;       // Log-forward moneyness
         double prevWk;  // Total variance of the previous slice
         double eps;     // Epsilon value
+        double atmWT;   // Atm vol
+    };
+
+    struct ConvexityCtx
+    {
+        double k;
+        double atmWT;   // Atm vol
     };
 
     struct GKPrecomp
@@ -177,66 +238,120 @@ namespace uv::models::svi::detail
     };
 
     template <::nlopt::algorithm Algo>
-    void addWMinConstraint(opt::nlopt::Optimizer<5, Algo>& optimizer) noexcept
+    void addWMinConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
     {
-        const double* epsPtr{ &optimizer.eps() };
-
         optimizer.addInequalityConstraint(
             +[](unsigned /*n*/, const double* x, double* grad, void* data) -> double
             {
                 // Reinterpret opaque pointer
-                const double eps{ *static_cast<const double*>(data) };
+                const auto& opt = *static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data);
+
+                const double eps{ opt.eps() };
+                const double wATM{ opt.userValue() };
 
                 // Extract variables
-                const double a{ x[0] };
-                const double b{ x[1] };
-                const double rho{ x[2] };
-                const double sigma{ x[4] };
+                const double b{ x[0] };
+                const double rho{ x[1] };
+                const double m{ x[2] };
+                const double sigma{ x[3] };
 
                 // Precompute
+                const double R{ std::sqrt(m * m + sigma * sigma) };
                 const double S{ std::sqrt(1.0 - rho * rho) };
+
+                const double a{wATM - b * (-rho * m + R)};
 
                 // w_min = a + b * sigma * sqrt(1 - rho^2)
                 const double wMin{ std::fma(b, sigma * S, a) };
 
                 if (grad)
                 {
-                    // c(x) = eps - wMin  =>  ∇c = -∇wMin
-                    grad[0] = -1.0;                         // -∂wMin/∂a
-                    grad[1] = -sigma * S;                   // -∂wMin/∂b
-                    grad[2] = -b * sigma * (rho / S);       // -∂wMin/∂rho (since ∂S/∂rho = -rho/S)
-                    grad[3] = 0.0;                          // -∂wMin/∂m
-                    grad[4] = -b * S;                       // -∂wMin/∂sigma
+                    grad[0] = -(rho * m - R + sigma * S);        // ∂/∂b
+                    grad[1] = -(b * (m - sigma * rho / S));      // ∂/∂rho
+                    grad[2] = -(b * (rho - m / R));              // ∂/∂m
+                    grad[3] = -(b * (S - sigma / R));            // ∂/∂sigma
                 }
 
                 // Enforce wMin ≥ eps  c(x) = eps - wMin ≤ 0
                 return eps - wMin;
             },
-            const_cast<double*>(epsPtr) // nlopt API takes void*
+            &optimizer
         );
     }
 
     template <::nlopt::algorithm Algo>
-    void addMaxSlopeConstraint(opt::nlopt::Optimizer<5, Algo>& optimizer) noexcept
+    void addMinSlopeConstraint(
+        opt::nlopt::Optimizer<4, Algo>& optimizer,
+        double epsSlope
+    )
+    {
+        // Right wing: b*(1 + rho) >= epsSlope
+        optimizer.addInequalityConstraint(
+            +[](unsigned, const double* x, double* grad, void* data) -> double
+            {
+                const double eps = *static_cast<const double*>(data);
+
+                const double b{ x[0] };
+                const double rho{ x[1] };
+
+                if (grad)
+                {
+                    grad[0] = -(1.0 + rho);   // ∂/∂b
+                    grad[1] = -b;             // ∂/∂rho
+                    grad[2] = 0.0;
+                    grad[3] = 0.0;
+                }
+
+                // c(x) = epsSlope - b*(1+rho) <= 0
+                return eps - b * (1.0 + rho);
+            },
+            &epsSlope
+        );
+
+        // Left wing: b*(1 - rho) >= epsSlope
+        optimizer.addInequalityConstraint(
+            +[](unsigned, const double* x, double* grad, void* data) -> double
+            {
+                const double eps = *static_cast<const double*>(data);
+
+                const double b{ x[0] };
+                const double rho{ x[1] };
+
+                if (grad)
+                {
+                    grad[0] = -(1.0 - rho);   // ∂/∂b
+                    grad[1] = b;              // ∂/∂rho
+                    grad[2] = 0.0;
+                    grad[3] = 0.0;
+                }
+
+                // c(x) = epsSlope - b*(1-rho) <= 0
+                return eps - b * (1.0 - rho);
+            },
+            &epsSlope
+        );
+    }
+
+    template <::nlopt::algorithm Algo>
+    void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
     {
         // Right wing: b*(1 + rho) <= 2
         optimizer.addInequalityConstraint(
             +[](unsigned, const double* x, double* grad, void*) -> double
             {
-                // x = [a, b, rho, m, sigma]
-                const double b{ x[1] };
-                const double rho{ x[2] };
+                // x = [ b, rho, m, sigma ]
+                const double b{ x[0] };
+                const double rho{ x[1] };
 
                 if (grad)
                 {
-                    grad[0] = 0.0;            // d/da
-                    grad[1] = (1.0 + rho);    // d/db
-                    grad[2] = b;              // d/drho
-                    grad[3] = 0.0;            // d/dm
-                    grad[4] = 0.0;            // d/dsigma
+                    grad[0] = (1.0 + rho);   // ∂/∂b
+                    grad[1] = b;             // ∂/∂rho
+                    grad[2] = 0.0;           // ∂/∂m
+                    grad[3] = 0.0;           // ∂/∂sigma
                 }
 
-                // c(x) = b*(1 + rho) - 2 <= 0
+                // c(x) = b * (1 + rho) - 2 <= 0
                 return b * (1.0 + rho) - 2.0;
             },
             nullptr
@@ -246,28 +361,29 @@ namespace uv::models::svi::detail
         optimizer.addInequalityConstraint(
             +[](unsigned, const double* x, double* grad, void*) -> double
             {
-                const double b{ x[1] };
-                const double rho{ x[2] };
+                // x = [ b, rho, m, sigma ]
+                const double b{ x[0] };
+                const double rho{ x[1] };
 
                 if (grad)
                 {
-                    grad[0] = 0.0;            // d/da
-                    grad[1] = (1.0 - rho);    // d/db
-                    grad[2] = -b;             // d/drho
-                    grad[3] = 0.0;            // d/dm
-                    grad[4] = 0.0;            // d/dsigma
+                    grad[0] = (1.0 - rho);   // ∂/∂b
+                    grad[1] = -b;            // ∂/∂rho
+                    grad[2] = 0.0;           // ∂/∂m
+                    grad[3] = 0.0;           // ∂/∂sigma
                 }
 
-                // c(x) = b*(1 - rho) - 2 <= 0
+                // c(x) = b * (1 - rho) - 2 <= 0
                 return b * (1.0 - rho) - 2.0;
             },
             nullptr
         );
     }
+  
 
     template <::nlopt::algorithm Algo>
-    void addCalendarConstraint(opt::nlopt::Optimizer<5, Algo>& optimizer,
-        std::vector<ConstraintCtx>& contexts) noexcept
+    void addCalendarConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer,
+        std::vector<CalendarCtx>& contexts)
     {
         // For each k, add one no calendar arbitrage constraint
         for (auto& ctx : contexts)
@@ -276,30 +392,34 @@ namespace uv::models::svi::detail
                 +[](unsigned, const double* x, double* grad, void* data) -> double
                 {
                     // Reinterpret opaque pointer
-                    const ConstraintCtx& c{ *static_cast<const ConstraintCtx*>(data) };
+                    const CalendarCtx& c{ *static_cast<const CalendarCtx*>(data) };
 
                     // Extract variables
-                    const double a{ x[0] };
-                    const double b{ x[1] };
-                    const double rho{ x[2] };
-                    const double m{ x[3] };
-                    const double sigma{ x[4] };
+                    const double b{ x[0] };
+                    const double rho{ x[1] };
+                    const double m{ x[2] };
+                    const double sigma{ x[3] };
 
                     // Precompute variables
                     const double xi{ c.k - m };
-                    const double R{ std::hypot(xi, sigma) };
-                    const double invR{ 1.0 / R };
+                    const double Rk{ std::hypot(xi, sigma) };
+                    const double invRk{ 1.0 / Rk };
+
+                    const double R0{ std::sqrt(m * m + sigma * sigma) };
+                    const double invR0{ 1.0 / R0 };
+
+                    const double a{c.atmWT - b * (-rho * m + R0)};
+
 
                     // Calculate wK
-                    const double wK{ a + b * (rho * xi + R) };
+                    const double wK{ a + b * (rho * xi + Rk) };
 
                     if (grad)
                     {
-                        grad[0] = -1.0;                     // -∂w/∂a
-                        grad[1] = -(rho * xi + R);          // -∂w/∂b
-                        grad[2] = -b * xi;                  // -∂w/∂ρ
-                        grad[3] = b * (rho + xi * invR);    // -∂w/∂m
-                        grad[4] = -b * (sigma * invR);      // -∂w/∂σ
+                        grad[0] = -(rho * xi + Rk - (-rho * m + R0));        // ∂/∂b
+                        grad[1] = -b * (xi + m);                             // ∂/∂rho
+                        grad[2] = b * (m * invR0 + xi * invRk);              // ∂/∂m
+                        grad[3] = -b * (sigma * invRk - sigma * invR0);      // ∂/∂sigma
                     }
 
                     // NLopt expects c(x) ≤ 0.
@@ -313,119 +433,165 @@ namespace uv::models::svi::detail
     }
 
     template <::nlopt::algorithm Algo>
-    void addConvexityConstraint(opt::nlopt::Optimizer<5, Algo>& optimizer, Vector<double>& kStorage) noexcept
+    void addConvexityConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer, ConvexityCtx& ctx)
     {
-        // For each k, add one convexity constraint g(k) ≥ 0
-        for (std::size_t i = 0; i < kStorage.size(); ++i)
-        {
-            optimizer.addInequalityConstraint(
-                +[](unsigned n, const double* x, double* grad, void* data) -> double
-                {
-                    // Reinterpret opaque pointer
-                    const double k{ *static_cast<const double*>(data) };
-
-                    // Extract variables
-                    const double a{ x[0] };
-                    const double b{ x[1] };
-                    const double rho{ x[2] };
-                    const double m{ x[3] };
-                    const double sigma{ x[4] };
-
-                    // Build g(K) precompute instance for efficiency
-                    const GKPrecomp p{ a, b, rho, m, sigma, k };
-                    const double g{ gk(p) };
-
-                    if (grad)
-                    {
-                        // ∇g = [dg/da, dg/db, dg/dρ, dg/dm, dg/dσ]
-                        const auto dg{ gkGrad(a, b, rho, m, sigma, k, p) };
-                        for (unsigned j = 0; j < 5 && j < n; ++j)
-                            grad[j] = -dg[j]; // c(x) = -g(k)
-                    }
-
-                    // NLopt enforces c(x) ≤ tol. 
-                    // Here c(x) = -g(k), so -g(k) ≤ tol  
-                    // Enforces g(k) ≥ -tol  (≈ g(k) ≥ 0 with small slack)
-                    return -g;
-                },
-                &kStorage[i]  // pointer to stable local copy
-            );
-        }
-    }
-
-    template <::nlopt::algorithm Algo>
-    void setMinObjective(opt::nlopt::Optimizer<5, Algo>& optimizer, const ObjCtx& obj) noexcept
-    {
-        optimizer.setMinObjective(
-            +[](unsigned n, const double* x, double* grad, void* data) -> double
+        optimizer.addInequalityConstraint(
+            +[](unsigned /*n*/, const double* x, double* grad, void* data) -> double
             {
-                // Reinterpret opaque pointer
-                const ObjCtx& obj{ *static_cast<const ObjCtx*>(data) };
+                //--------------------------------------------------------------------------
+                // Context
+                //--------------------------------------------------------------------------
+                const auto& c =
+                    *static_cast<const ConvexityCtx*>(data);
 
+                const double k{ c.k };
+                const double wATM{ c.atmWT };
+
+                //--------------------------------------------------------------------------
                 // Extract variables
-                const double a{ x[0] };
-                const double b{ x[1] };
-                const double rho{ x[2] };
-                const double m{ x[3] };
-                const double sigma{ x[4] };
+                //   x = [ b, rho, m, sigma ]
+                //--------------------------------------------------------------------------
+                const double b{ x[0] };
+                const double rho{ x[1] };
+                const double m{ x[2] };
+                const double sigma{ x[3] };
 
-                // Initialize variable to store total SSE
-                double SSE{ 0.0 };
-
-                // Accumulate ∇f here
-                std::array<double, 5> g{};
-
-                for (std::size_t i = 0; i < obj.n; ++i)
+                //--------------------------------------------------------------------------
+                // Recompute a from ATM
+                //--------------------------------------------------------------------------
+                const double R0{ std::sqrt(m * m + sigma * sigma) };
+                const double a
                 {
-                    // Extract variables
-                    const double k{ obj.k[i] };
-                    const double wKMarket{ obj.wK[i] };
+                    wATM - b * (-rho * m + R0)
+                };
 
-                    // Precompute variables
-                    const double xi{ k - m };
-                    const double R{ std::hypot(xi, sigma) };
-                    const double wKModel{ std::fma(b, rho * xi + R, a) };
-
-                    // Calculate SSE between model and market variance
-                    const double r{ wKModel - wKMarket };
-                    SSE += r * r;
-
-                    if (grad)
-                    {
-                        // Precompute variables
-                        const double invR{ 1.0 / R };
-
-                        // Calculate partial derivatives
-                        const double dwda{ 1.0 };                     // ∂w/∂a
-                        const double dwdb{ (rho * xi + R) };          // ∂w/∂b
-                        const double dwdrho{ (b * xi) };              // ∂w/∂ρ
-                        const double dwdm{ -b * (rho + xi * invR) };  // ∂w/∂m
-                        const double dwdsigma{ b * (sigma * invR) };  // ∂w/∂σ
-
-                        // ∇f += 2 * r * ∂w/∂θ  (variance-SSE)
-                        g[0] += 2.0 * r * dwda;
-                        g[1] += 2.0 * r * dwdb;
-                        g[2] += 2.0 * r * dwdrho;
-                        g[3] += 2.0 * r * dwdm;
-                        g[4] += 2.0 * r * dwdsigma;
-                    }
-                }
+                //--------------------------------------------------------------------------
+                // Convexity g(k)
+                //--------------------------------------------------------------------------
+                const GKPrecomp p{ a, b, rho, m, sigma, k };
+                const double g{ gk(p) };
 
                 if (grad)
                 {
-                    // Provide gradient to NLopt
-                    const auto mCopy = (std::min)(static_cast<std::size_t>(n), g.size());
-                    std::copy_n(g.data(), mCopy, grad);
+                    const auto dg{ gkGrad(a, b, rho, m, sigma, k, p) };
+
+                    // c(x) = -g(k)
+                    grad[0] = -dg[0]; // ∂/∂b
+                    grad[1] = -dg[1]; // ∂/∂rho
+                    grad[2] = -dg[2]; // ∂/∂m
+                    grad[3] = -dg[3]; // ∂/∂sigma
                 }
-                return SSE;
+
+                // Enforce g(k) ≥ 0
+                return -g;
             },
-            const_cast<ObjCtx*>(&obj) // nlopt needs void*
+            &ctx
         );
     }
 
     template <::nlopt::algorithm Algo>
+    void setMinObjective(opt::nlopt::Optimizer<4, Algo>& optimizer,  const ObjCtx& obj) 
+    {
+        optimizer.setMinObjective(
+            +[](unsigned n, const double* x, double* grad, void* data) -> double
+            {
+                //--------------------------------------------------------------------------
+                // Context
+                //--------------------------------------------------------------------------
+                const ObjCtx& obj =
+                    *static_cast<const ObjCtx*>(data);
+
+                const double wATM{ obj.atmWT };
+
+                //--------------------------------------------------------------------------
+                // Extract parameters
+                //   x = [ b, rho, m, sigma ]
+                //--------------------------------------------------------------------------
+                const double b{ x[0] };
+                const double rho{ x[1] };
+                const double m{ x[2] };
+                const double sigma{ x[3] };
+
+                //--------------------------------------------------------------------------
+                // Reconstruct a from ATM
+                //--------------------------------------------------------------------------
+                const double R0{ std::sqrt(m * m + sigma * sigma) };
+                const double a
+                {
+                    wATM - b * (-rho * m + R0)
+                };
+
+                //--------------------------------------------------------------------------
+                // Objective and gradient accumulator
+                //--------------------------------------------------------------------------
+                double SSE{ 0.0 };
+                std::array<double, 4> g{}; // [b, rho, m, sigma]
+
+                //--------------------------------------------------------------------------
+                // Loop over strikes
+                //--------------------------------------------------------------------------
+                for (std::size_t i = 0; i < obj.n; ++i)
+                {
+                    const double k{ obj.k[i] };
+                    const double wM{ obj.wK[i] };
+
+                    const double xi{ k - m };
+                    const double R{ std::hypot(xi, sigma) };
+
+                    const double wKModel
+                    {
+                        a + b * (rho * xi + R)
+                    };
+
+                    const double r{ wKModel - wM };
+                    SSE += r * r;
+
+                    if (grad)
+                    {
+                        const double invR{ 1.0 / R };
+                        const double invR0{ 1.0 / R0 };
+
+                        // Derivatives of w(k)
+                        const double dw_db =
+                            (rho * xi + R) - (-rho * m + R0);
+
+                        const double dw_drho =
+                            b * (xi + m);
+
+                        const double dw_dm =
+                            -b * (m * invR0 + xi * invR);
+
+                        const double dw_dsigma =
+                            b * (sigma * invR - sigma * invR0);
+
+                        g[0] += 2.0 * r * dw_db;
+                        g[1] += 2.0 * r * dw_drho;
+                        g[2] += 2.0 * r * dw_dm;
+                        g[3] += 2.0 * r * dw_dsigma;
+                    }
+                }
+
+                //--------------------------------------------------------------------------
+                // Write gradient
+                //--------------------------------------------------------------------------
+                if (grad)
+                {
+                    const unsigned mCopy =
+                        (std::min)(n, static_cast<unsigned>(g.size()));
+
+                    std::copy_n(g.data(), mCopy, grad);
+                }
+
+                return SSE;
+            },
+            const_cast<ObjCtx*>(&obj)
+        );
+    }
+
+
+    template <::nlopt::algorithm Algo>
     void evalCal(const Params& sviSlice,
-        const opt::nlopt::Optimizer<5, Algo>& optimizer,
+        const opt::nlopt::Optimizer<4, Algo>& optimizer,
         const Vector<double>& kSlice,
         const Vector<double>& wKPrevSlice) noexcept
     {
@@ -480,27 +646,27 @@ namespace uv::models::svi::detail
                 "(violations {} / {}, tol = {:.2e})",
                 gMin, kAtMin, nViol, kSlice.size(), tol));
 
-        // ---- Calendar no-arb: w_curr(k) >= w_prev(k) + eps ----
-        std::size_t nCalViol = 0;
-        double minMargin = std::numeric_limits<double>::infinity();
-        double kAtWorst = 0.0;
+        //// ---- Calendar no-arb: w_curr(k) >= w_prev(k) + eps ----
+        //std::size_t nCalViol = 0;
+        //double minMargin = std::numeric_limits<double>::infinity();
+        //double kAtWorst = 0.0;
 
-        for (std::size_t i = 0; i < kSlice.size(); ++i)
-        {
-            const double k = kSlice[i];
-            const double wPrev = wKPrevSlice[i] + eps;
-            const double wCurr = wk(a, b, rho, m, sigma, k);
-            const double margin = wCurr - wPrev; // should be >= 0
-            if (margin < minMargin) { minMargin = margin; kAtWorst = k; }
-            if (margin < -tol) ++nCalViol;
-        }
+        //for (std::size_t i = 0; i < kSlice.size(); ++i)
+        //{
+        //    const double k = kSlice[i];
+        //    const double wPrev = wKPrevSlice[i] + eps;
+        //    const double wCurr = wk(a, b, rho, m, sigma, k);
+        //    const double margin = wCurr - wPrev; // should be >= 0
+        //    if (margin < minMargin) { minMargin = margin; kAtWorst = k; }
+        //    if (margin < -tol) ++nCalViol;
+        //}
 
-        UV_WARN(minMargin < -tol,
-            std::format("No-arbitrage: calendar violated: "
-                "min[w_curr - (w_prev+eps)] = {:.6e} at k = {:.4f} "
-                "(violations {} / {}, tol = {:.2e}, eps = {:.2e})",
-                minMargin, kAtWorst, nCalViol, kSlice.size(),
-                tol, eps));
+        //UV_WARN(minMargin < -tol,
+        //    std::format("No-arbitrage: calendar violated: "
+        //        "min[w_curr - (w_prev+eps)] = {:.6e} at k = {:.4f} "
+        //        "(violations {} / {}, tol = {:.2e}, eps = {:.2e})",
+        //        minMargin, kAtWorst, nCalViol, kSlice.size(),
+        //        tol, eps));
     }
 
     template<std::floating_point T>

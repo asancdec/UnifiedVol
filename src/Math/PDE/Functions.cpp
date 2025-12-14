@@ -22,9 +22,6 @@
  * limitations under this License.
  */
 
-
-#pragma once
-
 #include "Math/PDE/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
 

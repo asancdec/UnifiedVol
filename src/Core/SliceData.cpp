@@ -25,13 +25,13 @@
 
 #include "Math/Functions.hpp"
 #include "Core/SliceData.hpp"
+#include "Math/Interpolation.hpp"
 #include "Utils/Aux/Errors.hpp"    
 #include "Utils/IO/Log.hpp"
 
 #include <cmath>
 #include <numbers>
 #include <algorithm>
-#include <iterator>
 #include <iterator>
 #include <sstream>
 #include <iomanip>
@@ -145,13 +145,12 @@ namespace uv::core
 
     Real SliceData::atmWT() const noexcept
     {
-        const Real* first{ logKF_.data() };
-        const Real* last{ first + numStrikes_};
-        const Real* it = std::min_element(first, last, [](Real a, Real b)
-            {
-                return std::abs(a) < std::abs(b);
-            });
-        return wT_[static_cast<std::size_t>(it - first)];
+        return math::interp::pchipInterp
+        (
+            Vector<Real>{ Real(0) },
+            logKF_,
+            wT_
+        )[0];
     }
 
     Real SliceData::T() const noexcept

@@ -29,12 +29,10 @@
 #include "Core/VolSurface.hpp"
 #include "Core/MarketData.hpp"
 #include "Models/SVI/Functions.hpp"
-#include "Models/LocalVol/Functions.hpp"
 #include "Math/PDE/Functions.hpp"
 #include "Models/Heston/Pricer.hpp"
 #include "Models/Heston/Config.hpp"
 #include "Models/Heston/Calibrator.hpp"
-#include "Models/LocalVol/Pricer.hpp"
 #include "Utils/Aux/Errors.hpp"
 #include "Utils/Types.hpp"
 #include "Math/Functions.hpp"
@@ -93,42 +91,27 @@ int main(int argc, char* argv[])
         };
 
         VolSurface mktVolSurf{ readVolSurface(path.string(), marketData) };
-        //mktVolSurf.printVol();
+        mktVolSurf.printTotVar();
 
         // ---------- SVI Calibration ----------
 
-        opt::nlopt::Optimizer<5, nlopt::LD_SLSQP> nloptOptimizer
+        opt::nlopt::Optimizer<4, nlopt::LD_SLSQP> nloptOptimizer
         {
-            opt::nlopt::Config<5>
+            opt::nlopt::Config<4>
             {
                 1e-12,                            
                 1e-9,                              
                 1e-10,                            
                 10000,                             
-                { "a", "b", "rho", "m", "sigma" }   
+                { "b", "rho", "m", "sigma" }   
             }
         };
 
         auto [sviSlices, sviVolSurface] = svi::calibrate(mktVolSurf, nloptOptimizer);
-        //sviVolSurface.printBSCall();
+        sviVolSurface.printTotVar();
 
-        // ---------- Build Local Volatility surface ----------
 
-        const VolSurface localVolSurface{localvol::buildSurface(sviVolSurface, sviSlices)};
-        localVolSurface.printBSCall();
-
-        auto prices = localvol::price
-        (
-            localVolSurface,
-            marketData,
-            20,
-            20,
-            3
-            );
-
-        // BP()
-
-        // ---------- Heston model calibration ----------
+        //// ---------- Heston model calibration ----------
 
         static constexpr std::size_t HestonNodes = 300;
         const TanHSinH<HestonNodes> quad{};
@@ -163,17 +146,17 @@ int main(int argc, char* argv[])
             }
         };
 
-        //VolSurface hestonVolurface
-        //{ 
-        //    heston::calibrator::calibrate
-        //    (
-        //        sviVolSurface,
-        //        hestonPricer,
-        //        ceresOptimizer
-        //    )
-        //};
+        VolSurface hestonVolurface
+        { 
+            heston::calibrator::calibrate
+            (
+                sviVolSurface,
+                hestonPricer,
+                ceresOptimizer
+            )
+        };
 
-        //hestonVolurface.printVol();
+        hestonVolurface.printVol();
 
         // ---------- Outputs ----------
 
