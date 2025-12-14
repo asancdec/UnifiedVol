@@ -67,3 +67,6 @@
 *.hpp linguist-language=C++
 *.h   linguist-language=C++
 *.inl linguist-language=C++
+
+# Keep notebooks in the repo but exclude them from language stats
+*.ipynb linguist-vendored
