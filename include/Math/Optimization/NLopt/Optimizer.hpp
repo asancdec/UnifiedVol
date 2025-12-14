@@ -101,7 +101,7 @@ namespace uv::math::opt::nlopt
         void setMinObjective(NloptFunction f, void* data) noexcept;
 
         // Run optimization	
-        Vector<double> optimize() noexcept;
+        Vector<double> optimize();
 
         //--------------------------------------------------------------------------
         // Setters

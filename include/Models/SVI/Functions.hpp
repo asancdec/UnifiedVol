@@ -59,10 +59,10 @@ namespace uv::models::svi
 		// Forward declarations
 		//--------------------------------------------------------------------------
 
-		struct CalendarCtx;
-		struct ObjCtx;
-		struct GKPrecomp;
-		struct ConvexityCtx;
+		struct CalendarContexts;
+		struct ObjectiveContexts;
+		struct GkCache;
+		struct ConvexityContexts;
 
 		//--------------------------------------------------------------------------
 		// Initial guess and bounds
@@ -87,7 +87,7 @@ namespace uv::models::svi
 
 		// Add Roger Lee left wing and right wing min slope constraints
 		template <::nlopt::algorithm Algo>
-		void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer, double epsSlope);
+		void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer);
 
 		// Add Roger Lee left wing and right wing max slope constraints
 		template <::nlopt::algorithm Algo>
@@ -95,28 +95,45 @@ namespace uv::models::svi
 
 		// Add no calendar spread arbitrage constraint: Wk_current ≥ Wk_previous
 		template <::nlopt::algorithm Algo>
-		void addCalendarConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer, std::vector<CalendarCtx>& contexts);
+		void addCalendarConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer, Vector<CalendarContexts>& ctx);
 
 		// Add no butterfly arbitrage constraints g(k) ≥ 0.0
 		template <::nlopt::algorithm Algo>
-		void addConvexityConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer, ConvexityCtx& ctx);
+		void addConvexityConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer, ConvexityContexts& ctx);
 
 		// Add objective function with analytical gradient
 		template <::nlopt::algorithm Algo>
-		void setMinObjective(opt::nlopt::Optimizer<4, Algo>& optimizer, const ObjCtx& obj);
+		void setMinObjective(opt::nlopt::Optimizer<4, Algo>& optimizer, const ObjectiveContexts& ctx);
 
 		//--------------------------------------------------------------------------
 		// Math functions
 		//--------------------------------------------------------------------------
 
 		// SVI total variance for a given log-forward moneyness
-		double wk(double a, double b, double rho, double m, double sigma, double k) noexcept;
+		double calculateWk(const double a,
+			const double b,
+			const double rho,
+			const double m,
+			const double sigma,
+			const double k) noexcept;
+
+		// a param from the atmWT
+		double aParam(const double atmWK,
+			const double b,
+			const double rho,
+			const double m,
+			const double sigma) noexcept;
 
 		// g(k) optimized function for calibration
-		double gk(const GKPrecomp& p) noexcept;
+		double gk(const GkCache& p) noexcept;
 
 		// ∇g(k)
-		std::array<double, 4> gkGrad(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept;
+		std::array<double, 4> gkGrad(const double b,
+			const double rho,
+			const double m,
+			const double sigma,
+			const double k,
+			const GkCache& p) noexcept;
 
 		//--------------------------------------------------------------------------
 		// Testing

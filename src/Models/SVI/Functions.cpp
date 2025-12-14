@@ -54,12 +54,13 @@ namespace uv::models::svi::detail
 {
     std::array<double, 4> initGuess(const core::SliceData& slice) noexcept
     {
-        const double b{ 0.1 };
-        const double rho{ -0.5 };
-        const double m{ 0.1 };
-        const double sigma{ 0.1 };
-
-        return { b, rho, m, sigma };
+        return 
+        { 
+            0.1,        // b
+            -0.5,       // rho
+            0.1,        // m
+            0.1         // sigma
+        };
     }
 
     std::array<double, 4> lowerBounds(const core::SliceData& slice) noexcept
@@ -84,56 +85,96 @@ namespace uv::models::svi::detail
         };
     }
 
-    double wk(double a, double b, double rho, double m, double sigma, double k) noexcept
+    double calculateWk(const double a,
+        const double b,
+        const double rho,
+        const double m,
+        const double sigma,
+        const double k) noexcept
     {
-        const double x{ k - m };                                     // x := k-m
-        return std::fma(b, (rho * x + std::hypot(x, sigma)), a);     // w(k) = a + b*(rho*x + sqrt(x^2 + sigma^2)) 
-    } 
-
-    double gk(const GKPrecomp& p) noexcept
-    {
-        return (p.A * p.A) - 0.25 * p.wkD1Squared * p.B + p.wkD2 * 0.5;  // g(k) = A^2 - B * (w')^2 / 4 + w''/2
+        const double x{ k - m };
+        return std::fma(b, (rho * x + std::hypot(x, sigma)), a);
     }
 
-    std::array<double, 4> gkGrad(double a, double b, double rho, double m, double sigma, double k, const GKPrecomp& p) noexcept
+    double aParam(const double atmWK,
+        const double b,
+        const double rho,
+        const double m,
+        const double sigma) noexcept
     {
-        // Precompute variables
-        double invR5{ p.invRCubed * p.invR * p.invR };     // 1/R^5
-        double wkSquaredInv{ 1.0 / (p.wk * p.wk) };        // 1/w^2
+        return atmWK - b * (-rho * m + std::sqrt(m * m + sigma * sigma));
+    }
 
-        // Calculate partial derivatives of g(k) with respect to w, w', and w''
-        double dgdw{ p.A * k * p.wkD1 * wkSquaredInv + 0.25 * p.wkD1Squared * wkSquaredInv };  // ∂g/∂w   = A*k*w'/w^2 + (w')^2 / (4 * w^2)
-        double dgdw1{ -p.A * k / p.wk - 0.5 * p.wkD1 * p.B };                                  // ∂g/∂w'  = -A*k/w - w'*B/2
-        double dgdw2{ 0.5 };                                                                   // ∂g/∂w'' = 1/2
+    double gk(const GkCache& p) noexcept
+    {
+        // g(k) = A^2 - B * (w')^2 / 4 + w''/2
+        return (p.A * p.A) - 0.25 * p.wkD1Squared * p.B + p.wkD2 * 0.5;  
+    }
 
-        // ---------- ∂w/∂θ ---------
+    std::array<double, 4> gkGrad(
+        const double b,
+        const double rho,
+        const double m,
+        const double sigma,
+        const double k,
+        const GkCache& p
+    ) noexcept
+    {
+        // ---------- Extract variables ----------
+
+        const double x{ p.x };
+        const double R{ p.R };
+        const double invR{ p.invR };
+        const double invRCubed{ p.invRCubed };
+        const double invR5{ p.invR5 };
+        const double sigmaSquared{ p.sigmaSquared };
+        const double wk{ p.wk };
+        const double wkInv{ p.wkInv };
+        const double wkSquaredInv{ p.wkSquaredInv };
+        const double wkD1{ p.wkD1 };
+        const double wkD1Squared{ p.wkD1Squared };
+        const double A{ p.A };
+        const double B{ p.B };
+        const double R0{ p.R0 };
+        const double invR0{ p.invR0 };
+
+        // ---------- ∂g/∂w, ∂g/∂w', ∂g/∂w ----------
+        const double dgdw{ A * k * wkD1 * wkSquaredInv + 0.25 * wkD1Squared * wkSquaredInv };
+        const double dgdw1{ -A * k * wkInv - 0.5 * wkD1 * B };
+        const double dgdw2{ 0.5 };
+
+        // ---------- ∂w/∂θ ----------
+
         std::array<double, 4> dw
         {
-            rho * p.x + p.R,             // ∂w/∂b   = ρ (k-m) + R
-            b * p.x,                     // ∂w/∂ρ   = b (k-m)
-            -b * (rho + p.x * p.invR),   // ∂w/∂m   = -b ( ρ + (k-m)/R )
-            b * sigma * p.invR           // ∂w/∂σ   = b (σ / R)
+            (rho * x + R) + (rho * m - R0),                   
+            (b * x) + (b * m),                                 
+            (-b * (rho + x * invR)) + (b * (rho - m * invR0)), 
+            (b * sigma * invR) + (-b * (sigma * invR0))      
         };
 
-        // ---------- ∂w′/∂θ ------
+        // ---------- ∂w′/∂θ ----------
+
         std::array<double, 4> dw1
         {
-            rho + p.x * p.invR,                 // ∂w′/∂b   = ρ + (k-m)/R
-            b,                                  // ∂w′/∂ρ   = b
-            -b * p.sigmaSquared * p.invRCubed,  // ∂w′/∂m   = -b * σ^2 / R^3
-            -b * p.x * sigma * p.invRCubed      // ∂w′/∂σ   = -b * (k-m) * σ / R^3
+            rho + x * invR,
+            b,
+            -b * sigmaSquared * invRCubed,
+            -b * x * sigma * invRCubed
         };
 
         // ---------- ∂w″/∂θ ----------
+
         std::array<double, 4> dw2
         {
-            p.sigmaSquared * p.invRCubed,                                        // ∂w″/∂b   = σ^2 / R^3
-            0.0,                                                                 // ∂w″/∂ρ   = 0
-            3.0 * b * p.sigmaSquared * p.x * invR5,                              // ∂w″/∂m   = 3 b σ^2 (k-m) / R^5
-            b * (2 * sigma * p.invRCubed - 3.0 * p.sigmaSquared * sigma * invR5) // ∂w″/∂σ   = b( 2σ/R^3 - 3σ^3/R^5 )
+            sigmaSquared * invRCubed,
+            0.0,
+            3.0 * b * sigmaSquared * x * invR5,
+            b * (2.0 * sigma * invRCubed - 3.0 * sigmaSquared * sigma * invR5)
         };
 
-        // Chain rule: ∇g = (∂g/∂w)∇w + (∂g/∂w1)∇w1 + (∂g/∂w2)∇w2
+        // ---------- Chain rule ----------
+
         std::array<double, 4> dg{};
         for (int j = 0; j < 4; ++j)
         {

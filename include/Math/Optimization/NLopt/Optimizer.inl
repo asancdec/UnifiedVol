@@ -96,7 +96,7 @@ namespace uv::math::opt::nlopt
     }
 
     template <std::size_t N, ::nlopt::algorithm Algo>
-    Vector<double> Optimizer<N, Algo>::optimize() noexcept
+    Vector<double> Optimizer<N, Algo>::optimize()
     {
         // Copy initial guess to working vector
         Vector<double> x(initGuess_.cbegin(), initGuess_.cend());
