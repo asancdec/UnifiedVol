@@ -25,7 +25,7 @@
 
 #include "Math/Functions.hpp"
 #include "Core/SliceData.hpp"
-#include "Math/Interpolation.hpp"
+
 #include "Utils/Aux/Errors.hpp"    
 #include "Utils/IO/Log.hpp"
 
@@ -121,36 +121,6 @@ namespace uv::core
                 /*isCall=*/true
             );
         }
-    }
-
-    Real SliceData::minWT() const noexcept
-    {
-        return *std::min_element(wT_.begin(), wT_.end());
-    }
-
-    Real SliceData::maxWT() const noexcept
-    {
-        return *std::max_element(wT_.begin(), wT_.end());
-    }
-
-    Real SliceData::minLogFM() const noexcept
-    {
-        return *std::min_element(logKF_.begin(), logKF_.end());
-    }
-
-    Real SliceData::maxLogFM() const noexcept
-    {
-        return *std::max_element(logKF_.begin(), logKF_.end());
-    }
-
-    Real SliceData::atmWT() const noexcept
-    {
-        return math::interp::pchipInterp
-        (
-            Vector<Real>{ Real(0) },
-            logKF_,
-            wT_
-        )[0];
     }
 
     Real SliceData::T() const noexcept

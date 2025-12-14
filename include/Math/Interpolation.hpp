@@ -77,6 +77,54 @@ namespace uv::math::interp
 		const Vector<T>& ys
 	);
 
+	/**
+	 * @brief Piecewise cubic Hermite interpolation (PCHIP) at a single query point.
+	 *
+	 * Computes a monotone piecewise cubic Hermite interpolant using function values
+	 * `ys` at strictly increasing knot locations `xs`, and evaluates it at the
+	 * scalar query point `x`.
+	 *
+	 * This overload is a convenience wrapper around the vector-valued `pchipInterp`
+	 * and preserves identical behavior (including endpoint handling and internal
+	 * derivative construction).
+	 *
+	 * ### Behavior
+	 *
+	 * - For x < xs.front(), the value ys.front() is returned (flat extrapolation).
+	 * - For x > xs.back(), the value ys.back() is returned (flat extrapolation).
+	 * - Within the domain, the value is obtained from the cubic on the interval
+	 *   [xs[i], xs[i+1]] containing `x`.
+	 *
+	 * ### Requirements
+	 *
+	 * - `xs` must be strictly increasing.
+	 * - `xs.size() == ys.size() >= 2`.
+	 *
+	 * ### Complexity
+	 *
+	 * - Slope computation: O(N) for N = xs.size().
+	 * - Evaluation: O(log N) using binary search.
+	 *
+	 * ### References
+	 *
+	 * - Fritsch, C. and Carlson, R. (1980). "Monotone Piecewise Cubic Interpolation".
+	 * - SciPy: `scipy.interpolate.PchipInterpolator`
+	 *
+	 * @tparam T     Floating‐point type satisfying `std::floating_point`.
+	 *
+	 * @param x      Query point at which to evaluate the interpolant.
+	 * @param xs     Strictly increasing knot locations.
+	 * @param ys     Function values corresponding to `xs`.
+	 *
+	 * @return       Interpolated value at `x`.
+	 */
+	template <std::floating_point T>
+	T pchipInterp(
+		T x,
+		const Vector<T>& xs,
+		const Vector<T>& ys
+	);
+
 	///**
 	// * @brief 2D tensor-product PCHIP interpolation on a rectangular grid.
 	// *

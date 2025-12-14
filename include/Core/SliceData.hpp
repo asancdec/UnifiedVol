@@ -60,24 +60,6 @@ namespace uv::core
             const Vector<Real>& vol,
             const MarketData& mktData);
 
-        //--------------------------------------------------------------------------
-        // Math functions
-        //--------------------------------------------------------------------------
-
-        // Determine minimum total variance
-        Real minWT() const noexcept;
-
-        // Determine maximum total variance
-        Real maxWT() const noexcept;
-
-        // Determine minimum log-forward moneyness
-        Real minLogFM() const noexcept;
-
-        // Determine maximum log-forward moneyness
-        Real maxLogFM() const noexcept;
-
-        // Return ATM total variance
-        Real atmWT() const noexcept;
 
         //--------------------------------------------------------------------------
         // Getters

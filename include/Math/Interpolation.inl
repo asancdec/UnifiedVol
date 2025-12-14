@@ -49,6 +49,15 @@ namespace uv::math::interp
 		);
 	};
 
+	template <std::floating_point T>
+	T pchipInterp(T x,
+		const Vector<T>& xs,
+		const Vector<T>& ys
+	)
+	{
+		return pchipInterp(Vector<T>{ x }, xs, ys)[0];
+	}
+
 	//template <std::floating_point T>
 	//Matrix<T> pchipInterp2D(const Vector<T>& x,   
 	//	const Vector<T>& y,  

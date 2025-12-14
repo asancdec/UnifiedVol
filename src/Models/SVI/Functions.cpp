@@ -52,7 +52,7 @@ namespace uv::models::svi
 
 namespace uv::models::svi::detail
 {
-    std::array<double, 4> initGuess(const core::SliceData& slice) noexcept
+    std::array<double, 4> initGuess() noexcept
     {
         return 
         { 
@@ -63,24 +63,24 @@ namespace uv::models::svi::detail
         };
     }
 
-    std::array<double, 4> lowerBounds(const core::SliceData& slice) noexcept
+    std::array<double, 4> lowerBounds(const double logKFMin) noexcept
     {
         return
         {
             0.001,                               // b            
             -0.9999,                             // rho
-            5.0 * double(slice.minLogFM()),      // m
+            5.0 * logKFMin,                      // m
             0.01                                 // sigma
         };
     }
 
-    std::array<double, 4> upperBounds(const core::SliceData& slice) noexcept
+    std::array<double, 4> upperBounds(const double logKFMax) noexcept
     {
         return
         {
             2.0,                                // b
             0.9999,                             // rho
-            5.0 * double(slice.maxLogFM()),     // m
+            5.0 * logKFMax,                     // m
             10.0                                // sigma
         };
     }

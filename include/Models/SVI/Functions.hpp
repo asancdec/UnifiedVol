@@ -47,8 +47,7 @@ namespace uv::models::svi
 	// Main calibration function
 	template <::nlopt::algorithm Algo>
 	std::tuple<std::vector<Params>, core::VolSurface> calibrate(const core::VolSurface& mktVolSurf,
-		const opt::nlopt::Optimizer<4, Algo>& prototype,
-		bool isValidateResults = true);
+		const opt::nlopt::Optimizer<4, Algo>& prototype);
 
 	//// g(k) standard function
 	//double gk(Real a, Real b, Real rho, Real m, Real sigma, Real k) noexcept;
@@ -69,13 +68,13 @@ namespace uv::models::svi
 		//--------------------------------------------------------------------------
 
 		// Initial guess
-		std::array<double, 4> initGuess(const core::SliceData& slice) noexcept;
+		std::array<double, 4> initGuess() noexcept;
 
 		// Lower bounds
-		std::array<double, 4> lowerBounds(const core::SliceData& slice) noexcept;
+		std::array<double, 4> lowerBounds(const double logKFMin) noexcept;
 
 		// Upper bounds
-		std::array<double, 4> upperBounds(const core::SliceData& slice) noexcept;
+		std::array<double, 4> upperBounds(const double logKFMax) noexcept;
 
 		//--------------------------------------------------------------------------
 		// Calibration
@@ -134,17 +133,6 @@ namespace uv::models::svi
 			const double sigma,
 			const double k,
 			const GkCache& p) noexcept;
-
-		//--------------------------------------------------------------------------
-		// Testing
-		//--------------------------------------------------------------------------
-
-		// Check calibration results
-		template <::nlopt::algorithm Algo>
-		void evalCal(const Params& sviSlice,
-			const opt::nlopt::Optimizer<4, Algo>& optimizer,
-			const Vector<double>& kSlice,
-			const Vector<double>& wKPrevSlice) noexcept;
 
 		// Make a wK slice
 		template <std::floating_point T>

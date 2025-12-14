@@ -22,8 +22,8 @@
  * limitations under this License.
  */
 
-
-#include "Utils/IO/Log.hpp"
+#include "Math/Interpolation.hpp"
+#include "Core/Functions.hpp"
 
 #include <algorithm>   
 #include <array>       
@@ -38,8 +38,7 @@ namespace uv::models::svi
 {
     template <::nlopt::algorithm Algo>
     std::tuple<std::vector<Params>, core::VolSurface> calibrate(const core::VolSurface& mktVolSurf,
-        const opt::nlopt::Optimizer<4, Algo>& prototype,
-        bool isValidateResults)
+        const opt::nlopt::Optimizer<4, Algo>& prototype)
     {
         // Copy market volatility surface
         core::VolSurface sviVolSurf{ mktVolSurf };
@@ -56,18 +55,22 @@ namespace uv::models::svi
             // Extract and convert data
             const Vector<double> wKSlice{slice.wT().cbegin(), slice.wT().cend() };
             const Vector<double> kSlice{slice.logKF().cbegin(), slice.logKF().cend()};
+            const double atmWK{ math::interp::pchipInterp<double>(0.0, kSlice, wKSlice) };
+
+            const double logKFMin{ core::minValue(kSlice)};
+            const double logKFMax{ core::maxValue(kSlice) };
+
 
             // Initialize optimizer instance
             opt::nlopt::Optimizer optimizer{ prototype.fresh() };
-            optimizer.setUserValue(static_cast<double>(slice.atmWT()));
-            
+            optimizer.setUserValue(atmWK);
 
             // Set initial guess and bounds
             optimizer.setGuessBounds
             (
-                detail::initGuess(slice),
-                detail::lowerBounds(slice),
-                detail::upperBounds(slice)
+                detail::initGuess(),
+                detail::lowerBounds(logKFMin),
+                detail::upperBounds(logKFMax)
             );
 
             // Enforce positive minimum total variance constraint
@@ -93,9 +96,7 @@ namespace uv::models::svi
                 for (std::size_t i = 0; i < kSlice.size(); ++i)
                 {
                     const double k = kSlice[i];
-                    const double xi = k - m0;
-                    const double R = std::hypot(xi, sigma0);
-                    const double wPrev = a0 + b0 * (rho0 * xi + R);
+                    const double wPrev = detail::calculateWk(a0, b0, rho0, m0, sigma0, k);
 
                     calCtx[i] = { k, wPrev, optimizer.eps(), optimizer.userValue() };
                 }
@@ -136,15 +137,9 @@ namespace uv::models::svi
             Real rho{ Real(params[1]) };
             Real m{ Real(params[2]) };
             Real sigma{ Real(params[3]) };
-            const Real a
-            {
-                slice.atmWT() - b * (-rho * m + std::sqrt(m * m + sigma * sigma))
-            };
+            const Real a{detail::aParam(atmWK, b, rho, m, sigma)};
 
             Params sviSlice{ T, a, b, rho, m, sigma };
-
-            // Evaluate calibration
-            //if (isValidateResults) detail::evalCal(sviSlice, optimizer, kSlice, wkSlice);
 
             // Save calibration parameter results
             sviSlices.emplace_back(std::move(sviSlice));
@@ -169,7 +164,7 @@ namespace uv::models::svi::detail
     struct ObjectiveContexts
     {
         const double* k;      // Pointer to log-forward moneyness
-        const double* wM;     // Pointer to marekt total variance
+        const double* wM;     // Pointer to market total variance
         std::size_t   n;      // Number of points
         const double  atmWK;  // Atm variance
     };
@@ -185,7 +180,7 @@ namespace uv::models::svi::detail
     struct ConvexityContexts
     {
         double k;       // Log-forward moneyness 
-        double atmWK;   // Atm varaince
+        double atmWK;   // Atm variance
     };
 
     struct GkCache
@@ -374,7 +369,7 @@ namespace uv::models::svi::detail
 
     template <::nlopt::algorithm Algo>
     void addCalendarConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer,
-        std::vector<CalendarContexts>& ctx)
+        Vector<CalendarContexts>& ctx)
     {
         for (auto& ctxK : ctx)
         {
@@ -528,87 +523,6 @@ namespace uv::models::svi::detail
             },
             const_cast<ObjectiveContexts*>(&ctx)
         );
-    }
-
-
-    template <::nlopt::algorithm Algo>
-    void evalCal(const Params& sviSlice,
-        const opt::nlopt::Optimizer<4, Algo>& optimizer,
-        const Vector<double>& kSlice,
-        const Vector<double>& wKPrevSlice) noexcept
-    {
-        // Extract parameters
-        const double a{ double(sviSlice.a) };
-        const double b{ double(sviSlice.b) };
-        const double rho{ double(sviSlice.rho) };
-        const double m{ double(sviSlice.m) };
-        const double sigma{ double(sviSlice.sigma) };
-
-        // Extract config attributes
-        const double eps{ optimizer.eps() };
-        const double tol{ optimizer.tol() };
-
-        // ---- wMin constraint violation ----
-        const double S = std::sqrt(std::max(0.0, 1.0 - rho * rho));
-        const double wMin = std::fma(b, sigma * S, a);
-
-        UV_WARN(eps - wMin > tol,
-            std::format("No-arbitrage: wMin violated: wMin = {:.6f} < eps = {:.6f}",
-                wMin, eps));
-
-        // ---- Lee wing-slope constraint violations ----
-        const double leeRight = b * (1.0 + rho) - 2.0;
-        const double leeLeft = b * (1.0 - rho) - 2.0;
-
-        UV_WARN(leeRight > tol,
-            std::format("No-arbitrage: right wing slope > 2: b*(1+rho) = {:.6f} "
-                "(b = {:.6f}, rho = {:.6f})",
-                b * (1.0 + rho), b, rho));
-
-        UV_WARN(leeLeft > tol,
-            std::format("No-arbitrage: left wing slope > 2: b*(1-rho) = {:.6f} "
-                "(b = {:.6f}, rho = {:.6f})",
-                b * (1.0 - rho), b, rho));
-
-        // ---- Convexity g(k) violation ----
-        double gMin = std::numeric_limits<double>::infinity();
-        double kAtMin = 0.0;
-        std::size_t nViol = 0;
-
-        for (double k : kSlice)
-        {
-            const GkCache pre{ a, b, rho, m, sigma, k };
-            const double g = gk(pre);
-            if (g < gMin) { gMin = g; kAtMin = k; }
-            if (g < -tol) ++nViol;
-        }
-
-        UV_WARN(gMin < -tol,
-            std::format("No-arbitrage: convexity violated: min g(k) = {:.6e} at k = {:.4f} "
-                "(violations {} / {}, tol = {:.2e})",
-                gMin, kAtMin, nViol, kSlice.size(), tol));
-
-        //// ---- Calendar no-arb: w_curr(k) >= w_prev(k) + eps ----
-        //std::size_t nCalViol = 0;
-        //double minMargin = std::numeric_limits<double>::infinity();
-        //double kAtWorst = 0.0;
-
-        //for (std::size_t i = 0; i < kSlice.size(); ++i)
-        //{
-        //    const double k = kSlice[i];
-        //    const double wPrev = wKPrevSlice[i] + eps;
-        //    const double wCurr = wk(a, b, rho, m, sigma, k);
-        //    const double margin = wCurr - wPrev; // should be >= 0
-        //    if (margin < minMargin) { minMargin = margin; kAtWorst = k; }
-        //    if (margin < -tol) ++nCalViol;
-        //}
-
-        //UV_WARN(minMargin < -tol,
-        //    std::format("No-arbitrage: calendar violated: "
-        //        "min[w_curr - (w_prev+eps)] = {:.6e} at k = {:.4f} "
-        //        "(violations {} / {}, tol = {:.2e}, eps = {:.2e})",
-        //        minMargin, kAtWorst, nCalViol, kSlice.size(),
-        //        tol, eps));
     }
 
     template<std::floating_point T>

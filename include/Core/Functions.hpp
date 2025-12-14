@@ -136,4 +136,38 @@ namespace uv::core
     Matrix<Real> hadamard(const Matrix<Real>& A,
         const Matrix<Real>& B);
 
+    /**
+     * @brief Return the minimum element of a vector.
+     *
+     * Computes and returns the smallest value in `x` using `std::min_element`.
+     *
+     * @tparam T Value type. Must be comparable with `operator<`.
+     *
+     * @param x Input vector (must be non-empty).
+     *
+     * @return Minimum value in `x`.
+     *
+     * @throws ErrorCode::InvalidArgument if `x` is empty.
+     */
+    template<typename T>
+    T minValue(const Vector<T>& x);
+
+    /**
+     * @brief Return the maximum element of a vector.
+     *
+     * Computes and returns the largest value in `x` using `std::max_element`.
+     *
+     * @tparam T Value type. Must be comparable with `operator<`.
+     *
+     * @param x Input vector (must be non-empty).
+     *
+     * @return Maximum value in `x`.
+     *
+     * @throws ErrorCode::InvalidArgument if `x` is empty.
+     */
+    template<typename T>
+    T maxValue(const Vector<T>& x);
+
 } // namespace uv::core
+
+#include "Functions.inl"
