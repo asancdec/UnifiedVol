@@ -94,27 +94,6 @@ PYBIND11_MODULE(interp, m) {
         },
         py::arg("x"), py::arg("xs"), py::arg("ys"));
 
-    m.def("pchip_interp_2d",
-        [](py::handle x_obj, py::handle y_obj, py::handle xs_obj, py::handle ys_obj, py::handle zs_obj) {
-            auto x = require_1d_ndarray(x_obj, "x");
-            auto y = require_1d_ndarray(y_obj, "y");
-            auto xs = require_1d_ndarray(xs_obj, "xs");
-            auto ys = require_1d_ndarray(ys_obj, "ys");
-            auto zs = require_2d_ndarray(zs_obj, "zs");
-
-            // shape check: zs must be (len(ys), len(xs))
-            if (zs.shape(0) != ys.size() || zs.shape(1) != xs.size())
-                throw py::value_error("zs shape must be (len(ys), len(xs)).");
-
-            auto out = uv::math::interp::pchipInterp2D<ld>(
-                vec_from_1d(x), vec_from_1d(y), vec_from_1d(xs), vec_from_1d(ys), mat_from_2d(zs)
-            );
-
-            // result expected as matrix (rows=len(y), cols=len(x))
-            return make_2d(static_cast<py::ssize_t>(out.size()), static_cast<py::ssize_t>(out.empty() ? 0 : out[0].size()), out);
-        },
-        py::arg("x"), py::arg("y"), py::arg("xs"), py::arg("ys"), py::arg("zs"));
-
     m.def("hermite_interp",
         [](py::handle x_obj, py::handle xs_obj, py::handle ys_obj, py::handle dydx_obj) {
             auto x = require_1d_ndarray(x_obj, "x");
