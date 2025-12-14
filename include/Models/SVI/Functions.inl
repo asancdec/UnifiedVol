@@ -24,138 +24,60 @@
 
 #include "Math/Interpolation.hpp"
 #include "Core/Functions.hpp"
+#include "Utils/Aux/Errors.hpp"
 
-#include <algorithm>   
 #include <array>       
 #include <cmath>      
 #include <cstddef>     
-#include <format>     
 #include <limits>    
 #include <utility>     
-
 
 namespace uv::models::svi
 {
     template <::nlopt::algorithm Algo>
-    std::tuple<std::vector<Params>, core::VolSurface> calibrate(const core::VolSurface& mktVolSurf,
+    Vector<Params> calibrate(const Vector<Real>& tenors,
+        const Matrix<Real>& kMatrix,
+        const Matrix<Real>& wMMatrix,
         const opt::nlopt::Optimizer<4, Algo>& prototype)
     {
-        // Copy market volatility surface
-        core::VolSurface sviVolSurf{ mktVolSurf };
+        // ---------- Validate inputs ----------
 
-        // Initialize vectors
-        std::vector<Params> sviSlices;
-        sviSlices.reserve(sviVolSurf.numTenors());
+        detail::validateInputs(tenors, kMatrix, wMMatrix);
 
-        bool isFirstSlice{ true };
+        // ---------- Extract data ----------
+        
+        // NLopt API accepts double type only
+        const Matrix<double> kMatrixD{ uv::core::convertMatrix<double>(kMatrix)};
+        const Matrix<double> wMMatrixD{ uv::core::convertMatrix<double>(wMMatrix)};
 
-        // Calibrate each slice
-        for (auto& slice : sviVolSurf.slices())
+        const std::size_t numTenors{ tenors.size()};
+        const std::size_t numStrikes{ kMatrixD[0].size()};
+
+        // ---------- Initialize params container ----------
+
+        Vector<Params> params;
+        params.reserve(numTenors);
+
+        // ---------- Calibrate per slice ----------
+
+        for (std::size_t i = 0; i < numTenors; ++i)
         {
-            // Extract and convert data
-            const Vector<double> wKSlice{slice.wT().cbegin(), slice.wT().cend() };
-            const Vector<double> kSlice{slice.logKF().cbegin(), slice.logKF().cend()};
-            const double atmWK{ math::interp::pchipInterp<double>(0.0, kSlice, wKSlice) };
+            const Params* prev = (i == 0) ? nullptr : &params.back();
 
-            const double logKFMin{ core::minValue(kSlice)};
-            const double logKFMax{ core::maxValue(kSlice) };
-
-
-            // Initialize optimizer instance
-            opt::nlopt::Optimizer optimizer{ prototype.fresh() };
-            optimizer.setUserValue(atmWK);
-
-            // Set initial guess and bounds
-            optimizer.setGuessBounds
+            params.emplace_back
             (
-                detail::initGuess(),
-                detail::lowerBounds(logKFMin),
-                detail::upperBounds(logKFMax)
+                detail::calibrateSlice(
+                    tenors[i],
+                    kMatrixD[i],
+                    wMMatrixD[i],
+                    prototype,
+                    prev,
+                    numStrikes
+                )
             );
-
-            // Enforce positive minimum total variance constraint
-            detail::addWMinConstraint(optimizer);
-
-            // Enforce Roger Lee wing slope constraints
-            detail::addMinSlopeConstraint(optimizer);
-            detail::addMaxSlopeConstraint(optimizer);
-
-            std::vector<detail::CalendarContexts> calCtx;
-
-            if (!isFirstSlice)
-            {
-                calCtx.resize(kSlice.size());
-                const Params& prevParams{ sviSlices.back() };
-
-                const double a0 = double(prevParams.a);
-                const double b0 = double(prevParams.b);
-                const double rho0 = double(prevParams.rho);
-                const double m0 = double(prevParams.m);
-                const double sigma0 = double(prevParams.sigma);
-
-                for (std::size_t i = 0; i < kSlice.size(); ++i)
-                {
-                    const double k = kSlice[i];
-                    const double wPrev = detail::calculateWk(a0, b0, rho0, m0, sigma0, k);
-
-                    calCtx[i] = { k, wPrev, optimizer.eps(), optimizer.userValue() };
-                }
-
-                detail::addCalendarConstraint(optimizer, calCtx);
-            }
-
-            // Enforce convexity constraints: g(k) ≥ 0
-            std::vector<detail::ConvexityContexts> convexityCtxs;
-            convexityCtxs.reserve(kSlice.size());
-            for (double k : kSlice)
-            {
-                convexityCtxs.push_back(
-                    detail::ConvexityContexts{
-                        k,
-                        optimizer.userValue()   // ATM total variance
-                    }
-                );
-
-                detail::addConvexityConstraint(
-                    optimizer,
-                    convexityCtxs.back()
-                );
-            }
-
-            // Objective function contexts
-            detail::ObjectiveContexts obj{ kSlice.data(), wKSlice.data(), kSlice.size(), optimizer.userValue() };
-
-            // Define objective function with analytical gradient
-            detail::setMinObjective(optimizer, obj);
-
-            // Solve the optimization problem
-            Vector<double> params{ optimizer.optimize() };
-
-            // Extract calibration results
-            Real T{ slice.T() };
-            Real b{ Real(params[0]) };
-            Real rho{ Real(params[1]) };
-            Real m{ Real(params[2]) };
-            Real sigma{ Real(params[3]) };
-            const Real a{detail::aParam(atmWK, b, rho, m, sigma)};
-
-            Params sviSlice{ T, a, b, rho, m, sigma };
-
-            // Save calibration parameter results
-            sviSlices.emplace_back(std::move(sviSlice));
-
-            // Update calculated variances use them on the next slice calibration
-            Vector<double> wkSlice = detail::makewKSlice<double>(kSlice, double(a), double(b), double(rho), double(m), double(sigma));
-
-            // Make a local copy first
-            Vector<Real> wtCopy{ wkSlice.begin(), wkSlice.end() };
-
-            // Set the slice of the calibrated volatility surface
-            slice.setWT(wtCopy);
-
-            isFirstSlice = false;
         }
-        return { std::move(sviSlices), std::move(sviVolSurf) };
+
+        return params;
     }
 } // namespace uv::models::svi
 
@@ -224,6 +146,109 @@ namespace uv::models::svi::detail
     };
 
     template <::nlopt::algorithm Algo>
+    Params calibrateSlice(
+        const Real T,
+        const Vector<double>& kSlice,
+        const Vector<double>& wKSlice,
+        const opt::nlopt::Optimizer<4, Algo>& prototype,
+        const Params* prevParams,         
+        const std::size_t numStrikes
+    )
+    {
+        // ---------- Calculate  ----------
+
+        const double atmWK{ math::interp::pchipInterp<double>(0.0, kSlice, wKSlice) };
+        const double logKFMin{ core::minValue(kSlice) };
+        const double logKFMax{ core::maxValue(kSlice) };
+
+        // ---------- Fresh optimizer  ----------
+
+        opt::nlopt::Optimizer optimizer{ prototype.fresh() };
+        optimizer.setUserValue(atmWK);
+
+        // ---------- Bounds and init guess ----------
+
+        optimizer.setGuessBounds(
+            initGuess(),
+            lowerBounds(logKFMin),
+            upperBounds(logKFMax)
+        );
+
+        // ---------- Standard constraints ----------
+
+        addWMinConstraint(optimizer);
+        addMinSlopeConstraint(optimizer);
+        addMaxSlopeConstraint(optimizer);
+
+        // ---------- Calendar constraints ----------
+
+        Vector<CalendarContexts> calCtx;
+
+        if (prevParams)
+        {
+            calCtx.resize(numStrikes);
+
+            // Extract data
+            const Params& prev{ *prevParams };
+            const double a0{ double(prev.a) };
+            const double b0{ double(prev.b) };
+            const double rho0{ double(prev.rho) };
+            const double m0{ double(prev.m) };
+            const double sigma0{ double(prev.sigma) };
+            const double eps{ optimizer.eps() };
+
+            for (std::size_t i = 0; i < numStrikes; ++i)
+            {
+                // Vector of calendar constraints context
+                const double k{ kSlice[i] };
+                const double wPrev{ detail::calculateWk(a0, b0, rho0, m0, sigma0, k) };
+                calCtx[i] = { k, wPrev, eps, atmWK };
+            }
+
+            addCalendarConstraint(optimizer, calCtx);
+        }
+
+        // ---------- Convexity constraints ----------
+
+        Vector<ConvexityContexts> convexityCtxs;
+        convexityCtxs.reserve(numStrikes);
+        for (double k : kSlice)
+        {
+            convexityCtxs.push_back({ k, atmWK });
+            addConvexityConstraint(optimizer, convexityCtxs.back());
+        }
+
+        // ---------- Set objective function ----------
+
+        ObjectiveContexts obj
+        {
+            kSlice.data(),
+            wKSlice.data(),
+            numStrikes,
+            optimizer.userValue()
+        };
+
+        setMinObjective(optimizer, obj);
+
+        // ---------- Run optimization ----------
+
+        Vector<double> params{ optimizer.optimize() };
+
+        return Params{
+            T,
+            aParam(atmWK,
+                   Real(params[0]),
+                   Real(params[1]),
+                   Real(params[2]),
+                   Real(params[3])),
+            Real(params[0]),
+            Real(params[1]),
+            Real(params[2]),
+            Real(params[3])
+        };
+    }
+
+    template <::nlopt::algorithm Algo>
     void addWMinConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
     {
         optimizer.addInequalityConstraint(
@@ -232,7 +257,7 @@ namespace uv::models::svi::detail
                 // Reinterpret opaque pointer
                 const auto& opt = *static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data);
 
-                // Extract variables
+                // Extract data
                 const double eps{ opt.eps() };
                 const double atmWK{ opt.userValue() };
                 const double b{ x[0] };
@@ -273,7 +298,7 @@ namespace uv::models::svi::detail
                 // Reinterpret opaque pointer
                 const auto& opt = *static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data);
 
-                // Extract variables
+                // Extract data
                 const double eps{ opt.eps() };
                 const double b{ x[0] };
                 const double rho{ x[1] };
@@ -299,7 +324,7 @@ namespace uv::models::svi::detail
                 // Reinterpret opaque pointer
                 const auto& opt = *static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data);
 
-                // Extract variables
+                // Extract data
                 const double eps{ opt.eps() };
                 const double b{ x[0] };
                 const double rho{ x[1] };
@@ -326,7 +351,7 @@ namespace uv::models::svi::detail
         optimizer.addInequalityConstraint(
             +[](unsigned, const double* x, double* grad, void*) -> double
             {
-                // Extract variables
+                // Extract data
                 const double b{ x[0] };
                 const double rho{ x[1] };
 
@@ -348,7 +373,7 @@ namespace uv::models::svi::detail
         optimizer.addInequalityConstraint(
             +[](unsigned, const double* x, double* grad, void*) -> double
             {
-                // Extract variables
+                // Extract data
                 const double b{ x[0] };
                 const double rho{ x[1] };
 
@@ -379,7 +404,7 @@ namespace uv::models::svi::detail
                     // Reinterpret opaque pointer
                     const CalendarContexts& ctxK{ *static_cast<const CalendarContexts*>(data) };
 
-                    // Extract variables
+                    // Extract data
                     const double atmWK{ ctxK.atmWK };
                     const double k{ ctxK.k };
                     const double prevWk{ ctxK.prevWk };
@@ -425,16 +450,13 @@ namespace uv::models::svi::detail
                 // Reinterpret opaque pointer
                 const auto& ctx = *static_cast<const ConvexityContexts*>(data);
 
-                // Extract variables
+                // Extract data
                 const double k{ ctx.k };
                 const double atmWK{ ctx.atmWK };
                 const double b{ x[0] };
                 const double rho{ x[1] };
                 const double m{ x[2] };
                 const double sigma{ x[3] };
-
-                // Precomputes
-                const double R0{ std::sqrt(m * m + sigma * sigma) };
 
                 // Calculate
                 const double a{ aParam(atmWK, b, rho, m, sigma) };
@@ -467,7 +489,7 @@ namespace uv::models::svi::detail
                 // Reinterpret opaque pointer
                 const ObjectiveContexts& ctx = *static_cast<const ObjectiveContexts*>(data);
 
-                // Extract variables
+                // Extract data
                 const double atmWK{ ctx.atmWK };
                 std::size_t N{ ctx.n };
                 const double b{ x[0] };
@@ -488,7 +510,7 @@ namespace uv::models::svi::detail
 
                 for (std::size_t i = 0; i < N; ++i)
                 {
-                    // Extract variables
+                    // Extract data
                     const double k{ ctx.k[i] };
                     const double wM{ ctx.wM[i] };
 
@@ -523,23 +545,5 @@ namespace uv::models::svi::detail
             },
             const_cast<ObjectiveContexts*>(&ctx)
         );
-    }
-
-    template<std::floating_point T>
-    Vector<T> makewKSlice(const Vector<T>& kSlice,
-        T a, T b, T rho, T m, T sigma) noexcept
-    {
-        Vector<T> wKSlice;
-        wKSlice.reserve(kSlice.size());
-
-        std::transform(
-            kSlice.begin(), kSlice.end(),
-            std::back_inserter(wKSlice),
-            [a, b, rho, m, sigma](T k) noexcept
-            {
-                return calculateWk(a, b, rho, m, sigma, k);
-            });
-
-        return wKSlice;
     }
 } 

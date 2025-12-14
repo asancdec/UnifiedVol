@@ -32,13 +32,24 @@
 
 namespace uv::math::opt::nlopt
 {
-	template <std::size_t N>
-	struct Config
+    /**
+     * @brief Configuration parameters for an NLopt optimizer.
+     *
+     * Holds numerical tolerances and metadata used to configure NLopt-based
+     * optimization routines.
+     *
+     * This structure does not own any optimizer state; it simply groups
+     * commonly used stopping criteria and constraint tolerances in one place.
+     *
+     * @tparam N Number of optimization parameters.
+     */
+    template <std::size_t N>
+    struct Config
     {
-        double eps;                                 // Inequality epsilon
-        double tol;                                 // Constraint tolerance
-        double ftolRel;                             // Relative objective tolerance
-        unsigned int maxEval;                       // Max evaluations
-        std::array<std::string_view, N> paramNames; // Parameter names
+        double eps;                                 ///< Small epsilon used in inequality constraints
+        double tol;                                 ///< Constraint satisfaction tolerance
+        double ftolRel;                             ///< Relative tolerance for objective improvement
+        unsigned int maxEval;                       ///< Maximum number of objective evaluations
+        std::array<std::string_view, N> paramNames; ///< Human-readable parameter names (for logging/debugging)
     };
-}
+}  // namespace uv::math::opt::nlopt

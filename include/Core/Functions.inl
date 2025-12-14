@@ -54,6 +54,33 @@ namespace uv::core
         return *std::max_element(x.begin(), x.end());
     }
 
+
+    template <typename To, typename From>
+    Vector<To> convertVector(const Vector<From>& x) noexcept
+    {
+        Vector<To> out;
+        out.reserve(x.size());
+
+        for (const From& v : x)
+            out.push_back(static_cast<To>(v));
+
+        return out;
+    }
+
+    template <typename To, typename From>
+    Matrix<To> convertMatrix(const Matrix<From>& A) noexcept
+    {
+        Matrix<To> out;
+        out.reserve(A.size());
+
+        for (const auto& row : A)
+        {
+            out.push_back(convertVector<To>(row));
+        }
+
+        return out;
+    }
+
 } // namespace uv::core
 
 

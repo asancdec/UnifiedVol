@@ -167,14 +167,11 @@ namespace uv::core
 
     Matrix<Real> VolSurface::totVarMatrix() const noexcept
     {
-        // Allocate matrix:
-        // outer dimension = tenors (rows)
-        // inner dimension = strikes (columns)        
+      
         Matrix<Real> matrix(
             numTenors_, Vector<Real>(numStrikes_)
         );
 
-        // Populate total variance slices
         for (std::size_t i = 0; i < numTenors_; ++i)
         {
             // Extract total variance slice at tenor i
@@ -185,18 +182,13 @@ namespace uv::core
     }
 
     Matrix<Real> VolSurface::volMatrix() const noexcept
-    {
-        // Allocate matrix:
-        // outer dimension = tenors (rows)
-        // inner dimension = strikes (columns)        
+    {      
         Matrix<Real> matrix(
             numTenors_, Vector<Real>(numStrikes_)
         );
 
-        // Populate total variance slices
         for (std::size_t i = 0; i < numTenors_; ++i)
         {
-            // Extract total variance slice at tenor i
             matrix[i] = slices_[i].vol();
         }
 
@@ -206,26 +198,19 @@ namespace uv::core
     Matrix<Real> VolSurface::varMatrix() const noexcept
     {
         
-        // Extract vol matrix
         Matrix<Real> vol{ volMatrix() };
 
-        // Square volatilites
         return hadamard(vol, vol);
     }
 
     Matrix<Real> VolSurface::logKFMatrix() const noexcept
     {
-        // Allocate matrix:
-        // outer dimension = tenors (rows)
-        // inner dimension = strikes (columns)        
         Matrix<Real> matrix(
             numTenors_, Vector<Real>(numStrikes_)
         );
 
-        // Populate total variance slices
         for (std::size_t i = 0; i < numTenors_; ++i)
         {
-            // Extract total variance slice at tenor i
             matrix[i] = slices_[i].logKF();
         }
 
@@ -257,4 +242,27 @@ namespace uv::core
         return numStrikes_;
     }
 
+    void VolSurface::setWt(const Matrix<Real>& wT)
+    {
+        // ---------- Validate inputs ----------
+
+        UV_REQUIRE(
+            !wT.empty(),
+            ErrorCode::InvalidArgument,
+            "VolSurface::setWt: wT is empty"
+        );
+
+        UV_REQUIRE(
+            wT.size() == numTenors_,
+            ErrorCode::InvalidArgument,
+            "VolSurface::setWt: wT rows must equal number of tenors"
+        );
+
+        // ---------- Validate inputs ----------
+
+        for (std::size_t i; i < numTenors_; ++i)
+        {
+            slices_[i].setWt(wT[i]);
+        }
+    }
 }

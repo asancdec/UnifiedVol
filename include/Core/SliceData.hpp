@@ -60,7 +60,6 @@ namespace uv::core
             const Vector<Real>& vol,
             const MarketData& mktData);
 
-
         //--------------------------------------------------------------------------
         // Getters
         //--------------------------------------------------------------------------
@@ -80,7 +79,7 @@ namespace uv::core
         //--------------------------------------------------------------------------
         // Setters
         //--------------------------------------------------------------------------
-        void setWT(const Vector<Real>& wT);
+        void setWt(const Vector<Real>& wT);
         void setCallBS(const Vector<Real>& callBS);
     };
 }

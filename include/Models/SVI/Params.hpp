@@ -29,13 +29,22 @@
 
 namespace uv::models::svi
 {
-	struct Params
-	{
-		Real T;
-		Real a;
-		Real b;
-		Real rho;
-		Real m;
-		Real sigma;
-	};
+    /**
+     * @brief SVI parameters for one maturity.
+     *
+     * Represents a single calibrated SVI slice describing the
+     * total variance smile at a given maturity.
+     *
+     * The parameter `a` is typically fixed from the ATM total variance
+     * and not optimized directly.
+     */
+    struct Params
+    {
+        Real T;       ///< Maturity (years)
+        Real a;       ///< ATM total variance level
+        Real b;       ///< Smile amplitude
+        Real rho;     ///< Skew parameter (-1 < rho < 1)
+        Real m;       ///< Horizontal shift
+        Real sigma;   ///< Smile curvature / smoothness
+    };
 }

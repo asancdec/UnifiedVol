@@ -168,6 +168,46 @@ namespace uv::core
     template<typename T>
     T maxValue(const Vector<T>& x);
 
+    /**
+     * @brief Convert a vector to another value type.
+     *
+     * Creates and returns a new vector by converting each element of the input
+     * vector `x` to type `To` using `static_cast`.
+     *
+     * The input vector may be empty; in this case, an empty vector is returned.
+     * No shape or validity checks are performed beyond element-wise conversion.
+     *
+     * @tparam To   Target value type.
+     * @tparam From Source value type.
+     *
+     * @param x Input vector.
+     *
+     * @return Vector whose elements are `static_cast<To>(x[i])`.
+     */
+    template <typename To, typename From>
+    Vector<To> convertVector(const Vector<From>& x) noexcept;
+
+    /**
+     * @brief Convert a matrix to another value type.
+     *
+     * Creates and returns a new matrix by converting each element of the input
+     * matrix `A` to type `To` using `static_cast`. The row structure of the matrix
+     * is preserved.
+     *
+     * The input matrix may be empty, and rows may be empty; these cases are handled
+     * naturally and result in an empty matrix or empty rows in the output.
+     *
+     * @tparam To   Target value type.
+     * @tparam From Source value type.
+     *
+     * @param A Input matrix.
+     *
+     * @return Matrix whose elements are `static_cast<To>(A[i][j])`.
+     */
+        template <typename To, typename From>
+    Matrix<To> convertMatrix(const Matrix<From>& A) noexcept;
+
+
 } // namespace uv::core
 
 #include "Functions.inl"

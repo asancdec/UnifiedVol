@@ -29,6 +29,7 @@
 #include "Core/VolSurface.hpp"
 #include "Core/MarketData.hpp"
 #include "Models/SVI/Functions.hpp"
+#include "Models/SVI/Params.hpp"
 #include "Math/PDE/Functions.hpp"
 #include "Models/Heston/Pricer.hpp"
 #include "Models/Heston/Config.hpp"
@@ -90,8 +91,8 @@ int main(int argc, char* argv[])
           Real(485.77548)     // S
         };
 
-        VolSurface mktVolSurf{ readVolSurface(path.string(), marketData) };
-        mktVolSurf.printTotVar();
+        VolSurface mktVolSurface{ readVolSurface(path.string(), marketData) };
+        mktVolSurface.printTotVar();
 
         // ---------- SVI Calibration ----------
 
@@ -107,11 +108,30 @@ int main(int argc, char* argv[])
             }
         };
 
-        auto [sviSlices, sviVolSurface] = svi::calibrate(mktVolSurf, nloptOptimizer);
+        Vector<svi::Params> sviParams
+        { 
+            svi::calibrate
+            (
+                mktVolSurface.tenors(),
+                mktVolSurface.logKFMatrix(),
+                mktVolSurface.totVarMatrix(),
+                nloptOptimizer
+            ) 
+        
+        };
+
+        const VolSurface sviVolSurface
+        {
+            svi::buildSurface
+            (
+                mktVolSurface,
+                sviParams
+            )
+        };
+       
         sviVolSurface.printTotVar();
 
-
-        //// ---------- Heston model calibration ----------
+        // ---------- Heston model calibration ----------
 
         static constexpr std::size_t HestonNodes = 300;
         const TanHSinH<HestonNodes> quad{};
@@ -146,7 +166,7 @@ int main(int argc, char* argv[])
             }
         };
 
-        VolSurface hestonVolurface
+        VolSurface hestonVolSurface
         { 
             heston::calibrator::calibrate
             (
@@ -156,7 +176,7 @@ int main(int argc, char* argv[])
             )
         };
 
-        hestonVolurface.printVol();
+        hestonVolSurface.printVol();
 
         // ---------- Outputs ----------
 

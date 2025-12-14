@@ -173,7 +173,7 @@ namespace uv::core
         return callBS_;
     }
 
-    void SliceData::setWT(const Vector<Real>& wT)
+    void SliceData::setWt(const Vector<Real>& wT)
     {
         // Check matching size
         UV_REQUIRE(wT.size() == numStrikes_, ErrorCode::InvalidArgument,

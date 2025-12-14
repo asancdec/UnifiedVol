@@ -91,5 +91,8 @@ namespace uv::core
         const Vector<Real>& strikes() const noexcept;
         std::size_t numTenors() const noexcept;
         std::size_t numStrikes() const noexcept;
+
+        // Setters
+        void setWt(const Matrix<Real>& wT);
     };
 }
