@@ -72,9 +72,9 @@ namespace uv::models::heston
 		const Real phi{ Pricer<N>::getPhi(kappa, theta, sigma, rho, v0, T, w) };
 
 		// Precomputations
-		constexpr Complex<Real> i(Real(Real(0.0)), Real(Real(1.0)));
+		constexpr Complex<Real> i(Real(0.0), Real(1));
 		const Real tanPhi{ std::tan(phi) };
-		const Complex<Real> onePlusITanPhi{ Real(Real(1.0)) + i * tanPhi };
+		const Complex<Real> onePlusITanPhi{ Real(1) + i * tanPhi };
 		const Complex<Real> c{ (i - tanPhi) * w };
 		const Complex<Real> iAlpha{- i * alpha};
 
@@ -151,9 +151,9 @@ namespace uv::models::heston
 		const Real phi{ Pricer<N>::getPhi(kappa, theta, sigma, rho, v0, T, w) };
 
 		// Precomputations
-		constexpr Complex<Real> i(Real(Real(0.0)), Real(Real(1.0)));
+		constexpr Complex<Real> i(Real(0), Real(1));
 		const Real tanPhi{ std::tan(phi) };
-		const Complex<Real> onePlusITanPhi{ Real(Real(1.0)) + i * tanPhi };
+		const Complex<Real> onePlusITanPhi{ Real(1) + i * tanPhi };
 		const Complex<Real> c{ (i - tanPhi) * w };
 		const Complex<Real> iAlpha{ -i * alpha };
 
@@ -197,12 +197,12 @@ namespace uv::models::heston
 
 				// Precomputations
 				const Real sigma3{ sigma2 * sigma };
-				const Real invTheta{ Real(Real(1.0)) / theta };
+				const Real invTheta{ Real(1) / theta };
 				const Complex<Real> u2{ uu - ui };
 				const Complex<Real> deDT_dD{ -T * eDT };
 
 				// Derivatives of beta
-				constexpr Complex<Real> dbeta_dk{ Real(Real(1.0)), Real(Real(0.0)) };
+				constexpr Complex<Real> dbeta_dk{ Real(1), Real(0.0) };
 				const Complex<Real>     dbeta_ds{ -rho * ui };
 				const Complex<Real>     dbeta_dr{ -sigma * ui };
 
@@ -214,7 +214,7 @@ namespace uv::models::heston
 				// g' helper
 				const auto dg_from = [&D, &denomG, &beta](const Complex<Real>& dbeta, const Complex<Real>& dD) noexcept -> Complex<Real>
 					{
-						return Real(Real(2.0)) * (D * dbeta - beta * dD) / denomG;
+						return Real(2) * (D * dbeta - beta * dD) / denomG;
 					};
 
 				// Derivatives of g
@@ -226,21 +226,21 @@ namespace uv::models::heston
 				const auto dB_from = [&](const Complex<Real>& dbeta, const Complex<Real>& dD, Real dC) noexcept -> Complex<Real>
 					{
 						// Prefactor derivative wrt (beta, D, C=sigma)
-						const Complex<Real> d_one_over_C2{ (-Real(Real(2.0)) * dC) / sigma3 };
+						const Complex<Real> d_one_over_C2{ (-Real(2) * dC) / sigma3 };
 						const Complex<Real> dpref{ (dbeta - dD) * invSigma2 + betaMinusD * d_one_over_C2 };
 
 						// Fraction derivative using cached inverses
 						const Complex<Real> dN1{ (+deDT_dD) * (-dD) };
 						const Complex<Real> dQ{ -(dg_from(dbeta, dD) * eDT) - g * (deDT_dD * dD) };
-						const Complex<Real> dfrac{ (dN1 * Q - (Real(Real(1.0)) - eDT) * dQ) * invQ2 };
+						const Complex<Real> dfrac{ (dN1 * Q - (Real(1) - eDT) * dQ) * invQ2 };
 
 						return dpref * fracB + betaMinusDinvSigma2 * dfrac;
 					};
 
 				// dC for each parameter (C := sigma)
-				constexpr Real dC_dk{ Real(Real(0.0)) };
-				constexpr Real dC_ds{ Real(Real(1.0)) };
-				constexpr Real dC_dr{ Real(Real(0.0)) };
+				constexpr Real dC_dk{ Real(0.0) };
+				constexpr Real dC_ds{ Real(1) };
+				constexpr Real dC_dr{ Real(0.0) };
 
 				// B partials
 				const Complex<Real> dB_dk{ dB_from(dbeta_dk, dD_dk, dC_dk) };
@@ -250,13 +250,13 @@ namespace uv::models::heston
 				// A' pieces
 				const Complex<Real> dK_dk{ theta * invSigma2 };
 				const Complex<Real> dK_ds{ (Real(-Real(2.0)) * kappaTheta) / sigma3 };
-				constexpr Complex<Real> dK_dr{ Real(Real(0.0)), Real(Real(0.0))};
+				constexpr Complex<Real> dK_dr{ Real(0.0), Real(0.0)};
 
 				// S' helper
 				const auto dS_from = [&](const Complex<Real>& dbeta, const Complex<Real>& dD, const Complex<Real>& dg) noexcept -> Complex<Real>
 					{
 						const Complex<Real> dQ{ -(dg * eDT + g * (deDT_dD * dD)) };
-						return (dbeta - dD) * T - Real(Real(2.0)) * (dQ * invQ + dg / R);
+						return (dbeta - dD) * T - Real(2) * (dQ * invQ + dg / R);
 					};
 
 				// S partials
@@ -307,11 +307,11 @@ namespace uv::models::heston
 	{
 		params_ = Params
 		{
-			Real(params[0]), // kappa
-			Real(params[1]), // theta
-			Real(params[2]), // sigma
-			Real(params[3]), // rho
-			Real(params[4])  // v0 
+			Real(params[0]),  // kappa
+			Real(params[1]),  // theta
+			Real(params[2]),  // sigma
+			Real(params[3]),  // rho
+			Real(params[4])   // v0 
 		};
 	}
 
@@ -320,14 +320,14 @@ namespace uv::models::heston
 		const Real F,
 		const Real K) noexcept
 	{
-		if (alpha < -Real(Real(1.0))) return F - K;
-		else return Real(Real(0.0));
+		if (alpha < -Real(1)) return F - K;
+		else return Real(0.0);
 	}
 
 	template <std::size_t N>
 	Real Pricer<N>::getAlpha(Real w) const noexcept
 	{
-		if (w >= Real(Real(0.0))) return config_.alphaItm;
+		if (w >= Real(0.0)) return config_.alphaItm;
 		else return config_.alphaOtm;
 	}
 
@@ -340,7 +340,7 @@ namespace uv::models::heston
 		Real T,
 		Real w) noexcept
 	{
-		if ((w * (rho - sigma * w / (v0 + kappa * theta * T))) >= Real(Real(0.0))) return Real(Real(0.0));
+		if ((w * (rho - sigma * w / (v0 + kappa * theta * T))) >= Real(0.0)) return Real(0.0);
 		else return std::copysign(std::numbers::pi_v<Real> / Real(Real(12.0)), w);
 	}
 
@@ -354,7 +354,7 @@ namespace uv::models::heston
 		const Complex<Real>& u) noexcept
 	{
 		// Define i 
-		constexpr Complex<Real> i{ Real(Real(0.0)), Real(Real(1.0)) };
+		constexpr Complex<Real> i{ Real(0.0), Real(1) };
 
 		// u * ( u+ 1)
 		Complex<Real> uu{ u * (u + i) };
@@ -374,7 +374,7 @@ namespace uv::models::heston
 		// beta - D
 		const Complex<Real> r
 		{
-			(std::real(beta * std::conj(D)) > Real(Real(0.0)))
+			(std::real(beta * std::conj(D)) > Real(0.0))
 			? -sigma2 * uu / betaPlusD
 			: beta - D
 		};
@@ -383,19 +383,19 @@ namespace uv::models::heston
 		const Complex<Real> DT{ D * T };
 		Complex<Real> y
 		{
-			(std::norm(D) > std::numeric_limits<Real>::epsilon() * (Real(Real(1.0)) + std::abs(DT)))
-			? math::expm1Complex(-DT) / (Real(Real(2.0)) * D)
-			: Complex<Real>(-T / Real(Real(2.0)))
+			(std::norm(D) > std::numeric_limits<Real>::epsilon() * (Real(1) + std::abs(DT)))
+			? math::expm1Complex(-DT) / (Real(2) * D)
+			: Complex<Real>(-T / Real(2))
 		};
 
 		// r * y 
 		const Complex<Real> ry{ r * y };
 
 		// A := (κ * theta / sigma^2) * (r * T − 2 * log1p(−r * y))
-		const Complex<Real> A{(kappa * theta / sigma2) * (r * T - Real(Real(2.0)) * math::log1pComplex<Real>(-ry))	};
+		const Complex<Real> A{(kappa * theta / sigma2) * (r * T - Real(2) * math::log1pComplex<Real>(-ry))	};
 
 		// B := u * (u + i) * y / (1 − r * y)
-		const Complex<Real> B{ uu * y / (Real(Real(1.0)) - ry) };
+		const Complex<Real> B{ uu * y / (Real(1) - ry) };
 
 		// psi(u) := e^( A + v0 * B),
 		return std::exp(A + v0 * B);
@@ -411,7 +411,7 @@ namespace uv::models::heston
 		const Complex<Real>& u) noexcept
 	{
 		// i
-		constexpr Complex<Real> i{ Real(Real(0.0)), Real(Real(1.0)) };
+		constexpr Complex<Real> i{ Real(0.0), Real(1) };
 
 		// u * (u + i)
 		const Complex<Real> uu{ u * (u + i) };
@@ -420,7 +420,7 @@ namespace uv::models::heston
 		const Real sigma2{ sigma * sigma };
 
 		// 1 / sigma^2
-		const Real invSigma2{ Real(Real(1.0)) / sigma2 };
+		const Real invSigma2{ Real(1) / sigma2 };
 
 		// u * i
 		const Complex<Real> ui{ u * i };
@@ -437,7 +437,7 @@ namespace uv::models::heston
 		// beta - D  (stable branch)
 		const Complex<Real> betaMinusD
 		{
-			(std::real(beta * std::conj(D)) > Real(Real(0.0)))
+			(std::real(beta * std::conj(D)) > Real(0.0))
 			? -sigma2 * uu / betaPlusD
 			: beta - D
 		};
@@ -449,9 +449,9 @@ namespace uv::models::heston
 		const Complex<Real> y
 		{
 			(std::norm(D) > std::numeric_limits<Real>::epsilon() *
-							  (Real(Real(1.0)) + std::abs(DT)))
-			? math::expm1Complex(-DT) / (Real(Real(2.0)) * D)
-			: Complex<Real>(-T / Real(Real(2.0)))
+							  (Real(1) + std::abs(DT)))
+			? math::expm1Complex(-DT) / (Real(2) * D)
+			: Complex<Real>(-T / Real(2))
 		};
 
 		// r * y
@@ -464,10 +464,10 @@ namespace uv::models::heston
 		const Complex<Real> kFac{ kappaTheta * invSigma2 };
 
 		// A := (kappa*theta/sigma^2) * (r*T − 2 log(1 - r*y))
-		const Complex<Real> A{ kFac * (betaMinusD * T - Real(Real(2.0))* math::log1pComplex<Real>(-ry)) };
+		const Complex<Real> A{ kFac * (betaMinusD * T - Real(2) * math::log1pComplex<Real>(-ry)) };
 
 		// B := u(u+i)*y / (1 − r*y)
-		const Complex<Real> B{ uu * y / (Real(Real(1.0)) - ry) };
+		const Complex<Real> B{ uu * y / (Real(1.0) - ry) };
 
 		// Rescued intermediates for gradient path
 
@@ -478,41 +478,40 @@ namespace uv::models::heston
 		const Complex<Real> g{ betaMinusD / betaPlusD };
 
 		// Q := 1 - g * eDT
-		const Complex<Real> Q{ Real(Real(1.0)) - g * eDT };
+		const Complex<Real> Q{ Real(1) - g * eDT };
 
 		// 1/Q and 1/Q^2
-		const Complex<Real> invQ{ Real(Real(1.0)) / Q };
+		const Complex<Real> invQ{ Real(1) / Q };
 
 		// R := 1 - g
-		const Complex<Real> R{ Real(Real(1.0)) - g };
+		const Complex<Real> R{ Real(1) - g };
 
-		// Return full CharFunCache
-		return
+		return CharFunCache
 		{
-			std::exp(A + v0 * B),									 // psi(u) := exp( A + v0 * B )
-			A,													 	 // A := (kappa*theta/sigma^2)*( r*T − 2*log(1 − r*y) )
-			B,														 // B := u(u+i)*y / (1 − r*y)
-			beta,													 // beta := kappa − sigma*rho*(i*u)
-			D,														 // D := sqrt( beta^2 + sigma^2*u(u+i) )
-			DT,														 // DT := D*T
+			std::exp(A + v0 * B),									// psi(u) := exp( A + v0 * B )
+			A,													    // A := (kappa*theta/sigma^2)*( r*T − 2*log(1 − r*y) )
+			B,														// B := u(u+i)*y / (1 − r*y)
+			beta,													// beta := kappa − sigma*rho*(i*u)
+			D,														// D := sqrt( beta^2 + sigma^2*u(u+i) )
+			DT,														// DT := D*T
 			betaPlusD,												// beta + D
 			betaMinusD,												// beta − D   (stable)
 			ui,														// ui := u*i
 			kFac,													// kFac := (kappa*theta)/sigma^2
 			invSigma2,												// 1 / sigma^2
 			kappaTheta,												// kappa * theta
-			sigma2,                                     // sigma^2
-			uu,                                         // uu := u(u+i)
-			eDT,                                        // eDT := exp( −DT )
-			betaMinusD / betaPlusD,                     // g := (beta−D)/(beta+D)
-			Q,                                          // Q := 1 − g*eDT
-			invQ,                                       // 1 / Q
-			invQ * invQ,                                // 1 / Q^2
-			R,                                          // R := 1 − g
-			betaMinusD * T - Real(Real(2.0)) * std::log(Q / R),    // S := (beta−D)*T − 2*log(Q/R)
-			(Real(Real(1.0)) - eDT) * invQ,                        // fracB := (1 − eDT) / Q
-			betaPlusD * betaPlusD,                      // denomG := (beta + D)^2
-			betaMinusD * invSigma2                      // betaMinusD / sigma^2
+			sigma2,													// sigma^2
+			uu,														// uu := u(u+i)
+			eDT,												    // eDT := exp( −DT )
+			betaMinusD / betaPlusD,								    // g := (beta−D)/(beta+D)
+			Q,                                                      // Q := 1 − g*eDT
+			invQ,                                                   // 1 / Q
+			invQ * invQ,                                            // 1 / Q^2
+			R,                                                      // R := 1 − g
+			betaMinusD * T - Real(2) * std::log(Q / R),             // S := (beta−D)*T − 2*log(Q/R)
+			(Real(1) - eDT) * invQ,                                 // fracB := (1 − eDT) / Q
+			betaPlusD * betaPlusD,									// denomG := (beta + D)^2
+			betaMinusD * invSigma2                                  // betaMinusD / sigma^2
 		};
 	}
 }

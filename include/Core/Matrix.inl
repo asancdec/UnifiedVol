@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * File:        Config.hpp
+ * File:        Matrix.hpp
  * Author:      Alvaro Sanchez de Carlos
  * Created:     2025-12-08
  *
@@ -22,25 +22,15 @@
  * limitations under this License.
  */
 
-
-#pragma once
-
-#include "Utils/Types.hpp"
-
-#include <limits>
-
-namespace uv::models::heston
+namespace uv::core
 {
-    /**
-     * @brief Configuration parameters for the Heston Fourier / contour-shift pricer.
-     *
-     * Stores damping parameters used to ensure integrability of the pricing integral,
-     * plus a small numerical epsilon used for stability guards.
-     */
-    struct Config
-    {
-        Real alphaItm;                                    ///< Damping parameter when ln(F/K) >= 0 (ITM region).
-        Real alphaOtm;                                    ///< Damping parameter when ln(F/K) < 0  (OTM region).
-        Real eps{ std::numeric_limits<Real>::epsilon() }; ///< Numerical epsilon (defaults to machine epsilon).
-    };
-}
+
+    template <std::floating_point T>
+    MatrixT<T>::MatrixT(const T val,
+        const std::size_t numRows,
+        const std::size_t numColumns) noexcept
+        : numRows_(numRows),
+        numColumns_(numColumns),
+        data_(numRows * numColumns, val) { }
+
+} // namespace uv::core

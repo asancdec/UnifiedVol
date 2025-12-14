@@ -29,12 +29,22 @@
 
 namespace uv::models::heston
 {
-	struct Params
-	{
-		Real kappa;  // Mean reversion speed
-		Real theta;  // Long term variance
-		Real sigma;  // Volatility of variance
-		Real rho;    // Correlation
-		Real v0;     // Initial variance
-	};
+    /**
+     * @brief Heston stochastic volatility model parameters.
+     *
+     * The Heston model dynamics are commonly written as:
+     *  - dS_t = (r - q) S_t dt + sqrt(v_t) S_t dW^S_t
+     *  - dv_t = kappa (theta - v_t) dt + sigma sqrt(v_t) dW^v_t
+     *  - corr(dW^S_t, dW^v_t) = rho
+     *
+     * This struct stores the five scalar parameters required by the model.
+     */
+    struct Params
+    {
+        Real kappa;  ///< Mean reversion speed of variance (kappa > 0).
+        Real theta;  ///< Long-run variance level (theta >= 0).
+        Real sigma;  ///< Volatility of variance ("vol-of-vol", sigma >= 0).
+        Real rho;    ///< Correlation between spot and variance Brownian motions (rho in [-1, 1]).
+        Real v0;     ///< Initial variance at t = 0 (v0 >= 0).
+    };
 }

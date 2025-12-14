@@ -97,7 +97,8 @@ namespace uv::models::heston::calibrator
 		}
 		return hestonVolSurf;  // RVO C++20
 	}
-} // namespace uv::models::heston_calibrator
+} // namespace uv::models::heston::calibrator:
+
 
 namespace uv::models::heston::calibrator::detail
 {   

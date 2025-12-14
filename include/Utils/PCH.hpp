@@ -29,9 +29,10 @@
 #include "Utils/IO/Log.hpp"
 #include "Utils/Aux/StopWatch.hpp"
 
-// ---------- Market data ----------
+// ---------- Core Data ----------
 #include "Core/VolSurface.hpp"
 #include "Core/MarketData.hpp"
+#include "Core/Matrix.hpp"
 
 // ---------- Models ----------
 #include "Models/SVI/Functions.hpp"

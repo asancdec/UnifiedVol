@@ -32,7 +32,7 @@ namespace uv::core
     /**
      * @brief Transpose a dense matrix stored as a vector of row vectors.
      *
-     * @tparam Real        Element type.
+     * @tparam Real     Element type.
      * @param  input    Matrix with shape [numRows][numCols].
      * @return          Transposed matrix with shape [numCols][numRows].
      */
@@ -198,7 +198,7 @@ namespace uv::core
      *
      * @return Matrix whose elements are `static_cast<To>(A[i][j])`.
      */
-        template <typename To, typename From>
+    template <typename To, typename From>
     Matrix<To> convertMatrix(const Matrix<From>& A) noexcept;
 
 

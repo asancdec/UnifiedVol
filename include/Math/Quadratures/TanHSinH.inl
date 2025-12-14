@@ -44,7 +44,7 @@ namespace uv::math
 			// Define optimal step size using a heuristic rule
 			boost::math::lambert_w0
 			(
-				Real(Real(2.0)) * std::numbers::pi_v<Real> * Real(N)
+				Real(2) * std::numbers::pi_v<Real> * Real(N)
 			)
 			/ Real(N)
 		)
@@ -70,10 +70,10 @@ namespace uv::math
 		constexpr Real eps{ std::numeric_limits<Real>::epsilon() };
 
 		// Accumulated sums
-		std::array<Real, M>  sR0{ Real(Real(0.0))},
-			sR1{ Real(Real(0.0))},
-			sL0{ Real(Real(0.0))},
-			sL1{ Real(Real(0.0))};
+		std::array<Real, M>  sR0{ Real(0.0)},
+			sR1{ Real(0.0)},
+			sL0{ Real(0.0)},
+			sL1{ Real(0.0)};
 
 		// Bit sets to indicate when done
 		std::bitset<M> actR0, actR1, actL0, actL1;
@@ -93,7 +93,7 @@ namespace uv::math
 			// Only evaluate func if at least one component needs it
 			std::array<Real, M> ta;
 			std::array<Real, M> tb;
-			Real fa{ Real(Real(0.0)) }, fb{ Real(Real(0.0)) };
+			Real fa{ Real(0.0) }, fb{ Real(0.0) };
 			if (anyA)
 			{
 				const Node& a{ nodes_[i] };
@@ -138,7 +138,7 @@ namespace uv::math
 			// Only evaluate func if at least one component needs it
 			std::array<Real, M> ta;
 			std::array<Real, M> tb;
-			Real fa{ Real(Real(0.0)) }, fb{ Real(Real(0.0)) };
+			Real fa{ Real(0.0) }, fb{ Real(0.0) };
 			if (anyA)
 			{
 				const Node& a{ nodes_[i] };
@@ -186,7 +186,7 @@ namespace uv::math
 		constexpr Real eps{ std::numeric_limits<Real>::epsilon() };
 
 		// Accumulated sums
-		Real sR0{ Real(Real(0.0)) }, sR1{ Real(Real(0.0)) }, sL0{ Real(Real(0.0)) }, sL1{ Real(Real(0.0)) };
+		Real sR0{ Real(0.0) }, sR1{ Real(0.0) }, sL0{ Real(0.0) }, sL1{ Real(0.0) };
 
 		// Define forwarded callable
 		auto&& func = std::forward<F>(f);
@@ -287,16 +287,16 @@ namespace uv::math
 		const Real q{ std::exp(-std::numbers::pi_v<Real> * std::sinh(nh)) };
 
 		// 1 / (1 + q)
-		const Real qInv{ Real(Real(1.0)) / (Real(Real(1.0)) + q) };
+		const Real qInv{ Real(1) / (Real(1) + q) };
 
 		// Calculate y term
-		const Real y{ Real(Real(2.0)) * q * qInv };
+		const Real y{ Real(2) * q * qInv };
 
 		// Calculate w
 		const Real w{ qInv * y * std::numbers::pi_v<Real>*std::cosh(nh) };
 
 		// Real(2.0) - y
-		const Real twoMinusY{ Real(Real(2.0)) - y };
+		const Real twoMinusY{ Real(2) - y };
 
 		// w * h
 		const Real wh{w * h_};
@@ -306,10 +306,10 @@ namespace uv::math
 		{
 			w,                                                      // weight value
 			y,                                                      // yn term
-			(Real(Real(1.0)) - q) * qInv,                           // abscissas value
-			wh * Real(Real(2.0)) / (y * y),                         // scaling term RHS
+			(Real(1) - q) * qInv,                           // abscissas value
+			wh * Real(2) / (y * y),                         // scaling term RHS
 			twoMinusY / y,										    // transformed input RHS
-			wh * Real(Real(2.0)) / (twoMinusY * twoMinusY),         // scaling term LHS
+			wh * Real(2) / (twoMinusY * twoMinusY),         // scaling term LHS
 			y / twoMinusY 									        // transformed input LHS
 		};
 	}
