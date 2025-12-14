@@ -125,37 +125,6 @@ namespace uv::math::interp
 		const Vector<T>& ys
 	);
 
-	///**
-	// * @brief 2D tensor-product PCHIP interpolation on a rectangular grid.
-	// *
-	// * Performs shape-preserving piecewise cubic Hermite interpolation (PCHIP)
-	// * along both dimensions of a 2D dataset defined on a rectangular grid.
-	// *
-	// * ### Method
-	// *
-	// * 1. Interpolate along x-direction for each fixed y (row pass).
-	// * 2. Transpose intermediate matrix so columns become rows.
-	// * 3. Interpolate along y-direction using identical row logic.
-	// * 4. Transpose back to obtain final layout (y.size() × x.size()).
-	// *	 
-	// * @tparam T    Floating-point type satisfying std::floating_point.
-	// *
-	// * @param x     Target grid along x-axis (e.g. strikes), size Mx.
-	// * @param y     Target grid along y-axis (e.g. maturities), size My.
-	// * @param xs    Source x-grid, strictly increasing, size Nx.
-	// * @param ys    Source y-grid, strictly increasing, size Ny.
-	// * @param zs    Rectangular matrix of samples f(ys[i], xs[j]).
-	// *
-	// * @return      Matrix of size y.size() × x.size() containing
-	// *              2D PCHIP-interpolated values.
-	// */
-	//template <std::floating_point T>
-	//Matrix<T> pchipInterp2D(const Vector<T>& x,
-	//	const Vector<T>& y,
-	//	const Vector<T>& xs,
-	//	const Vector<T>& ys,
-	//	const Matrix<T>& zs);
-
 	/**
 	 * @brief Cubic Hermite interpolation with precomputed tangent slopes.
 	 *

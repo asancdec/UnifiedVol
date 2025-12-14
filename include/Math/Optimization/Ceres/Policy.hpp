@@ -22,7 +22,6 @@
  * limitations under this License.
  */
 
-
 #pragma once
 
 #include <ceres/ceres.h>
@@ -30,7 +29,17 @@
 #include <type_traits>
 
 namespace uv::math::opt::ceres
-{
+{   
+    /**
+     * @brief Compile-time policy for configuring Ceres optimisation behaviour.
+     *
+     * Encapsulates solver strategy selection and optional robust loss
+     * construction via template parameters.
+     *
+     * @tparam LossType Robust loss type (e.g. ceres::HuberLoss). Use `void` for no loss.
+     * @tparam TrustRegionStrategy Ceres trust-region strategy (default: Levenberg–Marquardt).
+     * @tparam LinearSolver Linear solver type used by Ceres.
+     */
     template    
     <
     typename LossType = void,
@@ -39,19 +48,23 @@ namespace uv::math::opt::ceres
     >
     struct Policy
     {
-        // Solver configuration
+        // ---------- Solver configurations ----------
+
         static constexpr ::ceres::TrustRegionStrategyType trustRegionStrategy = TrustRegionStrategy;
         static constexpr ::ceres::LinearSolverType linearSolver = LinearSolver;
 
-        // Build the loss or return nullptr when Loss=void
+        // ---------- Robust loss construction ----------
+
         static std::unique_ptr<::ceres::LossFunction> makeLoss(double lossParam)
         {
             if constexpr (std::is_same_v<LossType, void>) 
             {
-                return nullptr;
+                // No robust loss
+                return nullptr; 
             }
             else 
             {
+                // Construct loss with scale parameter
                 return std::make_unique<LossType>(lossParam);
             }
         }

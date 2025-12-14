@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * File:        MarketData.hpp
+ * File:        PCH.hpp
  * Author:      Alvaro Sanchez de Carlos
  * Created:     2025-12-08
  *
@@ -22,29 +22,29 @@
  * limitations under this License.
  */
 
-
 #pragma once
 
+// ---------- Core I/O ----------
+#include "Utils/IO/CSVRead.hpp"
+#include "Utils/IO/Log.hpp"
+#include "Utils/Aux/StopWatch.hpp"
+
+// ---------- Market data ----------
+#include "Core/VolSurface.hpp"
+#include "Core/MarketData.hpp"
+
+// ---------- Models ----------
+#include "Models/SVI/Functions.hpp"
+#include "Models/SVI/Params.hpp"
+#include "Models/Heston/Pricer.hpp"
+#include "Models/Heston/Config.hpp"
+#include "Models/Heston/Calibrator.hpp"
+
+// ---------- Utils ----------
+#include "Utils/Aux/Errors.hpp"
 #include "Utils/Types.hpp"
 
-namespace uv::core
-{
-    /**
-     * @brief Container for basic market inputs.
-     *
-     * Holds the minimal set of continuously compounded market parameters
-     * required by pricing and calibration routines.
-     *
-     * All quantities are expressed under the same measure and conventions:
-     * - interest rates and yields are continuously compounded
-     * - spot price is expressed in domestic currency units
-     *
-     * This struct is a passive data holder with no invariants enforced.
-     */
-    struct MarketData
-    {
-        Real r;   // Continuously compounded risk-free rate
-        Real q;   // Continuously compounded dividend yield
-        Real S;   // Spot price
-    };
-} // namespace uv::core
+// ---------- Math ----------
+#include "Math/Quadratures/TanHSinH.hpp"
+#include "Math/Optimization/Ceres/Policy.hpp"
+#include "Math/Optimization/Ceres/Config.hpp"

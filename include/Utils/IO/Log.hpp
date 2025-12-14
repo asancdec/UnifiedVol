@@ -24,57 +24,138 @@
 
 
 #pragma once
+
 #include <fstream>
 #include <string_view>
 
 namespace uv
 {
-    enum class Level { Info, Warn };
+    /**
+     * @brief Log severity level.
+     */
+    enum class Level
+    {
+        Info,   ///< Informational message
+        Warn    ///< Warning message
+    };
 
+    /**
+     * @brief Central logging facility for UnifiedVol.
+     *
+     * Implements a lightweight singleton logger supporting:
+     * - console output (stdout)
+     * - file output under <project_root>/logs/
+     *
+     * Logging is timestamped with millisecond precision and formatted
+     * consistently across the library.
+     *
+     * The logger is configured once at startup (typically in @c main()).
+     *
+     * @note This class is not thread-safe.
+     * @note File output is optional and disabled by default.
+     */
     class Log
     {
     public:
-        // Singleton instance
+        /**
+         * @brief Retrieve the global logger instance.
+         *
+         * Uses the Meyers singleton pattern.
+         *
+         * @return Reference to the global @ref Log instance.
+         */
         static Log& instance();
 
-        // Enable file output (writes to <project_root>/logs/<path>).
+        /**
+         * @brief Enable file logging.
+         *
+         * Opens a log file located at:
+         *   <project_root>/logs/<path>
+         *
+         * The project root is detected by walking up the directory tree until
+         * a CMakeLists.txt file is found.
+         *
+         * @param path Log file name (relative, without directories).
+         *
+         * @throws UnifiedVolError if the directory or file cannot be created.
+         */
         void setFile(std::string_view path);
 
-        // Enable or disable console output
+        /**
+         * @brief Enable or disable console logging.
+         *
+         * @param enabled If true, log messages are printed to std::cout.
+         */
         void enableConsole(bool enabled) noexcept;
 
-        // Core logging API (prints to console; also to file if enabled).
+        /**
+         * @brief Core logging API.
+         *
+         * Formats and writes a log entry with timestamp and severity level.
+         * The message is written to:
+         * - std::cout (if console logging is enabled)
+         * - the log file (if file logging is enabled)
+         *
+         * @param lvl Log severity level.
+         * @param msg Message to log.
+         */
         void log(Level lvl, std::string_view msg);
 
     private:
-        Log(); // private constructor to enforce singleton pattern
-        std::ofstream file_;
-        bool fileEnabled_{ false };
-        bool consoleEnabled_{ true };
+        /**
+         * @brief Private constructor to enforce singleton pattern.
+         */
+        Log();
+
+        std::ofstream file_;     ///< Log file stream
+        bool fileEnabled_{ false };///< Whether file logging is enabled
+        bool consoleEnabled_{ true }; ///< Whether console logging is enabled
     };
 
-    // ---------------------------------------------------------------------------
-    // Macros
-    // ---------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
+    // Logging macros
+    // -------------------------------------------------------------------------
 
-    // Configure file output once at startup (e.g. in main()).
-    #define UV_LOG_TO_FILE(pathstr) \
+    /**
+     * @brief Enable file logging.
+     *
+     * Typically called once at program startup.
+     *
+     * @param pathstr Log file name (relative to <project_root>/logs).
+     */
+#define UV_LOG_TO_FILE(pathstr) \
         Log::instance().setFile((pathstr))
 
-    // Enable or disable console logging
-    #define UV_LOG_CONSOLE(enabled) \
+     /**
+      * @brief Enable or disable console logging.
+      *
+      * @param enabled Boolean flag.
+      */
+#define UV_LOG_CONSOLE(enabled) \
         Log::instance().enableConsole((enabled))
 
-    // Info-level message (always printed)
-    #define UV_INFO(msg) \
+      /**
+       * @brief Emit an informational log message.
+       *
+       * @param msg Message to log.
+       */
+#define UV_INFO(msg) \
         Log::instance().log(Level::Info, (msg))
 
-    // Warning message, printed only if condition is true
-    #define UV_WARN(cond, msg) \
+       /**
+        * @brief Emit a warning log message conditionally.
+        *
+        * The message is logged only if the condition evaluates to true.
+        *
+        * @param cond Condition to test.
+        * @param msg  Message to log if condition holds.
+        */
+#define UV_WARN(cond, msg) \
         do { \
             if (cond) \
                 Log::instance().log(Level::Warn, (msg)); \
         } while (0)
+
 } // namespace uv
 
 

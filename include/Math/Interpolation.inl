@@ -58,41 +58,6 @@ namespace uv::math::interp
 		return pchipInterp(Vector<T>{ x }, xs, ys)[0];
 	}
 
-	//template <std::floating_point T>
-	//Matrix<T> pchipInterp2D(const Vector<T>& x,   
-	//	const Vector<T>& y,  
-	//	const Vector<T>& xs,   
-	//	const Vector<T>& ys, 
-	//	const Matrix<T>& zs)    
-	//{
-
-	//	// ---------- Interpolate across rows ----------
-
-	//	const Matrix<T> tmp
-	//	{
-	//		details::pchipInterpRows
-	//		(
-	//			x,
-	//			xs,
-	//			zs
-	//		) 
-	//	};
-
-	//	// ---------- Interpolate across columns ----------
-
-	//	const Matrix<T> tmpT
-	//	{
-	//		details::pchipInterpRows
-	//		(
-	//			y,
-	//			ys,
-	//			uv::core::transposeMatrix(tmp)
-	//		)
-	//	};
-
-	//	return uv::core::transposeMatrix(tmpT);
-	//}
-
 	template <std::floating_point T>
 	Vector<T> hermiteSplineInterp(const Vector<T>& x,
 		const Vector<T>& xs,

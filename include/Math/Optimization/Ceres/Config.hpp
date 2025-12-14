@@ -31,15 +31,23 @@
 
 namespace uv::math::opt::ceres
 {
-	template <std::size_t N>
-	struct Config
+    /**
+     * @brief Configuration for Ceres-based optimisation.
+     *
+     * Groups solver tolerances, iteration limits, and logging options used by
+     * the Ceres optimiser wrapper.
+     *
+     * @tparam N Number of optimisation parameters.
+     */
+    template <std::size_t N>
+    struct Config
     {
         unsigned maxEval;                               // Maximum number of iterations / function evaluations
         double functionTol;                             // Function tolerance → stop when relative cost improvement < threshold
         double paramTol;                                // Parameter tolerance → stop when parameter updates are below threshold
         std::array<std::string_view, N> paramNames;     // Parameter names (for logging and diagnostics)
-        double gradientTol{ double(0.0) };              // Gradient tolerance → stop when ∥Jᵀr∥ < threshold (stationarity)
-        double lossScale{ double(1.0) };                // Loss function scale (e.g., δ for Huber or Cauchy)
-        bool verbose{false};                            // Logs the full Ceres calibration report 
+        double gradientTol{ 0.0 };                      // Gradient tolerance → stop when ∥Jᵀr∥ < threshold (stationarity)
+        double lossScale{ 1.0 };                        // Loss function scale (e.g., δ for Huber or Cauchy)
+        bool verbose{ false };                          // Logs the full Ceres calibration report
     };
 }

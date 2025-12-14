@@ -304,13 +304,13 @@ namespace uv::math
 		// Calculate and return Node struct
 		return
 		{
-			w,                                                                // weight value
-			y,                                                                // yn term
-			(Real(Real(1.0)) - q) * qInv,                                                // abscissas value
-			wh * Real(Real(2.0)) / (y * y),                                              // scaling term RHS
-			twoMinusY / y,												      // transformed input RHS
-			wh * Real(Real(2.0)) / (twoMinusY * twoMinusY),                              // scaling term LHS
-			y / twoMinusY 												      // transformed input LHS
+			w,                                                      // weight value
+			y,                                                      // yn term
+			(Real(Real(1.0)) - q) * qInv,                           // abscissas value
+			wh * Real(Real(2.0)) / (y * y),                         // scaling term RHS
+			twoMinusY / y,										    // transformed input RHS
+			wh * Real(Real(2.0)) / (twoMinusY * twoMinusY),         // scaling term LHS
+			y / twoMinusY 									        // transformed input LHS
 		};
 	}
 }

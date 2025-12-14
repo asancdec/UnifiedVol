@@ -84,12 +84,6 @@ namespace uv::core
     /**
      * @brief Compute the element-wise reciprocal of a vector.
      *
-     * This function returns a vector @p r such that
-     * @f[
-     *   r_i = \frac{1}{v_i}
-     * @f]
-     * for all valid indices.
-     *
      * @param v Input vector.
      * @return A new vector where each entry equals <tt>1 / v[i]</tt>.
      *

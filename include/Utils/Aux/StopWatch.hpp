@@ -31,6 +31,20 @@
 
 namespace uv::utils
 {
+    /**
+     * @brief Lightweight RAII-style stopwatch for wall-clock timing.
+     *
+     * Provides simple start/stop/reset semantics and supports querying
+     * elapsed time in arbitrary chrono periods.
+     *
+     * Typical use cases:
+     * - timing calibration routines
+     * - profiling numerical kernels
+     * - logging elapsed wall-clock time
+     *
+     * @note This class measures wall-clock time, not CPU time.
+     * @note Not thread-safe.
+     */
     class StopWatch
     {
     private:
@@ -38,48 +52,82 @@ namespace uv::utils
         //--------------------------------------------------------------------------
         // Member variables
         //--------------------------------------------------------------------------
-        std::chrono::high_resolution_clock::time_point startTime_;
-        std::chrono::high_resolution_clock::time_point endTime_;
-        bool running_;
+
+        std::chrono::high_resolution_clock::time_point startTime_; // Start timestamp
+        std::chrono::high_resolution_clock::time_point endTime_;   // End timestamp
+        bool running_;                                             // Whether the stopwatch is running
 
         //--------------------------------------------------------------------------
-        // Initialization
-        //--------------------------------------------------------------------------   
-        // Private copy constructor to prevent copying
+        // Copy prevention
+        //--------------------------------------------------------------------------
+
+        /// Deleted copy constructor (StopWatch is non-copyable).
         StopWatch(const StopWatch&);
 
-        // Private copy assignment operator to prevent assignment
+        /// Deleted copy assignment operator (StopWatch is non-copyable).
         StopWatch& operator=(const StopWatch&);
 
     public:
 
         //--------------------------------------------------------------------------
         // Initialization
-        //--------------------------------------------------------------------------   
+        //--------------------------------------------------------------------------
+
+        /**
+         * @brief Construct a stopped stopwatch with zero elapsed time.
+         */
         StopWatch();
 
         //--------------------------------------------------------------------------
-        // Time
-        //-------------------------------------------------------------------------   
+        // Time control
+        //--------------------------------------------------------------------------
 
-        // Starts the stopwatch if it is not already running
+        /**
+         * @brief Start the stopwatch.
+         *
+         * Has no effect if the stopwatch is already running.
+         */
         void StartStopWatch() noexcept;
 
-        // Stops the stopwatch if it is running
+        /**
+         * @brief Stop the stopwatch.
+         *
+         * Has no effect if the stopwatch is not running.
+         */
         void StopStopWatch() noexcept;
 
-        // Resets the stopwatch clearing the running state and time points
+        /**
+         * @brief Reset the stopwatch.
+         *
+         * Clears the running state and stored timestamps.
+         */
         void Reset() noexcept;
 
-        // Returns the elapsed time
+        /**
+         * @brief Get the elapsed time.
+         *
+         * If the stopwatch is currently running, returns the time elapsed
+         * since the last call to @ref StartStopWatch.
+         * Otherwise, returns the time between the last start/stop pair.
+         *
+         * @tparam Period Chrono period for the returned duration
+         *                (e.g. std::milli, std::micro).
+         * @return Elapsed time expressed in the given period.
+         */
         template <typename Period = std::ratio<1>>
         Real GetTime() const noexcept;
 
-        // Log time
+        /**
+         * @brief Log the elapsed time using the UnifiedVol logger.
+         *
+         * Formats the elapsed time with a unit label derived from @tparam Period
+         * and emits an informational log message.
+         *
+         * @tparam Period Chrono period for the logged duration.
+         */
         template <typename Period = std::ratio<1>>
         void LogTime() const noexcept;
     };
-}
+} // namespace uv::utils
 
 #include "StopWatch.inl"
-

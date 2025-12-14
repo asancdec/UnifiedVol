@@ -33,42 +33,105 @@
 
 namespace uv::math::opt::ceres
 {
-	template <std::size_t N, typename Policy = Policy<>>
-	class Optimizer
-	{
-	private:
+    /**
+     * @brief Lightweight wrapper around a Ceres least-squares optimisation problem.
+     *
+     * This class provides a structured interface for configuring and running
+     * Ceres-based calibrations with:
+     *
+     * - fixed parameter dimension at compile time
+     * - bound handling and clamping of initial guesses
+     * - analytic residual blocks (user-provided CostFunction)
+     * - optional robust loss via @ref Policy
+     * - standardised logging of results and boundary hits
+     *
+     * The optimiser is configured once via @ref Config.
+     *
+     * @tparam N       Number of optimisation parameters.
+     * @tparam Policy  Compile-time policy selecting solver strategy, linear solver,
+     *                 and robust-loss construction (see @ref Policy).
+     *
+     * @note
+     * - This class is not thread-safe.
+     * - Bounds are enforced via Ceres parameter bounds on a single parameter block.
+     */
+    template <std::size_t N, typename Policy = Policy<>>
+    class Optimizer
+    {
+    private:
+        //--------------------------------------------------------------------------
+        // Member variables
+        //--------------------------------------------------------------------------
 
-		//--------------------------------------------------------------------------
-		// Member variables
-		//--------------------------------------------------------------------------
-		Config<N> config_;                   // Optimizer configuration
-		std::array<double, N> lowerBounds_;  // Lower parameter bounds
-		std::array<double, N> upperBounds_;  // Upper parameter bounds
-		std::array<double, N> x_;            // Parameter block
-		::ceres::Problem problem_;           // Ceres problem instance
+        Config<N> config_;                   // Optimiser configuration
+        std::array<double, N> lowerBounds_;  // Lower parameter bounds
+        std::array<double, N> upperBounds_;  // Upper parameter bounds
+        std::array<double, N> x_;            // Parameter block (optimised in-place)
+        ::ceres::Problem problem_;           // Ceres problem instance
 
-	public:
+    public:
+        //--------------------------------------------------------------------------
+        // Initialization
+        //--------------------------------------------------------------------------
 
-		//--------------------------------------------------------------------------
-		// Initialization
-		//--------------------------------------------------------------------------
-		Optimizer() = delete;
-		explicit Optimizer(const Config<N>& config);
+        /// Deleted default constructor.
+        Optimizer() = delete;
 
-		//--------------------------------------------------------------------------
-		// Calibration
-		//--------------------------------------------------------------------------	
-		// Set initial guess and bounds
-		void setGuessBounds(const std::array<double, N>& initGuess,
-			const std::array<double, N>& lowerBounds,
-			const std::array<double, N>& upperBounds) noexcept;
-		
-		// Set differentiation cost function
-		void addAnalyticResidual(std::unique_ptr<::ceres::CostFunction> cf) noexcept;
+        /**
+         * @brief Construct an optimiser from a configuration object.
+         *
+         * @param config Optimiser configuration (tolerances, parameter names, logging options).
+         */
+        explicit Optimizer(const Config<N>& config);
 
-		// Solve the problem
-		std::array<double, N> optimize();
-	};
-}
+        //--------------------------------------------------------------------------
+        // Calibration
+        //--------------------------------------------------------------------------
+
+        /**
+         * @brief Set the initial guess and per-parameter bounds.
+         *
+         * Stores the input vectors, clamps the initial guess to the bounds,
+         * registers a single parameter block with Ceres, and applies parameter
+         * bounds on that same block.
+         *
+         * @param initGuess   Initial parameter guess.
+         * @param lowerBounds Lower parameter bounds.
+         * @param upperBounds Upper parameter bounds.
+         *
+         * @note The initial guess is clamped in-place before being passed to Ceres.
+         */
+        void setGuessBounds(const std::array<double, N>& initGuess,
+            const std::array<double, N>& lowerBounds,
+            const std::array<double, N>& upperBounds) noexcept;
+
+        /**
+         * @brief Add an analytic residual block to the problem.
+         *
+         * Adds a user-provided Ceres cost function (analytic Jacobian) to the
+         * internal problem, optionally wrapped by a robust loss function created
+         * by the @ref Policy.
+         *
+         * @param cf Owning pointer to a Ceres cost function.
+         *
+         * @note Ownership of the cost function is transferred to Ceres.
+         * @note The robust loss (if any) is constructed using @c config_.lossScale.
+         */
+        void addAnalyticResidual(std::unique_ptr<::ceres::CostFunction> cf) noexcept;
+
+        /**
+         * @brief Solve the optimisation problem.
+         *
+         * Builds @c ceres::Solver::Options from @ref Config and @ref Policy,
+         * executes @c ceres::Solve, then:
+         *
+         * - warns if parameters are (numerically) on bounds
+         * - logs the final calibration line (params, SSE, time, iterations, status)
+         *
+         * @return Optimised parameter vector.
+         */
+        std::array<double, N> optimize();
+    };
+} // namespace uv::math::opt::ceres
 
 #include "Optimizer.inl"

@@ -1,6 +1,6 @@
 ﻿// SPDX-License-Identifier: Apache-2.0
 /*
- * File:        Pricer.hpp
+ * File:        main.cpp
  * Author:      Alvaro Sanchez de Carlos
  * Created:     2025-12-08
  *
@@ -22,46 +22,18 @@
  * limitations under this License.
  */
 
-#include "Utils/IO/CSVRead.hpp"
-#include "Utils/IO/Log.hpp"
-#include "Core/Functions.hpp"
-#include "Utils/Aux/StopWatch.hpp"
-#include "Core/VolSurface.hpp"
-#include "Core/MarketData.hpp"
-#include "Models/SVI/Functions.hpp"
-#include "Models/SVI/Params.hpp"
-#include "Math/PDE/Functions.hpp"
-#include "Models/Heston/Pricer.hpp"
-#include "Models/Heston/Config.hpp"
-#include "Models/Heston/Calibrator.hpp"
-#include "Utils/Aux/Errors.hpp"
-#include "Utils/Types.hpp"
-#include "Math/Functions.hpp"
-#include "Math/Quadratures/TanHSinH.hpp"
-#include "Math/Optimization/Ceres/Policy.hpp"
-#include "Math/Optimization/Ceres/Config.hpp"
-#include "Math/Interpolation.hpp"
+#include "Utils/PCH.hpp"
 
-
-#include <chrono>
 #include <filesystem>
 #include <iostream>
-#include <iomanip>
-#include <string_view>
-#include <numeric>
-#include <cassert>
-#include <utility>
-#include <numbers>
-#include <limits>
 #include <memory>
-
+#include <cstdlib>
 
 using namespace uv;
 using namespace models;
 using namespace utils;
 using namespace core;
 using namespace math;
-
 
 int main(int argc, char* argv[])
 {
