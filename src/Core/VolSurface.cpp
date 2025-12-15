@@ -217,6 +217,30 @@ namespace uv::core
         return matrix;
     }
 
+    Vector<Real> VolSurface::forwards() const noexcept
+    {
+        Vector<Real> x (numTenors_);
+
+        for (std::size_t i = 0; i < numTenors_; ++i)
+        {
+            x[i] = slices_[i].F();
+        }
+        return x;
+    }
+
+    Matrix<Real> VolSurface::calls() const noexcept
+    {
+        Matrix<Real> matrix(
+            numTenors_, Vector<Real>(numStrikes_)
+        );
+
+        for (std::size_t i = 0; i < numTenors_; ++i)
+        {
+            matrix[i] = slices_[i].callBS();
+        }
+
+        return matrix;
+    }
     std::vector<SliceData>& VolSurface::slices() noexcept
     {
         return slices_;
@@ -242,6 +266,11 @@ namespace uv::core
         return numStrikes_;
     }
 
+    Vector<Real> VolSurface::rates() const noexcept
+    {
+        return Vector<Real>(numTenors_, slices_[0].r());
+    }
+
     void VolSurface::setWt(const Matrix<Real>& wT)
     {
         // ---------- Validate inputs ----------
@@ -258,11 +287,36 @@ namespace uv::core
             "VolSurface::setWt: wT rows must equal number of tenors"
         );
 
-        // ---------- Validate inputs ----------
+        // ---------- Set ----------
 
         for (std::size_t i; i < numTenors_; ++i)
         {
             slices_[i].setWt(wT[i]);
+        }
+    }
+
+    void VolSurface::setCallBS(const Matrix<Real>& calls)
+    {
+        // ---------- Validate inputs ----------
+
+        UV_REQUIRE(
+            !calls.empty(),
+            ErrorCode::InvalidArgument,
+            "VolSurface::setCallBS: calls is empty"
+        );
+
+        UV_REQUIRE(
+            calls.size() == numTenors_,
+            ErrorCode::InvalidArgument,
+            "VolSurface::setCallBS: calls rows must equal number of tenors"
+        );
+
+
+        // ---------- Set ----------
+
+        for (std::size_t i; i < numTenors_; ++i)
+        {
+            slices_[i].setCallBS(calls[i]);
         }
     }
 }

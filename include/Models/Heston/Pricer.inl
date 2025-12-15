@@ -302,17 +302,9 @@ namespace uv::models::heston
 	}
 
 	template <std::size_t N>
-	template <typename T>
-	void Pricer<N>::setParams(const std::array<T, 5>& params) noexcept
+	void Pricer<N>::setParams(const Params& params) noexcept
 	{
-		params_ = Params
-		{
-			Real(params[0]),  // kappa
-			Real(params[1]),  // theta
-			Real(params[2]),  // sigma
-			Real(params[3]),  // rho
-			Real(params[4])   // v0 
-		};
+		params_ = params;
 	}
 
 	template <std::size_t N>

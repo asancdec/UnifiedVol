@@ -22,6 +22,7 @@
  * limitations under this License.
  */
 
+#include "Core/Functions.hpp"
 
 #include <ceres/ceres.h>
 
@@ -31,14 +32,32 @@
 namespace uv::models::heston::calibrator
 {
 	template <std::size_t N, typename Policy>
-	core::VolSurface calibrate(const core::VolSurface& mktVolSurf,
+	Params calibrate(const Vector<Real>& tenors,
+		const Vector<Real>& strikes,
+		const Vector<Real>& forwards,
+		const Vector<Real>& rates,
+		const Matrix<Real>& callM,
 		Pricer<N>& pricer,
 		opt::ceres::Optimizer<5, Policy>& optimizer)
 	{
-		// Copy market volatility surface
-		core::VolSurface hestonVolSurf{ mktVolSurf };
+		// ---------- Validate input data  ----------
 
-		// Set initial guess, lower and upper bounds
+		detail::validateInputs(tenors, strikes, forwards, rates, callM);
+
+		// ---------- Convert data ----------
+
+		// Ceres API accepts doubles only
+		const Vector<double> tenorsD{ uv::core::convertVector<double>(tenors) };
+		const Vector<double> strikesD{ uv::core::convertVector<double>(strikes) };
+		const Vector<double> forwardsD{ uv::core::convertVector<double>(forwards) };
+		const Vector<double> ratesD{ uv::core::convertVector<double>(rates) };
+		const Matrix<double> callMD{ uv::core::convertMatrix<double>(callM) };
+
+		const std::size_t numTenors{ tenorsD.size() };
+		const std::size_t numStrikes{ strikesD.size() };
+
+		// ---------- Set initial guess and bounds ----------
+
 		optimizer.setGuessBounds
 		(
 			detail::initGuess(),
@@ -46,57 +65,78 @@ namespace uv::models::heston::calibrator
 			detail::upperBounds()
 		);
 
-		// Add residual blocks
-		for (const auto& slice : hestonVolSurf.slices())
-		{
-			// Extract slice parameters
-			const double T{ double(slice.T()) };
-			const double F{ double(slice.F()) };
-			const double r{ double(slice.r() )};
-			Vector<double> Kcopy{ slice.K().cbegin(), slice.K().cend() };
-			const Vector<double>& K{ Kcopy };
-			Vector<double> callPriceMktCopy{ slice.callBS().cbegin(), slice.callBS().cend() };
-			const Vector<double>& callPriceMkt{ callPriceMktCopy };
+		// ---------- Add residual blocks ----------
 
-			for (std::size_t i = 0; i < K.size(); ++i)
+		for (std::size_t i = 0; i < numTenors; ++i)
+		{
+			// Extract data
+			const double T{ tenorsD[i] };
+			const double F{ forwardsD[i]};
+			const double r{ ratesD[i] };
+
+			for (std::size_t j = 0; j < numStrikes; ++j)
 			{
 				optimizer.addAnalyticResidual
 				(
 					std::make_unique<detail::PriceResidualJac<N>>
 					(
-						T, F, r, K[i], callPriceMkt[i], pricer
+						T, F, r, strikesD[j], callMD[i][j], pricer
 					)
 				);
 			}
 		}
 
-		// Calibrate Pricer parameters
-		pricer.setParams(optimizer.optimize());
+		// ---------- Run calibration ----------
 
-		// Fill in the calibrated volatility surface
-		for (auto& slice : hestonVolSurf.slices())
+		const std::array<double, 5> params{ optimizer.optimize() };
+		return Params
 		{
-			// Extract slice parameters
-			const Real T{ slice.T() };
-			const Real F{ slice.F() };
-			const Real r{ slice.r() };
-			const Vector<Real>& K{ slice.K() };
-			Vector<Real> modelCall(K.size());
-
-			// Fill modelCall with call prices for each strike
-			std::transform
-			(
-				K.begin(),
-				K.end(),
-				modelCall.begin(),
-				[T, F, r, &pricer](Real Ki) noexcept { return pricer.callPrice(T, F, r, Ki); }
-			);
-
-			// Store the calculated prices in the volatility surface object
-			slice.setCallBS(std::move(modelCall));
-		}
-		return hestonVolSurf;  // RVO C++20
+			Real(params[0]),  // kappa
+			Real(params[1]),  // theta
+			Real(params[2]),  // sigma
+			Real(params[3]),  // rho
+			Real(params[4])   // v0 
+		};
 	}
+
+	template <std::size_t N>
+	core::VolSurface buildSurface(const core::VolSurface& volSurface,
+		const Pricer<N>& pricer)
+	{
+		// ---------- Extract data ----------
+		
+		const std::size_t numTenors{ volSurface.numTenors() };
+		const std::size_t numStrikes{ volSurface.numStrikes() };
+		const Vector<Real>& tenors{ volSurface.tenors() };
+		const Vector<Real>& strikes{ volSurface.strikes() };
+		const Vector<Real>& forwards{ volSurface.forwards() };
+		const Vector<Real>& rates{ volSurface.rates() };
+
+		// ---------- Calculate call prices ----------
+
+		Matrix<Real> callPrices(numTenors, Vector<Real>(numStrikes));
+
+		for (std::size_t i = 0; i < numTenors; ++i)
+		{
+			// Extract data
+			const Real T{ tenors[i]};
+			const Real F{ forwards[i]};
+			const Real r{ rates[i]};
+
+			for (std::size_t j = 0; j < numStrikes; ++j)
+			{
+				callPrices[i][j] = pricer.callPrice(T, F, r, strikes[j]);
+			}
+		}
+
+		// ---------- Copy and set surface ----------
+
+		core::VolSurface hestonVolSurface{ volSurface };
+		hestonVolSurface.setCallBS(callPrices);
+
+		return hestonVolSurface;
+	}
+
 } // namespace uv::models::heston::calibrator:
 
 
@@ -117,7 +157,6 @@ namespace uv::models::heston::calibrator::detail
 			double* residuals,
 			double** jacobians) const override
 		{
-			// returns [P, dP/dκ, dP/dθ, dP/dσ, dP/dρ, dP/dv0]
 			const double* p = parameters[0];
 			const auto pg = pricer_->callPriceWithGradient
 			(

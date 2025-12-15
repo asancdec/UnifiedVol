@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
        
         sviVolSurface.printTotVar();
 
-        MatrixT<Real>{0.0, 10, 10};
+        //MatrixT<Real>{0.0, 10, 10};
 
         // ---------- Heston model calibration ----------
 
@@ -140,14 +140,27 @@ int main(int argc, char* argv[])
             }
         };
 
-        VolSurface hestonVolSurface
-        { 
+        hestonPricer.setParams
+        (
             heston::calibrator::calibrate
             (
-                sviVolSurface,
+                sviVolSurface.tenors(),
+                sviVolSurface.strikes(),
+                sviVolSurface.forwards(),
+                sviVolSurface.rates(),
+                sviVolSurface.calls(),
                 hestonPricer,
                 ceresOptimizer
             )
+        );
+
+        const VolSurface hestonVolSurface
+        { 
+            heston::calibrator::buildSurface
+            (
+                sviVolSurface, 
+                hestonPricer
+            ) 
         };
 
         hestonVolSurface.printVol();

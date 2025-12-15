@@ -85,14 +85,19 @@ namespace uv::core
         // Return the logKF matrix
         Matrix<Real> logKFMatrix() const noexcept;
 
+        Vector<Real> forwards() const noexcept;
+        Matrix<Real> calls() const noexcept;
+
         // Getters
         std::vector<SliceData>& slices() noexcept;
         const Vector<Real>& tenors() const noexcept;
         const Vector<Real>& strikes() const noexcept;
         std::size_t numTenors() const noexcept;
         std::size_t numStrikes() const noexcept;
+        Vector<Real> rates() const noexcept;
 
         // Setters
         void setWt(const Matrix<Real>& wT);
+        void setCallBS(const Matrix<Real>& calls);
     };
 }

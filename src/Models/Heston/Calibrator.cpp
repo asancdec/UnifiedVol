@@ -28,7 +28,111 @@
 #include <array>
 
 namespace uv::models::heston::calibrator::detail
-{
+{	
+    void validateInputs(const Vector<Real>& tenors,
+        const Vector<Real>& strikes,
+        const Vector<Real>& forwards,
+        const Vector<Real>& rates,
+        const Matrix<Real>& callM)
+    {
+        UV_REQUIRE(!tenors.empty(), 
+            ErrorCode::InvalidArgument,
+            "validateInputs: tenors is empty");
+
+        UV_REQUIRE(!strikes.empty(), 
+            ErrorCode::InvalidArgument,
+            "validateInputs: strikes is empty");
+
+        UV_REQUIRE(!forwards.empty(), 
+            ErrorCode::InvalidArgument,
+            "validateInputs: forwards is empty");
+
+        UV_REQUIRE(!rates.empty(),
+            ErrorCode::InvalidArgument, 
+            "validateInputs: rates is empty");
+
+        UV_REQUIRE(!callM.empty(),
+            ErrorCode::InvalidArgument, 
+            "validateInputs: callM is empty");
+
+        const std::size_t numTenors{ tenors.size() };
+        const std::size_t numStrikes{ strikes.size() };
+
+        UV_REQUIRE(forwards.size() == numTenors, 
+            ErrorCode::InvalidArgument,
+            "validateInputs: forwards size must equal tenors size");
+
+        UV_REQUIRE(rates.size() == numTenors, 
+            ErrorCode::InvalidArgument,
+            "validateInputs: rates size must equal tenors size");
+
+        UV_REQUIRE(callM.size() == numTenors,
+            ErrorCode::InvalidArgument,
+            "validateInputs: callM rows must equal number of tenors");
+
+        UV_REQUIRE(!callM[0].empty(),
+            ErrorCode::InvalidArgument,
+            "validateInputs: callM has zero strikes");
+
+        UV_REQUIRE(callM[0].size() == numStrikes,
+            ErrorCode::InvalidArgument,
+            "validateInputs: callM columns must equal strikes size");
+
+        // Tenors strictly increasing + positive
+        for (std::size_t i = 0; i < numTenors; ++i)
+        {
+            UV_REQUIRE(tenors[i] > Real(0),
+                ErrorCode::InvalidArgument,
+                "validateInputs: tenors must be > 0");
+
+            if (i > 0)
+            {
+                UV_REQUIRE(tenors[i] > tenors[i - 1], 
+                    ErrorCode::InvalidArgument,
+                    "validateInputs: tenors must be strictly increasing");
+            }
+        }
+
+        // Strikes strictly increasing + positive
+        for (std::size_t j = 0; j < numStrikes; ++j)
+        {
+            UV_REQUIRE(strikes[j] > Real(0), 
+                ErrorCode::InvalidArgument,
+                "validateInputs: strikes must be > 0");
+
+            if (j > 0)
+            {
+                UV_REQUIRE(strikes[j] > strikes[j - 1],
+                    ErrorCode::InvalidArgument,
+                    "validateInputs: strikes must be strictly increasing");
+            }
+        }
+
+        // Forwards positive
+        for (std::size_t i = 0; i < numTenors; ++i)
+        {
+            UV_REQUIRE(forwards[i] > Real(0),
+                ErrorCode::InvalidArgument,
+                "validateInputs: forwards must be > 0");
+        }
+
+        // callM rectangular + finite
+        for (std::size_t i = 0; i < numTenors; ++i)
+        {
+            UV_REQUIRE(callM[i].size() == numStrikes, 
+                ErrorCode::InvalidArgument,
+                "validateInputs: callM is not rectangular or does not match strikes");
+
+            for (std::size_t j = 0; j < numStrikes; ++j)
+            {
+                UV_REQUIRE(
+                    std::isfinite(static_cast<double>(callM[i][j])),
+                    ErrorCode::InvalidArgument,
+                    "validateInputs: callM contains non-finite value");
+            }
+        }
+    }
+
 	std::array<double, 5> initGuess() noexcept
 	{
 		return

@@ -244,12 +244,10 @@ namespace uv::models::heston
         // Setters
         //--------------------------------------------------------------------------
         /**
-         * @brief Set internal Heston parameters from an array-like container.
-         * @tparam T Input scalar type convertible to Real.
-         * @param params Parameter vector in order: [kappa, theta, sigma, rho, v0].
+         * @brief Set internal Heston parameters.
+         * @param params Parameter struct.
          */
-        template <typename T>
-        void setParams(const std::array<T, 5>& params) noexcept;
+        void setParams(const Params& params) noexcept;
     };
 
 } // namespace uv::models::heston
