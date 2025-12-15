@@ -25,8 +25,6 @@
 #include "Math/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
 
-#include <iostream>
-
 namespace uv::math
 {
     Vector<Real> blackScholes(Real t,
@@ -35,7 +33,7 @@ namespace uv::math
         const Vector<Real>& vol,
         Real S,
         const Vector<Real>& K,
-        bool isCall) noexcept
+        bool isCall)
     {
 
         // ---------- Validate inputs ----------
@@ -75,15 +73,8 @@ namespace uv::math
         Real S,
         const Vector<Real>& K,
         bool isCall
-    ) noexcept
+    )
     {
-        std::cout
-            << "Nt=" << t.size()
-            << " K=" << K.size()
-            << " vol0=" << (vol.empty() ? 0ULL : vol.front().size())
-            << " volLast=" << (vol.empty() ? 0ULL : vol.back().size())
-            << '\n';
-
         // ---------- Validate inputs ----------
 
         const std::size_t Nt{ t.size() };
@@ -106,7 +97,7 @@ namespace uv::math
                 t[i],
                 r[i],
                 q[i],
-                vol[i],   // Vector<T>
+                vol[i], 
                 S,
                 K,
                 isCall

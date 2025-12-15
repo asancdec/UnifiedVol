@@ -26,13 +26,10 @@
 #include "Core/VolSurface.hpp"
 #include "Core/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
-#include "Utils/IO/Log.hpp"
+#include "Utils/IO/Functions.hpp"
 #include "Math/Functions.hpp"
 
-#include <iomanip>
-#include <sstream>
 #include <algorithm>
-#include <string>
 #include <utility>
 
 namespace uv::core
@@ -47,26 +44,36 @@ namespace uv::core
         numStrikes_(mny_.size()),
         volMatrix_(std::move(volMatrix)),
         S_(mktData.S),
-        rates_(numTenors_, mktData.r),         // Constant risk-free rate for now
-        dividends_(numTenors_, mktData.q),     // Constant dividends for now
-        strikes_(uv::core::multiply(mny_, S_)),
+        rates_(numTenors_, mktData.r),          // Constant risk-free rate for now
+        dividends_(numTenors_, mktData.q),      // Constant dividends for now
+        strikes_(Vector<Real>(numStrikes_)),
         forwards_(numTenors_),
-        callPrices_(uv::math::blackScholes(tenors_, rates_, dividends_, volMatrix_, S_, strikes_)),
+        callPrices_(numTenors_, Vector<Real>(numStrikes_)),
         logKFMatrix_(numTenors_, Vector<Real>(numStrikes_)),
         totVarMatrix_(numTenors_, Vector<Real>(numStrikes_))
     {   
 
         // ---------- Initialize member variables ---------- 
 
-        // Forwards
+        strikes_ = uv::core::multiply(mny_, S_);
+        setForwards_();
+        callPrices_ = uv::math::blackScholes(tenors_, rates_, dividends_, volMatrix_, S_, strikes_);
+        setLogKFMatrix_();
+        setTotVar_(volMatrix_);
+    }
+
+    void VolSurface::setForwards_() noexcept
+    {
         for (std::size_t i = 0; i < numTenors_; ++i)
         {
             forwards_[i] = S_ * std::exp((rates_[i] - dividends_[i]) * tenors_[i]);
         }
+    }
 
-        // LogKFMatrix
+    void VolSurface::setLogKFMatrix_() noexcept
+    {
         for (std::size_t i = 0; i < numTenors_; ++i)
-        {   
+        {
             const Real logF{ std::log(forwards_[i]) };
             Vector<Real>& row{ logKFMatrix_[i] };
 
@@ -75,113 +82,45 @@ namespace uv::core
                 row[j] = std::log(strikes_[j]) - logF;
             }
         }
+    }
 
-        // TotVarMatrix
+    void VolSurface::setTotVar_(const Matrix<Real>& volMatrix)
+    {
+        // NOTE: Prefer to pass volMatrix as input for safety
         for (std::size_t i = 0; i < numTenors_; ++i)
         {
-            totVarMatrix_[i] = uv::core::multiply(uv::core::hadamard(volMatrix_[i], volMatrix_[i]), tenors_[i]);
+            totVarMatrix_[i] = uv::core::multiply(uv::core::hadamard(volMatrix[i], volMatrix[i]), tenors_[i]);
         }
     }
 
-    void VolSurface::printVol() const noexcept
+    void VolSurface::setVolFromVar_(const Matrix<Real>& totVarMatrix) noexcept
     {
-        std::ostringstream oss;
-        oss << '\n';
-        oss << "T\\%S\t";
-
-        // Header row (moneyness)
-        for (const auto& m : mny_)
-            oss << std::fixed << std::setprecision(2) << m << '\t';
-        oss << '\n';
-
-        // Each tenor row
-        for (size_t i = 0; i < numTenors_; ++i)
+        for (std::size_t i = 0; i < numTenors_; ++i)
         {
-            oss << std::fixed << std::setprecision(2) << tenors_[i] << '\t';
+            const Real invT{ Real(1) / tenors_[i] };
 
-            for (const auto& v : volMatrix_[i])
-                oss << std::fixed << std::setprecision(5) << v << '\t';
+            const Vector<Real>& wRow{ totVarMatrix_[i] };
+            Vector<Real>& vRow{ volMatrix_[i] };
 
-            oss << '\n';
+            for (std::size_t j = 0; j < numStrikes_; ++j)
+            {
+                vRow[j] = std::sqrt(wRow[j] * invT);
+            }
         }
-
-        UV_INFO(oss.str());
     }
 
-    void VolSurface::printTotVar() const noexcept
+    void VolSurface::setTotVar(const Matrix<Real>& totVarMatrix)
     {
-        std::ostringstream oss;
-        oss << '\n';
-        oss << "T\\k\t";
-
-        // Header row (moneyness)
-        for (const auto& m : mny_)
-            oss << std::fixed << std::setprecision(2) << m << '\t';
-        oss << '\n';
-
-        // Each tenor row
-        for (size_t i = 0; i < numTenors_; ++i)
-        {
-            oss << std::fixed << std::setprecision(2) << tenors_[i] << '\t';
-
-            for (const auto& v : totVarMatrix_[i])
-
-                oss << std::fixed << std::setprecision(5) << v << '\t';
-
-            oss << '\n';
-        }
-
-        UV_INFO(oss.str());
+        totVarMatrix_ = totVarMatrix;
+        setVolFromVar_(totVarMatrix);
+        callPrices_ = uv::math::blackScholes(tenors_, rates_, dividends_, volMatrix_, S_, strikes_);
     }
 
-    void VolSurface::printBSCall() const noexcept
+    void VolSurface::setCallPrices(const Matrix<Real>& callPrices)
     {
-        std::ostringstream oss;
-        oss << '\n';
-        oss << "T\\k\t";
-
-        // Header row (moneyness)
-        for (const auto& m : mny_)
-            oss << std::fixed << std::setprecision(2) << m << '\t';
-        oss << '\n';
-
-        // Each tenor row
-        for (size_t i = 0; i < numTenors_; ++i)
-        {
-            oss << std::fixed << std::setprecision(2) << tenors_[i] << '\t';
-
-            for (const auto& v : callPrices_[i])
-                oss << std::fixed << std::setprecision(5) << v << '\t';
-
-            oss << '\n';
-        }
-        UV_INFO(oss.str());
-    }
-
-    const Matrix<Real>& VolSurface::totVarMatrix() const noexcept
-    {
-      
-        return totVarMatrix_;
-    }
-
-    const Matrix<Real>& VolSurface::volMatrix() const noexcept
-    {      
-        return volMatrix_;
-    }
-
-    const Matrix<Real>& VolSurface::logKFMatrix() const noexcept
-    {
-        return logKFMatrix_;
-    }
-
-    const Vector<Real>& VolSurface::forwards() const noexcept
-    {
-        return forwards_;
-    }
-
-    const Matrix<Real>& VolSurface::callPrices() const noexcept
-    {
-        return callPrices_;
+        callPrices_ = callPrices;
+        volMatrix_ = uv::math::impliedVolBS(callPrices_, tenors_, rates_, dividends_, S_, strikes_);
+        setTotVar_(volMatrix_);
     }
 
     const Vector<Real>& VolSurface::tenors() const noexcept
@@ -189,19 +128,29 @@ namespace uv::core
         return tenors_;
     }
 
-    const Vector<Real>& VolSurface::strikes() const noexcept
-    {
-        return strikes_;
-    }
-
     std::size_t VolSurface::numTenors() const noexcept
     {
         return numTenors_;
     }
 
+    const Vector<Real>& VolSurface::mny() const noexcept
+    {
+        return mny_;
+    }
+
     std::size_t VolSurface::numStrikes() const noexcept
     {
         return numStrikes_;
+    }
+
+    const Matrix<Real>& VolSurface::volMatrix() const noexcept
+    {
+        return volMatrix_;
+    }
+
+    Real VolSurface::S() const noexcept
+    {
+        return S_;
     }
 
     const Vector<Real>& VolSurface::rates() const noexcept
@@ -214,54 +163,82 @@ namespace uv::core
         return dividends_;
     }
 
-    void VolSurface::setTotVar(const Matrix<Real>& totVarMatrix)
+    const Vector<Real>& VolSurface::strikes() const noexcept
     {
-        // ---------- Set ----------
-
-        totVarMatrix_ = totVarMatrix;
-
-        for (std::size_t i = 0; i < totVarMatrix_.size(); ++i)
-        {
-            const Real invT = Real(1) / tenors_[i];
-
-            for (std::size_t j = 0; j < totVarMatrix_[i].size(); ++j)
-            {
-                volMatrix_[i][j] =
-                    std::sqrt(totVarMatrix_[i][j] * invT);
-            }
-        }
-
-        callPrices_ = uv::math::blackScholes(tenors_, rates_, dividends_, volMatrix_, S_, strikes_);
-
+        return strikes_;
     }
 
-    void VolSurface::setCallPrices(const Matrix<Real>& callPrices)
+    const Vector<Real>& VolSurface::forwards() const noexcept
     {
-        // ---------- Set ----------
+        return forwards_;
+    }
 
-        callPrices_ = callPrices;
+    const Matrix<Real>& VolSurface::callPrices() const noexcept
+    {
+        return callPrices_;
+    }
 
+    const Matrix<Real>& VolSurface::logKFMatrix() const noexcept
+    {
+        return logKFMatrix_;
+    }
 
-        for (std::size_t i = 0; i < callPrices_.size(); ++i)
-        {
-            const Real T = tenors_[i];
-            const Real r = rates_[i];
-            const Real q = dividends_[i];
+    const Matrix<Real>& VolSurface::totVarMatrix() const noexcept
+    {
+        return totVarMatrix_;
+    }
 
-            for (std::size_t j = 0; j < callPrices_[i].size(); ++j)
-            {
-                volMatrix_[i][j] = uv::math::impliedVolBS(
-                    callPrices_[i][j],
-                    T,
-                    r,
-                    q,
-                    S_,
-                    strikes_[j],
-                    /*isCall=*/true
-                );
-            }
-        }
+    void VolSurface::printVol(const unsigned int valuePrec,
+        const bool mnyFlag) const noexcept
+    {
+        const Vector<Real>& header{ mnyFlag ? mny_ : logKFMatrix_[0] };
+        const int headerPrec{ mnyFlag ? 2 : 4 };
+        const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
 
+        uv::utils::printMatrix(
+            /*title=*/title,
+            /*header=*/header,
+            /*rowLabels=*/tenors_,
+            /*M=*/volMatrix_,
+            /*headerPrec=*/headerPrec,
+            /*rowLabelPrec=*/2,
+            /*valuePrec=*/valuePrec
+        );
+    }
 
+    void VolSurface::printTotVar(const unsigned int valuePrec,
+        const bool mnyFlag) const noexcept
+    {
+        const Vector<Real>& header{ mnyFlag ? mny_ : logKFMatrix_[0] };
+        const int headerPrec{ mnyFlag ? 2 : 4 };
+        const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
+
+        uv::utils::printMatrix(
+            /*title=*/title,
+            /*header=*/header,
+            /*rowLabels=*/tenors_,
+            /*M=*/totVarMatrix_,
+            /*headerPrec=*/headerPrec,
+            /*rowLabelPrec=*/2,
+            /*valuePrec=*/valuePrec
+        );
+    }
+
+    void VolSurface::printBSCall(const unsigned int valuePrec,
+        const bool mnyFlag) const noexcept
+    {
+        const Vector<Real>& header{ mnyFlag ? mny_ : logKFMatrix_[0] };
+        const int headerPrec{ mnyFlag ? 2 : 4 };
+        const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
+
+        uv::utils::printMatrix(
+            /*title=*/title,
+            /*header=*/header,
+            /*rowLabels=*/tenors_,
+            /*M=*/callPrices_,
+            /*headerPrec=*/headerPrec,
+            /*rowLabelPrec=*/2,
+            /*valuePrec=*/valuePrec
+        );
     }
 }

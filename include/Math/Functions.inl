@@ -161,10 +161,8 @@ namespace uv::math
         T r,
         T q,
         T S,
-        T K,
-        bool isCall)
+        T K)
     {
-
         // ---------- Optimization parameters ----------
 
         const T TOL{ 1e-14 };
@@ -229,7 +227,7 @@ namespace uv::math
         for (unsigned int i = 0U; i < EVAL; ++i)
         {
 
-            const T priceBS{ blackScholes(t, r, q, vol, S, K, isCall) };
+            const T priceBS{ blackScholes(t, r, q, vol, S, K) };
             const T objEval{ priceBS - callPrice };
 
             // Check Absolute and relative tolerance threshold
@@ -257,7 +255,7 @@ namespace uv::math
             )
         );
 
-        const T finalPrice{ blackScholes<T>(t, r, q, vol, S, K, isCall) };
+        const T finalPrice{ blackScholes<T>(t, r, q, vol, S, K) };
         const T finalResidual{ finalPrice - callPrice };
         const T finalTol{ TOL * (T(1) + std::fabs(finalPrice)) };
 
@@ -271,6 +269,84 @@ namespace uv::math
         );
 
         return vol;
+    }
+
+    template <std::floating_point T>
+    Vector<T> impliedVolBS(const Vector<T>& callPrices,
+        T t,
+        T r,
+        T q,
+        T S,
+        const Vector<T>& K
+    )
+    {
+        // ---------- Validate inputs ----------
+
+        const std::size_t N{ callPrices.size() };
+
+        UV_REQUIRE(
+            K.size() == N,
+            ErrorCode::InvalidArgument,
+            "impliedVolBS: price / strike size mismatch"
+        );
+
+        // ---------- Compute implied volatilities ----------
+
+        Vector<T> out(N);
+
+        for (std::size_t i = 0; i < N; ++i)
+        {
+            out[i] = uv::math::impliedVolBS(
+                callPrices[i],
+                t,
+                r,
+                q,
+                S,
+                K[i]
+            );
+        }
+
+        return out;
+    }
+
+    template <std::floating_point T>
+    Matrix<T> impliedVolBS(const Matrix<T>& callPrices,
+        const Vector<T>& t,
+        const Vector<T>& r,
+        const Vector<T>& q,
+        T S,
+        const Vector<T>& K
+    )
+    {
+        // ---------- Validate inputs ----------
+
+        const std::size_t Nt{ t.size() };
+
+        UV_REQUIRE(
+            r.size() == Nt &&
+            q.size() == Nt &&
+            callPrices.size() == Nt,
+            ErrorCode::InvalidArgument,
+            "impliedVolBS(matrix): input size mismatch"
+        );
+
+        // ---------- Compute implied volatilities ----------
+
+        Matrix<T> out(Nt);
+
+        for (std::size_t i = 0; i < Nt; ++i)
+        {
+            out[i] = uv::math::impliedVolBS(
+                callPrices[i],   // Vector<T>
+                t[i],
+                r[i],
+                q[i],
+                S,
+                K
+            );
+        }
+
+        return out;
     }
 
 }  // namespace uv::math
