@@ -24,8 +24,12 @@
 
 
 #include "Models/Heston/Calibrator.hpp"
+#include "Utils/Aux/Errors.hpp"
+#include "Utils/Types.hpp"
 
 #include <array>
+#include <cmath>
+#include <cstddef>
 
 namespace uv::models::heston::calibrator::detail
 {	

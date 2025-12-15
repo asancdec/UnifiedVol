@@ -24,6 +24,8 @@
 
 #include "Math/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
+#include "Utils/Types.hpp"
+#include <cstddef>
 
 namespace uv::math
 {

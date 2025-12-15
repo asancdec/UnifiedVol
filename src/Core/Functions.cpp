@@ -22,10 +22,13 @@
  * limitations under this License.
  */
 
-#include "Utils/Aux/Errors.hpp"  
 #include "Core/Functions.hpp"
+#include "Utils/Aux/Errors.hpp"  
+#include "Utils/Types.hpp"
 
+#include <cstddef>
 #include <string> 
+#include <vector>
 
 namespace uv::core
 {

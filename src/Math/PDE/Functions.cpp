@@ -24,11 +24,13 @@
 
 #include "Math/PDE/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
+#include "Utils/Types.hpp"
 
-#include <cstddef>
-#include <cmath>
-#include <string>
 #include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <iterator>
+#include <string>
 
 namespace uv::math::pde
 {

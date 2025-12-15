@@ -55,17 +55,17 @@ namespace uv::utils
 
         std::chrono::high_resolution_clock::time_point startTime_; // Start timestamp
         std::chrono::high_resolution_clock::time_point endTime_;   // End timestamp
-        bool running_;                                             // Whether the stopwatch is running
+        bool running_{false};                                             // Whether the stopwatch is running
 
         //--------------------------------------------------------------------------
         // Copy prevention
         //--------------------------------------------------------------------------
 
         /// Deleted copy constructor (StopWatch is non-copyable).
-        StopWatch(const StopWatch&);
+        StopWatch(const StopWatch&) = delete;
 
         /// Deleted copy assignment operator (StopWatch is non-copyable).
-        StopWatch& operator=(const StopWatch&);
+        StopWatch& operator=(const StopWatch&) = delete;
 
     public:
 

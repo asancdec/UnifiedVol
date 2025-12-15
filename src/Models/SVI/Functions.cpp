@@ -24,9 +24,14 @@
 
 
 #include "Models/SVI/Functions.hpp"  
+#include "Core/VolSurface.hpp"
+#include "Models/SVI/Params.hpp"
 #include "Utils/Aux/Errors.hpp"
+#include "Utils/Types.hpp"
 
+#include <array>
 #include <cmath>      
+#include <cstddef>
 
 namespace uv::models::svi
 {
@@ -37,7 +42,7 @@ namespace uv::models::svi
 
         const std::size_t numTenors{ volSurface.numTenors() };
         const std::size_t numStrikes{ volSurface.numStrikes() };
-        const Matrix<Real> kMatrix{ volSurface.logKFMatrix() };
+        const Matrix<Real>& kMatrix{ volSurface.logKFMatrix() };
 
         // ---------- Validate inputs ----------
 

@@ -22,12 +22,33 @@
  * limitations under this License.
  */
 
-#include "Utils/PCH.hpp"
+#include "Core/MarketData.hpp"
+#include "Core/VolSurface.hpp"
+#include "Math/Optimization/Ceres/Config.hpp"
+#include "Math/Optimization/Ceres/Optimizer.hpp"
+#include "Math/Optimization/Ceres/Policy.hpp"
+#include "Math/Optimization/NLopt/Config.hpp"
+#include "Math/Optimization/NLopt/Optimizer.hpp"
+#include "Math/Quadratures/TanHSinH.hpp"
+#include "Models/Heston/Calibrator.hpp"
+#include "Models/Heston/Pricer.hpp"
+#include "Models/SVI/Functions.hpp"
+#include "Models/SVI/Params.hpp"
+#include "Utils/Aux/Errors.hpp"
+#include "Utils/Aux/StopWatch.hpp"
+#include "Utils/IO/Functions.hpp"
+#include "Utils/IO/Log.hpp"
+#include "Utils/Types.hpp"
 
+#include <ceres/loss_function.h>
+#include <ceres/types.h>
+#include <cstdlib>
+#include <exception>
 #include <filesystem>
 #include <iostream>
 #include <memory>
-#include <cstdlib>
+#include <nlopt.hpp>
+#include <ratio>
 
 using namespace uv;
 using namespace models;

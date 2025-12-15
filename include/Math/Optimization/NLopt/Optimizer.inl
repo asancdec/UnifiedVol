@@ -32,7 +32,7 @@ namespace uv::math::opt::nlopt
     Optimizer<N, Algo>::Optimizer(const Config<N>& config) :
         config_(config),
         opt_(Algo, N),
-        timer_(),
+        
         lowerBounds_(),
         upperBounds_(),
         initGuess_(),

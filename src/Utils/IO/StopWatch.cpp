@@ -24,10 +24,11 @@
 
 
 #include "Utils/Aux/StopWatch.hpp"
+#include <chrono>
 
 namespace uv::utils
 {
-    StopWatch::StopWatch() : startTime_(), endTime_(), running_(false) {}
+    StopWatch::StopWatch()   = default;
 
     void StopWatch::StartStopWatch() noexcept
     {
