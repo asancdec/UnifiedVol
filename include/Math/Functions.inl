@@ -29,6 +29,8 @@
 #include <cmath>
 #include <numbers>
 #include <string>
+#include <format>
+#include <algorithm>
 
 namespace uv::math
 {
@@ -102,7 +104,7 @@ namespace uv::math
     }
 
     template <std::floating_point T>
-    T d1BS(T t,
+    T d1BlackScholes(T t,
         T r,
         T q,
         T vol,
@@ -121,7 +123,7 @@ namespace uv::math
         T K,
         bool isCall) noexcept
     {
-        T d1{ d1BS(t, r, q, vol, S, K)};
+        T d1{ d1BlackScholes(t, r, q, vol, S, K)};
         T d2{ std::fma(-vol, std::sqrt(t), d1) };
 
         if (isCall)
@@ -151,6 +153,124 @@ namespace uv::math
     {
         T d2{ std::fma(-vol, std::sqrt(t), d1) };
         return vega * (d1 * d2) / vol;
+    }
+
+    template <std::floating_point T>
+    T impliedVolBS(T callPrice,
+        T t,
+        T r,
+        T q,
+        T S,
+        T K,
+        bool isCall)
+    {
+
+        // ---------- Optimization parameters ----------
+
+        const T TOL{ 1e-14 };
+        const unsigned int EVAL{ 100 };
+
+        // ---------- Sanity checks ----------
+
+        // Spot must be positive
+        UV_REQUIRE(S > T(0),
+            ErrorCode::InvalidArgument,
+            std::format("impliedVolBS: spot S = {:.6f} must be > 0", S)
+        );
+
+        // Strike must be positive
+        UV_REQUIRE(K > T(0),
+            ErrorCode::InvalidArgument,
+            std::format("impliedVolBS: strike K = {:.6f} must be > 0", K)
+        );
+
+        // Tenor must be positive
+        UV_REQUIRE(t > T(0),
+            ErrorCode::InvalidArgument,
+            std::format("impliedVolBS: tenor t = {:.6f} must be > 0", t)
+        );
+
+        // Market price must be non-negative
+        UV_REQUIRE(callPrice >= T(0),
+            ErrorCode::InvalidArgument,
+            std::format("impliedVolBS: market price = {:.6f} must be >= 0", callPrice)
+        );
+
+        // ---------- Initial guess ----------
+
+        // Log(F/K)
+        const T logKF{ std::log((S * std::exp((r - q) * t)) / K) };
+
+        // Heuristic guess
+        const T volGuess
+        {
+            (std::fabs(logKF) < T(1e-6))
+                ? T(0.3)
+                : std::sqrt(T(2) * std::fabs(logKF) / t)
+        };
+
+        // Clamp bounds
+        const T volMin{ T(1e-4) };
+        const T volMax{ T(5.0) };
+
+        // Clamp
+        T vol{ std::clamp(volGuess, volMin, volMax) };
+
+        // Warn if clamped
+        UV_WARN(vol != volGuess,
+            std::format(
+                "impliedVolBS: initial guess = {:.6f} clamped to {:.6f} (lb = {:.4f}, ub = {:.4f})",
+                volGuess, vol, volMin, volMax
+            )
+        );
+
+        // ---------- Halley's method ----------
+
+        for (unsigned int i = 0U; i < EVAL; ++i)
+        {
+
+            const T priceBS{ blackScholes(t, r, q, vol, S, K, isCall) };
+            const T objEval{ priceBS - callPrice };
+
+            // Check Absolute and relative tolerance threshold
+            if (std::fabs(objEval) < TOL * (T(1) + priceBS)) break;
+
+            // Derivatives
+            const T d1{ d1BlackScholes<T>(t, r, q, vol, S, K) };
+            const T vega{ vegaBS<T>(d1, t, q, S) };
+            const T volga{ volgaBS<T>(vega, d1, t, vol) };
+
+            // Update volatility using Halley's method
+            vol -= (T(2) * objEval * vega) / (T(2) * (vega * vega) - objEval * volga);
+        }
+
+        // ---------- Evaluate calibration ----------
+
+        // Throw if volatility is negative or larger than 100
+        UV_REQUIRE(
+            (vol > T(0)) && (vol < T(100)),
+            ErrorCode::CalibrationError,
+            std::format(
+                "impliedVolBS: resulting volatility out of bounds: vol = {:.6f} "
+                "(lb = {:.4f}, ub = {:.4f})",
+                vol, T(0.0), T(100)
+            )
+        );
+
+        const T finalPrice{ blackScholes<T>(t, r, q, vol, S, K, isCall) };
+        const T finalResidual{ finalPrice - callPrice };
+        const T finalTol{ TOL * (T(1) + std::fabs(finalPrice)) };
+
+        // Warn if no convergence
+        UV_WARN(std::fabs(finalResidual) > finalTol,
+            std::format(
+                "impliedVolBS: no convergence after {} iterations "
+                "(|f| = {:.3e} > tol = {:.3e}, vol = {:.6f})",
+                EVAL, std::fabs(finalResidual), finalTol, vol
+            )
+        );
+
+        return vol;
     }
 
 }  // namespace uv::math

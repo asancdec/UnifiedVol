@@ -75,7 +75,7 @@ namespace uv::models::svi
         core::VolSurface sviVolSurface{ volSurface };
 
         // Set data
-        sviVolSurface.setWt(wK);
+        sviVolSurface.setTotVar(wK);
 
         return sviVolSurface;
     }

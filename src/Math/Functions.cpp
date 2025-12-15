@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * File:        Functions.inl
+ * File:        CSVRead.hpp
  * Author:      Alvaro Sanchez de Carlos
  * Created:     2025-12-08
  *
@@ -22,130 +22,98 @@
  * limitations under this License.
  */
 
-
 #include "Math/Functions.hpp"
-#include "Utils/IO/Log.hpp"
 #include "Utils/Aux/Errors.hpp"
 
-#include <algorithm>
-#include <format>
+#include <iostream>
 
 namespace uv::math
 {
-    Real impliedVolBS(Real mktPriceBS,
-        Real T,
+    Vector<Real> blackScholes(Real t,
         Real r,
         Real q,
+        const Vector<Real>& vol,
         Real S,
-        Real K,
-        bool isCall)
+        const Vector<Real>& K,
+        bool isCall) noexcept
     {
 
-        // ---------- Optimization parameters ----------
+        // ---------- Validate inputs ----------
 
-        const Real TOL{ 1e-14 };
-        const unsigned int EVAL{ 100 };
+        const std::size_t N{ vol.size() };
 
-        // ---------- Sanity checks ----------
-
-        // Spot must be positive
-        UV_REQUIRE(S > Real(0.0),
+        UV_REQUIRE(
+            K.size() == N,
             ErrorCode::InvalidArgument,
-            std::format("impliedVolBS: spot S = {:.6f} must be > 0", S)
+            "blackScholes: vol / strike size mismatch"
         );
 
-        // Strike must be positive
-        UV_REQUIRE(K > Real(0.0),
-            ErrorCode::InvalidArgument,
-            std::format("impliedVolBS: strike K = {:.6f} must be > 0", K)
-        );
+        // ---------- Calculate Black-Scholes prices ----------
 
-        // Tenor must be positive
-        UV_REQUIRE(T > Real(0.0),
-            ErrorCode::InvalidArgument,
-            std::format("impliedVolBS: tenor T = {:.6f} must be > 0", T)
-        );
+        Vector<Real> out(N);
 
-        // Market price must be non-negative
-        UV_REQUIRE(mktPriceBS >= Real(0.0),
-            ErrorCode::InvalidArgument,
-            std::format("impliedVolBS: market price = {:.6f} must be >= 0", mktPriceBS)
-        );
-
-        // ---------- Initial guess ----------
-
-        // Log(F/K)
-        const Real logKF{ std::log((S * std::exp((r - q) * T)) / K) };
-
-        // Heuristic guess
-        const Real volGuess
+        for (std::size_t i = 0; i < N; ++i)
         {
-            (std::fabs(logKF) < Real(1e-6))
-                ? Real(0.3)
-                : std::sqrt(Real(2.0) * std::fabs(logKF) / T)
-        };
-
-        // Clamp bounds
-        const Real volMin{ Real(1e-4) };
-        const Real volMax{ Real(5.0) };
-
-        // Clamp
-        Real vol{ std::clamp(volGuess, volMin, volMax) };
-
-        // Warn if clamped
-        UV_WARN(vol != volGuess,
-            std::format(
-                "impliedVolBS: initial guess = {:.6f} clamped to {:.6f} (lb = {:.4f}, ub = {:.4f})",
-                volGuess, vol, volMin, volMax
-            )
-        );
-
-        // ---------- Halley's method ----------
-
-        for (unsigned int i = 0U; i < EVAL; ++i)
-        {
-
-            const Real priceBS{ blackScholes(T, r, q, vol, S, K, isCall) };
-            const Real objEval{ priceBS - mktPriceBS };
-
-            // Check Absolute and relative tolerance threshold
-            if (std::fabs(objEval) < TOL * (Real(1.0) + priceBS)) break;
-
-            // Derivatives
-            const Real d1{ d1BS(T, r, q, vol, S, K) };
-            const Real vega{ vegaBS(d1, T, q, S) };
-            const Real volga{ volgaBS(vega, d1, T, vol) };
-
-            // Update volatility using Halley's method
-            vol -= (Real(2.0) * objEval * vega) / (Real(2.0) * (vega * vega) - objEval * volga);
+            out[i] = uv::math::blackScholes(
+                t,
+                r,
+                q,
+                vol[i],
+                S,
+                K[i],
+                isCall
+            );
         }
 
-        // ---------- Evaluate calibration ----------
-
-        // Throw if volatility is negative or larger than 100
-        UV_REQUIRE(
-            (vol > Real(0.0)) && (vol < Real(100.0)),
-            ErrorCode::CalibrationError,
-            std::format(
-                "impliedVolBS: resulting volatility out of bounds: vol = {:.6f} "
-                "(lb = {:.4f}, ub = {:.4f})",
-                vol, Real(0.0), Real(100.0)
-            )
-        );
-
-        const Real finalPrice{ blackScholes(T, r, q, vol, S, K, isCall) };
-        const Real finalResidual{ finalPrice - mktPriceBS };
-        const Real finalTol{ TOL * (Real(1.0) + std::fabs(finalPrice)) };
-
-        // Warn if no convergence
-        UV_WARN(std::fabs(finalResidual) > finalTol,
-            std::format(
-                "impliedVolBS: no convergence after {} iterations "
-                "(|f| = {:.3e} > tol = {:.3e}, vol = {:.6f})",
-                EVAL, std::fabs(finalResidual), finalTol, vol
-            )
-        );
-
-        return vol;
+        return out;
     }
-} // namespace uv::math
+
+    Matrix<Real> blackScholes(const Vector<Real>& t,
+        const Vector<Real>& r,
+        const Vector<Real>& q,
+        const Matrix<Real>& vol,
+        Real S,
+        const Vector<Real>& K,
+        bool isCall
+    ) noexcept
+    {
+        std::cout
+            << "Nt=" << t.size()
+            << " K=" << K.size()
+            << " vol0=" << (vol.empty() ? 0ULL : vol.front().size())
+            << " volLast=" << (vol.empty() ? 0ULL : vol.back().size())
+            << '\n';
+
+        // ---------- Validate inputs ----------
+
+        const std::size_t Nt{ t.size() };
+
+        UV_REQUIRE(
+            r.size() == Nt &&
+            q.size() == Nt &&
+            vol.size() == Nt,
+            ErrorCode::InvalidArgument,
+            "blackScholes(matrix): input size mismatch"
+        );
+
+        // ---------- Calculate Black-Scholes prices ----------
+
+        Matrix<Real> out(Nt);
+
+        for (std::size_t i = 0; i < Nt; ++i)
+        {
+            out[i] = uv::math::blackScholes(
+                t[i],
+                r[i],
+                q[i],
+                vol[i],   // Vector<T>
+                S,
+                K,
+                isCall
+            );
+        }
+
+        return out;
+    }
+
+} // nampespace uv::math

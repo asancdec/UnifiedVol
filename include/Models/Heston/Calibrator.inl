@@ -132,7 +132,7 @@ namespace uv::models::heston::calibrator
 		// ---------- Copy and set surface ----------
 
 		core::VolSurface hestonVolSurface{ volSurface };
-		hestonVolSurface.setCallBS(callPrices);
+		hestonVolSurface.setCallPrices(callPrices);
 
 		return hestonVolSurface;
 	}

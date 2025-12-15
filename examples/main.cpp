@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
                 sviVolSurface.strikes(),
                 sviVolSurface.forwards(),
                 sviVolSurface.rates(),
-                sviVolSurface.calls(),
+                sviVolSurface.callPrices(),
                 hestonPricer,
                 ceresOptimizer
             )

@@ -25,7 +25,6 @@
 
 #pragma once
 
-#include "Core/SliceData.hpp"
 #include "Core/MarketData.hpp"
 #include "Utils/Types.hpp"
 
@@ -41,12 +40,25 @@ namespace uv::core
         // Member variables
         //--------------------------------------------------------------------------
 
-        std::vector<SliceData> slices_;         // 2D volatility grid: vols[maturity][tenors slice]
-        Vector<Real> tenors_;                   // Vector with different volatility surface tenors
-        Vector<Real> strikes_;                  // Strikes
+        Vector<Real> tenors_;                       
+        std::size_t numTenors_;                     
 
-        std::size_t numTenors_;                 // Number of tenors in years
-        std::size_t numStrikes_;                // Number of strikes
+        Vector<Real> mny_;                         
+        std::size_t numStrikes_;
+
+        Matrix<Real> volMatrix_;
+
+        Real S_;
+        Vector<Real> rates_;
+        Vector<Real> dividends_;
+
+        Vector<Real> strikes_;
+        Vector<Real> forwards_;
+
+        Matrix<Real> callPrices_;
+        Matrix<Real> logKFMatrix_; 
+        Matrix<Real> totVarMatrix_;
+
 
     public:
 
@@ -55,14 +67,10 @@ namespace uv::core
         //--------------------------------------------------------------------------
 
         VolSurface() = delete;
-        explicit VolSurface(const Vector<Real>& mny,
-            const Matrix<Real>& vols,
-            const Vector<Real>& tenors,
+        explicit VolSurface(Vector<Real> tenors,
+            Vector<Real> mny,
+            Matrix<Real> volMatrix,
             const MarketData& mktData);
-
-        //--------------------------------------------------------------------------
-        // Utilities
-        //--------------------------------------------------------------------------
 
         // Print volatility surface on the console
         void printVol() const noexcept;
@@ -73,31 +81,22 @@ namespace uv::core
         // Print Black-Scholes Call price surface
         void printBSCall() const noexcept;
 
-        // Return total variance matrix
-        Matrix<Real> totVarMatrix() const noexcept;
-
-        // Return total variance matrix
-        Matrix<Real> volMatrix() const noexcept;
-
-        // Return variance matrix
-        Matrix<Real> varMatrix() const noexcept;
-
-        // Return the logKF matrix
-        Matrix<Real> logKFMatrix() const noexcept;
-
-        Vector<Real> forwards() const noexcept;
-        Matrix<Real> calls() const noexcept;
 
         // Getters
-        std::vector<SliceData>& slices() noexcept;
+        const Matrix<Real>& callPrices() const noexcept;
+        const Matrix<Real>& logKFMatrix() const noexcept;
+        const Matrix<Real>& totVarMatrix() const noexcept;
+        const Vector<Real>& forwards() const noexcept;
+        const Matrix<Real>& volMatrix() const noexcept;
         const Vector<Real>& tenors() const noexcept;
         const Vector<Real>& strikes() const noexcept;
         std::size_t numTenors() const noexcept;
         std::size_t numStrikes() const noexcept;
-        Vector<Real> rates() const noexcept;
+        const Vector<Real>& rates() const noexcept;
+        const Vector<Real>& dividends() const noexcept;
 
         // Setters
-        void setWt(const Matrix<Real>& wT);
-        void setCallBS(const Matrix<Real>& calls);
+        void setTotVar(const Matrix<Real>& totalVarMatrix);
+        void setCallPrices(const Matrix<Real>& callPrices);
     };
 }

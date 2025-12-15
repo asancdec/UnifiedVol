@@ -27,67 +27,60 @@
 #include "Core/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
 #include "Utils/IO/Log.hpp"
+#include "Math/Functions.hpp"
 
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
 #include <string>
+#include <utility>
 
 namespace uv::core
 {
-    VolSurface::VolSurface(const Vector<Real>& mny,
-        const Matrix<Real>& vols,
-        const Vector<Real>& tenors,
+    VolSurface::VolSurface(Vector<Real> tenors,
+        Vector<Real> mny,
+        Matrix<Real> volMatrix,
         const MarketData& mktData)
-        : tenors_(tenors),
-        numTenors_(tenors.size())
+        : tenors_(std::move(tenors)),
+        numTenors_(tenors_.size()),
+        mny_(std::move(mny)),
+        numStrikes_(mny_.size()),
+        volMatrix_(std::move(volMatrix)),
+        S_(mktData.S),
+        rates_(numTenors_, mktData.r),         // Constant risk-free rate for now
+        dividends_(numTenors_, mktData.q),     // Constant dividends for now
+        strikes_(uv::core::multiply(mny_, S_)),
+        forwards_(numTenors_),
+        callPrices_(uv::math::blackScholes(tenors_, rates_, dividends_, volMatrix_, S_, strikes_)),
+        logKFMatrix_(numTenors_, Vector<Real>(numStrikes_)),
+        totVarMatrix_(numTenors_, Vector<Real>(numStrikes_))
     {   
-        // ---------- Sanity checks ----------
-        
-        // Number of volatility slices (one per maturity)
-        const std::size_t dim0{ vols.size()};
 
-        // Validate that the volatility matrix provides one slice per maturity
-        UV_REQUIRE(
-            dim0 == numTenors_,
-            ErrorCode::InvalidArgument,
-            "VolSurface: number of vol slices (" + std::to_string(dim0) +
-            ") does not match number of tenors (" + std::to_string(numTenors_) + ")"
-        );
+        // ---------- Initialize member variables ---------- 
 
-        // Number of strikes in the strike grid (must be consistent across slices)
-        const std::size_t dim1{ mny.size() };
-
-        // Validate that each volatility slice has the same number of strikes
-        for (std::size_t i = 0; i < dim0; ++i)
+        // Forwards
+        for (std::size_t i = 0; i < numTenors_; ++i)
         {
-            const std::size_t t{ vols[i].size() };
-            UV_REQUIRE(
-                t == dim1,
-                ErrorCode::InvalidArgument,
-                "VolSurface: inconsistent strike dimension — expected " +
-                std::to_string(t) + " strikes, but slice " + std::to_string(i) +
-                " has " + std::to_string(dim1)
-            );
+            forwards_[i] = S_ * std::exp((rates_[i] - dividends_[i]) * tenors_[i]);
         }
 
-        // ---------- Initialize member variables ----------
+        // LogKFMatrix
+        for (std::size_t i = 0; i < numTenors_; ++i)
+        {   
+            const Real logF{ std::log(forwards_[i]) };
+            Vector<Real>& row{ logKFMatrix_[i] };
 
-        slices_.reserve(numTenors_);
-        for (size_t i = 0; i < numTenors_; ++i)
-        {
-            slices_.emplace_back
-            (
-                SliceData(tenors_[i],
-                    mny,
-                    vols[i],
-                    mktData)
-            );
+            for (std::size_t j = 0; j < numStrikes_; ++j)
+            {
+                row[j] = std::log(strikes_[j]) - logF;
+            }
         }
 
-        numStrikes_ = dim1;
-        strikes_.resize(numStrikes_);
-        strikes_ = slices_[0].K();
+        // TotVarMatrix
+        for (std::size_t i = 0; i < numTenors_; ++i)
+        {
+            totVarMatrix_[i] = uv::core::multiply(uv::core::hadamard(volMatrix_[i], volMatrix_[i]), tenors_[i]);
+        }
     }
 
     void VolSurface::printVol() const noexcept
@@ -97,7 +90,7 @@ namespace uv::core
         oss << "T\\%S\t";
 
         // Header row (moneyness)
-        for (const auto& m : slices_[0].mny())
+        for (const auto& m : mny_)
             oss << std::fixed << std::setprecision(2) << m << '\t';
         oss << '\n';
 
@@ -106,7 +99,7 @@ namespace uv::core
         {
             oss << std::fixed << std::setprecision(2) << tenors_[i] << '\t';
 
-            for (const auto& v : slices_[i].vol())
+            for (const auto& v : volMatrix_[i])
                 oss << std::fixed << std::setprecision(5) << v << '\t';
 
             oss << '\n';
@@ -122,7 +115,7 @@ namespace uv::core
         oss << "T\\k\t";
 
         // Header row (moneyness)
-        for (const auto& m : slices_[0].logKF())
+        for (const auto& m : mny_)
             oss << std::fixed << std::setprecision(2) << m << '\t';
         oss << '\n';
 
@@ -131,7 +124,7 @@ namespace uv::core
         {
             oss << std::fixed << std::setprecision(2) << tenors_[i] << '\t';
 
-            for (const auto& v : slices_[i].wT())
+            for (const auto& v : totVarMatrix_[i])
 
                 oss << std::fixed << std::setprecision(5) << v << '\t';
 
@@ -148,7 +141,7 @@ namespace uv::core
         oss << "T\\k\t";
 
         // Header row (moneyness)
-        for (const auto& m : slices_[0].mny())
+        for (const auto& m : mny_)
             oss << std::fixed << std::setprecision(2) << m << '\t';
         oss << '\n';
 
@@ -157,7 +150,7 @@ namespace uv::core
         {
             oss << std::fixed << std::setprecision(2) << tenors_[i] << '\t';
 
-            for (const auto& v : slices_[i].callBS())
+            for (const auto& v : callPrices_[i])
                 oss << std::fixed << std::setprecision(5) << v << '\t';
 
             oss << '\n';
@@ -165,85 +158,30 @@ namespace uv::core
         UV_INFO(oss.str());
     }
 
-    Matrix<Real> VolSurface::totVarMatrix() const noexcept
+    const Matrix<Real>& VolSurface::totVarMatrix() const noexcept
     {
       
-        Matrix<Real> matrix(
-            numTenors_, Vector<Real>(numStrikes_)
-        );
-
-        for (std::size_t i = 0; i < numTenors_; ++i)
-        {
-            // Extract total variance slice at tenor i
-            matrix[i] = slices_[i].wT();
-        }
-
-        return matrix;
+        return totVarMatrix_;
     }
 
-    Matrix<Real> VolSurface::volMatrix() const noexcept
+    const Matrix<Real>& VolSurface::volMatrix() const noexcept
     {      
-        Matrix<Real> matrix(
-            numTenors_, Vector<Real>(numStrikes_)
-        );
-
-        for (std::size_t i = 0; i < numTenors_; ++i)
-        {
-            matrix[i] = slices_[i].vol();
-        }
-
-        return matrix;
+        return volMatrix_;
     }
 
-    Matrix<Real> VolSurface::varMatrix() const noexcept
+    const Matrix<Real>& VolSurface::logKFMatrix() const noexcept
     {
-        
-        Matrix<Real> vol{ volMatrix() };
-
-        return hadamard(vol, vol);
+        return logKFMatrix_;
     }
 
-    Matrix<Real> VolSurface::logKFMatrix() const noexcept
+    const Vector<Real>& VolSurface::forwards() const noexcept
     {
-        Matrix<Real> matrix(
-            numTenors_, Vector<Real>(numStrikes_)
-        );
-
-        for (std::size_t i = 0; i < numTenors_; ++i)
-        {
-            matrix[i] = slices_[i].logKF();
-        }
-
-        return matrix;
+        return forwards_;
     }
 
-    Vector<Real> VolSurface::forwards() const noexcept
+    const Matrix<Real>& VolSurface::callPrices() const noexcept
     {
-        Vector<Real> x (numTenors_);
-
-        for (std::size_t i = 0; i < numTenors_; ++i)
-        {
-            x[i] = slices_[i].F();
-        }
-        return x;
-    }
-
-    Matrix<Real> VolSurface::calls() const noexcept
-    {
-        Matrix<Real> matrix(
-            numTenors_, Vector<Real>(numStrikes_)
-        );
-
-        for (std::size_t i = 0; i < numTenors_; ++i)
-        {
-            matrix[i] = slices_[i].callBS();
-        }
-
-        return matrix;
-    }
-    std::vector<SliceData>& VolSurface::slices() noexcept
-    {
-        return slices_;
+        return callPrices_;
     }
 
     const Vector<Real>& VolSurface::tenors() const noexcept
@@ -266,57 +204,64 @@ namespace uv::core
         return numStrikes_;
     }
 
-    Vector<Real> VolSurface::rates() const noexcept
+    const Vector<Real>& VolSurface::rates() const noexcept
     {
-        return Vector<Real>(numTenors_, slices_[0].r());
+        return rates_;
     }
 
-    void VolSurface::setWt(const Matrix<Real>& wT)
+    const Vector<Real>& VolSurface::dividends() const noexcept
     {
-        // ---------- Validate inputs ----------
-
-        UV_REQUIRE(
-            !wT.empty(),
-            ErrorCode::InvalidArgument,
-            "VolSurface::setWt: wT is empty"
-        );
-
-        UV_REQUIRE(
-            wT.size() == numTenors_,
-            ErrorCode::InvalidArgument,
-            "VolSurface::setWt: wT rows must equal number of tenors"
-        );
-
-        // ---------- Set ----------
-
-        for (std::size_t i; i < numTenors_; ++i)
-        {
-            slices_[i].setWt(wT[i]);
-        }
+        return dividends_;
     }
 
-    void VolSurface::setCallBS(const Matrix<Real>& calls)
+    void VolSurface::setTotVar(const Matrix<Real>& totVarMatrix)
     {
-        // ---------- Validate inputs ----------
-
-        UV_REQUIRE(
-            !calls.empty(),
-            ErrorCode::InvalidArgument,
-            "VolSurface::setCallBS: calls is empty"
-        );
-
-        UV_REQUIRE(
-            calls.size() == numTenors_,
-            ErrorCode::InvalidArgument,
-            "VolSurface::setCallBS: calls rows must equal number of tenors"
-        );
-
-
         // ---------- Set ----------
 
-        for (std::size_t i; i < numTenors_; ++i)
+        totVarMatrix_ = totVarMatrix;
+
+        for (std::size_t i = 0; i < totVarMatrix_.size(); ++i)
         {
-            slices_[i].setCallBS(calls[i]);
+            const Real invT = Real(1) / tenors_[i];
+
+            for (std::size_t j = 0; j < totVarMatrix_[i].size(); ++j)
+            {
+                volMatrix_[i][j] =
+                    std::sqrt(totVarMatrix_[i][j] * invT);
+            }
         }
+
+        callPrices_ = uv::math::blackScholes(tenors_, rates_, dividends_, volMatrix_, S_, strikes_);
+
+    }
+
+    void VolSurface::setCallPrices(const Matrix<Real>& callPrices)
+    {
+        // ---------- Set ----------
+
+        callPrices_ = callPrices;
+
+
+        for (std::size_t i = 0; i < callPrices_.size(); ++i)
+        {
+            const Real T = tenors_[i];
+            const Real r = rates_[i];
+            const Real q = dividends_[i];
+
+            for (std::size_t j = 0; j < callPrices_[i].size(); ++j)
+            {
+                volMatrix_[i][j] = uv::math::impliedVolBS(
+                    callPrices_[i][j],
+                    T,
+                    r,
+                    q,
+                    S_,
+                    strikes_[j],
+                    /*isCall=*/true
+                );
+            }
+        }
+
+
     }
 }

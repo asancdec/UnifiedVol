@@ -185,6 +185,72 @@ namespace uv::math
         bool isCall = true) noexcept;
 
     /**
+     * @brief Black–Scholes pricing for a single maturity and spot,
+     *        with vectorized volatility and strikes.
+     *
+     * Prices European options for a fixed maturity @p t, risk-free rate @p r,
+     * dividend yield @p q, and spot price @p S, using element-wise volatilities
+     * and strikes.
+     *
+     * Each output element corresponds to:
+     * @code
+     *   price[i] = BS(t, r, q, vol[i], S, K[i])
+     * @endcode
+     *     *
+     * @param t      Time to maturity (years).
+     * @param r      Risk-free continuously compounded rate.
+     * @param q      Continuous dividend yield.
+     * @param vol    Vector of Black–Scholes volatilities.
+     * @param S      Spot price.
+     * @param K      Vector of strikes.
+     * @param isCall True for calls, false for puts.
+     *
+     * @return Vector of option prices, one per strike.
+     *
+     * @pre vol.size() == K.size()
+     */
+    Vector<Real> blackScholes(Real t,
+        Real r,
+        Real q,
+        const Vector<Real>& vol,
+        Real S,
+        const Vector<Real>& K,
+        bool isCall = true) noexcept;
+
+     /**
+     * @brief Black–Scholes pricing over a volatility surface.
+     *
+     * Prices European options across multiple maturities and strikes.
+     * For each maturity index @p i, a full strike slice is priced using:
+     *
+     * @code
+     *   prices[i][j] = BS(t[i], r[i], q[i], vol[i][j], S, K[i][j])
+     * @endcode
+     *
+     * This overload internally calls the vector (slice) Black–Scholes
+     * implementation for each maturity.
+     *  
+     * @param t      Vector of maturities (years).
+     * @param r      Vector of risk-free rates.
+     * @param q      Vector of dividend yields.
+     * @param vol    Matrix of volatilities [maturity][strike].
+     * @param S      Spot price.
+     * @param K      Vector of strikes per maturity.
+     * @param isCall True for calls, false for puts.
+     *
+     * @return Matrix of option prices [maturity][strike].
+     *
+     * @pre t.size() == r.size() == q.size() == vol.size() == K.size()
+     */
+    Matrix<Real> blackScholes(const Vector<Real>& t,
+        const Vector<Real>& r,
+        const Vector<Real>& q,
+        const Matrix<Real>& vol,
+        Real S,
+        const Vector<Real>& K,
+        bool isCall = true) noexcept;
+
+    /**
      * @brief Black–Scholes Vega (∂Price / ∂σ).
      *
      * Computes:
@@ -232,49 +298,45 @@ namespace uv::math
     /**
      * @brief Compute the Black–Scholes implied volatility using Halley's method.
      *
-     * This function returns the volatility σ such that the Black–Scholes price
-     * matches a given market price. It solves for the root of
+     * Finds the volatility such that the Black–Scholes price matches a given
+     * call price. The function solves:
      *
-     *      f(σ) = BS(σ) – market price
+     *   BS(vol) - callPrice = 0
      *
-     * using an iterative Halley update:
+     * using Halley's iterative root-finding method, which combines Vega and
+     * Volga for fast and stable convergence.
      *
-     *      σ_{n+1} = σ_n - 2 f f' / ( 2 (f')² - f f'' ),
+     * @tparam T Floating-point type.
      *
-     * where f' is the Vega (∂BS/∂σ) and f'' is the Volga (∂²BS/∂σ²).
-     *
-     * ### Arguments
-     * @param mktPriceBS Market option price under Black–Scholes assumptions.
-     * @param T          Time to maturity (in years), must be positive.
-     * @param r          Flat risk-free rate (continuously compounded).
+     * @param callPrice  Market option price.
+     * @param t          Time to maturity (years), must be positive.
+     * @param r          Continuously compounded risk-free rate.
      * @param q          Continuous dividend yield.
      * @param S          Spot price of the underlying, must be positive.
      * @param K          Option strike, must be positive.
      * @param isCall     True for a call, false for a put.
      *
-     * ### Returns
-     * Implied volatility σ such that BS(σ) ≈ mktPriceBS.
+     * @return Implied volatility such that the Black–Scholes price matches
+     *         the given market price.
      *
-     * ### Algorithm
-     * - Initial guess uses a log-moneyness heuristic:
-     *       σ0 = sqrt(2 |log(F/K)| / T),
-     *   where F = S · exp((r − q) T).
-     * - Halley's method iterates up to 100 evaluations with a tolerance of 1e-14.
-     * - Convergence is checked using a relative/absolute condition on price residual.
+     * @details
+     * - The initial volatility guess is based on log-moneyness:
+     *     vol0 = sqrt(2 * |log(F / K)| / t),
+     *   where F = S * exp((r - q) * t).
+     * - The algorithm performs up to 100 iterations with a tolerance of 1e-14
+     *   on the pricing residual.
      *
-     * ### Complexity
-     * O(maxIter) Black–Scholes evaluations and Greeks per call (typically < 1 µs).
-
-     * @warning Produces warnings (UV_WARN) if convergence fails within the
+     * @warning Emits a warning if convergence is not reached within the
      *          maximum number of iterations.
      */
-    Real impliedVolBS(Real mktPriceBS,
-        Real T,
-        Real r,
-        Real q,
-        Real S,
-        Real K,
-        bool isCall = true);
+    template <std::floating_point T>
+    T impliedVolBS(T callPrice,
+        T t,
+        T r,
+        T q,
+        T S,
+        T K,
+        bool isCall);
 
 } // namespace uv::math
 
