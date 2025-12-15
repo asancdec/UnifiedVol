@@ -167,7 +167,7 @@ namespace uv::models::svi
 			const Vector<double>& wKSlice,
 			const opt::nlopt::Optimizer<4, Algo>& prototype,
 			const Params* prevParams,
-			const std::size_t numStrikes
+			std::size_t numStrikes
 		);
 
 		/**
@@ -189,7 +189,7 @@ namespace uv::models::svi
 		 *
 		 * @return Lower bounds vector [b, rho, m, sigma].
 		 */
-		std::array<double, 4> lowerBounds(const double logKFMin) noexcept;
+		std::array<double, 4> lowerBounds(double logKFMin) noexcept;
 
 		/**
 		 * @brief Upper bounds for (b, rho, m, sigma).
@@ -201,7 +201,7 @@ namespace uv::models::svi
 		 *
 		 * @return Upper bounds vector [b, rho, m, sigma].
 		 */
-		std::array<double, 4> upperBounds(const double logKFMax) noexcept;
+		std::array<double, 4> upperBounds(double logKFMax) noexcept;
 
 		/**
 		 * @brief Add minimum total variance constraint.
@@ -301,12 +301,12 @@ namespace uv::models::svi
 		 *
 		 * @return Total variance w(k).
 		 */
-		double calculateWk(const double a,
-			const double b,
-			const double rho,
-			const double m,
-			const double sigma,
-			const double k) noexcept;
+		double calculateWk(double a,
+			double b,
+			double rho,
+			double m,
+			double sigma,
+			double k) noexcept;
 
 		/**
 		 * @brief Compute the pinned `a` parameter from ATM total variance.
@@ -322,11 +322,11 @@ namespace uv::models::svi
 		 *
 		 * @return The implied `a` value for this slice.
 		 */
-		double aParam(const double atmWK,
-			const double b,
-			const double rho,
-			const double m,
-			const double sigma) noexcept;
+		double aParam(double atmWK,
+			double b,
+			double rho,
+			double m,
+			double sigma) noexcept;
 
 		/**
 		 * @brief Compute g(k) using precomputed cache values (internal).
@@ -356,11 +356,11 @@ namespace uv::models::svi
 		 *
 		 * @return Gradient vector [db, drho, dm, dsigma].
 		 */
-		std::array<double, 4> gkGrad(const double b,
-			const double rho,
-			const double m,
-			const double sigma,
-			const double k,
+		std::array<double, 4> gkGrad(double b,
+			double rho,
+			double m,
+			double sigma,
+			double k,
 			const GkCache& p) noexcept;
 
 	} // namespace detail

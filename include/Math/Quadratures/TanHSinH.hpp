@@ -90,7 +90,7 @@ namespace uv::math
          * @param nh Value of n*h used to build the node.
          * @return Fully populated Node (weights + transformed inputs).
          */
-        Node generateNode(const Real nh) const noexcept;
+        Node generateNode(Real nh) const noexcept;
 
     public:
 

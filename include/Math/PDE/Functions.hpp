@@ -55,7 +55,7 @@ namespace uv::math::pde
 	 *         probability density suitable for use as initial data in a
 	 *         Fokker–Planck PDE solver.
 	 */
-	Vector<Real> fokkerPlankInit(const Real x0,
+	Vector<Real> fokkerPlankInit(Real x0,
 	const Vector<Real>& xGrid);
 
 	Matrix<Real> fokkerPlankSolve(const Vector<Real>& pdeInitCond,

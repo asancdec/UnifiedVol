@@ -49,9 +49,9 @@ namespace uv::core
      *
      * @note If `steps <= 1`, the function returns { bound1 }.
     */
-    Vector<Real> generateGrid(const Real bound1,
-        const Real bound2,
-        const size_t steps
+    Vector<Real> generateGrid(Real bound1,
+        Real bound2,
+        size_t steps
     ) noexcept;
 
     /**
@@ -79,7 +79,7 @@ namespace uv::core
      * @return A vector where each element equals `v[i] * x`.
      */
     Vector<Real> multiply(const Vector<Real>& v,
-        const Real x) noexcept;
+        Real x) noexcept;
 
     /**
      * @brief Compute the element-wise reciprocal of a vector.
@@ -100,7 +100,7 @@ namespace uv::core
      * @return A matrix where each entry equals <tt>A[i][j] + x</tt>.
      */
     Matrix<Real> add(const Matrix<Real>& A,
-        const Real x) noexcept;
+        Real x) noexcept;
 
     /**
      * @brief Compute the element-wise (Hadamard) product of two vectors.

@@ -43,9 +43,9 @@ namespace uv::core
 
 	public:
 
-		MatrixT(const T val,
-		const std::size_t numRows,
-		const std::size_t numColumns) noexcept;
+		MatrixT(T val,
+		std::size_t numRows,
+		std::size_t numColumns) noexcept;
 
 
 		std::size_t rows() const noexcept;

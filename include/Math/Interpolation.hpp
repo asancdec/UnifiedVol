@@ -277,10 +277,10 @@ namespace uv::math::interp
 		 * @return    Shape-preserving one-sided derivative at the endpoint.
 		 */
 		template <std::floating_point T>
-		T pchipEndpointSlope(const T h1,
-			const T h2,
-			const T S1,
-			const T S2
+		T pchipEndpointSlope(T h1,
+			T h2,
+			T S1,
+			T S2
 		) noexcept;
 
 		/**
