@@ -22,15 +22,54 @@
  * limitations under this License.
  */
 
+
+#include "Utils/IO/Functions.hpp"
+
+
 namespace uv::core
 {
-
     template <std::floating_point T>
     MatrixT<T>::MatrixT(const T val,
         const std::size_t numRows,
         const std::size_t numColumns) noexcept
         : numRows_(numRows),
         numColumns_(numColumns),
-        data_(numRows * numColumns, val) { }
+        data_(numRows * numColumns, val) {}
+
+    template <std::floating_point T>
+    std::size_t MatrixT<T>::rows() const noexcept
+    {
+        return numRows_;
+    }
+
+    template <std::floating_point T>
+
+    std::span<T> MatrixT<T>::operator[](std::size_t i) noexcept
+    {      
+        return { data_.data() + i * numColumns_, numColumns_ };
+    }
+
+    template <std::floating_point T>
+    std::span<const T> MatrixT<T>::operator[](std::size_t i) const noexcept 
+    {
+        return { data_.data() + i * numColumns_, numColumns_ };
+    }
+
+
+
+    //template <std::floating_point T>
+    //void MatrixT<T>::print() const noexcept
+    //{
+    //    uv::utils::printMatrix(
+    //        /*title=*/title,
+    //        /*header=*/header,
+    //        /*rowLabels=*/tenors_,
+    //        /*M=*/volMatrix_,
+    //        /*headerPrec=*/headerPrec,
+    //        /*rowLabelPrec=*/2,
+    //        /*valuePrec=*/valuePrec
+    //    );
+    //}
+
 
 } // namespace uv::core

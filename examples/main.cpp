@@ -54,6 +54,10 @@ int main(int argc, char* argv[])
         StopWatch timer;
         timer.StartStopWatch();
 
+
+        
+
+
         // ---------- Market data ----------
 
         MarketData marketData

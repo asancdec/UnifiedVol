@@ -28,6 +28,7 @@
 
 #include <concepts>
 #include <cstddef>
+#include <span>
 
 namespace uv::core
 {
@@ -45,6 +46,15 @@ namespace uv::core
 		MatrixT(const T val,
 		const std::size_t numRows,
 		const std::size_t numColumns) noexcept;
+
+
+		std::size_t rows() const noexcept;
+
+
+		std::span<T> operator[](std::size_t i) noexcept;
+		std::span<const T> operator[](std::size_t i) const noexcept;
+
+		void print() const noexcept;
 
 	};
 

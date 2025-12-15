@@ -26,8 +26,10 @@
 #pragma once
 
 #include "Core/VolSurface.hpp"
+#include "Core/Matrix.hpp"
 
 #include <string>
+#include <concepts>
 
 namespace uv::utils
 {
@@ -81,6 +83,17 @@ namespace uv::utils
 		unsigned int headerPrec = 2,
 		unsigned int rowLabelPrec = 2,
 		unsigned int valuePrec = 5) noexcept;
+
+
+	//template <std::floating_point T>
+	//template <typename HeaderVec, typename RowLabels>
+	//void printMatrix(std::string_view title,
+	//	const HeaderVec& header,
+	//	const RowLabels& rowLabels,
+	//	const core::MatrixT<T>& M,
+	//	unsigned int headerPrec = 2,
+	//	unsigned int rowLabelPrec = 2,
+	//	unsigned int valuePrec = 5) noexcept;
 
 } // namespace uv::utils
 
