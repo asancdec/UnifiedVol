@@ -45,7 +45,7 @@ namespace uv::core
             UV_REQUIRE(
                 actual == expected,
                 ErrorCode::InvalidArgument,
-                "transposeVector: inconsistent row length — row " +
+                "transposeVector: inconsistent row length - row " +
                 std::to_string(i) + " has " + std::to_string(actual) +
                 " elements, expected " + std::to_string(expected)
             );

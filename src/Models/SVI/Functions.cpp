@@ -259,7 +259,6 @@ namespace uv::models::svi::detail
         const double invRCubed{ p.invRCubed };
         const double invR5{ p.invR5 };
         const double sigmaSquared{ p.sigmaSquared };
-        const double wk{ p.wk };
         const double wkInv{ p.wkInv };
         const double wkSquaredInv{ p.wkSquaredInv };
         const double wkD1{ p.wkD1 };
