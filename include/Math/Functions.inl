@@ -99,7 +99,7 @@ namespace uv::math
     template <std::floating_point T>
     T normalPDF(T x) noexcept
     {
-        constexpr T invSqrt2Pi = std::numbers::inv_sqrt3_v<T> *std::numbers::inv_sqrtpi_v<T>;
+        constexpr T invSqrt2Pi = std::numbers::inv_sqrtpi_v<T> / std::numbers::sqrt2_v<T>;
         return invSqrt2Pi * std::exp(-T(0.5) * x * x);
     }
 
