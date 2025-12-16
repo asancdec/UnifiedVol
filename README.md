@@ -37,14 +37,14 @@ UnifiedVol is a C++20 volatility-modelling and pricing library designed for nume
 
 Benchmarks (WSL Ubuntu, **g++-13**, `-O3 -march=native`, multithreading (8), 300 TanH–Sinh nodes):
 
-- **Heston calibration (187 quotes):** **2.46 s** with PGO  
+- **Heston calibration (187 quotes):** **0.70 **  
   *(~19 s → 2.46 s after analytic Jacobians + CF optimizations)*
 - **Heston price:** ~**45 µs**  
-- **SVI calibration:** **1–5 ms** per slice  
-  (**avg 2.66 ms**, **avg 682 iterations**, **avg SSE ≈ 3.1×10⁻⁵**)  
+- **SVI calibration:** **1–2 ms** per slice  
+  (**avg 1.76 ms**, **avg 682 iterations**, **avg SSE ≈ 3.1×10⁻⁵**)  
   *(strict calendar + butterfly constraints)*
 
-**Ceres (Heston):** 34 iterations, 58 Jacobian evaluations, total **2.49 s** (converged).
+**Ceres (Heston):** 34 iterations, 58 Jacobian evaluations, total **0.70 s** (converged).
 
 ### Accuracy
 - Constant-vol limit (Heston → Black–Scholes): **3.5×10⁻¹⁵**  
@@ -97,7 +97,7 @@ cmake --build build --config Release
 ./build/Release/unifiedvol_example
 ```
 
-### Profile-Guided Optimization (Fun)
+### Profile-Guided Optimization (Optimized)
 
 ```bash
 # Generate profiled execution
