@@ -338,16 +338,16 @@ namespace uv::math
 
         for (std::size_t i = 0; i < Nt; ++i)
         {
-            std::span<T> outi{out[i]};
-            std::span<const T> callPricesi{callPrices[i]};
+            std::span<T> outRow{out[i]};
+            std::span<const T> callPricesRow{callPrices[i]};
             const T ti{ t[i] };
             const T ri{ r[i] };
             const T qi{ q[i] };
 
             for (std::size_t j = 0; j < Nk; ++j)
             {
-                outi[j] = math::impliedVolBS(
-                    callPricesi[j],
+                outRow[j] = math::impliedVolBS(
+                    callPricesRow[j],
                     ti,
                     ri,
                     qi,

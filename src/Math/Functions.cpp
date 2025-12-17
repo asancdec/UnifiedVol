@@ -61,7 +61,7 @@ namespace uv::math
         for (std::size_t i = 0; i < Nt; ++i)
         {
             std::span<Real> outRow{ out[i] };
-            std::span<const Real> voli{ vol[i] };
+            std::span<const Real> volRow{ vol[i] };
             const Real ti{ t[i] };
             const Real ri{ r[i] };
             const Real qi{ q[i] };
@@ -70,7 +70,7 @@ namespace uv::math
             for (std::size_t j = 0; j < Nk; ++j)
             {
                 outRow[j] = math::blackScholes(
-                    ti, ri, qi, voli[j],
+                    ti, ri, qi, volRow[j],
                     S, K[j], isCall
                 );
             }

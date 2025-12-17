@@ -71,7 +71,7 @@ namespace uv::models::heston::calibrator
 		for (std::size_t i = 0; i < numTenors; ++i)
 		{
 			// Extract data
-			std::span<const double> callMDi{callMD[i]};
+			std::span<const double> callMDRow{callMD[i]};
 			const double T{ tenorsD[i] };
 			const double F{ forwardsD[i]};
 			const double r{ ratesD[i] };
@@ -82,7 +82,7 @@ namespace uv::models::heston::calibrator
 				(
 					std::make_unique<detail::PriceResidualJac<N>>
 					(
-						T, F, r, strikesD[j], callMDi[j], pricer
+						T, F, r, strikesD[j], callMDRow[j], pricer
 					)
 				);
 			}
@@ -121,14 +121,14 @@ namespace uv::models::heston::calibrator
 		for (std::size_t i = 0; i < numTenors; ++i)
 		{
 			// Extract data
-			std::span<Real> callPricesi{ callPrices[i] };
+			std::span<Real> callPricesRow{ callPrices[i] };
 			const Real T{ tenors[i]};
 			const Real F{ forwards[i]};
 			const Real r{ rates[i]};
 
 			for (std::size_t j = 0; j < numStrikes; ++j)
 			{
-				callPricesi[j] = pricer.callPrice(T, F, r, strikes[j]);
+				callPricesRow[j] = pricer.callPrice(T, F, r, strikes[j]);
 			}
 		}
 
@@ -168,7 +168,7 @@ namespace uv::models::heston::calibrator::detail
 
 			residuals[0] = double(pg[0] - callPriceMkt_);
 
-			if (jacobians && jacobians[0]) 
+			if ((jacobians != nullptr) && (jacobians[0] != nullptr)) 
 			{
 				double* J = jacobians[0];
 				J[0] = double(pg[1]);

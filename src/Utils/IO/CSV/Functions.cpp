@@ -54,8 +54,8 @@ namespace uv::utils
         auto trim = [](std::string& s)
             {
                 auto issp = [](unsigned char c) { return std::isspace(c); };
-                while (!s.empty() && issp(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
-                while (!s.empty() && issp(static_cast<unsigned char>(s.back())))  s.pop_back();
+                while (!s.empty() && (issp(static_cast<unsigned char>(s.front())) != 0)) s.erase(s.begin());
+                while (!s.empty() && (issp(static_cast<unsigned char>(s.back())) != 0))  s.pop_back();
             };
 
         auto parseCell = [&](const std::string& raw, Real& out, bool strict = true) -> bool

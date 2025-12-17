@@ -59,7 +59,7 @@ namespace uv::utils
         // Compile-time unit label
         constexpr const char* unit =
             std::is_same_v<Period, std::milli> ? "ms" :
-            std::is_same_v<Period, std::micro> ? "µs" :
+            std::is_same_v<Period, std::micro> ? "us" :
             std::is_same_v<Period, std::nano> ? "ns" :
             "s";
 
