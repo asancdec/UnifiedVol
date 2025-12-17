@@ -55,6 +55,26 @@ namespace uv::core
     ) noexcept;
 
     /**
+     * @brief Generate a sequence of consecutive values.
+     *
+     * Creates a vector of length @p n containing consecutive values starting
+     * from @p start. The resulting sequence is:
+     *
+     *   start, start + 1, start + 2, ..., start + (n - 1)
+     *
+     * @tparam T     Element type of the sequence.
+     * @param n      Number of elements to generate.
+     * @param start  Initial value of the sequence.
+     *
+     * @return Vector<T> containing the generated sequence.
+     *
+     * @note This function performs no validation on @p n. If @p n is zero,
+     *       an empty vector is returned.
+     */
+    template <typename T>
+    Vector<T> makeSequence(std::size_t n, T start) noexcept;
+
+    /**
      * @brief Compute first forward differences of a vector.
      *
      * This function returns a vector containing the element-wise

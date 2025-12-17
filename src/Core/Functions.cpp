@@ -29,6 +29,7 @@
 #include <cstddef>
 #include <string> 
 #include <vector>
+#include <numeric>  
 
 namespace uv::core
 {

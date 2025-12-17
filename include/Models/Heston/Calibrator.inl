@@ -47,11 +47,11 @@ namespace uv::models::heston::calibrator
 		// ---------- Convert data ----------
 
 		// Ceres API accepts doubles only
-		const Vector<double> tenorsD{ uv::core::convertVector<double>(tenors) };
-		const Vector<double> strikesD{ uv::core::convertVector<double>(strikes) };
-		const Vector<double> forwardsD{ uv::core::convertVector<double>(forwards) };
-		const Vector<double> ratesD{ uv::core::convertVector<double>(rates) };
-		const Matrix<double> callMD{ uv::core::convertMatrix<double>(callM) };
+		const Vector<double> tenorsD{ core::convertVector<double>(tenors) };
+		const Vector<double> strikesD{ core::convertVector<double>(strikes) };
+		const Vector<double> forwardsD{ core::convertVector<double>(forwards) };
+		const Vector<double> ratesD{ core::convertVector<double>(rates) };
+		const Matrix<double> callMD{ core::convertMatrix<double>(callM) };
 
 		const std::size_t numTenors{ tenorsD.size() };
 		const std::size_t numStrikes{ strikesD.size() };

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * File:        Matrix.hpp
+ * File:        Functions.hpp
  * Author:      Alvaro Sanchez de Carlos
  * Created:     2025-12-08
  *
@@ -22,43 +22,28 @@
  * limitations under this License.
  */
 
+
 #pragma once
 
+#include "Core/VolSurface.hpp"
+
+#include <string>
 #include <concepts>
-#include <cstddef>
-#include <span>
 
-namespace uv::core
+namespace uv::utils
 {
-	template <std::floating_point T>
-	class MatrixT
-	{
-	private:
+	/**
+	 * @brief Reads a CSV file containing a volatility surface and returns a VolSurface object.
+	 *
+	 * The CSV file is expected to have the following structure:
+	 * - The first row contains moneyness (K/S).
+	 * - The first column of each subsequent row contains tenors.
+	 * - The remaining cells contain implied volatilities for each strike-maturity pair.
+	 *
+	 * @param filename Path to the CSV file.
+	 * @return VolSurface Object containing the strikes, tenors, and implied volatilities.
+	 */
+	core::VolSurface readVolSurface(const std::string& filename, const core::MarketData& mktData);
 
-		std::size_t numRows_{ 0 };
-		std::size_t numColumns_{ 0 };
-		Vector<T> data_{};
+} // namespace uv::utils
 
-	public:
-
-		MatrixT() = delete;
-		MatrixT(std::size_t numRows,
-		std::size_t numColumns,
-		T val = T(0)) noexcept;
-
-
-		std::span<T> operator[](std::size_t i) noexcept;
-		std::span<const T> operator[](std::size_t i) const noexcept;
-
-		void print(unsigned int valuePrec = 4) const noexcept;
-		bool empty() const noexcept;
-
-		// Getters
-		std::size_t rows() const noexcept;
-		std::size_t size() const noexcept;  // For STL API compatibility
-
-	};
-
-} // namespace uv::core
-
-#include "Matrix.inl"

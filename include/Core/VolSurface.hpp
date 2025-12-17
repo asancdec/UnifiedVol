@@ -27,6 +27,8 @@
 
 #include "Core/MarketData.hpp"
 #include "Utils/Types.hpp"
+#include "Core/Matrix.hpp"
+
 
 #include <cstddef>
 

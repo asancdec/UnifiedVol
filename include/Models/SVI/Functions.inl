@@ -47,8 +47,8 @@ namespace uv::models::svi
         // ---------- Extract data ----------
         
         // NLopt API accepts double type only
-        const Matrix<double> kMatrixD{ uv::core::convertMatrix<double>(kMatrix)};
-        const Matrix<double> wMMatrixD{ uv::core::convertMatrix<double>(wMMatrix)};
+        const Matrix<double> kMatrixD{ core::convertMatrix<double>(kMatrix)};
+        const Matrix<double> wMMatrixD{ core::convertMatrix<double>(wMMatrix)};
 
         const std::size_t numTenors{ tenors.size()};
         const std::size_t numStrikes{ kMatrixD[0].size()};

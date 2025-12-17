@@ -25,9 +25,19 @@
 #include "Utils/Aux/Errors.hpp"  
 
 #include <algorithm>
+#include <numeric>
 
 namespace uv::core
 {
+    template <typename T>
+    Vector<T> makeSequence(std::size_t n, 
+        T start) noexcept
+    {
+        Vector<T> v(n);
+        std::iota(v.begin(), v.end(), start);
+        return v;
+    }
+
     template<typename T>
     T minValue(const Vector<T>& x)
     {

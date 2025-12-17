@@ -26,26 +26,12 @@
 #pragma once
 
 #include "Core/VolSurface.hpp"
-#include "Core/Matrix.hpp"
 
 #include <string>
 #include <concepts>
 
 namespace uv::utils
 {
-	/**
-	 * @brief Reads a CSV file containing a volatility surface and returns a VolSurface object.
-	 *
-	 * The CSV file is expected to have the following structure:
-	 * - The first row contains moneyness (K/S).
-	 * - The first column of each subsequent row contains tenors.
-	 * - The remaining cells contain implied volatilities for each strike-maturity pair.
-	 *
-	 * @param filename Path to the CSV file.
-	 * @return VolSurface Object containing the strikes, tenors, and implied volatilities.
-	 */
-	core::VolSurface readVolSurface(const std::string& filename, const core::MarketData& mktData);
-
 	/**
 	 * @brief Pretty-print a 2D matrix with a header row and row labels.
 	 *
@@ -83,17 +69,6 @@ namespace uv::utils
 		unsigned int headerPrec = 2,
 		unsigned int rowLabelPrec = 2,
 		unsigned int valuePrec = 5) noexcept;
-
-
-	//template <std::floating_point T>
-	//template <typename HeaderVec, typename RowLabels>
-	//void printMatrix(std::string_view title,
-	//	const HeaderVec& header,
-	//	const RowLabels& rowLabels,
-	//	const core::MatrixT<T>& M,
-	//	unsigned int headerPrec = 2,
-	//	unsigned int rowLabelPrec = 2,
-	//	unsigned int valuePrec = 5) noexcept;
 
 } // namespace uv::utils
 

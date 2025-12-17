@@ -54,7 +54,7 @@ namespace uv::math
 
         for (std::size_t i = 0; i < N; ++i)
         {
-            out[i] = uv::math::blackScholes(
+            out[i] = math::blackScholes(
                 t,
                 r,
                 q,
@@ -95,7 +95,7 @@ namespace uv::math
 
         for (std::size_t i = 0; i < Nt; ++i)
         {
-            out[i] = uv::math::blackScholes(
+            out[i] = math::blackScholes(
                 t[i],
                 r[i],
                 q[i],

@@ -296,7 +296,7 @@ namespace uv::math
 
         for (std::size_t i = 0; i < N; ++i)
         {
-            out[i] = uv::math::impliedVolBS(
+            out[i] = math::impliedVolBS(
                 callPrices[i],
                 t,
                 r,
@@ -336,7 +336,7 @@ namespace uv::math
 
         for (std::size_t i = 0; i < Nt; ++i)
         {
-            out[i] = uv::math::impliedVolBS(
+            out[i] = math::impliedVolBS(
                 callPrices[i],   // Vector<T>
                 t[i],
                 r[i],

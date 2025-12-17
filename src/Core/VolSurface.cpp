@@ -33,6 +33,8 @@
 #include <cmath>
 #include <cstddef>
 #include <utility>
+#include <span>
+
 
 namespace uv::core
 {
@@ -57,9 +59,9 @@ namespace uv::core
 
         // ---------- Initialize member variables ---------- 
 
-        strikes_ = uv::core::multiply(mny_, S_);
+        strikes_ = core::multiply(mny_, S_);
         setForwards_();
-        callPrices_ = uv::math::blackScholes(tenors_, rates_, dividends_, volMatrix_, S_, strikes_);
+        callPrices_ = math::blackScholes(tenors_, rates_, dividends_, volMatrix_, S_, strikes_);
         setLogKFMatrix_();
         setTotVar_(volMatrix_);
     }
@@ -91,7 +93,7 @@ namespace uv::core
         // NOTE: Prefer to pass volMatrix as input for safety
         for (std::size_t i = 0; i < numTenors_; ++i)
         {
-            totVarMatrix_[i] = uv::core::multiply(uv::core::hadamard(volMatrix[i], volMatrix[i]), tenors_[i]);
+            totVarMatrix_[i] = core::multiply(uv::core::hadamard(volMatrix[i], volMatrix[i]), tenors_[i]);
         }
     }
 
@@ -115,13 +117,13 @@ namespace uv::core
     {
         totVarMatrix_ = totVarMatrix;
         setVolFromVar_(totVarMatrix);
-        callPrices_ = uv::math::blackScholes(tenors_, rates_, dividends_, volMatrix_, S_, strikes_);
+        callPrices_ = math::blackScholes(tenors_, rates_, dividends_, volMatrix_, S_, strikes_);
     }
 
     void VolSurface::setCallPrices(const Matrix<Real>& callPrices)
     {
         callPrices_ = callPrices;
-        volMatrix_ = uv::math::impliedVolBS(callPrices_, tenors_, rates_, dividends_, S_, strikes_);
+        volMatrix_ = math::impliedVolBS(callPrices_, tenors_, rates_, dividends_, S_, strikes_);
         setTotVar_(volMatrix_);
     }
 
@@ -197,7 +199,7 @@ namespace uv::core
         const int headerPrec{ mnyFlag ? 2 : 4 };
         const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
 
-        uv::utils::printMatrix(
+        utils::printMatrix(
             /*title=*/title,
             /*header=*/header,
             /*rowLabels=*/tenors_,
@@ -215,7 +217,7 @@ namespace uv::core
         const int headerPrec{ mnyFlag ? 2 : 4 };
         const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
 
-        uv::utils::printMatrix(
+        utils::printMatrix(
             /*title=*/title,
             /*header=*/header,
             /*rowLabels=*/tenors_,
@@ -233,7 +235,7 @@ namespace uv::core
         const int headerPrec{ mnyFlag ? 2 : 4 };
         const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
 
-        uv::utils::printMatrix(
+        utils::printMatrix(
             /*title=*/title,
             /*header=*/header,
             /*rowLabels=*/tenors_,
