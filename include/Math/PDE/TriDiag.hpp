@@ -25,6 +25,7 @@
 #pragma once
 
 #include "Utils/Types.hpp"
+#include "Core/Matrix.hpp"
 
 namespace uv::math::pde
 {
@@ -48,8 +49,8 @@ namespace uv::math::pde
 	 */
 	struct TriDiag
 	{
-		Matrix<Real> lower; ///< Sub-diagonal coefficients (A)
-		Matrix<Real> diag;  ///< Main diagonal coefficients (B)
-		Matrix<Real> upper; ///< Super-diagonal coefficients (C)
+		core::Matrix<Real> lower; ///< Sub-diagonal coefficients (A)
+		core::Matrix<Real> diag;  ///< Main diagonal coefficients (B)
+		core::Matrix<Real> upper; ///< Super-diagonal coefficients (C)
 	};
 }  // namespace uv::math::pde

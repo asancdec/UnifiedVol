@@ -24,20 +24,13 @@
 #pragma once
 
 #include "Utils/Types.hpp"
+#include "Core/Matrix.hpp"
 
+#include <span>
 #include <cstddef>
 
 namespace uv::core
 {
-    /**
-     * @brief Transpose a dense matrix stored as a vector of row vectors.
-     *
-     * @tparam Real     Element type.
-     * @param  input    Matrix with shape [numRows][numCols].
-     * @return          Transposed matrix with shape [numCols][numRows].
-     */
-	Matrix<Real> transposeMatrix(const Matrix<Real>& input);
-
     /**
      * @brief Generate an evenly spaced 1D grid of Real values.
      *
@@ -113,42 +106,13 @@ namespace uv::core
     Vector<Real> reciprocal(const Vector<Real>& v) noexcept;
 
     /**
-     * @brief Add a scalar value to every element of a matrix.
-     *
-     * @param A Input matrix.
-     * @param x Scalar value to add to each matrix element.
-     * @return A matrix where each entry equals <tt>A[i][j] + x</tt>.
-     */
-    Matrix<Real> add(const Matrix<Real>& A,
-        Real x) noexcept;
-
-    /**
      * @brief Compute the element-wise (Hadamard) product of two vectors.
      *
      * @param a First input vector.
      * @param b Second input vector.
      * @return A vector where each element equals <tt>a[i] * b[i]</tt>.
      */
-    Vector<Real> hadamard(const Vector<Real>& a, const Vector<Real>& b);
-
-    /**
-     * @brief Compute the element-wise (Hadamard) product of a matrix and a vector.
-     *
-     * @param A Input matrix of size `A.size() x A[0].size()`.
-     * @param b Input vector whose size must match the number of columns of @p A.
-     * @return A new matrix where each row is the Hadamard product of a row of @p A and @p b.
-     */
-    Matrix<Real> hadamard(const Matrix<Real>& A,
-        const Vector<Real>& b);
-
-    /**
-     * @brief Compute the element-wise (Hadamard) product of two matrices.
-     *
-     * @return A matrix of the same size as `A` and `B`, where each element is the
-     *         Hadamard (element-wise) product of the corresponding elements of `A` and `B`.
-     */
-    Matrix<Real> hadamard(const Matrix<Real>& A,
-        const Matrix<Real>& B);
+    Vector<Real> hadamard(std::span<const Real> a, std::span<const Real> b);
 
     /**
      * @brief Return the minimum element of a vector.
@@ -164,7 +128,7 @@ namespace uv::core
      * @throws ErrorCode::InvalidArgument if `x` is empty.
      */
     template<typename T>
-    T minValue(const Vector<T>& x);
+    T minValue(std::span<const T> x);
 
     /**
      * @brief Return the maximum element of a vector.
@@ -180,7 +144,7 @@ namespace uv::core
      * @throws ErrorCode::InvalidArgument if `x` is empty.
      */
     template<typename T>
-    T maxValue(const Vector<T>& x);
+    T maxValue(std::span<const T> x);
 
     /**
      * @brief Convert a vector to another value type.
@@ -220,7 +184,6 @@ namespace uv::core
      */
     template <typename To, typename From>
     Matrix<To> convertMatrix(const Matrix<From>& A) noexcept;
-
 
 } // namespace uv::core
 

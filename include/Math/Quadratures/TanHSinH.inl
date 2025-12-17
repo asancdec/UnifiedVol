@@ -281,7 +281,7 @@ namespace uv::math
 	}
 
 	template <std::size_t N>
-	TanHSinH<N>::Node TanHSinH<N>::generateNode(const Real nh) const noexcept
+	TanHSinH<N>::Node TanHSinH<N>::generateNode(Real nh) const noexcept
 	{
 		// Calculate q term
 		const Real q{ std::exp(-std::numbers::pi_v<Real> * std::sinh(nh)) };

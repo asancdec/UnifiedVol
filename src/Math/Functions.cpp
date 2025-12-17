@@ -25,53 +25,16 @@
 #include "Math/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
 #include "Utils/Types.hpp"
+
 #include <cstddef>
+#include <span>
 
 namespace uv::math
 {
-    Vector<Real> blackScholes(Real t,
-        Real r,
-        Real q,
-        const Vector<Real>& vol,
-        Real S,
-        const Vector<Real>& K,
-        bool isCall)
-    {
-
-        // ---------- Validate inputs ----------
-
-        const std::size_t N{ vol.size() };
-
-        UV_REQUIRE(
-            K.size() == N,
-            ErrorCode::InvalidArgument,
-            "blackScholes: vol / strike size mismatch"
-        );
-
-        // ---------- Calculate Black-Scholes prices ----------
-
-        Vector<Real> out(N);
-
-        for (std::size_t i = 0; i < N; ++i)
-        {
-            out[i] = math::blackScholes(
-                t,
-                r,
-                q,
-                vol[i],
-                S,
-                K[i],
-                isCall
-            );
-        }
-
-        return out;
-    }
-
-    Matrix<Real> blackScholes(const Vector<Real>& t,
+    core::Matrix<Real> blackScholes(const Vector<Real>& t,
         const Vector<Real>& r,
         const Vector<Real>& q,
-        const Matrix<Real>& vol,
+        const core::Matrix<Real>& vol,
         Real S,
         const Vector<Real>& K,
         bool isCall
@@ -80,30 +43,37 @@ namespace uv::math
         // ---------- Validate inputs ----------
 
         const std::size_t Nt{ t.size() };
+        const std::size_t Nk{ K.size() };
 
         UV_REQUIRE(
             r.size() == Nt &&
             q.size() == Nt &&
-            vol.size() == Nt,
+            vol.rows() == Nt &&
+            Nk == vol.cols(),
             ErrorCode::InvalidArgument,
             "blackScholes(matrix): input size mismatch"
         );
 
         // ---------- Calculate Black-Scholes prices ----------
 
-        Matrix<Real> out(Nt);
+        core::Matrix<Real> out(Nt, Nk);
 
         for (std::size_t i = 0; i < Nt; ++i)
         {
-            out[i] = math::blackScholes(
-                t[i],
-                r[i],
-                q[i],
-                vol[i], 
-                S,
-                K,
-                isCall
-            );
+            std::span<Real> outRow{ out[i] };
+            std::span<const Real> voli{ vol[i] };
+            const Real ti{ t[i] };
+            const Real ri{ r[i] };
+            const Real qi{ q[i] };
+
+
+            for (std::size_t j = 0; j < Nk; ++j)
+            {
+                outRow[j] = math::blackScholes(
+                    ti, ri, qi, voli[j],
+                    S, K[j], isCall
+                );
+            }
         }
 
         return out;

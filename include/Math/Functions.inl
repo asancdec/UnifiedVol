@@ -310,7 +310,7 @@ namespace uv::math
     }
 
     template <std::floating_point T>
-    Matrix<T> impliedVolBS(const Matrix<T>& callPrices,
+    core::Matrix<T> impliedVolBS(const core::Matrix<T>& callPrices,
         const Vector<T>& t,
         const Vector<T>& r,
         const Vector<T>& q,
@@ -321,29 +321,40 @@ namespace uv::math
         // ---------- Validate inputs ----------
 
         const std::size_t Nt{ t.size() };
+        const std::size_t Nk{ K.size() };
 
         UV_REQUIRE(
             r.size() == Nt &&
             q.size() == Nt &&
-            callPrices.size() == Nt,
+            callPrices.rows() == Nt &&
+            callPrices.cols() == Nk,
             ErrorCode::InvalidArgument,
             "impliedVolBS(matrix): input size mismatch"
         );
 
         // ---------- Compute implied volatilities ----------
 
-        Matrix<T> out(Nt);
+        core::Matrix<T> out(Nt, Nk);
 
         for (std::size_t i = 0; i < Nt; ++i)
         {
-            out[i] = math::impliedVolBS(
-                callPrices[i],   // Vector<T>
-                t[i],
-                r[i],
-                q[i],
-                S,
-                K
-            );
+            std::span<T> outi{out[i]};
+            std::span<const T> callPricesi{callPrices[i]};
+            const T ti{ t[i] };
+            const T ri{ r[i] };
+            const T qi{ q[i] };
+
+            for (std::size_t j = 0; j < Nk; ++j)
+            {
+                outi[j] = math::impliedVolBS(
+                    callPricesi[j],
+                    ti,
+                    ri,
+                    qi,
+                    S,
+                    K[j]
+                );
+            }
         }
 
         return out;

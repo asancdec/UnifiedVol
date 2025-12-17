@@ -36,8 +36,8 @@ namespace uv::models::svi
 {
     template <::nlopt::algorithm Algo>
     Vector<Params> calibrate(const Vector<Real>& tenors,
-        const Matrix<Real>& kMatrix,
-        const Matrix<Real>& wMMatrix,
+        const core::Matrix<Real>& kMatrix,
+        const core::Matrix<Real>& wMMatrix,
         const opt::nlopt::Optimizer<4, Algo>& prototype)
     {
         // ---------- Validate inputs ----------
@@ -47,11 +47,11 @@ namespace uv::models::svi
         // ---------- Extract data ----------
         
         // NLopt API accepts double type only
-        const Matrix<double> kMatrixD{ core::convertMatrix<double>(kMatrix)};
-        const Matrix<double> wMMatrixD{ core::convertMatrix<double>(wMMatrix)};
+        const core::Matrix<double> kMatrixD{ core::convertMatrix<double>(kMatrix)};
+        const core::Matrix<double> wMMatrixD{ core::convertMatrix<double>(wMMatrix)};
 
         const std::size_t numTenors{ tenors.size()};
-        const std::size_t numStrikes{ kMatrixD[0].size()};
+        const std::size_t numStrikes{ kMatrixD.cols()};
 
         // ---------- Initialize params container ----------
 
@@ -148,8 +148,8 @@ namespace uv::models::svi::detail
     template <::nlopt::algorithm Algo>
     Params calibrateSlice(
         const Real T,
-        const Vector<double>& kSlice,
-        const Vector<double>& wKSlice,
+        std::span<const double> kSlice,
+        std::span<const double> wKSlice,
         const opt::nlopt::Optimizer<4, Algo>& prototype,
         const Params* prevParams,         
         const std::size_t numStrikes
@@ -545,5 +545,17 @@ namespace uv::models::svi::detail
             },
             const_cast<ObjectiveContexts*>(&ctx)
         );
+    }
+
+    template <std::floating_point T>
+    T calculateWk(T a,
+        T b,
+        T rho,
+        T m,
+        T sigma,
+        T k) noexcept
+    {
+        const T x{ k - m };
+        return std::fma(b, (rho * x + std::hypot(x, sigma)), a);
     }
 } 

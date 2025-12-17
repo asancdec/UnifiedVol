@@ -52,14 +52,6 @@ namespace uv
     using Vector = std::vector<T>;
 
     /**
-     * @brief 2D dynamic container representing a numerical matrix.
-     * 
-     * @tparam T Element type.
-     */
-    template <typename T>
-    using Matrix = std::vector<Vector<T>>;
-
-    /**
      * @brief Complex number type with floating point real/imaginary components.
      *
      * @tparam T A floating point type (float, double, long double, etc.).

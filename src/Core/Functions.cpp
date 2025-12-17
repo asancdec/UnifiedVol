@@ -33,43 +33,6 @@
 
 namespace uv::core
 {
-    Matrix<Real> transposeMatrix(const Matrix<Real>& input)
-	{
-        // ---------- Check matching dimensions ----------
-
-        const std::size_t numRows{ input.size() };
-        const std::size_t numCols{ input[0].size() };
-
-        // Throw if all rows are not the same size
-        for (std::size_t i = 1; i < numRows; ++i)
-        {
-            const std::size_t actual{ input[i].size() };
-            const std::size_t expected{ numCols };
-
-            UV_REQUIRE(
-                actual == expected,
-                ErrorCode::InvalidArgument,
-                "transposeVector: inconsistent row length - row " +
-                std::to_string(i) + " has " + std::to_string(actual) +
-                " elements, expected " + std::to_string(expected)
-            );
-        }
-
-        // ---------- Transpose matrix ----------
-        
-        std::vector<Vector<Real>> result(numCols, Vector<Real>(numRows));
-
-        for (std::size_t i = 0; i < numRows; ++i)
-        {
-            for (std::size_t j = 0; j < numCols; ++j)
-            {
-                result[j][i] = input[i][j];
-            }
-        }
-
-        return result;
-	}
-
     Vector<Real> generateGrid(const Real bound1,
         const Real bound2,
         const size_t steps
@@ -156,30 +119,8 @@ namespace uv::core
         return result;
     }
 
-
-    Matrix<Real> add(const Matrix<Real>& A,
-        const Real x) noexcept
-    {
-        const std::size_t rows{ A.size() };
-
-        Matrix<Real> result(rows);
-
-        for (std::size_t i = 0; i < rows; ++i)
-        {
-            const std::size_t cols{ A[i].size() };
-            result[i].resize(cols);
-
-            for (std::size_t j = 0; j < cols; ++j)
-            {
-                result[i][j] = A[i][j] + x;
-            }
-        }
-
-        return result;
-    }
-
-    Vector<Real> hadamard(const Vector<Real>& a, 
-        const Vector<Real>& b)
+    Vector<Real> hadamard(std::span<const Real> a,
+        std::span<const Real> b)
     {
         // ---------- Check dimensions ----------
 
@@ -203,74 +144,6 @@ namespace uv::core
         }
 
         return c;
-    }
-
-
-    Matrix<Real> hadamard(const Matrix<Real>& A,
-        const Vector<Real>& b) 
-    {
-        // ---------- Check dimensions ----------
-
-        const std::size_t rows{ A.size() };
-        const std::size_t cols{ A[0].size() };
-
-        UV_REQUIRE(
-            b.size() == cols,
-            ErrorCode::InvalidArgument,
-            "hadamard: vector size must equal number of columns"
-        );
-
-        // ---------- Row-wise multiplication ----------
-
-        Matrix<Real> C(rows, Vector<Real>(cols));
-
-        for (std::size_t i = 0; i < rows; ++i)
-        {
-
-            C[i] = hadamard(A[i], b);
-        }
-
-        return C;
-    }
-
-    Matrix<Real> hadamard(const Matrix<Real>& A,
-        const Matrix<Real>& B)
-    {
-        // ---------- Check dimensions ----------
-
-        const std::size_t rowsA{ A.size() };
-        const std::size_t rowsB{ B.size() };
-
-        UV_REQUIRE(
-            rowsA == rowsB,
-            ErrorCode::InvalidArgument,
-            "hadamard: matrices must have same number of rows (got " +
-            std::to_string(rowsA) + " and " + std::to_string(rowsB) + ")"
-        );
-
-        const std::size_t colsA{ A[0].size() };
-        const std::size_t colsB{ B[0].size() };
-
-        UV_REQUIRE(
-            colsA == colsB,
-            ErrorCode::InvalidArgument,
-            "hadamard: matrices must have same number of columns (got " +
-            std::to_string(colsA) + " and " + std::to_string(colsB) + ")"
-        );
-
-        // ---------- Element-wise multiplication ----------
-
-        Matrix<Real> C(rowsA, Vector<Real>(colsA));
-
-        for (std::size_t i = 0; i < rowsA; ++i)
-        {
-            for (std::size_t j = 0; j < colsA; ++j)
-            {
-                C[i][j] = A[i][j] * B[i][j];
-            }
-        }
-
-        return C;
     }
 
 } // namespace uv::core

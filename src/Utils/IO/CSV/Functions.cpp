@@ -26,6 +26,7 @@
 #include "Utils/IO/CSV/Functions.hpp"
 #include "Core/MarketData.hpp"
 #include "Core/VolSurface.hpp"
+#include "Core/Matrix.hpp"
 #include "Utils/Aux/Errors.hpp"       
 #include "Utils/Types.hpp"
 
@@ -130,7 +131,7 @@ namespace uv::utils
         // Read data rows: maturity, vol_1, vol_2, ..., vol_N
         // --------------------------------------------------------------------------
         Vector<Real> tenors{};
-        Matrix<Real> vols{};
+        Vector<Vector<Real>> vols{};
 
         std::size_t lineNo = 1; // already consumed header
         while (std::getline(file, line))
@@ -202,7 +203,18 @@ namespace uv::utils
             }
         }
 
-        // Construct VolSurface using the MarketData-based ctor
-        return core::VolSurface(tenors, mny, vols, mktData);
+        // Conver to matrix data type
+        core::Matrix<Real> volsMat(tenors.size(), mny.size());
+
+        for (std::size_t i = 0; i < tenors.size(); ++i)
+        {  
+            for (std::size_t j = 0; j < mny.size(); ++j)
+            {
+                volsMat[i][j] = vols[i][j];
+            }
+        }
+
+        // Construct VolSurface
+        return core::VolSurface(tenors, mny, volsMat, mktData);
     }
 } // namespace uv::utils

@@ -42,7 +42,7 @@ namespace uv::models::svi
 
         const std::size_t numTenors{ volSurface.numTenors() };
         const std::size_t numStrikes{ volSurface.numStrikes() };
-        const Matrix<Real>& kMatrix{ volSurface.logKFMatrix() };
+        const core::Matrix<Real>& kMatrix{ volSurface.logKFMatrix() };
 
         // ---------- Validate inputs ----------
 
@@ -54,23 +54,23 @@ namespace uv::models::svi
 
         // ---------- Build total variance matrix ----------
 
-        Matrix<Real> wK(numTenors, Vector<Real>(numStrikes));
+        core::Matrix<Real> wK(numTenors, numStrikes);
 
         for (std::size_t i = 0; i < numTenors; ++i)
         {
             // Extract data
             const Params& p{ params[i] };
-            const Vector<Real>& kSlice{kMatrix[i]};
-            const double a{ double(p.a) };
-            const double b{ double(p.b) };
-            const double rho{ double(p.rho) };
-            const double m{ double(p.m) };
-            const double sigma{ double(p.sigma) };
+            std::span<const Real> kSlice{kMatrix[i]};
+            const Real a{ p.a };
+            const Real b{ p.b };
+            const Real rho{ p.rho };
+            const Real m{ p.m };
+            const Real sigma{ p.sigma };
 
             // Calculate total variance per strike
             for (std::size_t j = 0; j < numStrikes; ++j)
             {
-                wK[i][j] = Real(detail::calculateWk(a, b, rho, m, sigma, kSlice[j]));
+                wK[i][j] = detail::calculateWk(a, b, rho, m, sigma, kSlice[j]);
             }
         }
 
@@ -106,8 +106,8 @@ namespace uv::models::svi
 namespace uv::models::svi::detail
 {
     void validateInputs(const Vector<Real>& tenors,
-        const Matrix<Real>& kMatrix,
-        const Matrix<Real>& wMMatrix)
+        const core::Matrix<Real>& kMatrix,
+        const core::Matrix<Real>& wMMatrix)
     {
         UV_REQUIRE(
             !tenors.empty(),
@@ -128,28 +128,22 @@ namespace uv::models::svi::detail
         );
 
         UV_REQUIRE(
-            kMatrix.size() == tenors.size(),
+            kMatrix.rows() == tenors.size(),
             ErrorCode::InvalidArgument,
             "validateInputs: kMatrix rows must equal number of tenors"
         );
 
         UV_REQUIRE(
-            wMMatrix.size() == tenors.size(),
+            wMMatrix.rows() == tenors.size(),
             ErrorCode::InvalidArgument,
             "validateInputs: wMMatrix rows must equal number of tenors"
         );
 
-        UV_REQUIRE(
-            !kMatrix[0].empty(),
-            ErrorCode::InvalidArgument,
-            "validateInputs: kMatrix has zero strikes"
-        );
-
         const std::size_t numTenors{ tenors.size() };
-        const std::size_t numStrikes{ kMatrix[0].size() };
+        const std::size_t numStrikes{ kMatrix.cols() };
 
         UV_REQUIRE(
-            wMMatrix[0].size() == numStrikes,
+            wMMatrix.cols() == numStrikes,
             ErrorCode::InvalidArgument,
             "validateInputs: wMMatrix columns must equal kMatrix columns"
         );
@@ -165,18 +159,6 @@ namespace uv::models::svi::detail
 
         for (std::size_t i = 0; i < numTenors; ++i)
         {
-            UV_REQUIRE(
-                kMatrix[i].size() == numStrikes,
-                ErrorCode::InvalidArgument,
-                "validateInputs: kMatrix is not rectangular"
-            );
-
-            UV_REQUIRE(
-                wMMatrix[i].size() == numStrikes,
-                ErrorCode::InvalidArgument,
-                "validateInputs: wMMatrix is not rectangular or does not match kMatrix"
-            );
-
             for (std::size_t j = 1; j < numStrikes; ++j)
             {
                 UV_REQUIRE(
@@ -199,7 +181,7 @@ namespace uv::models::svi::detail
         };
     }
 
-    std::array<double, 4> lowerBounds(const double logKFMin) noexcept
+    std::array<double, 4> lowerBounds(double logKFMin) noexcept
     {
         return
         {
@@ -210,7 +192,7 @@ namespace uv::models::svi::detail
         };
     }
 
-    std::array<double, 4> upperBounds(const double logKFMax) noexcept
+    std::array<double, 4> upperBounds(double logKFMax) noexcept
     {
         return
         {
@@ -221,22 +203,11 @@ namespace uv::models::svi::detail
         };
     }
 
-    double calculateWk(const double a,
-        const double b,
-        const double rho,
-        const double m,
-        const double sigma,
-        const double k) noexcept
-    {
-        const double x{ k - m };
-        return std::fma(b, (rho * x + std::hypot(x, sigma)), a);
-    }
-
-    double aParam(const double atmWK,
-        const double b,
-        const double rho,
-        const double m,
-        const double sigma) noexcept
+    double aParam(double atmWK,
+        double b,
+        double rho,
+        double m,
+        double sigma) noexcept
     {
         return atmWK - b * (-rho * m + std::sqrt(m * m + sigma * sigma));
     }
@@ -248,11 +219,11 @@ namespace uv::models::svi::detail
     }
 
     std::array<double, 4> gkGrad(
-        const double b,
-        const double rho,
-        const double m,
-        const double sigma,
-        const double k,
+        double b,
+        double rho,
+        double m,
+        double sigma,
+        double k,
         const GkCache& p
     ) noexcept
     {

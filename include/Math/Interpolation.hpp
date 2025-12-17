@@ -27,6 +27,7 @@
 
 #include "Utils/Types.hpp"
 
+#include <span>
 #include <concepts>
 
 namespace uv::math::interp
@@ -72,9 +73,9 @@ namespace uv::math::interp
 	 */
 	template <std::floating_point T>
 	Vector<T> pchipInterp(
-		const Vector<T>& x,
-		const Vector<T>& xs,
-		const Vector<T>& ys
+		std::span<const T> x,
+		std::span<const T> xs,
+		std::span<const T> ys
 	);
 
 	/**
@@ -121,8 +122,8 @@ namespace uv::math::interp
 	template <std::floating_point T>
 	T pchipInterp(
 		T x,
-		const Vector<T>& xs,
-		const Vector<T>& ys
+		std::span<const T> xs,
+		std::span<const T> ys
 	);
 
 	/**
@@ -176,10 +177,10 @@ namespace uv::math::interp
 	 */
 	template <std::floating_point T>
 	Vector<T> hermiteSplineInterp(
-		const Vector<T>& x,
-		const Vector<T>& xs,
-		const Vector<T>& ys,
-		const Vector<T>& dydx
+		const std::span<const T> x,
+		const std::span<const T> xs,
+		const std::span<const T> ys,
+		const std::span<const T> dydx
 	);
 
 	/**
@@ -231,8 +232,8 @@ namespace uv::math::interp
 	 * @note Complexity: O(N), no global solves or matrix factorizations.
 	 */
 	template <std::floating_point T>
-	Vector<T> pchipDerivatives(const Vector<T>& xs,
-		const Vector<T>& ys);
+	Vector<T> pchipDerivatives(std::span<const T> xs,
+		std::span<const T> ys);
 
 	namespace details
 	{	
@@ -282,36 +283,6 @@ namespace uv::math::interp
 			T S1,
 			T S2
 		) noexcept;
-
-		/**
-		 * @brief Row-wise PCHIP interpolation of a 2D matrix.
-		 *
-		 * Performs 1D piecewise cubic Hermite interpolation (PCHIP) independently on
-		 * each row of a 2D matrix. For each fixed row i, the routine interpolates
-		 * entries on the source grid (xs, ys[i]) to a new grid x, preserving the
-		 * number of rows and replacing the columns.
-		 *
-		 * Given a matrix:
-		 *
-		 *     ys[i][j] = f( xs[j] ),   i = 0..(nRows-1),  j = 0..(nXS-1)
-		 *
-		 * the output matrix has the form:
-		 *
-		 *     result[i][k] = f_interp( x[k] ),  k = 0..(x.size()-1)
-		 *
-		 * @tparam T    Floating-point type satisfying std::floating_point.
-		 *
-		 * @param x     Target x-grid for interpolation (size M).
-		 * @param xs    Source x-grid (size C), must be strictly increasing.
-		 * @param ys    Matrix of values indexed as ys[row][col].
-		 *
-		 * @return      Matrix with the same number of rows as ys and
-		 *              x.size() columns containing interpolated values.
-		 */
-		template <std::floating_point T>
-		Matrix<T> pchipInterpRows(const Vector<T>& x,
-			const Vector<T>& xs,
-			const Matrix<T>& ys);
 
 	} // namespace details
 

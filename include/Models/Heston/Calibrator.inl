@@ -28,6 +28,7 @@
 
 #include <memory>
 #include <algorithm>
+#include <span>
 
 namespace uv::models::heston::calibrator
 {
@@ -36,7 +37,7 @@ namespace uv::models::heston::calibrator
 		const Vector<Real>& strikes,
 		const Vector<Real>& forwards,
 		const Vector<Real>& rates,
-		const Matrix<Real>& callM,
+		const core::Matrix<Real>& callM,
 		Pricer<N>& pricer,
 		opt::ceres::Optimizer<5, Policy>& optimizer)
 	{
@@ -51,7 +52,7 @@ namespace uv::models::heston::calibrator
 		const Vector<double> strikesD{ core::convertVector<double>(strikes) };
 		const Vector<double> forwardsD{ core::convertVector<double>(forwards) };
 		const Vector<double> ratesD{ core::convertVector<double>(rates) };
-		const Matrix<double> callMD{ core::convertMatrix<double>(callM) };
+		const core::Matrix<double> callMD{ core::convertMatrix<double>(callM) };
 
 		const std::size_t numTenors{ tenorsD.size() };
 		const std::size_t numStrikes{ strikesD.size() };
@@ -70,6 +71,7 @@ namespace uv::models::heston::calibrator
 		for (std::size_t i = 0; i < numTenors; ++i)
 		{
 			// Extract data
+			std::span<const double> callMDi{callMD[i]};
 			const double T{ tenorsD[i] };
 			const double F{ forwardsD[i]};
 			const double r{ ratesD[i] };
@@ -80,7 +82,7 @@ namespace uv::models::heston::calibrator
 				(
 					std::make_unique<detail::PriceResidualJac<N>>
 					(
-						T, F, r, strikesD[j], callMD[i][j], pricer
+						T, F, r, strikesD[j], callMDi[j], pricer
 					)
 				);
 			}
@@ -114,18 +116,19 @@ namespace uv::models::heston::calibrator
 
 		// ---------- Calculate call prices ----------
 
-		Matrix<Real> callPrices(numTenors, Vector<Real>(numStrikes));
+		core::Matrix<Real> callPrices(numTenors, numStrikes);
 
 		for (std::size_t i = 0; i < numTenors; ++i)
 		{
 			// Extract data
+			std::span<Real> callPricesi{ callPrices[i] };
 			const Real T{ tenors[i]};
 			const Real F{ forwards[i]};
 			const Real r{ rates[i]};
 
 			for (std::size_t j = 0; j < numStrikes; ++j)
 			{
-				callPrices[i][j] = pricer.callPrice(T, F, r, strikes[j]);
+				callPricesi[j] = pricer.callPrice(T, F, r, strikes[j]);
 			}
 		}
 

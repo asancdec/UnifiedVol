@@ -35,7 +35,6 @@
 #include <utility>
 #include <span>
 
-
 namespace uv::core
 {
     VolSurface::VolSurface(Vector<Real> tenors,
@@ -50,11 +49,11 @@ namespace uv::core
         S_(mktData.S),
         rates_(numTenors_, mktData.r),          // Constant risk-free rate for now
         dividends_(numTenors_, mktData.q),      // Constant dividends for now
-        strikes_(Vector<Real>(numStrikes_)),
+        strikes_(numStrikes_),
         forwards_(numTenors_),
-        callPrices_(numTenors_, Vector<Real>(numStrikes_)),
-        logKFMatrix_(numTenors_, Vector<Real>(numStrikes_)),
-        totVarMatrix_(numTenors_, Vector<Real>(numStrikes_))
+        callPrices_(numTenors_, numStrikes_),
+        logKFMatrix_(numTenors_, numStrikes_),
+        totVarMatrix_(numTenors_, numStrikes_)
     {   
 
         // ---------- Initialize member variables ---------- 
@@ -79,7 +78,7 @@ namespace uv::core
         for (std::size_t i = 0; i < numTenors_; ++i)
         {
             const Real logF{ std::log(forwards_[i]) };
-            Vector<Real>& row{ logKFMatrix_[i] };
+            std::span<Real> row{ logKFMatrix_[i] };
 
             for (std::size_t j = 0; j < numStrikes_; ++j)
             {
@@ -90,10 +89,16 @@ namespace uv::core
 
     void VolSurface::setTotVar_(const Matrix<Real>& volMatrix)
     {
-        // NOTE: Prefer to pass volMatrix as input for safety
         for (std::size_t i = 0; i < numTenors_; ++i)
         {
-            totVarMatrix_[i] = core::multiply(uv::core::hadamard(volMatrix[i], volMatrix[i]), tenors_[i]);
+            std::span<const Real> volRow{ volMatrix[i] };
+            std::span<Real> tvRow{ totVarMatrix_[i] };
+            const Real T{ tenors_[i] };
+
+            for (std::size_t j = 0; j < numStrikes_; ++j)
+            {
+                tvRow[j] = volRow[j] * volRow[j] * T;
+            }
         }
     }
 
@@ -103,8 +108,8 @@ namespace uv::core
         {
             const Real invT{ Real(1) / tenors_[i] };
 
-            const Vector<Real>& wRow{ totVarMatrix_[i] };
-            Vector<Real>& vRow{ volMatrix_[i] };
+            const std::span<Real> wRow{ totVarMatrix_[i] };
+            std::span<Real> vRow{ volMatrix_[i] };
 
             for (std::size_t j = 0; j < numStrikes_; ++j)
             {
@@ -195,7 +200,10 @@ namespace uv::core
     void VolSurface::printVol(const unsigned int valuePrec,
         const bool mnyFlag) const noexcept
     {
-        const Vector<Real>& header{ mnyFlag ? mny_ : logKFMatrix_[0] };
+        const std::span<const Real> header
+        {
+            mnyFlag ? std::span<const Real>(mny_) : logKFMatrix_[0]
+        };
         const int headerPrec{ mnyFlag ? 2 : 4 };
         const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
 
@@ -213,7 +221,10 @@ namespace uv::core
     void VolSurface::printTotVar(const unsigned int valuePrec,
         const bool mnyFlag) const noexcept
     {
-        const Vector<Real>& header{ mnyFlag ? mny_ : logKFMatrix_[0] };
+        const std::span<const Real> header
+        { 
+            mnyFlag ? std::span<const Real>(mny_) : logKFMatrix_[0]
+        };
         const int headerPrec{ mnyFlag ? 2 : 4 };
         const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
 
@@ -231,7 +242,10 @@ namespace uv::core
     void VolSurface::printBSCall(const unsigned int valuePrec,
         const bool mnyFlag) const noexcept
     {
-        const Vector<Real>& header{ mnyFlag ? mny_ : logKFMatrix_[0] };
+        const std::span<const Real> header
+        {
+            mnyFlag ? std::span<const Real>(mny_) : logKFMatrix_[0]
+        };
         const int headerPrec{ mnyFlag ? 2 : 4 };
         const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
 

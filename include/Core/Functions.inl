@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <numeric>
+#include <span>
 
 namespace uv::core
 {
@@ -39,7 +40,7 @@ namespace uv::core
     }
 
     template<typename T>
-    T minValue(const Vector<T>& x)
+    T minValue(std::span<const T> x)
     {
         UV_REQUIRE
         (
@@ -52,7 +53,7 @@ namespace uv::core
     }
 
     template<typename T>
-    T maxValue(const Vector<T>& x)
+    T maxValue(std::span<const T> x)
     {
         UV_REQUIRE
         (
@@ -80,17 +81,22 @@ namespace uv::core
     template <typename To, typename From>
     Matrix<To> convertMatrix(const Matrix<From>& A) noexcept
     {
-        Matrix<To> out;
-        out.reserve(A.size());
+        std::size_t nRows{ A.rows() };
+        std::size_t nCols{ A.cols() };
 
-        for (const auto& row : A)
+        core::Matrix<To> out(nRows, nCols);
+ 
+        for (std::size_t i = 0; i < nRows; ++i)
         {
-            out.push_back(convertVector<To>(row));
-        }
+            std::span<const From> inRow{ A[i] };
+            std::span<To> outRow{ out[i] };
 
+            for (std::size_t j = 0; j < nCols; ++j)
+            {
+                outRow[j] = static_cast<To>(inRow[j]);
+            }
+        }
         return out;
     }
 
 } // namespace uv::core
-
-

@@ -49,7 +49,7 @@ namespace uv::utils
         oss << '\n';
 
         // Body
-        for (std::size_t i = 0; i < M.size(); ++i)
+        for (std::size_t i = 0; i < M.rows(); ++i)
         {
             oss << std::fixed << std::setprecision(rowLabelPrec)
                 << rowLabels[i] << '\t';

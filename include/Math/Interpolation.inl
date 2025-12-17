@@ -32,37 +32,45 @@
 #include <format>
 #include <algorithm>
 #include <iostream>
+#include <array>
 
 namespace uv::math::interp
 {
 	template <std::floating_point T>
-	Vector<T> pchipInterp(const Vector<T>& x,
-		const Vector<T>& xs,
-		const Vector<T>& ys)
+	Vector<T> pchipInterp(std::span<const T> x,
+		std::span<const T> xs,
+		std::span<const T> ys)
 	{
+		// ---------- Derivatives ----------
+
+		Vector<T> dydx{ pchipDerivatives(xs, ys) };
+
+		// ---------- Interpolate ----------
+
 		return hermiteSplineInterp
 		(
 			x,
 			xs,
 			ys,
-			pchipDerivatives(xs, ys)
+			std::span<const T>{ dydx.data(), dydx.size() }
 		);
-	};
-
-	template <std::floating_point T>
-	T pchipInterp(T x,
-		const Vector<T>& xs,
-		const Vector<T>& ys
-	)
-	{
-		return pchipInterp(Vector<T>{ x }, xs, ys)[0];
 	}
 
 	template <std::floating_point T>
-	Vector<T> hermiteSplineInterp(const Vector<T>& x,
-		const Vector<T>& xs,
-		const Vector<T>& ys,
-		const Vector<T>& dydx)
+	T pchipInterp(T x,
+		std::span<const T> xs,
+		std::span<const T> ys
+	)
+	{
+		const std::array<T, 1> x1{ x };
+		return pchipInterp(std::span<const T>{ x1 }, xs, ys)[0];
+	}
+
+	template <std::floating_point T>
+	Vector<T> hermiteSplineInterp(std::span<const T> x,
+		std::span<const T> xs,
+		std::span<const T> ys,
+		std::span<const T> dydx)
 	{
 		// ---------- Check matching dimensions ----------
 
@@ -199,8 +207,8 @@ namespace uv::math::interp
 	}
 
 	template <std::floating_point T>
-	Vector<T> pchipDerivatives(const Vector<T>& xs,
-		const Vector<T>& ys)
+	Vector<T> pchipDerivatives(std::span<const T> xs,
+		std::span<const T> ys)
 	{
 		// ---------- Check matching dimensions ----------
 		
@@ -346,31 +354,5 @@ namespace uv::math::interp::details
 			d = T(3) * S1;
 		}
 		return d;
-	}
-
-	template <std::floating_point T>
-	Matrix<T> pchipInterpRows(const Vector<T>& x,
-		const Vector<T>& xs,
-		const Matrix<T>& ys)
-	{
-		const std::size_t ysSize{ ys.size() };
-		const std::size_t xSize{ x.size() };
-
-		// ---------- Allocate ----------
-
-		Matrix<T> result
-		(
-			ysSize,            // Same rows
-			Vector<T>(xSize)   // New columns
-		);
-
-		// ---------- Interpolate across rows ----------
-
-		for (std::size_t i = 0; i < ysSize; ++i)
-		{
-			result[i] = pchipInterp(x, xs, ys[i]);
-		}
-
-		return result;
 	}
 }

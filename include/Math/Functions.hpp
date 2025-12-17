@@ -26,6 +26,7 @@
 #pragma once
 
 #include "Utils/Types.hpp"
+#include "Core/Matrix.hpp"
 
 #include <concepts>
 
@@ -184,39 +185,6 @@ namespace uv::math
         T K,
         bool isCall = true) noexcept;
 
-    /**
-     * @brief Black–Scholes pricing for a single maturity and spot,
-     *        with vectorized volatility and strikes.
-     *
-     * Prices European options for a fixed maturity @p t, risk-free rate @p r,
-     * dividend yield @p q, and spot price @p S, using element-wise volatilities
-     * and strikes.
-     *
-     * Each output element corresponds to:
-     * @code
-     *   price[i] = BS(t, r, q, vol[i], S, K[i])
-     * @endcode
-     *     *
-     * @param t      Time to maturity (years).
-     * @param r      Risk-free continuously compounded rate.
-     * @param q      Continuous dividend yield.
-     * @param vol    Vector of Black–Scholes volatilities.
-     * @param S      Spot price.
-     * @param K      Vector of strikes.
-     * @param isCall True for calls, false for puts.
-     *
-     * @return Vector of option prices, one per strike.
-     *
-     * @pre vol.size() == K.size()
-     */
-    Vector<Real> blackScholes(Real t,
-        Real r,
-        Real q,
-        const Vector<Real>& vol,
-        Real S,
-        const Vector<Real>& K,
-        bool isCall = true);
-
      /**
      * @brief Black–Scholes pricing over a volatility surface.
      *
@@ -242,10 +210,10 @@ namespace uv::math
      *
      * @pre t.size() == r.size() == q.size() == vol.size()
      */
-    Matrix<Real> blackScholes(const Vector<Real>& t,
+    core::Matrix<Real> blackScholes(const Vector<Real>& t,
         const Vector<Real>& r,
         const Vector<Real>& q,
-        const Matrix<Real>& vol,
+        const core::Matrix<Real>& vol,
         Real S,
         const Vector<Real>& K,
         bool isCall = true);
@@ -337,38 +305,6 @@ namespace uv::math
         T K);
 
     /**
-     * @brief Compute Black–Scholes implied volatilities for a single maturity slice.
-     *
-     * Computes the implied volatility for each strike such that the Black–Scholes
-     * price matches the corresponding market call/put price. This overload applies
-     * the scalar impliedVolBS solver independently to each element:
-     *
-     *   out[i] = impliedVolBS(callPrices[i], t, r, q, S, K[i], isCall)
-     *
-     * @tparam T Floating-point type.
-     *
-     * @param callPrices Vector of market option prices (BS prices).
-     * @param t          Time to maturity (years).
-     * @param r          Continuously compounded risk-free rate.
-     * @param q          Continuous dividend yield.
-     * @param S          Spot price.
-     * @param K          Vector of strikes.
-     * @param isCall     True for calls, false for puts.
-     *
-     * @return Vector of implied volatilities (one per strike).
-     *
-     * @pre callPrices.size() == K.size()
-     */
-    template <std::floating_point T>
-    Vector<T> impliedVolBS(
-        const Vector<T>& callPrices,
-        T t,
-        T r,
-        T q,
-        T S,
-        const Vector<T>& K);
-
-    /**
      * @brief Compute Black–Scholes implied volatilities over a surface.
      *
      * Computes implied volatilities across multiple maturities using a common
@@ -393,8 +329,8 @@ namespace uv::math
      * @pre t.size() == r.size() == q.size() == callPrices.size()
      */
     template <std::floating_point T>
-    Matrix<T> impliedVolBS(
-        const Matrix<T>& callPrices,
+    core::Matrix<T> impliedVolBS(
+        const core::Matrix<T>& callPrices,
         const Vector<T>& t,
         const Vector<T>& r,
         const Vector<T>& q,

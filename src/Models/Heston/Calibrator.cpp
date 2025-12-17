@@ -37,7 +37,7 @@ namespace uv::models::heston::calibrator::detail
         const Vector<Real>& strikes,
         const Vector<Real>& forwards,
         const Vector<Real>& rates,
-        const Matrix<Real>& callM)
+        const core::Matrix<Real>& callM)
     {
         UV_REQUIRE(!tenors.empty(), 
             ErrorCode::InvalidArgument,
@@ -70,15 +70,11 @@ namespace uv::models::heston::calibrator::detail
             ErrorCode::InvalidArgument,
             "validateInputs: rates size must equal tenors size");
 
-        UV_REQUIRE(callM.size() == numTenors,
+        UV_REQUIRE(callM.rows() == numTenors,
             ErrorCode::InvalidArgument,
             "validateInputs: callM rows must equal number of tenors");
 
-        UV_REQUIRE(!callM[0].empty(),
-            ErrorCode::InvalidArgument,
-            "validateInputs: callM has zero strikes");
-
-        UV_REQUIRE(callM[0].size() == numStrikes,
+        UV_REQUIRE(callM.cols() == numStrikes,
             ErrorCode::InvalidArgument,
             "validateInputs: callM columns must equal strikes size");
 
@@ -118,22 +114,6 @@ namespace uv::models::heston::calibrator::detail
             UV_REQUIRE(forwards[i] > Real(0),
                 ErrorCode::InvalidArgument,
                 "validateInputs: forwards must be > 0");
-        }
-
-        // callM rectangular + finite
-        for (std::size_t i = 0; i < numTenors; ++i)
-        {
-            UV_REQUIRE(callM[i].size() == numStrikes, 
-                ErrorCode::InvalidArgument,
-                "validateInputs: callM is not rectangular or does not match strikes");
-
-            for (std::size_t j = 0; j < numStrikes; ++j)
-            {
-                UV_REQUIRE(
-                    std::isfinite(static_cast<double>(callM[i][j])),
-                    ErrorCode::InvalidArgument,
-                    "validateInputs: callM contains non-finite value");
-            }
         }
     }
 

@@ -99,9 +99,6 @@ int main(int argc, char* argv[])
        
         sviVolSurface.printTotVar();
 
-        MatrixT<Real> test {10, 10, 0.0};
-        test.print();
-
         // ---------- Heston model calibration ----------
 
         static constexpr std::size_t HestonNodes = 300;

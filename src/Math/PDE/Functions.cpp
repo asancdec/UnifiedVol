@@ -34,82 +34,82 @@
 
 namespace uv::math::pde
 {
-    Vector<Real> fokkerPlankInit(const Real x0,
-        const Vector<Real>& xGrid)
-    {	
-        // ---------- Check size ----------
+  //  Vector<Real> fokkerPlankInit(const Real x0,
+  //      const Vector<Real>& xGrid)
+  //  {	
+  //      // ---------- Check size ----------
 
-		std::size_t NX{ xGrid.size() };
+		//std::size_t NX{ xGrid.size() };
 
-        // Throw if grid size is one or less
-        UV_REQUIRE(
-            NX > 1,
-            ErrorCode::InvalidArgument,
-            "fokkerPlankInit: grid size must be > 1 (got " + std::to_string(NX) + ")"
-        );
+  //      // Throw if grid size is one or less
+  //      UV_REQUIRE(
+  //          NX > 1,
+  //          ErrorCode::InvalidArgument,
+  //          "fokkerPlankInit: grid size must be > 1 (got " + std::to_string(NX) + ")"
+  //      );
 
-        // ---------- Check sorted ----------
+  //      // ---------- Check sorted ----------
 
-        // Throw if not sorted
-        UV_REQUIRE(
-            std::is_sorted(xGrid.begin(), xGrid.end()),
-            ErrorCode::InvalidArgument,
-            "fokkerPlankInit: xGrid must be non-decreasing"
-        );
+  //      // Throw if not sorted
+  //      UV_REQUIRE(
+  //          std::is_sorted(xGrid.begin(), xGrid.end()),
+  //          ErrorCode::InvalidArgument,
+  //          "fokkerPlankInit: xGrid must be non-decreasing"
+  //      );
 
-        // ---------- Check in bounds ----------
+  //      // ---------- Check in bounds ----------
 
-        // Throw if out of bounds
-        UV_REQUIRE(
-            x0 >= xGrid.front() && x0 <= xGrid.back(),
-            ErrorCode::InvalidArgument,
-            "fokkerPlankInit: Initial value must lie within the grid domain"
-        );
+  //      // Throw if out of bounds
+  //      UV_REQUIRE(
+  //          x0 >= xGrid.front() && x0 <= xGrid.back(),
+  //          ErrorCode::InvalidArgument,
+  //          "fokkerPlankInit: Initial value must lie within the grid domain"
+  //      );
 
-        // ---------- Binary search index ----------
+  //      // ---------- Binary search index ----------
 
-        auto it = std::lower_bound(xGrid.begin(), xGrid.end(), x0);
-        std::size_t idx{ static_cast<std::size_t>(std::distance(xGrid.begin(), it)) };
+  //      auto it = std::lower_bound(xGrid.begin(), xGrid.end(), x0);
+  //      std::size_t idx{ static_cast<std::size_t>(std::distance(xGrid.begin(), it)) };
 
-        // If there is an element to the left
-        if (idx > 0)
-        {
-            // Choose the closest of idx and idx-1
-            if (std::abs(xGrid[idx] - x0) > std::abs(xGrid[idx - 1] - x0))
-            {
-                --idx;
-            }
-        }
-        
-        // ---------- Dirac approximation ----------
+  //      // If there is an element to the left
+  //      if (idx > 0)
+  //      {
+  //          // Choose the closest of idx and idx-1
+  //          if (std::abs(xGrid[idx] - x0) > std::abs(xGrid[idx - 1] - x0))
+  //          {
+  //              --idx;
+  //          }
+  //      }
+  //      
+  //      // ---------- Dirac approximation ----------
 
-        Vector<Real> p0(NX, Real(0.0));
-        Real dX{};
+  //      Vector<Real> p0(NX, Real(0.0));
+  //      Real dX{};
 
-        // Step size at the left 
-        if (idx == 0)
-        {
-            dX = xGrid[1] - xGrid[0];
-        }
-        // Step size at the right
-        else if (idx == NX - 1)
-        {
-            dX = xGrid[NX - 1] - xGrid[NX - 2];
-        }
-        else
-        {   
-            // Average step sizes
-            const Real dXLeft{ xGrid[idx] - xGrid[idx - 1] };
-            const Real dXRight{ xGrid[idx + 1] - xGrid[idx] };
-            dX = Real(0.5) * (dXLeft + dXRight);
-        }
+  //      // Step size at the left 
+  //      if (idx == 0)
+  //      {
+  //          dX = xGrid[1] - xGrid[0];
+  //      }
+  //      // Step size at the right
+  //      else if (idx == NX - 1)
+  //      {
+  //          dX = xGrid[NX - 1] - xGrid[NX - 2];
+  //      }
+  //      else
+  //      {   
+  //          // Average step sizes
+  //          const Real dXLeft{ xGrid[idx] - xGrid[idx - 1] };
+  //          const Real dXRight{ xGrid[idx + 1] - xGrid[idx] };
+  //          dX = Real(0.5) * (dXLeft + dXRight);
+  //      }
 
-        // Probability mass under p0 is 1
-        // Therefore the following must hold approximately
-        p0[idx] = Real(1.0) / dX;
+  //      // Probability mass under p0 is 1
+  //      // Therefore the following must hold approximately
+  //      p0[idx] = Real(1.0) / dX;
 
-        return p0;
-    }
+  //      return p0;
+  //  }
 
     //Matrix<Real> fokkerPlankSolve(const Vector<Real>& pdeInitCond,
     //    const Vector<Real>& dTGrid,

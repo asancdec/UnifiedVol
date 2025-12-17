@@ -29,9 +29,10 @@
 #include "Models/Heston/Params.hpp"
 #include "Math/Optimization/Ceres/Optimizer.hpp"
 #include "Core/VolSurface.hpp"
+#include "Core/Matrix.hpp"
 
 #include <array>
-#include <cstddef>  
+#include <cstddef>
 
 namespace uv::models::heston::calibrator
 {
@@ -66,7 +67,7 @@ namespace uv::models::heston::calibrator
 		const Vector<Real>& strikes,
 		const Vector<Real>& forwards,
 		const Vector<Real>& rates,
-		const Matrix<Real>& callM,
+		const core::Matrix<Real>& callM,
 		Pricer<N>& pricer,
 		opt::ceres::Optimizer<5, Policy>& optimizer);
 
@@ -115,7 +116,7 @@ namespace uv::models::heston::calibrator
 			const Vector<Real>& strikes,
 			const Vector<Real>& forwards,
 			const Vector<Real>& rates,
-			const Matrix<Real>& callM);
+			const core::Matrix<Real>& callM);
 
 		/**
 		 * @brief Ceres analytic residual for a single call price point.

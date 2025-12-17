@@ -31,7 +31,7 @@
 namespace uv::core
 {
 	template <std::floating_point T>
-	class MatrixT
+	class Matrix
 	{
 	private:
 
@@ -41,8 +41,8 @@ namespace uv::core
 
 	public:
 
-		MatrixT() = delete;
-		MatrixT(std::size_t numRows,
+		Matrix() = delete;
+		Matrix(std::size_t numRows,
 		std::size_t numColumns,
 		T val = T(0)) noexcept;
 
@@ -55,7 +55,7 @@ namespace uv::core
 
 		// Getters
 		std::size_t rows() const noexcept;
-		std::size_t size() const noexcept;  // For STL API compatibility
+		std::size_t cols() const noexcept;
 
 	};
 

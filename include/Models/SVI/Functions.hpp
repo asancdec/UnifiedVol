@@ -26,6 +26,7 @@
 #pragma once
 
 #include "Core/VolSurface.hpp"
+#include "Core/Matrix.hpp"
 #include "Math/Optimization/NLopt/Optimizer.hpp"
 #include "Models/SVI/Params.hpp"
 #include "Utils/Types.hpp"
@@ -34,6 +35,7 @@
 #include <concepts>
 #include <array>
 #include <vector>
+#include <span>
 
 namespace opt = uv::math::opt;
 
@@ -63,8 +65,8 @@ namespace uv::models::svi
 	 */
 	template <::nlopt::algorithm Algo>
 	Vector<Params> calibrate(const Vector<Real>& tenors,
-		const Matrix<Real>& kMatrix,
-		const Matrix<Real>& wMMatrix,
+		const core::Matrix<Real>& kMatrix,
+		const core::Matrix<Real>& wMMatrix,
 		const opt::nlopt::Optimizer<4, Algo>& prototype);
 
 	/**
@@ -136,8 +138,8 @@ namespace uv::models::svi
 		 * @throws ErrorCode::InvalidArgument if validation fails.
 		 */
 		void validateInputs(const Vector<Real>& tenors,
-			const Matrix<Real>& kMatrix,
-			const Matrix<Real>& wMMatrix);
+			const core::Matrix<Real>& kMatrix,
+			const core::Matrix<Real>& wMMatrix);
 
 		/**
 		 * @brief Calibrate one SVI slice for a single maturity.
@@ -163,8 +165,8 @@ namespace uv::models::svi
 		 */
 		template <::nlopt::algorithm Algo>
 		Params calibrateSlice(Real T,
-			const Vector<double>& kSlice,
-			const Vector<double>& wKSlice,
+			std::span<const double> kSlice,
+			std::span<const double> wKSlice,
 			const opt::nlopt::Optimizer<4, Algo>& prototype,
 			const Params* prevParams,
 			std::size_t numStrikes
@@ -301,12 +303,13 @@ namespace uv::models::svi
 		 *
 		 * @return Total variance w(k).
 		 */
-		double calculateWk(double a,
-			double b,
-			double rho,
-			double m,
-			double sigma,
-			double k) noexcept;
+		template <std::floating_point T>
+		T calculateWk(T a,
+			T b,
+			T rho,
+			T m,
+			T sigma,
+			T k) noexcept;
 
 		/**
 		 * @brief Compute the pinned `a` parameter from ATM total variance.

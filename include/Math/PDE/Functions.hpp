@@ -28,6 +28,7 @@
 #include "Utils/Types.hpp"
 #include "Utils/Aux/Errors.hpp"
 #include "Math/PDE/TriDiag.hpp"
+#include "Core/Matrix.hpp"
 
 #include <cstddef>
 
@@ -58,7 +59,7 @@ namespace uv::math::pde
 	Vector<Real> fokkerPlankInit(Real x0,
 	const Vector<Real>& xGrid);
 
-	Matrix<Real> fokkerPlankSolve(const Vector<Real>& pdeInitCond,
+	core::Matrix<Real> fokkerPlankSolve(const Vector<Real>& pdeInitCond,
 		const Vector<Real>& dTGrid,
 		const Vector<Real>& dXGrid,
 		const TriDiag& coefficients);
