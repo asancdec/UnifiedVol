@@ -78,25 +78,4 @@ namespace uv::core
         return out;
     }
 
-    template <typename To, typename From>
-    Matrix<To> convertMatrix(const Matrix<From>& A) noexcept
-    {
-        std::size_t nRows{ A.rows() };
-        std::size_t nCols{ A.cols() };
-
-        core::Matrix<To> out(nRows, nCols);
- 
-        for (std::size_t i = 0; i < nRows; ++i)
-        {
-            std::span<const From> inRow{ A[i] };
-            std::span<To> outRow{ out[i] };
-
-            for (std::size_t j = 0; j < nCols; ++j)
-            {
-                outRow[j] = static_cast<To>(inRow[j]);
-            }
-        }
-        return out;
-    }
-
 } // namespace uv::core

@@ -26,7 +26,7 @@
 #include "Utils/IO/CSV/Functions.hpp"
 #include "Core/MarketData.hpp"
 #include "Core/VolSurface.hpp"
-#include "Core/Matrix.hpp"
+#include "Core/Matrix/Matrix.hpp"
 #include "Utils/Aux/Errors.hpp"       
 #include "Utils/Types.hpp"
 

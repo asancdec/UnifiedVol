@@ -26,7 +26,7 @@
 #pragma once
 
 #include "Core/VolSurface.hpp"
-#include "Core/Matrix.hpp"
+#include "Core/Matrix/Matrix.hpp"
 #include "Math/Optimization/NLopt/Optimizer.hpp"
 #include "Models/SVI/Params.hpp"
 #include "Utils/Types.hpp"

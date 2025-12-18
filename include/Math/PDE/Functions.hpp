@@ -28,7 +28,7 @@
 #include "Utils/Types.hpp"
 #include "Utils/Aux/Errors.hpp"
 #include "Math/PDE/TriDiag.hpp"
-#include "Core/Matrix.hpp"
+#include "Core/Matrix/Matrix.hpp"
 
 #include <cstddef>
 

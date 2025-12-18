@@ -25,6 +25,7 @@
 
 #include "Core/VolSurface.hpp"
 #include "Core/Functions.hpp"
+#include "Core/Matrix/Functions.hpp"
 #include "Core/MarketData.hpp"
 #include "Math/Functions.hpp"
 #include "Utils/IO/Functions.hpp"
@@ -60,7 +61,7 @@ namespace uv::core
 
         strikes_ = core::multiply(mny_, S_);
         setForwards_();
-        callPrices_ = math::blackScholes(tenors_, rates_, dividends_, volMatrix_, S_, strikes_);
+        setCallPrices_();
         setLogKFMatrix_();
         setTotVar_(volMatrix_);
     }
@@ -73,62 +74,98 @@ namespace uv::core
         }
     }
 
-    void VolSurface::setLogKFMatrix_() noexcept
+    void VolSurface::setCallPrices_()
     {
-        for (std::size_t i = 0; i < numTenors_; ++i)
-        {
-            const Real logF{ std::log(forwards_[i]) };
-            std::span<Real> row{ logKFMatrix_[i] };
+        callPrices_ = applyIndexed
+            (
+                volMatrix_,
+                [&](std::size_t i, std::size_t j, Real sigma)
+                {
+                    return math::blackScholes(
+                        tenors_[i],
+                        rates_[i],
+                        dividends_[i],
+                        sigma,
+                        S_,
+                        strikes_[j]
+                    );
+                }
+            );
+    }
 
-            for (std::size_t j = 0; j < numStrikes_; ++j)
-            {
-                row[j] = std::log(strikes_[j]) - logF;
-            }
-        }
+    void VolSurface::setLogKFMatrix_()
+    {
+        logKFMatrix_ = applyIndexed<Real>
+            (
+                numTenors_,
+                numStrikes_,
+                [&](std::size_t i, std::size_t j)
+                {
+                    return std::log(strikes_[j]) - std::log(forwards_[i]);
+                }
+            );
     }
 
     void VolSurface::setTotVar_(const Matrix<Real>& volMatrix)
     {
-        for (std::size_t i = 0; i < numTenors_; ++i)
-        {
-            std::span<const Real> volRow{ volMatrix[i] };
-            std::span<Real> tvRow{ totVarMatrix_[i] };
-            const Real T{ tenors_[i] };
-
-            for (std::size_t j = 0; j < numStrikes_; ++j)
-            {
-                tvRow[j] = volRow[j] * volRow[j] * T;
-            }
-        }
+        totVarMatrix_ = volMatrix;
+        squareInplace(totVarMatrix_);
+        hadamardInplace(totVarMatrix_, tenors_);
     }
 
-    void VolSurface::setVolFromVar_(const Matrix<Real>& totVarMatrix) noexcept
+    void VolSurface::setVolFromVar_(const Matrix<Real>& totVarMatrix)
     {
-        for (std::size_t i = 0; i < numTenors_; ++i)
-        {
-            const Real invT{ Real(1) / tenors_[i] };
-
-            const std::span<Real> wRow{ totVarMatrix_[i] };
-            std::span<Real> vRow{ volMatrix_[i] };
-
-            for (std::size_t j = 0; j < numStrikes_; ++j)
-            {
-                vRow[j] = std::sqrt(wRow[j] * invT);
-            }
-        }
+        volMatrix_ = totVarMatrix;
+        hadamardInplace(volMatrix_, reciprocal(tenors_));
+        sqrtInplace(volMatrix_);
     }
 
-    void VolSurface::setTotVar(const Matrix<Real>& totVarMatrix)
+    void VolSurface::setVolFromPrices_(const Matrix<Real>& callPrices)
     {
+        volMatrix_ = applyIndexed
+        (
+            callPrices,
+            [&](std::size_t i, std::size_t j, Real callPrice)
+            {
+                return math::impliedVolBS(
+                    callPrice,
+                    tenors_[i],
+                    rates_[i],
+                    dividends_[i],
+                    S_,
+                    strikes_[j]
+                );
+            }
+        );
+    }
+
+    void VolSurface::setTotVar(const Matrix<Real>& totVarMatrix) 
+    {
+        UV_REQUIRE
+        (
+            totVarMatrix.rows() == numTenors_ &&
+            totVarMatrix.cols() == numStrikes_,
+            ErrorCode::InvalidArgument,
+            "setTotVar: dimension mismatch"
+        );
+
         totVarMatrix_ = totVarMatrix;
         setVolFromVar_(totVarMatrix);
-        callPrices_ = math::blackScholes(tenors_, rates_, dividends_, volMatrix_, S_, strikes_);
+        setCallPrices_();
     }
 
     void VolSurface::setCallPrices(const Matrix<Real>& callPrices)
     {
+        UV_REQUIRE
+        (
+            callPrices.rows() == numTenors_ &&
+            callPrices.cols() == numStrikes_,
+            ErrorCode::InvalidArgument,
+            "setCallPrices: dimension mismatch"
+        );
+
         callPrices_ = callPrices;
-        volMatrix_ = math::impliedVolBS(callPrices_, tenors_, rates_, dividends_, S_, strikes_);
+        setVolFromPrices_(callPrices_);
         setTotVar_(volMatrix_);
     }
 

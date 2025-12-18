@@ -23,6 +23,7 @@
  */
 
 #include "Core/Functions.hpp"
+#include "Core/Matrix/Functions.hpp"
 
 #include <ceres/ceres.h>
 
@@ -114,28 +115,27 @@ namespace uv::models::heston::calibrator
 		const Vector<Real>& forwards{ volSurface.forwards() };
 		const Vector<Real>& rates{ volSurface.rates() };
 
-		// ---------- Calculate call prices ----------
-
-		core::Matrix<Real> callPrices(numTenors, numStrikes);
-
-		for (std::size_t i = 0; i < numTenors; ++i)
-		{
-			// Extract data
-			std::span<Real> callPricesRow{ callPrices[i] };
-			const Real T{ tenors[i]};
-			const Real F{ forwards[i]};
-			const Real r{ rates[i]};
-
-			for (std::size_t j = 0; j < numStrikes; ++j)
-			{
-				callPricesRow[j] = pricer.callPrice(T, F, r, strikes[j]);
-			}
-		}
-
 		// ---------- Copy and set surface ----------
 
 		core::VolSurface hestonVolSurface{ volSurface };
-		hestonVolSurface.setCallPrices(callPrices);
+		hestonVolSurface.setCallPrices
+		(
+			core::applyIndexed<Real>
+			(
+				numTenors,
+				numStrikes,
+				[&](std::size_t i, std::size_t j)
+				{
+					return pricer.callPrice
+					(
+						tenors[i],
+						forwards[i],
+						rates[i],
+						strikes[j]
+					);
+				}
+			)
+		);
 
 		return hestonVolSurface;
 	}

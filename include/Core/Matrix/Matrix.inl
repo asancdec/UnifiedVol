@@ -33,22 +33,22 @@ namespace uv::core
 {
     template <std::floating_point T>
     Matrix<T>::Matrix(const std::size_t numRows,
-        std::size_t numColumns,
+        std::size_t numCols,
         T val) noexcept
         : numRows_(numRows),
-        numColumns_(numColumns),
-        data_(numRows * numColumns, val) {}
+        numCols_(numCols),
+        data_(numRows * numCols, val) {}
 
     template <std::floating_point T>
     std::span<T> Matrix<T>::operator[](std::size_t i) noexcept
     {      
-        return { data_.data() + i * numColumns_, numColumns_ };
+        return { data_.data() + i * numCols_, numCols_ };
     }
 
     template <std::floating_point T>
     std::span<const T> Matrix<T>::operator[](std::size_t i) const noexcept 
     {
-        return { data_.data() + i * numColumns_, numColumns_ };
+        return { data_.data() + i * numCols_, numCols_ };
     }
 
     template <std::floating_point T>
@@ -151,7 +151,7 @@ namespace uv::core
     {
         utils::printMatrix(
             /*title=*/"",
-            /*header=*/makeSequence<T>(numColumns_, 1),
+            /*header=*/makeSequence<T>(numCols_, 1),
             /*rowLabels=*/makeSequence<T>(numRows_, 1),
             /*M=*/*this,
             /*headerPrec=*/1,
@@ -163,7 +163,7 @@ namespace uv::core
     template <std::floating_point T>
     bool Matrix<T>::empty() const noexcept
     {
-        return numRows_ == 0 || numColumns_ == 0;
+        return numRows_ == 0 || numCols_ == 0;
     }
 
     template <std::floating_point T>
@@ -175,7 +175,7 @@ namespace uv::core
     template <std::floating_point T>
     std::size_t Matrix<T>::cols() const noexcept
     {
-        return numColumns_;
+        return numCols_;
     }
 
     template <std::floating_point T>

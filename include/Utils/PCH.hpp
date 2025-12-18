@@ -32,7 +32,7 @@
 // ---------- Core Data ----------
 #include "Core/VolSurface.hpp"
 #include "Core/MarketData.hpp"
-#include "Core/Matrix.hpp"
+#include "Core/Matrix/Matrix.hpp"
 
 // ---------- Models ----------
 #include "Models/SVI/Functions.hpp"

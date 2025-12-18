@@ -24,7 +24,6 @@
 #pragma once
 
 #include "Utils/Types.hpp"
-#include "Core/Matrix.hpp"
 
 #include <span>
 #include <cstddef>
@@ -32,16 +31,10 @@
 namespace uv::core
 {
     /**
-     * @brief Generate an evenly spaced 1D grid of Real values.
+     * @brief Generate an evenly spaced 1D grid.
      *
-     * @param bound1  Lower bound of the grid (inclusive).
-     * @param bound2  Upper bound of the grid (inclusive).
-     * @param steps   Number of grid points (must be >= 1).
-     *
-     * @return A vector of Real values: [bound1, ..., bound2].
-     *
-     * @note If `steps <= 1`, the function returns { bound1 }.
-    */
+     * Returns a vector of values from bound1 to bound2 (inclusive).
+     */
     Vector<Real> generateGrid(Real bound1,
         Real bound2,
         size_t steps
@@ -50,82 +43,39 @@ namespace uv::core
     /**
      * @brief Generate a sequence of consecutive values.
      *
-     * Creates a vector of length @p n containing consecutive values starting
-     * from @p start. The resulting sequence is:
-     *
-     *   start, start + 1, start + 2, ..., start + (n - 1)
-     *
-     * @tparam T     Element type of the sequence.
-     * @param n      Number of elements to generate.
-     * @param start  Initial value of the sequence.
-     *
-     * @return Vector<T> containing the generated sequence.
-     *
-     * @note This function performs no validation on @p n. If @p n is zero,
-     *       an empty vector is returned.
+     * Returns a vector of length n starting from start.
      */
     template <typename T>
     Vector<T> makeSequence(std::size_t n, T start) noexcept;
 
     /**
-     * @brief Compute first forward differences of a vector.
+     * @brief Compute forward differences of a vector.
      *
-     * This function returns a vector containing the element-wise
-     * forward differences of the input vector `v`, defined as
-     * @f$ d[i] = v[i+1] - v[i] @f$ for all valid indices.
-     *
-     * ### Example
-     * Input:  `[v0, v1, v2, v3]`
-     * Output: `[v1 - v0, v2 - v1, v3 - v2]`
-     *
-     * @param v Input vector.
-     * @return A vector of size `v.size() - 1` containing forward differences.
-     *     
+     * Returns v[i+1] - v[i] for all valid indices.
      */
     Vector<Real> diff(const Vector<Real>& v);
 
     /**
-     * @brief Return a new vector with every element multiplied by a scalar.
-     *
-     * @param v Input vector (unchanged).
-     * @param x Scalar multiplier.
-     * @return A vector where each element equals `v[i] * x`.
+     * @brief Multiply all elements of a vector by a scalar.
      */
     Vector<Real> multiply(const Vector<Real>& v,
         Real x) noexcept;
 
     /**
-     * @brief Compute the element-wise reciprocal of a vector.
-     *
-     * @param v Input vector.
-     * @return A new vector where each entry equals <tt>1 / v[i]</tt>.
-     *
-     * @note No range checking is performed; division by zero will result
-     *       in undefined behavior.
+     * @brief Compute element wise reciprocal of a vector.
      */
     Vector<Real> reciprocal(const Vector<Real>& v) noexcept;
 
     /**
-     * @brief Compute the element-wise (Hadamard) product of two vectors.
-     *
-     * @param a First input vector.
-     * @param b Second input vector.
-     * @return A vector where each element equals <tt>a[i] * b[i]</tt>.
+     * @brief Element wise multiplication of two vectors.
      */
-    Vector<Real> hadamard(std::span<const Real> a, std::span<const Real> b);
+    Vector<Real> hadamard(std::span<const Real> a,
+        std::span<const Real> b);
 
     /**
      * @brief Return the minimum element of a vector.
      *
-     * Computes and returns the smallest value in `x` using `std::min_element`.
-     *
-     * @tparam T Value type. Must be comparable with `operator<`.
-     *
-     * @param x Input vector (must be non-empty).
-     *
-     * @return Minimum value in `x`.
-     *
-     * @throws ErrorCode::InvalidArgument if `x` is empty.
+     * The input must be non empty.
      */
     template<typename T>
     T minValue(std::span<const T> x);
@@ -133,15 +83,7 @@ namespace uv::core
     /**
      * @brief Return the maximum element of a vector.
      *
-     * Computes and returns the largest value in `x` using `std::max_element`.
-     *
-     * @tparam T Value type. Must be comparable with `operator<`.
-     *
-     * @param x Input vector (must be non-empty).
-     *
-     * @return Maximum value in `x`.
-     *
-     * @throws ErrorCode::InvalidArgument if `x` is empty.
+     * The input must be non empty.
      */
     template<typename T>
     T maxValue(std::span<const T> x);
@@ -149,41 +91,10 @@ namespace uv::core
     /**
      * @brief Convert a vector to another value type.
      *
-     * Creates and returns a new vector by converting each element of the input
-     * vector `x` to type `To` using `static_cast`.
-     *
-     * The input vector may be empty; in this case, an empty vector is returned.
-     * No shape or validity checks are performed beyond element-wise conversion.
-     *
-     * @tparam To   Target value type.
-     * @tparam From Source value type.
-     *
-     * @param x Input vector.
-     *
-     * @return Vector whose elements are `static_cast<To>(x[i])`.
+     * Returns a new vector with each element static casted.
      */
     template <typename To, typename From>
     Vector<To> convertVector(const Vector<From>& x) noexcept;
-
-    /**
-     * @brief Convert a matrix to another value type.
-     *
-     * Creates and returns a new matrix by converting each element of the input
-     * matrix `A` to type `To` using `static_cast`. The row structure of the matrix
-     * is preserved.
-     *
-     * The input matrix may be empty, and rows may be empty; these cases are handled
-     * naturally and result in an empty matrix or empty rows in the output.
-     *
-     * @tparam To   Target value type.
-     * @tparam From Source value type.
-     *
-     * @param A Input matrix.
-     *
-     * @return Matrix whose elements are `static_cast<To>(A[i][j])`.
-     */
-    template <typename To, typename From>
-    Matrix<To> convertMatrix(const Matrix<From>& A) noexcept;
 
 } // namespace uv::core
 

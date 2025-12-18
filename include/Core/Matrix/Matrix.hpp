@@ -49,7 +49,7 @@ namespace uv::core
 		// ----------Member variables ----------
 
 		std::size_t numRows_{ 0 };
-		std::size_t numColumns_{ 0 };
+		std::size_t numCols_{ 0 };
 		Vector<T> data_{};
 
 	public:
@@ -63,14 +63,14 @@ namespace uv::core
 		 * @brief Construct a matrix with given dimensions and initial value.
 		 *
 		 * Allocates a contiguous block of memory of size
-		 * (numRows × numColumns) and initializes all entries to the given value.
+		 * (numRows × numCols) and initializes all entries to the given value.
 		 *
 		 * @param numRows     Number of rows.
-		 * @param numColumns  Number of columns.
+		 * @param numCols  Number of columns.
 		 * @param val         Initial value for all elements (default = 0).
 		 */
 		Matrix(std::size_t numRows,
-			std::size_t numColumns,
+			std::size_t numCols,
 			T val = T(0)) noexcept;
 
 		// ---------- Unary operators ----------

@@ -25,7 +25,7 @@
 #pragma once
 
 #include "Utils/Types.hpp"
-#include "Core/Matrix.hpp"
+#include "Core/Matrix/Matrix.hpp"
 
 namespace uv::math::pde
 {

@@ -29,7 +29,7 @@
 #include "Models/Heston/Params.hpp"
 #include "Math/Optimization/Ceres/Optimizer.hpp"
 #include "Core/VolSurface.hpp"
-#include "Core/Matrix.hpp"
+#include "Core/Matrix/Matrix.hpp"
 
 #include <array>
 #include <cstddef>

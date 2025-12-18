@@ -27,7 +27,7 @@
 
 #include "Core/MarketData.hpp"
 #include "Utils/Types.hpp"
-#include "Core/Matrix.hpp"
+#include "Core/Matrix/Matrix.hpp"
 
 
 #include <cstddef>
@@ -88,11 +88,16 @@ namespace uv::core
         void setForwards_() noexcept;
 
         /**
+         * @brief Compute call prices using Black-Scholes formula
+         */
+        void setCallPrices_();
+
+        /**
          * @brief Compute logKFMatrix_ using forwards_ and strikes_.
          *
          * logKFMatrix_[i][j] = log(forwards_[i] / strikes_[j])
          */
-        void setLogKFMatrix_() noexcept;
+        void setLogKFMatrix_();
 
         /**
          * @brief Compute totVarMatrix_ from an implied vol matrix.
@@ -106,7 +111,14 @@ namespace uv::core
          *
          * volMatrix_[i][j] = sqrt(totVarMatrix[i][j] / tenors_[i])
          */
-        void setVolFromVar_(const Matrix<Real>& totVarMatrix) noexcept;
+        void setVolFromVar_(const Matrix<Real>& totVarMatrix);
+
+
+        /**
+         * @brief Compute volMatrix_ from Call Prices solving for
+         * implied volatility using the Black-Scholes formula.
+         */
+        void setVolFromPrices_(const Matrix<Real>& callPrices);
 
     public:
         //--------------------------------------------------------------------------

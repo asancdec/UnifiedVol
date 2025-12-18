@@ -23,6 +23,7 @@
  */
 
 #include "Math/Interpolation.hpp"
+#include "Core/Matrix/Functions.hpp"
 #include "Core/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
 

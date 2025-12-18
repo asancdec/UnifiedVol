@@ -25,6 +25,7 @@
 
 #include "Models/SVI/Functions.hpp"  
 #include "Core/VolSurface.hpp"
+#include "Core/Matrix/Functions.hpp"
 #include "Models/SVI/Params.hpp"
 #include "Utils/Aux/Errors.hpp"
 #include "Utils/Types.hpp"
@@ -32,6 +33,7 @@
 #include <array>
 #include <cmath>      
 #include <cstddef>
+#include <span>
 
 namespace uv::models::svi
 {
@@ -52,35 +54,35 @@ namespace uv::models::svi
             "buildSurface: params size must equal number of tenors"
         );
 
-        // ---------- Build total variance matrix ----------
-
-        core::Matrix<Real> wK(numTenors, numStrikes);
-
-        for (std::size_t i = 0; i < numTenors; ++i)
-        {
-            // Extract data
-            const Params& p{ params[i] };
-            std::span<const Real> kSlice{kMatrix[i]};
-            const Real a{ p.a };
-            const Real b{ p.b };
-            const Real rho{ p.rho };
-            const Real m{ p.m };
-            const Real sigma{ p.sigma };
-
-            // Calculate total variance per strike
-            for (std::size_t j = 0; j < numStrikes; ++j)
-            {
-                wK[i][j] = detail::calculateWk(a, b, rho, m, sigma, kSlice[j]);
-            }
-        }
-
         // ---------- Build surface  ---------- 
         
         // Copy surface
         core::VolSurface sviVolSurface{ volSurface };
 
-        // Set data
-        sviVolSurface.setTotVar(wK);
+        // Set total variance
+        sviVolSurface.setTotVar
+        (
+            core::applyIndexed<Real>
+            (
+                numTenors,
+                numStrikes,
+                [&](std::size_t i, std::size_t j)
+                {
+                    std::span<const Real> kMatrixRow{ kMatrix[i] };
+                    const Params& p{ params[i] };
+
+                    return detail::calculateWk
+                    (
+                        p.a,
+                        p.b,
+                        p.rho,
+                        p.m,
+                        p.sigma,
+                        kMatrixRow[j]
+                    );
+                }
+            )
+        );
 
         return sviVolSurface;
     }

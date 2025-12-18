@@ -26,7 +26,6 @@
 #pragma once
 
 #include "Utils/Types.hpp"
-#include "Core/Matrix.hpp"
 
 #include <concepts>
 
@@ -185,39 +184,6 @@ namespace uv::math
         T K,
         bool isCall = true) noexcept;
 
-     /**
-     * @brief Black–Scholes pricing over a volatility surface.
-     *
-     * Prices European options across multiple maturities and strikes.
-     * For each maturity index @p i, a full strike slice is priced using:
-     *
-     * @code
-     *   prices[i][j] = BS(t[i], r[i], q[i], vol[i][j], S, K[i][j])
-     * @endcode
-     *
-     * This overload internally calls the vector (slice) Black–Scholes
-     * implementation for each maturity.
-     *  
-     * @param t      Vector of maturities (years).
-     * @param r      Vector of risk-free rates.
-     * @param q      Vector of dividend yields.
-     * @param vol    Matrix of volatilities [maturity][strike].
-     * @param S      Spot price.
-     * @param K      Vector of strikes per maturity.
-     * @param isCall True for calls, false for puts.
-     *
-     * @return Matrix of option prices [maturity][strike].
-     *
-     * @pre t.size() == r.size() == q.size() == vol.size()
-     */
-    core::Matrix<Real> blackScholes(const Vector<Real>& t,
-        const Vector<Real>& r,
-        const Vector<Real>& q,
-        const core::Matrix<Real>& vol,
-        Real S,
-        const Vector<Real>& K,
-        bool isCall = true);
-
     /**
      * @brief Black–Scholes Vega (∂Price / ∂σ).
      *
@@ -303,40 +269,6 @@ namespace uv::math
         T q,
         T S,
         T K);
-
-    /**
-     * @brief Compute Black–Scholes implied volatilities over a surface.
-     *
-     * Computes implied volatilities across multiple maturities using a common
-     * strike grid. For each maturity index i, a full strike slice is solved via:
-     *
-     *   out[i] = impliedVolBS(callPrices[i], t[i], r[i], q[i], S, K, isCall)
-     *
-     * This overload internally calls the vector (slice) impliedVolBS implementation
-     * for each maturity.
-     *
-     * @tparam T Floating-point type.
-     *
-     * @param callPrices Matrix of market option prices [maturity][strike].
-     * @param t          Vector of maturities (years).
-     * @param r          Vector of risk-free rates.
-     * @param q          Vector of dividend yields.
-     * @param S          Spot price.
-     * @param K          Common strike vector used for all maturities.
-     *
-     * @return Matrix of implied volatilities [maturity][strike].
-     *
-     * @pre t.size() == r.size() == q.size() == callPrices.size()
-     */
-    template <std::floating_point T>
-    core::Matrix<T> impliedVolBS(
-        const core::Matrix<T>& callPrices,
-        const Vector<T>& t,
-        const Vector<T>& r,
-        const Vector<T>& q,
-        T S,
-        const Vector<T>& K);
-
 } // namespace uv::math
 
 #include "Functions.inl"
