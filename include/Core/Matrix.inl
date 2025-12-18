@@ -52,6 +52,101 @@ namespace uv::core
     }
 
     template <std::floating_point T>
+    Matrix<T>& Matrix<T>::operator+=(const Matrix<T>& rhs) noexcept
+    {
+        T* ptrThis{ data_.data() };
+        const T* ptrRhs{ rhs.data_.data() };
+
+        for (std::size_t i = 0; i < data_.size(); ++i)
+        {
+            ptrThis[i] += ptrRhs[i];
+        }
+
+        return *this;
+    }
+
+    template <std::floating_point T>
+    Matrix<T>& Matrix<T>::operator-=(const Matrix<T>& rhs) noexcept
+    {
+        T* ptrThis{ data_.data() };
+        const T* ptrRhs{ rhs.data_.data() };
+
+        for (std::size_t i = 0; i < data_.size(); ++i)
+        {
+            ptrThis[i] -= ptrRhs[i];
+        }
+
+        return *this;
+    }
+
+    template <std::floating_point T>
+    Matrix<T>& Matrix<T>::operator+=(T scalar) noexcept
+    {
+        T* ptr{ data_.data() };
+
+        for (std::size_t i = 0; i < data_.size(); ++i)
+        {
+            ptr[i] += scalar;
+        }
+
+        return *this;
+    }
+
+    template <std::floating_point T>
+    Matrix<T>& Matrix<T>::operator-=(T scalar) noexcept
+    {
+        T* ptr{ data_.data() };
+
+        for (std::size_t i = 0; i < data_.size(); ++i)
+        {
+            ptr[i] -= scalar;
+        }
+
+        return *this;
+    }
+
+    template <std::floating_point T>
+    Matrix<T>& Matrix<T>::operator*=(T scalar) noexcept
+    {
+        T* ptr{ data_.data() };
+
+        for (std::size_t i = 0; i < data_.size(); ++i)
+        {
+            ptr[i] *= scalar;
+        }
+
+        return *this;
+    }
+
+    template <std::floating_point T>
+    Matrix<T>& Matrix<T>::operator/=(T scalar) noexcept
+    {
+        T* ptr{ data_.data() };
+
+        for (std::size_t i = 0; i < data_.size(); ++i)
+        {
+            ptr[i] /= scalar;
+        }
+
+        return *this;
+    }
+
+    template <std::floating_point T>
+    Matrix<T> Matrix<T>::operator-() const noexcept
+    {
+        Matrix<T> result(*this);  
+
+        T* ptr{ result.data_.data() };
+
+        for (std::size_t i = 0; i < result.data_.size(); ++i)
+        {
+            ptr[i] = -ptr[i];
+        }
+
+        return result;
+    }
+
+    template <std::floating_point T>
     void Matrix<T>::print(unsigned int valuePrec) const noexcept
     {
         utils::printMatrix(
@@ -81,6 +176,41 @@ namespace uv::core
     std::size_t Matrix<T>::cols() const noexcept
     {
         return numColumns_;
+    }
+
+    template <std::floating_point T>
+    Matrix<T> operator+(Matrix<T> lhs, const Matrix<T>& rhs) noexcept
+    {
+        lhs += rhs;
+        return lhs;
+    }
+
+    template <std::floating_point T>
+    Matrix<T> operator-(Matrix<T> lhs, const Matrix<T>& rhs) noexcept
+    {
+        lhs -= rhs;
+        return lhs;
+    }
+
+    template <std::floating_point T>
+    Matrix<T> operator*(Matrix<T> lhs, T scalar) noexcept
+    {
+        lhs *= scalar;
+        return lhs;
+    }
+
+    template <std::floating_point T>
+    Matrix<T> operator/(Matrix<T> lhs, T scalar) noexcept
+    {
+        lhs /= scalar;
+        return lhs;
+    }
+
+    template <std::floating_point T>
+    Matrix<T> operator*(T scalar, Matrix<T> rhs) noexcept
+    {
+        rhs *= scalar;
+        return rhs;
     }
 
 } // namespace uv::core

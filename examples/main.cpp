@@ -62,6 +62,27 @@ int main(int argc, char* argv[])
         VolSurface mktVolSurface{ readVolSurface(path.string(), marketData) };
         mktVolSurface.printTotVar();
 
+        Matrix<Real> a{ 10, 10, 4.0 };
+        Matrix<Real> b{ 10, 10, 1.5 };
+
+        (a + b).print();
+        (a - b).print();
+        (a * 2.0).print();
+        (2.0 * a).print();
+        (a / 2.0).print();
+
+        a.print();
+        a *= 2.0;
+        a.print();
+        a /= 2.0;
+        a.print();
+        a += b;
+        a.print();
+        a -= b;
+        a.print();
+        (-a).print();
+
+
         // ---------- SVI Calibration ----------
 
         opt::nlopt::Optimizer<4, nlopt::LD_SLSQP> nloptOptimizer

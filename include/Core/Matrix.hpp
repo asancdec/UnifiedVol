@@ -31,23 +31,22 @@
 namespace uv::core
 {
 	/**
-	 * @brief Lightweight 2D matrix with contiguous memory storage.
-	 * Internally, data is stored in a single contiguous 1D buffer 
-	 * in row-major order, enabling:
+	 * @brief Lightweight 2D matrix with contiguous row-major storage.
 	 *
-	 * - Cache-friendly access patterns
-	 * - Efficient SIMD auto-vectorization
-	 * - Zero-copy row views via std::span
+	 * The matrix stores all elements in a single contiguous buffer,
+	 * enabling cache-friendly access and efficient SIMD auto-vectorization.
 	 *
-	 * The class provides bounds-unchecked row access through operator[],
-	 * returning a std::span over the requested row.
+	 * All arithmetic operators are implemented as bounds-unchecked,
+	 * in-place loops for maximum performance.
 	 *
-	 * @tparam T Floating-point value type.
+	 * @tparam T Floating-point element type.
 	 */
 	template <std::floating_point T>
 	class Matrix
 	{
 	private:
+
+		// ----------Member variables ----------
 
 		std::size_t numRows_{ 0 };
 		std::size_t numColumns_{ 0 };
@@ -55,6 +54,9 @@ namespace uv::core
 
 	public:
 
+		// ---------- Constructors ----------
+		
+		/** @brief Delete default constructor to avoid unwanted behaviour */
 		Matrix() = delete;
 
 		/**
@@ -68,34 +70,39 @@ namespace uv::core
 		 * @param val         Initial value for all elements (default = 0).
 		 */
 		Matrix(std::size_t numRows,
-		std::size_t numColumns,
-		T val = T(0)) noexcept;
+			std::size_t numColumns,
+			T val = T(0)) noexcept;
 
-		/**
-		 * @brief Access a matrix row as a contiguous view.
-		 *
-		 * Returns a std::span representing the i-th row of the matrix.
-		 * The returned span provides direct access to the underlying data
-		 * without copying.
-		 *
-		 * @param i Row index (0-based).
-		 * @return Mutable span over the row elements.
-		 *
-		 * @warning No bounds checking is performed.
-		 */
+		// ---------- Unary operators ----------
+
+		/** @brief Returns a mutable view of row @p i (no bounds checking). */
 		std::span<T> operator[](std::size_t i) noexcept;
 
-		/**
-		 * @brief Access a matrix row as a read-only contiguous view.
-		 *
-		 * Returns a const std::span representing the i-th row of the matrix.
-		 *
-		 * @param i Row index (0-based).
-		 * @return Read-only span over the row elements.
-		 *
-		 * @warning No bounds checking is performed.
-		 */
+		/** @brief Returns a read-only view of row @p i (no bounds checking). */
 		std::span<const T> operator[](std::size_t i) const noexcept;
+
+		/** @brief In-place element-wise addition with another matrix. */
+		Matrix& operator+=(const Matrix& rhs) noexcept;
+
+		/** @brief In-place element-wise subtraction with another matrix. */
+		Matrix& operator-=(const Matrix& rhs) noexcept;
+
+		/** @brief In-place addition of a scalar to all elements. */
+		Matrix& operator+=(T scalar) noexcept;
+
+		/** @brief In-place subtraction of a scalar from all elements. */
+		Matrix& operator-=(T scalar) noexcept;
+
+		/** @brief In-place multiplication of all elements by a scalar. */
+		Matrix& operator*=(T scalar) noexcept;
+
+		/** @brief In-place division of all elements by a scalar. */
+		Matrix& operator/=(T scalar) noexcept;
+
+		/** @brief Returns a new matrix with all elements negated. */
+		Matrix operator-() const noexcept;
+
+		// ---------- Utilities ----------
 
 		/**
 		 * @brief Print the matrix to standard output.
@@ -116,6 +123,8 @@ namespace uv::core
 		 */
 		bool empty() const noexcept;
 
+		// ---------- Getters ----------
+
 		/**
 		 * @brief Number of rows in the matrix.
 		 */
@@ -127,6 +136,29 @@ namespace uv::core
 		std::size_t cols() const noexcept;
 
 	};
+
+	// ---------- Binary operators ----------
+
+	/** @brief Returns the element-wise sum of two matrices. */
+	template <std::floating_point T>
+	Matrix<T> operator+(Matrix<T> lhs, const Matrix<T>& rhs) noexcept;
+
+	/** @brief Returns the element-wise difference of two matrices. */
+	template <std::floating_point T>
+	Matrix<T> operator-(Matrix<T> lhs, const Matrix<T>& rhs) noexcept;
+
+	/** @brief Returns a matrix scaled by a scalar (right multiplication). */
+	template <std::floating_point T>
+	Matrix<T> operator*(Matrix<T> lhs, T scalar) noexcept;
+
+	/** @brief Returns a matrix divided by a scalar. */
+	template <std::floating_point T>
+	Matrix<T> operator/(Matrix<T> lhs, T scalar) noexcept;
+
+	/** @brief Returns a matrix scaled by a scalar (left multiplication). */
+	template <std::floating_point T>
+	Matrix<T> operator*(T scalar, Matrix<T> rhs) noexcept;
+
 
 } // namespace uv::core
 
