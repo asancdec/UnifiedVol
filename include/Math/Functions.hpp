@@ -22,10 +22,7 @@
  * limitations under this License.
  */
 
-
 #pragma once
-
-#include "Utils/Types.hpp"
 
 #include <concepts>
 

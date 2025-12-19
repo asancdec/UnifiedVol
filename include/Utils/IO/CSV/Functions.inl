@@ -1,6 +1,6 @@
-﻿// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 /*
- * File:        Functions.cpp
+ * File:        Functions.inl
  * Author:      Alvaro Sanchez de Carlos
  * Created:     2025-12-08
  *
@@ -23,25 +23,25 @@
  */
 
 
-#include "Utils/IO/CSV/Functions.hpp"
 #include "Core/MarketData.hpp"
 #include "Core/VolSurface.hpp"
 #include "Core/Matrix/Matrix.hpp"
 #include "Utils/Aux/Errors.hpp"       
-#include "Utils/Types.hpp"
+#include "Core/Types.hpp"
 
 #include <cctype>
 #include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <string>
 #include <utility>
 #include <vector>
 
 namespace uv::utils
 {
-    core::VolSurface readVolSurface(const std::string& filename, const core::MarketData& mktData)
+    template <std::floating_point T>
+    core::VolSurface<T> readVolSurface(const std::string& filename,
+        const core::MarketData<T>& mktData)
     {
         // Open the CSV file for reading
         std::ifstream file(filename);
@@ -58,7 +58,7 @@ namespace uv::utils
                 while (!s.empty() && (issp(static_cast<unsigned char>(s.back())) != 0))  s.pop_back();
             };
 
-        auto parseCell = [&](const std::string& raw, Real& out, bool strict = true) -> bool
+        auto parseCell = [&](const std::string& raw, T& out, bool strict = true) -> bool
             {
                 std::string s = raw;
                 trim(s);
@@ -111,12 +111,12 @@ namespace uv::utils
             raise(ErrorCode::DataFormat, "Header must have at least 2 columns (blank/label + one moneyness)");
         }
 
-        Vector<Real> mny;
+        Vector<T> mny;
         mny.reserve(header.size() - 1);
 
         for (std::size_t j = 1; j < header.size(); ++j) // skip first header cell
         {
-            Real v{};
+            T v{};
             if (!parseCell(header[j], v, /*strict=*/true))
                 raise(ErrorCode::DataFormat, "Non-numeric moneyness at header col " + std::to_string(j + 1));
             mny.push_back(v);
@@ -130,8 +130,8 @@ namespace uv::utils
         // --------------------------------------------------------------------------
         // Read data rows: maturity, vol_1, vol_2, ..., vol_N
         // --------------------------------------------------------------------------
-        Vector<Real> tenors{};
-        Vector<Vector<Real>> vols{};
+        Vector<T> tenors{};
+        Vector<Vector<T>> vols{};
 
         std::size_t lineNo = 1; // already consumed header
         while (std::getline(file, line))
@@ -149,8 +149,8 @@ namespace uv::utils
             }
 
             // First column is maturity
-            Real T{};
-            if (!parseCell(cells[0], T, /*strict=*/true))
+            T t{};
+            if (!parseCell(cells[0], t, /*strict=*/true))
             {
                 raise(ErrorCode::DataFormat, "Missing/invalid maturity at row " + std::to_string(lineNo));
             }
@@ -164,11 +164,11 @@ namespace uv::utils
                     std::to_string(mny.size()));
             }
 
-            Vector<Real> row;
+            Vector<T> row;
             row.reserve(mny.size());
             for (std::size_t j = 0; j < mny.size(); ++j)
             {
-                Real sigma{};
+                T sigma{};
                 if (!parseCell(cells[1 + j], sigma, /*strict=*/true))
                 {
                     raise(ErrorCode::DataFormat,
@@ -178,7 +178,7 @@ namespace uv::utils
                 row.push_back(sigma);
             }
 
-            tenors.push_back(T);
+            tenors.push_back(t);
             vols.push_back(std::move(row));
         }
 
@@ -204,10 +204,10 @@ namespace uv::utils
         }
 
         // Conver to matrix data type
-        core::Matrix<Real> volsMat(tenors.size(), mny.size());
+        core::Matrix<T> volsMat(tenors.size(), mny.size());
 
         for (std::size_t i = 0; i < tenors.size(); ++i)
-        {  
+        {
             for (std::size_t j = 0; j < mny.size(); ++j)
             {
                 volsMat[i][j] = vols[i][j];
@@ -215,6 +215,6 @@ namespace uv::utils
         }
 
         // Construct VolSurface
-        return core::VolSurface(tenors, mny, volsMat, mktData);
+        return core::VolSurface<T>(tenors, mny, volsMat, mktData);
     }
 } // namespace uv::utils

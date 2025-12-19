@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "Utils/Types.hpp"
+#include <concepts>
 
 namespace uv::models::svi
 {
@@ -38,13 +38,14 @@ namespace uv::models::svi
      * The parameter `a` is typically fixed from the ATM total variance
      * and not optimized directly.
      */
+    template <std::floating_point T>
     struct Params
     {
-        Real T;       ///< Maturity (years)
-        Real a;       ///< ATM total variance level
-        Real b;       ///< Smile amplitude
-        Real rho;     ///< Skew parameter (-1 < rho < 1)
-        Real m;       ///< Horizontal shift
-        Real sigma;   ///< Smile curvature / smoothness
+        T t;       ///< Maturity (years)
+        T a;       ///< ATM total variance level
+        T b;       ///< Smile amplitude
+        T rho;     ///< Skew parameter (-1 < rho < 1)
+        T m;       ///< Horizontal shift
+        T sigma;   ///< Smile curvature / smoothness
     };
 }

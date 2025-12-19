@@ -25,9 +25,8 @@
 
 #pragma once
 
-#include "Utils/Types.hpp"
-
 #include <limits>
+#include <concepts>
 
 namespace uv::models::heston
 {
@@ -37,10 +36,11 @@ namespace uv::models::heston
      * Stores damping parameters used to ensure integrability of the pricing integral,
      * plus a small numerical epsilon used for stability guards.
      */
+    template<std::floating_point T>
     struct Config
     {
-        Real alphaItm;                                    ///< Damping parameter when ln(F/K) >= 0 (ITM region).
-        Real alphaOtm;                                    ///< Damping parameter when ln(F/K) < 0  (OTM region).
-        Real eps{ std::numeric_limits<Real>::epsilon() }; ///< Numerical epsilon (defaults to machine epsilon).
+        T alphaItm;                                    ///< Damping parameter when ln(F/K) >= 0 (ITM region).
+        T alphaOtm;                                    ///< Damping parameter when ln(F/K) < 0  (OTM region).
+        T eps{ std::numeric_limits<T>::epsilon() };    ///< Numerical epsilon (defaults to machine epsilon).
     };
 }

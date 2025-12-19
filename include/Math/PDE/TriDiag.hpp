@@ -24,8 +24,9 @@
 
 #pragma once
 
-#include "Utils/Types.hpp"
 #include "Core/Matrix/Matrix.hpp"
+
+#include <concepts>
 
 namespace uv::math::pde
 {
@@ -47,10 +48,11 @@ namespace uv::math::pde
 	 * These coefficients are used to assemble a tridiagonal linear system
 	 * for implicit or Crank–Nicolson time stepping schemes.
 	 */
+	template <std::floating_point T>
 	struct TriDiag
 	{
-		core::Matrix<Real> lower; ///< Sub-diagonal coefficients (A)
-		core::Matrix<Real> diag;  ///< Main diagonal coefficients (B)
-		core::Matrix<Real> upper; ///< Super-diagonal coefficients (C)
+		core::Matrix<T> lower; ///< Sub-diagonal coefficients (A)
+		core::Matrix<T> diag;  ///< Main diagonal coefficients (B)
+		core::Matrix<T> upper; ///< Super-diagonal coefficients (C)
 	};
 }  // namespace uv::math::pde

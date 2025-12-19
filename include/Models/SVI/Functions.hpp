@@ -29,7 +29,6 @@
 #include "Core/Matrix/Matrix.hpp"
 #include "Math/Optimization/NLopt/Optimizer.hpp"
 #include "Models/SVI/Params.hpp"
-#include "Utils/Types.hpp"
 
 #include <nlopt.hpp> 
 #include <concepts>
@@ -63,10 +62,10 @@ namespace uv::models::svi
 	 *
 	 * @throws ErrorCode::InvalidArgument if inputs are inconsistent or unsorted.
 	 */
-	template <::nlopt::algorithm Algo>
-	Vector<Params> calibrate(const Vector<Real>& tenors,
-		const core::Matrix<Real>& kMatrix,
-		const core::Matrix<Real>& wMMatrix,
+	template <std::floating_point T, ::nlopt::algorithm Algo>
+	Vector<Params<T>> calibrate(const Vector<T>& tenors,
+		const core::Matrix<T>& kMatrix,
+		const core::Matrix<T>& wMMatrix,
 		const opt::nlopt::Optimizer<4, Algo>& prototype);
 
 	/**
@@ -85,8 +84,9 @@ namespace uv::models::svi
 	 *
 	 * @throws ErrorCode::InvalidArgument if parameter dimensions mismatch.
 	 */
-	core::VolSurface buildSurface(const core::VolSurface& volSurface,
-		const Vector<Params>& params);
+	template <std::floating_point T>
+	core::VolSurface<T> buildSurface(const core::VolSurface<T>& volSurface,
+		const Vector<Params<T>>& params);
 
 	/**
 	 * @brief SVI convexity function g(k) used for butterfly arbitrage checks.
@@ -104,11 +104,11 @@ namespace uv::models::svi
 	 *
 	 * @return Value of g(k).
 	 */
-	double gk(Real a, Real b, Real rho, Real m, Real sigma, Real k) noexcept;
+	template <std::floating_point T>
+	T gk(T a, T b, T rho, T m, T sigma, T k) noexcept;
 
 	namespace detail
 	{
-
 		/// @brief Calendar-spread constraint context (internal).
 		struct CalendarContexts;
 
@@ -137,9 +137,10 @@ namespace uv::models::svi
 		 *
 		 * @throws ErrorCode::InvalidArgument if validation fails.
 		 */
-		void validateInputs(const Vector<Real>& tenors,
-			const core::Matrix<Real>& kMatrix,
-			const core::Matrix<Real>& wMMatrix);
+		template <std::floating_point T>
+		void validateInputs(const Vector<T>& tenors,
+			const core::Matrix<T>& kMatrix,
+			const core::Matrix<T>& wMMatrix);
 
 		/**
 		 * @brief Calibrate one SVI slice for a single maturity.
@@ -154,7 +155,7 @@ namespace uv::models::svi
 		 *
 		 * @tparam Algo NLopt algorithm.
 		 *
-		 * @param T          Slice maturity (years).
+		 * @param t          Slice maturity (years).
 		 * @param kSlice     Log-forward moneyness grid for this tenor (strictly increasing).
 		 * @param wKSlice    Market total variance values at kSlice.
 		 * @param prototype  Prototype optimizer used to create a fresh instance.
@@ -163,12 +164,12 @@ namespace uv::models::svi
 		 *
 		 * @return Calibrated SVI parameters for this slice.
 		 */
-		template <::nlopt::algorithm Algo>
-		Params calibrateSlice(Real T,
+		template <std::floating_point T, ::nlopt::algorithm Algo>
+		Params<T> calibrateSlice(T t,
 			std::span<const double> kSlice,
 			std::span<const double> wKSlice,
 			const opt::nlopt::Optimizer<4, Algo>& prototype,
-			const Params* prevParams,
+			const Params<T>* prevParams,
 			std::size_t numStrikes
 		);
 

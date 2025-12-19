@@ -28,150 +28,15 @@
 #include "Core/Matrix/Functions.hpp"
 #include "Models/SVI/Params.hpp"
 #include "Utils/Aux/Errors.hpp"
-#include "Utils/Types.hpp"
 
 #include <array>
 #include <cmath>      
 #include <cstddef>
 #include <span>
 
-namespace uv::models::svi
-{
-    core::VolSurface buildSurface(const core::VolSurface& volSurface,
-        const Vector<Params>& params)
-    {
-        // ---------- Extract data ----------
-
-        const std::size_t numTenors{ volSurface.numTenors() };
-        const std::size_t numStrikes{ volSurface.numStrikes() };
-        const core::Matrix<Real>& kMatrix{ volSurface.logKFMatrix() };
-
-        // ---------- Validate inputs ----------
-
-        UV_REQUIRE(
-            params.size() == numTenors,
-            ErrorCode::InvalidArgument,
-            "buildSurface: params size must equal number of tenors"
-        );
-
-        // ---------- Build surface  ---------- 
-        
-        // Copy surface
-        core::VolSurface sviVolSurface{ volSurface };
-
-        // Set total variance
-        sviVolSurface.setTotVar
-        (
-            core::applyIndexed<Real>
-            (
-                numTenors,
-                numStrikes,
-                [&](std::size_t i, std::size_t j)
-                {
-                    std::span<const Real> kMatrixRow{ kMatrix[i] };
-                    const Params& p{ params[i] };
-
-                    return detail::calculateWk
-                    (
-                        p.a,
-                        p.b,
-                        p.rho,
-                        p.m,
-                        p.sigma,
-                        kMatrixRow[j]
-                    );
-                }
-            )
-        );
-
-        return sviVolSurface;
-    }
-
-    double gk(Real a, Real b, Real rho, Real m, Real sigma, Real k) noexcept
-    {
-        Real x{ k - m };                                          // x := k-m
-        Real R{ std::hypot(x, sigma) };                           // R:= sqrt(x^2 + sigma^2)
-        Real invR{ 1.0 / R };                                     // invR := 1 / R
-        Real wk{ std::fma(b, (rho * x + R), a) };                 // w(k) = a + b*(rho*x + R)
-        Real wkD1{ b * (rho + x * invR) };                        // w'(k) = b * (rho + x/R)
-        Real wkD1Squared{ wkD1 * wkD1 };                          // w'(k)^2
-        Real invRCubed{ invR * invR * invR };                     // 1/(R^3)
-        Real sigmaSquared{ sigma * sigma };                       // sigma^2
-        Real wkD2{ b * sigmaSquared * invRCubed };                // w''(k) = b * sigma^2 / R^3
-        Real A{ 1.0 - 0.5 * k * wkD1 / wk };                      // A := 1 - k * w'/(2 * w)                        
-        Real B{ (1.0 / wk) + 0.25 };                              // B := 1/w(k) + 1/4
-
-        return (A * A) - 0.25 * wkD1Squared * B + wkD2 * 0.5;
-    }
-} // namespace uv::models::svi
 
 namespace uv::models::svi::detail
 {
-    void validateInputs(const Vector<Real>& tenors,
-        const core::Matrix<Real>& kMatrix,
-        const core::Matrix<Real>& wMMatrix)
-    {
-        UV_REQUIRE(
-            !tenors.empty(),
-            ErrorCode::InvalidArgument,
-            "validateInputs: tenors is empty"
-        );
-
-        UV_REQUIRE(
-            !kMatrix.empty(),
-            ErrorCode::InvalidArgument,
-            "validateInputs: kMatrix is empty"
-        );
-
-        UV_REQUIRE(
-            !wMMatrix.empty(),
-            ErrorCode::InvalidArgument,
-            "validateInputs: wMMatrix is empty"
-        );
-
-        UV_REQUIRE(
-            kMatrix.rows() == tenors.size(),
-            ErrorCode::InvalidArgument,
-            "validateInputs: kMatrix rows must equal number of tenors"
-        );
-
-        UV_REQUIRE(
-            wMMatrix.rows() == tenors.size(),
-            ErrorCode::InvalidArgument,
-            "validateInputs: wMMatrix rows must equal number of tenors"
-        );
-
-        const std::size_t numTenors{ tenors.size() };
-        const std::size_t numStrikes{ kMatrix.cols() };
-
-        UV_REQUIRE(
-            wMMatrix.cols() == numStrikes,
-            ErrorCode::InvalidArgument,
-            "validateInputs: wMMatrix columns must equal kMatrix columns"
-        );
-
-        for (std::size_t i = 1; i < numTenors; ++i)
-        {
-            UV_REQUIRE(
-                tenors[i] > tenors[i - 1],
-                ErrorCode::InvalidArgument,
-                "validateInputs: tenors must be strictly increasing"
-            );
-        }
-
-        for (std::size_t i = 0; i < numTenors; ++i)
-        {
-            for (std::size_t j = 1; j < numStrikes; ++j)
-            {
-                UV_REQUIRE(
-                    kMatrix[i][j] > kMatrix[i][j - 1],
-                    ErrorCode::InvalidArgument,
-                    "validateInputs: kMatrix rows must be strictly increasing"
-                );
-            }
-        }
-    }
-
     std::array<double, 4> initGuess() noexcept
     {
         return 

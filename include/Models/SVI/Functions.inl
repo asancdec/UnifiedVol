@@ -35,15 +35,15 @@
 
 namespace uv::models::svi
 {
-    template <::nlopt::algorithm Algo>
-    Vector<Params> calibrate(const Vector<Real>& tenors,
-        const core::Matrix<Real>& kMatrix,
-        const core::Matrix<Real>& wMMatrix,
+    template <std::floating_point T, ::nlopt::algorithm Algo>
+    Vector<Params<T>> calibrate(const Vector<T>& tenors,
+        const core::Matrix<T>& kMatrix,
+        const core::Matrix<T>& wMMatrix,
         const opt::nlopt::Optimizer<4, Algo>& prototype)
     {
         // ---------- Validate inputs ----------
 
-        detail::validateInputs(tenors, kMatrix, wMMatrix);
+        detail::validateInputs<T>(tenors, kMatrix, wMMatrix);
 
         // ---------- Extract data ----------
         
@@ -56,18 +56,18 @@ namespace uv::models::svi
 
         // ---------- Initialize params container ----------
 
-        Vector<Params> params;
+        Vector<Params<T>> params;
         params.reserve(numTenors);
 
         // ---------- Calibrate per slice ----------
 
         for (std::size_t i = 0; i < numTenors; ++i)
         {
-            const Params* prev = (i == 0) ? nullptr : &params.back();
+            const Params<T>* prev = (i == 0) ? nullptr : &params.back();
 
             params.emplace_back
             (
-                detail::calibrateSlice(
+                detail::calibrateSlice<T>(
                     tenors[i],
                     kMatrixD[i],
                     wMMatrixD[i],
@@ -80,6 +80,76 @@ namespace uv::models::svi
 
         return params;
     }
+
+    template <std::floating_point T>
+    core::VolSurface<T> buildSurface(const core::VolSurface<T>& volSurface,
+        const Vector<Params<T>>& params)
+    {
+        // ---------- Extract data ----------
+
+        const std::size_t numTenors{ volSurface.numTenors() };
+        const std::size_t numStrikes{ volSurface.numStrikes() };
+        const core::Matrix<T>& kMatrix{ volSurface.logKFMatrix() };
+
+        // ---------- Validate inputs ----------
+
+        UV_REQUIRE(
+            params.size() == numTenors,
+            ErrorCode::InvalidArgument,
+            "buildSurface: params size must equal number of tenors"
+        );
+
+        // ---------- Build surface  ---------- 
+
+        // Copy surface
+        core::VolSurface<T> sviVolSurface{ volSurface };
+
+        // Set total variance
+        sviVolSurface.setTotVar
+        (
+            core::generateIndexed<Real>
+            (
+                numTenors,
+                numStrikes,
+                [&](std::size_t i, std::size_t j)
+                {
+                    std::span<const T> kMatrixRow{ kMatrix[i] };
+                    const Params<T>& p{ params[i] };
+
+                    return detail::calculateWk
+                    (
+                        p.a,
+                        p.b,
+                        p.rho,
+                        p.m,
+                        p.sigma,
+                        kMatrixRow[j]
+                    );
+                }
+            )
+        );
+
+        return sviVolSurface;
+    }
+
+    template <std::floating_point T>
+    T gk(T a, T b, T rho, T m, T sigma, T k) noexcept
+    {
+        T x{ k - m };                                          // x := k-m
+        T R{ std::hypot(x, sigma) };                           // R:= sqrt(x^2 + sigma^2)
+        T invR{ 1.0 / R };                                     // invR := 1 / R
+        T wk{ std::fma(b, (rho * x + R), a) };                 // w(k) = a + b*(rho*x + R)
+        T wkD1{ b * (rho + x * invR) };                        // w'(k) = b * (rho + x/R)
+        T wkD1Squared{ wkD1 * wkD1 };                          // w'(k)^2
+        T invRCubed{ invR * invR * invR };                     // 1/(R^3)
+        T sigmaSquared{ sigma * sigma };                       // sigma^2
+        T wkD2{ b * sigmaSquared * invRCubed };                // w''(k) = b * sigma^2 / R^3
+        T A{ 1.0 - 0.5 * k * wkD1 / wk };                      // A := 1 - k * w'/(2 * w)                        
+        T B{ (1.0 / wk) + 0.25 };                              // B := 1/w(k) + 1/4
+
+        return (A * A) - T(0.25) * wkD1Squared * B + wkD2 * T(0.5);
+    }
+
 } // namespace uv::models::svi
 
 namespace uv::models::svi::detail
@@ -146,13 +216,78 @@ namespace uv::models::svi::detail
         }
     };
 
-    template <::nlopt::algorithm Algo>
-    Params calibrateSlice(
-        const Real T,
+    template <std::floating_point T>
+    void validateInputs(const Vector<T>& tenors,
+        const core::Matrix<T>& kMatrix,
+        const core::Matrix<T>& wMMatrix)
+    {
+        UV_REQUIRE(
+            !tenors.empty(),
+            ErrorCode::InvalidArgument,
+            "validateInputs: tenors is empty"
+        );
+
+        UV_REQUIRE(
+            !kMatrix.empty(),
+            ErrorCode::InvalidArgument,
+            "validateInputs: kMatrix is empty"
+        );
+
+        UV_REQUIRE(
+            !wMMatrix.empty(),
+            ErrorCode::InvalidArgument,
+            "validateInputs: wMMatrix is empty"
+        );
+
+        UV_REQUIRE(
+            kMatrix.rows() == tenors.size(),
+            ErrorCode::InvalidArgument,
+            "validateInputs: kMatrix rows must equal number of tenors"
+        );
+
+        UV_REQUIRE(
+            wMMatrix.rows() == tenors.size(),
+            ErrorCode::InvalidArgument,
+            "validateInputs: wMMatrix rows must equal number of tenors"
+        );
+
+        const std::size_t numTenors{ tenors.size() };
+        const std::size_t numStrikes{ kMatrix.cols() };
+
+        UV_REQUIRE(
+            wMMatrix.cols() == numStrikes,
+            ErrorCode::InvalidArgument,
+            "validateInputs: wMMatrix columns must equal kMatrix columns"
+        );
+
+        for (std::size_t i = 1; i < numTenors; ++i)
+        {
+            UV_REQUIRE(
+                tenors[i] > tenors[i - 1],
+                ErrorCode::InvalidArgument,
+                "validateInputs: tenors must be strictly increasing"
+            );
+        }
+
+        for (std::size_t i = 0; i < numTenors; ++i)
+        {
+            for (std::size_t j = 1; j < numStrikes; ++j)
+            {
+                UV_REQUIRE(
+                    kMatrix[i][j] > kMatrix[i][j - 1],
+                    ErrorCode::InvalidArgument,
+                    "validateInputs: kMatrix rows must be strictly increasing"
+                );
+            }
+        }
+    }
+
+    template <std::floating_point T, ::nlopt::algorithm Algo>
+    Params<T> calibrateSlice(const T t,
         std::span<const double> kSlice,
         std::span<const double> wKSlice,
         const opt::nlopt::Optimizer<4, Algo>& prototype,
-        const Params* prevParams,         
+        const Params<T>* prevParams,
         const std::size_t numStrikes
     )
     {
@@ -190,7 +325,7 @@ namespace uv::models::svi::detail
             calCtx.resize(numStrikes);
 
             // Extract data
-            const Params& prev{ *prevParams };
+            const Params<T>& prev{ *prevParams };
             const double a0{ double(prev.a) };
             const double b0{ double(prev.b) };
             const double rho0{ double(prev.rho) };
@@ -235,17 +370,18 @@ namespace uv::models::svi::detail
 
         Vector<double> params{ optimizer.optimize() };
 
-        return Params{
-            T,
+        return Params<T>
+        {
+            t,
             aParam(atmWK,
-                   Real(params[0]),
-                   Real(params[1]),
-                   Real(params[2]),
-                   Real(params[3])),
-            Real(params[0]),
-            Real(params[1]),
-            Real(params[2]),
-            Real(params[3])
+                   T(params[0]),
+                   T(params[1]),
+                   T(params[2]),
+                   T(params[3])),
+            T(params[0]),
+            T(params[1]),
+            T(params[2]),
+            T(params[3])
         };
     }
 

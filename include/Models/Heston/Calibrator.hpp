@@ -33,6 +33,7 @@
 
 #include <array>
 #include <cstddef>
+#include <concepts>
 
 namespace uv::models::heston::calibrator
 {
@@ -62,13 +63,13 @@ namespace uv::models::heston::calibrator
 	 *
 	 * @throws (via UV_REQUIRE) if input dimensions are inconsistent or invalid.
 	 */
-	template <std::size_t N, typename Policy>
-	Params calibrate(const Vector<Real>& tenors,
-		const Vector<Real>& strikes,
-		const Vector<Real>& forwards,
-		const Vector<Real>& rates,
-		const core::Matrix<Real>& callM,
-		Pricer<N>& pricer,
+	template <std::floating_point T, std::size_t N, typename Policy>
+	Params<T> calibrate(const Vector<T>& tenors,
+		const Vector<T>& strikes,
+		const Vector<T>& forwards,
+		const Vector<T>& rates,
+		const core::Matrix<T>& callM,
+		Pricer<T, N>& pricer,
 		opt::ceres::Optimizer<5, Policy>& optimizer);
 
 	/**
@@ -86,9 +87,9 @@ namespace uv::models::heston::calibrator
 	 *
 	 * @return Copy of volSurface with call prices set to the Heston model prices.
 	*/
-	template <std::size_t N>
-	core::VolSurface buildSurface(const core::VolSurface& volSurface,
-		const Pricer<N>& pricer);
+	template <std::floating_point T, std::size_t N>
+	core::VolSurface<T> buildSurface(const core::VolSurface<T>& volSurface,
+		const Pricer<T, N>& pricer);
 
 	namespace detail
 	{
@@ -112,11 +113,12 @@ namespace uv::models::heston::calibrator
 		 *
 		 * @throws (via UV_REQUIRE) if any condition fails.
 		 */
-		void validateInputs(const Vector<Real>& tenors,
-			const Vector<Real>& strikes,
-			const Vector<Real>& forwards,
-			const Vector<Real>& rates,
-			const core::Matrix<Real>& callM);
+		template <std::floating_point T>
+		void validateInputs(const Vector<T>& tenors,
+			const Vector<T>& strikes,
+			const Vector<T>& forwards,
+			const Vector<T>& rates,
+			const core::Matrix<T>& callM);
 
 		/**
 		 * @brief Ceres analytic residual for a single call price point.
@@ -128,7 +130,7 @@ namespace uv::models::heston::calibrator
 		 *
 		 * @tparam N Quadrature setting used by the pricer backend.
 		 */
-		template <std::size_t N>
+		template <std::floating_point T, std::size_t N>
 		struct PriceResidualJac;
 
 		/**

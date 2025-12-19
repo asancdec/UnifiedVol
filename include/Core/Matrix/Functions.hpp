@@ -25,50 +25,42 @@
 #pragma once
 
 #include "Core/Matrix/Matrix.hpp"
-#include "Utils/Types.hpp"
 
 #include <concepts>
+#include <functional>
 
 namespace uv::core
 {
     /**
-     * @brief Apply a function to each matrix element using its indices.
+     * @brief Generate a matrix from an index-based function.
      *
-     * Returns a new matrix where each element is computed as f(i, j, m[i][j]).
+     * Computes out(i,j) = f(i,j).
      */
     template <std::floating_point T, typename F>
-    Matrix<T> applyIndexed(const Matrix<T>& m, F&& f);
-
-    /**
-     * @brief Apply a function to each matrix element in place using its indices.
-     *
-     * Each element m[i][j] is replaced by f(i, j, m[i][j]).
-     */
-    template <std::floating_point T, typename F>
-    void applyIndexedInplace(Matrix<T>& m, F&& f);
-
-    /**
-     * @brief Create a matrix by applying a function over index pairs.
-     *
-     * Returns a rows by cols matrix with elements f(i, j).
-     */
-    template <std::floating_point T, typename F>
-    Matrix<T> applyIndexed(std::size_t rows,
+    requires std::invocable<F&, std::size_t, std::size_t>
+    Matrix<T> generateIndexed(std::size_t rows,
         std::size_t cols,
-        F&& f
-    );
+        F&& f);
 
     /**
-     * @brief Fill a matrix in place by applying a function over index pairs.
+     * @brief Apply an index-aware element-wise transform to a matrix.
      *
-     * Each element m[i][j] is replaced by f(i, j).
+     * Computes out(i,j) = f(i,j,m(i,j)).
      */
     template <std::floating_point T, typename F>
-    void applyIndexedInplace(Matrix<T>& m,
-        std::size_t rows,
-        std::size_t cols,
-        F&& f
-    );
+    requires std::invocable<F&, std::size_t, std::size_t, T>
+    Matrix<T> transformIndexed(const Matrix<T>& m,
+        F&& f);
+
+    /**
+     * @brief Apply an index-aware element-wise transform in-place.
+     *
+     * Replaces m(i,j) with f(i,j,m(i,j)).
+     */
+    template <std::floating_point T, typename F>
+    requires std::invocable<F&, std::size_t, std::size_t, T>
+    void transformIndexedInplace(Matrix<T>& m,
+        F&& f);
 
     /**
      * @brief Element wise multiplication of two matrices.
@@ -84,7 +76,7 @@ namespace uv::core
      *
      * Replaces lhs[i][j] with lhs[i][j] * rhs[i][j].
      */
-    template<std::floating_point T>
+    template <std::floating_point T>
     void hadamardInplace(Matrix<T>& lhs,
         const Matrix<T>& rhs);
 
@@ -102,9 +94,44 @@ namespace uv::core
      *
      * Each row of lhs is multiplied by rhs.
      */
-    template<std::floating_point T>
+    template <std::floating_point T>
     void hadamardInplace(Matrix<T>& lhs,
         const Vector<T>& rhs);
+    /**
+     * @brief Element-wise (component-wise) matrix division.
+     *
+     * Computes C(i,j) = A(i,j) / B(i,j).
+     * Both matrices must have the same shape.
+     */
+    template <std::floating_point T>
+    Matrix<T> divide(const Matrix<T>& lhs,
+        const Matrix<T>& rhs);
+
+    /**
+     * @brief Inplace element-wise (component-wise) matrix division.
+     *
+     * Computes C(i,j) = A(i,j) / B(i,j).
+     * Both matrices must have the same shape.
+     */
+    template <std::floating_point T>
+    void divideInplace(Matrix<T>& lhs,
+        const Matrix<T>& rhs);
+
+    /**
+     * @brief Return the element-wise reciprocal of a matrix.
+     *
+     * Computes out(i,j) = 1 / m(i,j).
+     */
+    template <std::floating_point T>
+    Matrix<T> reciprocal(const Matrix<T>& m) noexcept;
+
+    /**
+     * @brief Replace each entry of a matrix with its reciprocal (in-place).
+     *
+     * Computes m(i,j) = 1 / m(i,j).
+     */
+    template <std::floating_point T>
+    void reciprocalInplace(Matrix<T>& m) noexcept;
 
     /**
      * @brief Element wise square of a matrix.
@@ -112,13 +139,13 @@ namespace uv::core
      * Returns a new matrix with each element squared.
      */
     template <std::floating_point T>
-    Matrix<T> square(const Matrix<T>& m);
+    Matrix<T> square(const Matrix<T>& m) noexcept;
 
     /**
      * @brief In place element wise square of a matrix.
      */
     template <std::floating_point T>
-    void squareInplace(Matrix<T>& m);
+    void squareInplace(Matrix<T>& m) noexcept;
 
     /**
      * @brief Element wise square root of a matrix.

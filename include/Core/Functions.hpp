@@ -23,10 +23,12 @@
  */
 #pragma once
 
-#include "Utils/Types.hpp"
+#include "Core/Types.hpp"
 
 #include <span>
 #include <cstddef>
+#include <concepts>
+#include <functional>
 
 namespace uv::core
 {
@@ -35,10 +37,38 @@ namespace uv::core
      *
      * Returns a vector of values from bound1 to bound2 (inclusive).
      */
-    Vector<Real> generateGrid(Real bound1,
-        Real bound2,
-        size_t steps
-    ) noexcept;
+    template <std::floating_point T>
+    Vector<T> generateGrid(T bound1,
+        T bound2,
+        size_t steps) noexcept;
+
+    /**
+     * @brief Accumulate the elements in a span
+     *
+     * Returns the sum of the elements
+     */
+    template <std::floating_point T>
+    T sum(std::span<const T> x) noexcept;
+
+    /**
+     * @brief Multiply all elements of a vector by a scalar.
+     */
+    template <std::floating_point T>
+    Vector<T> multiply(std::span<const T> v,
+        T x) noexcept;
+
+    /**
+     * @brief Compute element wise reciprocal of a vector.
+     */
+    template <std::floating_point T>
+    Vector<T> reciprocal(std::span<const T> v) noexcept;
+
+    /**
+     * @brief Element wise multiplication of two vectors.
+     */
+    template <std::floating_point T>
+    Vector<T> hadamard(std::span<const T> a,
+        std::span<const T> b);
 
     /**
      * @brief Generate a sequence of consecutive values.
@@ -49,35 +79,11 @@ namespace uv::core
     Vector<T> makeSequence(std::size_t n, T start) noexcept;
 
     /**
-     * @brief Compute forward differences of a vector.
-     *
-     * Returns v[i+1] - v[i] for all valid indices.
-     */
-    Vector<Real> diff(const Vector<Real>& v);
-
-    /**
-     * @brief Multiply all elements of a vector by a scalar.
-     */
-    Vector<Real> multiply(const Vector<Real>& v,
-        Real x) noexcept;
-
-    /**
-     * @brief Compute element wise reciprocal of a vector.
-     */
-    Vector<Real> reciprocal(const Vector<Real>& v) noexcept;
-
-    /**
-     * @brief Element wise multiplication of two vectors.
-     */
-    Vector<Real> hadamard(std::span<const Real> a,
-        std::span<const Real> b);
-
-    /**
      * @brief Return the minimum element of a vector.
      *
      * The input must be non empty.
      */
-    template<typename T>
+    template <typename T>
     T minValue(std::span<const T> x);
 
     /**
@@ -85,7 +91,7 @@ namespace uv::core
      *
      * The input must be non empty.
      */
-    template<typename T>
+    template <typename T>
     T maxValue(std::span<const T> x);
 
     /**

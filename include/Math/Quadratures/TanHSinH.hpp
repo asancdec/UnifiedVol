@@ -25,10 +25,9 @@
 
 #pragma once
 
-#include "Utils/Types.hpp"
-
 #include <array>
 #include <cstddef>
+#include <concepts>
 
 namespace uv::math
 {
@@ -47,7 +46,7 @@ namespace uv::math
      *
      * @note This class is header-only (see TanHSinH.inl).
      */
-    template <std::size_t N>
+    template <std::floating_point T, std::size_t N>
     class TanHSinH
     {
     private:
@@ -64,20 +63,20 @@ namespace uv::math
          */
         struct Node
         {
-            Real w;              // Weight value
-            Real y;              // y_n term
-            Real x;              // Abscissa value
-            Real factorRight;    // Scaling factor (RHS)
-            Real inputRight;     // Transformed input (RHS)
-            Real factorLeft;     // Scaling factor (LHS)
-            Real inputLeft;      // Transformed input (LHS)
+            T w;              // Weight value
+            T y;              // y_n term
+            T x;              // Abscissa value
+            T factorRight;    // Scaling factor (RHS)
+            T inputRight;     // Transformed input (RHS)
+            T factorLeft;     // Scaling factor (LHS)
+            T inputLeft;      // Transformed input (LHS)
         };
 
         //--------------------------------------------------------------------------
         // Member variables
         //--------------------------------------------------------------------------	
 
-        const Real h_;                 // Step size
+        const T h_;                 // Step size
         std::array<Node, N> nodes_;    // Precomputed node storage
 
         //--------------------------------------------------------------------------
@@ -90,7 +89,7 @@ namespace uv::math
          * @param nh Value of n*h used to build the node.
          * @return Fully populated Node (weights + transformed inputs).
          */
-        Node generateNode(Real nh) const noexcept;
+        Node generateNode(T nh) const noexcept;
 
     public:
 
@@ -116,14 +115,14 @@ namespace uv::math
         /**
          * @brief Numerically integrate a scalar-valued function on (0, +∞).
          *
-         * @tparam F Callable type with signature: Real f(Real x).
+         * @tparam F Callable type with signature: T f(T x).
          * @param f Integrand callable.
          * @return Numerical approximation of ∫₀^∞ f(x) dx.
          *
          * @note Uses early-exit checks when additional terms are negligible.
          */
         template<typename F>
-        Real integrateZeroToInf(F&& f) const noexcept;
+        T integrateZeroToInf(F&& f) const noexcept;
 
         /**
          * @brief Numerically integrate a multi-output function on (0, +∞).
@@ -132,14 +131,14 @@ namespace uv::math
          * multiple components (e.g. vector of payoffs).
          *
          * @tparam M Number of components returned by the integrand.
-         * @tparam F Callable type with signature: std::array<Real, M> f(Real x).
+         * @tparam F Callable type with signature: std::array<T, M> f(T x).
          * @param f Integrand callable.
          * @return Array of M integrals, component-wise.
          *
          * @note Uses component-wise early-exit checks per accumulated sum.
          */
         template<std::size_t M, typename F>
-        std::array<Real, M> integrateZeroToInfMulti(F&& f) const noexcept;
+        std::array<T, M> integrateZeroToInfMulti(F&& f) const noexcept;
 
         //--------------------------------------------------------------------------
         // Utilities

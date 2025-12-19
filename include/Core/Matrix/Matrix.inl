@@ -154,8 +154,8 @@ namespace uv::core
             /*header=*/makeSequence<T>(numCols_, 1),
             /*rowLabels=*/makeSequence<T>(numRows_, 1),
             /*M=*/*this,
-            /*headerPrec=*/1,
-            /*rowLabelPrec=*/1,
+            /*headerPrec=*/0,
+            /*rowLabelPrec=*/0,
             /*valuePrec=*/valuePrec
         );
     }

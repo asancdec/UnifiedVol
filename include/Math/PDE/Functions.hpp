@@ -25,15 +25,25 @@
 
 #pragma once
 
-#include "Utils/Types.hpp"
 #include "Utils/Aux/Errors.hpp"
 #include "Math/PDE/TriDiag.hpp"
 #include "Core/Matrix/Matrix.hpp"
 
 #include <cstddef>
+#include <concepts>
+#include <span>
 
 namespace uv::math::pde
 {
+	/**
+	 * @brief Construct the mid-point (face) grid from a cell-centered grid.
+	 *
+	 * Returns a vector of size n-1 where each entry is the average of two
+	 * consecutive points in xGrid. The input grid must be sorted.
+	 */
+	template <std::floating_point T>
+	Vector<T> createXMidGrid(std::span<const T> xGrid);
+
 	/**
 	 * @brief Construct a discrete initial density for Fokker–Planck evolution.
 	 *
@@ -56,12 +66,58 @@ namespace uv::math::pde
 	 *         probability density suitable for use as initial data in a
 	 *         Fokker–Planck PDE solver.
 	 */
-	Vector<Real> fokkerPlankInit(Real x0,
-	const Vector<Real>& xGrid);
+	template <std::floating_point T>
+	Vector<T> fokkerPlankInit(T x0,
+	std::span<const T> xGrid);
 
-	core::Matrix<Real> fokkerPlankSolve(const Vector<Real>& pdeInitCond,
-		const Vector<Real>& dTGrid,
-		const Vector<Real>& dXGrid,
-		const TriDiag& coefficients);
+	/**
+	 * @brief Compute the Chang-Cooper interpolation weight at a cell interface.
+	 *
+	 * This function evaluates the Chang-Cooper weight
+	 *
+	 *   delta(w) = 1 / w - 1 / (exp(w) - 1)
+	 *
+	 * where
+	 *
+	 *   w = (B / C) * dx
+	 *
+	 * is the dimensionless drift-diffusion ratio at the cell interface.
+	 *
+	 * The weight delta in [0, 1] determines the upwind bias in the conservative
+	 * finite-difference discretisation of the Fokker-Planck flux.
+	 *
+	 * Properties of the Chang-Cooper scheme:
+	 *  - preserves non-negativity of the solution,
+	 *  - conserves total probability mass,
+	 *  - exactly reproduces the stationary (equilibrium) solution,
+	 *  - smoothly interpolates between central differencing (w -> 0, delta -> 0.5)
+	 *    and full upwinding (|w| -> infinity).
+	 *
+	 * Numerical safeguards:
+	 *  - Non-finite values (NaN or Inf) are detected and replaced by delta = 0.5.
+	 *  - The result is clamped to the theoretical bounds [0, 1].
+	 *  - A warning is emitted if clamping occurs.
+	 *
+	 * Reference:
+	 *   J. S. Chang and G. Cooper,
+	 *   "A Practical Difference Scheme for Fokker-Planck Equations",
+	 *   Journal of Computational Physics, Vol. 6, pp. 1-16, 1970.
+	 *
+	 * @param i Grid index in the first dimension.
+	 * @param j Grid index in the second dimension.
+	 * @param x Dimensionless drift-diffusion ratio w at the cell interface.
+	 * @return Chang-Cooper weight delta in the interval [0, 1].
+	 */
+	template <std::floating_point T>
+	core::Matrix<T> changCooperWeights(const core::Matrix<T>& B,
+		const core::Matrix<T>& C,
+        T dx);
+
+	//core::Matrix<Real> fokkerPlankSolve(const Vector<Real>& pdeInitCond,
+	//	const Vector<Real>& dTGrid,
+	//	const Vector<Real>& dXGrid,
+	//	const TriDiag& coefficients);
 
 } // namespace uv::math::pde
+
+#include "Functions.inl"

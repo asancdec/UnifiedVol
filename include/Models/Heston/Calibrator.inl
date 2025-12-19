@@ -33,18 +33,18 @@
 
 namespace uv::models::heston::calibrator
 {
-	template <std::size_t N, typename Policy>
-	Params calibrate(const Vector<Real>& tenors,
-		const Vector<Real>& strikes,
-		const Vector<Real>& forwards,
-		const Vector<Real>& rates,
-		const core::Matrix<Real>& callM,
-		Pricer<N>& pricer,
+	template <std::floating_point T, std::size_t N, typename Policy>
+	Params<T> calibrate(const Vector<T>& tenors,
+		const Vector<T>& strikes,
+		const Vector<T>& forwards,
+		const Vector<T>& rates,
+		const core::Matrix<T>& callM,
+		Pricer<T, N>& pricer,
 		opt::ceres::Optimizer<5, Policy>& optimizer)
 	{
 		// ---------- Validate input data  ----------
 
-		detail::validateInputs(tenors, strikes, forwards, rates, callM);
+		detail::validateInputs<T>(tenors, strikes, forwards, rates, callM);
 
 		// ---------- Convert data ----------
 
@@ -73,7 +73,7 @@ namespace uv::models::heston::calibrator
 		{
 			// Extract data
 			std::span<const double> callMDRow{callMD[i]};
-			const double T{ tenorsD[i] };
+			const double t{ tenorsD[i] };
 			const double F{ forwardsD[i]};
 			const double r{ ratesD[i] };
 
@@ -81,9 +81,9 @@ namespace uv::models::heston::calibrator
 			{
 				optimizer.addAnalyticResidual
 				(
-					std::make_unique<detail::PriceResidualJac<N>>
+					std::make_unique<detail::PriceResidualJac<T, N>>
 					(
-						T, F, r, strikesD[j], callMDRow[j], pricer
+						t, F, r, strikesD[j], callMDRow[j], pricer
 					)
 				);
 			}
@@ -92,35 +92,35 @@ namespace uv::models::heston::calibrator
 		// ---------- Run calibration ----------
 
 		const std::array<double, 5> params{ optimizer.optimize() };
-		return Params
+		return Params<T>
 		{
-			Real(params[0]),  // kappa
-			Real(params[1]),  // theta
-			Real(params[2]),  // sigma
-			Real(params[3]),  // rho
-			Real(params[4])   // v0 
+			T(params[0]),  // kappa
+			T(params[1]),  // theta
+			T(params[2]),  // sigma
+			T(params[3]),  // rho
+			T(params[4])   // v0 
 		};
 	}
 
-	template <std::size_t N>
-	core::VolSurface buildSurface(const core::VolSurface& volSurface,
-		const Pricer<N>& pricer)
+	template <std::floating_point T, std::size_t N>
+	core::VolSurface<T> buildSurface(const core::VolSurface<T>& volSurface,
+		const Pricer<T, N>& pricer)
 	{
 		// ---------- Extract data ----------
 		
 		const std::size_t numTenors{ volSurface.numTenors() };
 		const std::size_t numStrikes{ volSurface.numStrikes() };
-		const Vector<Real>& tenors{ volSurface.tenors() };
-		const Vector<Real>& strikes{ volSurface.strikes() };
-		const Vector<Real>& forwards{ volSurface.forwards() };
-		const Vector<Real>& rates{ volSurface.rates() };
+		const Vector<T>& tenors{ volSurface.tenors() };
+		const Vector<T>& strikes{ volSurface.strikes() };
+		const Vector<T>& forwards{ volSurface.forwards() };
+		const Vector<T>& rates{ volSurface.rates() };
 
 		// ---------- Copy and set surface ----------
 
-		core::VolSurface hestonVolSurface{ volSurface };
+		core::VolSurface<T> hestonVolSurface{ volSurface };
 		hestonVolSurface.setCallPrices
 		(
-			core::applyIndexed<Real>
+			core::generateIndexed<T>
 			(
 				numTenors,
 				numStrikes,
@@ -140,21 +140,106 @@ namespace uv::models::heston::calibrator
 		return hestonVolSurface;
 	}
 
-} // namespace uv::models::heston::calibrator:
+} // namespace uv::models::heston::calibrator
 
 
 namespace uv::models::heston::calibrator::detail
 {   
-	template <std::size_t N>
+	template <std::floating_point T>
+	void validateInputs(const Vector<T>& tenors,
+		const Vector<T>& strikes,
+		const Vector<T>& forwards,
+		const Vector<T>& rates,
+		const core::Matrix<T>& callM)
+	{
+		UV_REQUIRE(!tenors.empty(),
+			ErrorCode::InvalidArgument,
+			"validateInputs: tenors is empty");
+
+		UV_REQUIRE(!strikes.empty(),
+			ErrorCode::InvalidArgument,
+			"validateInputs: strikes is empty");
+
+		UV_REQUIRE(!forwards.empty(),
+			ErrorCode::InvalidArgument,
+			"validateInputs: forwards is empty");
+
+		UV_REQUIRE(!rates.empty(),
+			ErrorCode::InvalidArgument,
+			"validateInputs: rates is empty");
+
+		UV_REQUIRE(!callM.empty(),
+			ErrorCode::InvalidArgument,
+			"validateInputs: callM is empty");
+
+		const std::size_t numTenors{ tenors.size() };
+		const std::size_t numStrikes{ strikes.size() };
+
+		UV_REQUIRE(forwards.size() == numTenors,
+			ErrorCode::InvalidArgument,
+			"validateInputs: forwards size must equal tenors size");
+
+		UV_REQUIRE(rates.size() == numTenors,
+			ErrorCode::InvalidArgument,
+			"validateInputs: rates size must equal tenors size");
+
+		UV_REQUIRE(callM.rows() == numTenors,
+			ErrorCode::InvalidArgument,
+			"validateInputs: callM rows must equal number of tenors");
+
+		UV_REQUIRE(callM.cols() == numStrikes,
+			ErrorCode::InvalidArgument,
+			"validateInputs: callM columns must equal strikes size");
+
+		// Tenors strictly increasing + positive
+		for (std::size_t i = 0; i < numTenors; ++i)
+		{
+			UV_REQUIRE(tenors[i] > Real(0),
+				ErrorCode::InvalidArgument,
+				"validateInputs: tenors must be > 0");
+
+			if (i > 0)
+			{
+				UV_REQUIRE(tenors[i] > tenors[i - 1],
+					ErrorCode::InvalidArgument,
+					"validateInputs: tenors must be strictly increasing");
+			}
+		}
+
+		// Strikes strictly increasing + positive
+		for (std::size_t j = 0; j < numStrikes; ++j)
+		{
+			UV_REQUIRE(strikes[j] > Real(0),
+				ErrorCode::InvalidArgument,
+				"validateInputs: strikes must be > 0");
+
+			if (j > 0)
+			{
+				UV_REQUIRE(strikes[j] > strikes[j - 1],
+					ErrorCode::InvalidArgument,
+					"validateInputs: strikes must be strictly increasing");
+			}
+		}
+
+		// Forwards positive
+		for (std::size_t i = 0; i < numTenors; ++i)
+		{
+			UV_REQUIRE(forwards[i] > Real(0),
+				ErrorCode::InvalidArgument,
+				"validateInputs: forwards must be > 0");
+		}
+	}
+
+	template <std::floating_point T, std::size_t N>
 	struct PriceResidualJac final
 		: public ceres::SizedCostFunction<1, 5> 
 	{
 		const double T_, F_, r_, K_, callPriceMkt_;
-		const Pricer<N>* pricer_; 
+		const Pricer<T, N>* pricer_; 
 
-		PriceResidualJac(double T, double F, double r, double K, double callPriceMkt,
-			const Pricer<N>& pricer) noexcept
-			: T_(T), F_(F), r_(r), K_(K), callPriceMkt_(callPriceMkt), pricer_(&pricer) {}
+		PriceResidualJac(double t, double F, double r, double K, double callPriceMkt,
+			const Pricer<T, N>& pricer) noexcept
+			: T_(t), F_(F), r_(r), K_(K), callPriceMkt_(callPriceMkt), pricer_(&pricer) {}
 
 		bool Evaluate(double const* const* parameters,
 			double* residuals,

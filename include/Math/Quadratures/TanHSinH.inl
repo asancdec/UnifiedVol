@@ -37,16 +37,16 @@
 
 namespace uv::math
 {
-	template <std::size_t N>
-	TanHSinH<N>::TanHSinH() :
+	template <std::floating_point T, std::size_t N>
+	TanHSinH<T, N>::TanHSinH() :
 		h_
 		(
 			// Define optimal step size using a heuristic rule
 			boost::math::lambert_w0
 			(
-				Real(2) * std::numbers::pi_v<Real> * Real(N)
+				T(2) * std::numbers::pi_v<T> * T(N)
 			)
-			/ Real(N)
+			/ T(N)
 		)
 	{	
 		// Sanity checks at compile-time
@@ -58,22 +58,22 @@ namespace uv::math
 		// Calculate and store node values
 		for (unsigned int n = 0; n < N; ++n)
 		{
-			nodes_[n] = generateNode(Real(n) * h_);
+			nodes_[n] = generateNode(T(n) * h_);
 		}
 	}
 
-	template <std::size_t N>
+	template <std::floating_point T, std::size_t N>
 	template<std::size_t M, typename F >
-	std::array<Real, M> TanHSinH<N>::integrateZeroToInfMulti(F&& f) const noexcept
+	std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti(F&& f) const noexcept
 	{
 		// Define numerical limit
-		constexpr Real eps{ std::numeric_limits<Real>::epsilon() };
+		constexpr T eps{ std::numeric_limits<T>::epsilon() };
 
 		// Accumulated sums
-		std::array<Real, M>  sR0{ Real(0.0)},
-			sR1{ Real(0.0)},
-			sL0{ Real(0.0)},
-			sL1{ Real(0.0)};
+		std::array<T, M>  sR0{ T(0.0)},
+			sR1{ T(0.0)},
+			sL0{ T(0.0)},
+			sL1{ T(0.0)};
 
 		// Bit sets to indicate when done
 		std::bitset<M> actR0, actR1, actL0, actL1;
@@ -91,9 +91,9 @@ namespace uv::math
 			if (!anyA && !anyB) break;
 
 			// Only evaluate func if at least one component needs it
-			std::array<Real, M> ta;
-			std::array<Real, M> tb;
-			Real fa{ Real(0.0) }, fb{ Real(0.0) };
+			std::array<T, M> ta;
+			std::array<T, M> tb;
+			T fa{ T(0.0) }, fb{ T(0.0) };
 			if (anyA)
 			{
 				const Node& a{ nodes_[i] };
@@ -113,14 +113,14 @@ namespace uv::math
 				if (anyA && actR0.test(m))
 				{
 					// Early exit check (first)
-					Real term{ fa * ta[m] };
+					T term{ fa * ta[m] };
 					if (std::fabs(term) <= std::fabs(sR0[m] * eps)) actR0.reset(m);
 					else sR0[m] += term;
 				}
 				if (anyB && actR1.test(m))
 				{
 					// Early exit check (second)
-					Real term{ fb * tb[m] };
+					T term{ fb * tb[m] };
 					if (std::fabs(term) <= std::fabs(sR1[m] * eps)) actR1.reset(m);
 					else sR1[m] += term;
 				}
@@ -136,9 +136,9 @@ namespace uv::math
 			if (!anyA && !anyB) break;
 
 			// Only evaluate func if at least one component needs it
-			std::array<Real, M> ta;
-			std::array<Real, M> tb;
-			Real fa{ Real(0.0) }, fb{ Real(0.0) };
+			std::array<T, M> ta;
+			std::array<T, M> tb;
+			T fa{ T(0.0) }, fb{ T(0.0) };
 			if (anyA)
 			{
 				const Node& a{ nodes_[i] };
@@ -158,14 +158,14 @@ namespace uv::math
 				if (anyA && actL0.test(m))
 				{
 					// Early exit check (first)
-					Real term{ fa * ta[m] };
+					T term{ fa * ta[m] };
 					if (std::fabs(term) <= std::fabs(sL0[m] * eps)) actL0.reset(m);
 					else sL0[m] += term;
 				}
 				if (anyB && actL1.test(m))
 				{
 					// Early exit check (second)
-					Real term{ fb * tb[m] };
+					T term{ fb * tb[m] };
 					if (std::fabs(term) <= std::fabs(sL1[m] * eps)) actL1.reset(m);
 					else sL1[m] += term;
 				}
@@ -173,20 +173,20 @@ namespace uv::math
 		}
 
 		// Accumulate and return the total sum
-		std::array<Real, M> out{};
+		std::array<T, M> out{};
 		for (std::size_t m = 0; m < M; ++m) out[m] = sR0[m] + sR1[m] + sL0[m] + sL1[m];
 		return out;
 	}
 
-	template <std::size_t N>
+	template <std::floating_point T, std::size_t N>
 	template<typename F>
-	Real TanHSinH<N>::integrateZeroToInf(F&& f) const noexcept
+	T TanHSinH<T, N>::integrateZeroToInf(F&& f) const noexcept
 	{
 		// Define numerical limit
-		constexpr Real eps{ std::numeric_limits<Real>::epsilon() };
+		constexpr T eps{ std::numeric_limits<T>::epsilon() };
 
 		// Accumulated sums
-		Real sR0{ Real(0.0) }, sR1{ Real(0.0) }, sL0{ Real(0.0) }, sL1{ Real(0.0) };
+		T sR0{ T(0.0) }, sR1{ T(0.0) }, sL0{ T(0.0) }, sL1{ T(0.0) };
 
 		// Define forwarded callable
 		auto&& func = std::forward<F>(f);
@@ -199,7 +199,7 @@ namespace uv::math
 			const Node& b{ nodes_[i + 1] };
 
 			// u(x) * w  (first)
-			const Real ta{ a.factorRight * func(a.inputRight) };
+			const T ta{ a.factorRight * func(a.inputRight) };
 
 			// Early exit check (first)
 			if (std::fabs(ta) <= std::fabs(sR0 * eps)) break;
@@ -208,7 +208,7 @@ namespace uv::math
 			sR0 += ta;
 
 			// u(x) * w  (second)
-			const Real tb{ b.factorRight * func(b.inputRight)};
+			const T tb{ b.factorRight * func(b.inputRight)};
 
 			// Early exit check (second)
 			if (std::fabs(tb) <= std::fabs(sR1 * eps)) break;
@@ -224,7 +224,7 @@ namespace uv::math
 			const Node& b{ nodes_[i + 1] };
 
 			// u(x) * w  (first)
-			const Real ta{ a.factorLeft * func(a.inputLeft) };
+			const T ta{ a.factorLeft * func(a.inputLeft) };
 
 			// Early exit check (first)
 			if (std::fabs(ta) <= std::fabs(sL0 * eps)) break;
@@ -233,7 +233,7 @@ namespace uv::math
 			sL0 += ta;
 
 			// u(x) * w  (second)
-			const Real tb{ b.factorLeft * func(b.inputLeft) };
+			const T tb{ b.factorLeft * func(b.inputLeft) };
 
 			// Early exit check (second)
 			if (std::fabs(tb) <= std::fabs(sL1 * eps)) break;
@@ -247,8 +247,8 @@ namespace uv::math
 	}
 
 
-	template <std::size_t N>
-	void TanHSinH<N>::printGrid() const noexcept
+	template <std::floating_point T, std::size_t N>
+	void TanHSinH<T, N>::printGrid() const noexcept
 	{
 		constexpr int idxW = 6;
 		constexpr int colW = 24;
@@ -280,36 +280,36 @@ namespace uv::math
 		UV_INFO(oss.str());
 	}
 
-	template <std::size_t N>
-	TanHSinH<N>::Node TanHSinH<N>::generateNode(Real nh) const noexcept
+	template <std::floating_point T, std::size_t N>
+	TanHSinH<T, N>::Node TanHSinH<T, N>::generateNode(T nh) const noexcept
 	{
 		// Calculate q term
-		const Real q{ std::exp(-std::numbers::pi_v<Real> * std::sinh(nh)) };
+		const T q{ std::exp(-std::numbers::pi_v<T> * std::sinh(nh)) };
 
 		// 1 / (1 + q)
-		const Real qInv{ Real(1) / (Real(1) + q) };
+		const T qInv{ T(1) / (T(1) + q) };
 
 		// Calculate y term
-		const Real y{ Real(2) * q * qInv };
+		const T y{ T(2) * q * qInv };
 
 		// Calculate w
-		const Real w{ qInv * y * std::numbers::pi_v<Real>*std::cosh(nh) };
+		const T w{ qInv * y * std::numbers::pi_v<T>*std::cosh(nh) };
 
-		// Real(2.0) - y
-		const Real twoMinusY{ Real(2) - y };
+		// T(2.0) - y
+		const T twoMinusY{ T(2) - y };
 
 		// w * h
-		const Real wh{w * h_};
+		const T wh{w * h_};
 		
 		// Calculate and return Node struct
 		return
 		{
 			w,                                                      // weight value
 			y,                                                      // yn term
-			(Real(1) - q) * qInv,                           // abscissas value
-			wh * Real(2) / (y * y),                         // scaling term RHS
+			(T(1) - q) * qInv,                           // abscissas value
+			wh * T(2) / (y * y),                         // scaling term RHS
 			twoMinusY / y,										    // transformed input RHS
-			wh * Real(2) / (twoMinusY * twoMinusY),         // scaling term LHS
+			wh * T(2) / (twoMinusY * twoMinusY),         // scaling term LHS
 			y / twoMinusY 									        // transformed input LHS
 		};
 	}

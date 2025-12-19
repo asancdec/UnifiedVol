@@ -26,10 +26,9 @@
 #pragma once
 
 #include "Core/MarketData.hpp"
-#include "Utils/Types.hpp"
 #include "Core/Matrix/Matrix.hpp"
 
-
+#include "concepts"
 #include <cstddef>
 
 namespace uv::core
@@ -49,6 +48,7 @@ namespace uv::core
      * Rates and dividends are currently treated as flat term structures, stored
      * as one value per tenor.
      */
+    template <std::floating_point T>
     class VolSurface
     {
     private:
@@ -57,24 +57,24 @@ namespace uv::core
         // Member variables
         //--------------------------------------------------------------------------
 
-        Vector<Real> tenors_;        ///< Tenors (years), one per surface row.
-        std::size_t numTenors_;      ///< Number of tenors (rows).
+        Vector<T> tenors_;        ///< Tenors (years), one per surface row.
+        std::size_t numTenors_;   ///< Number of tenors (rows).
 
-        Vector<Real> mny_;           ///< Moneyness grid (%S), one per surface column.
-        std::size_t numStrikes_;     ///< Number of strikes/moneyness points (cols).
+        Vector<T> mny_;           ///< Moneyness grid (%S), one per surface column.
+        std::size_t numStrikes_;  ///< Number of strikes/moneyness points (cols).
 
-        Matrix<Real> volMatrix_;     ///< Implied vols [tenor][strike].
+        Matrix<T> volMatrix_;     ///< Implied vols [tenor][strike].
 
-        Real S_;                     ///< Spot price.
-        Vector<Real> rates_;         ///< Risk-free rates per tenor (flat per row).
-        Vector<Real> dividends_;     ///< Dividend yields per tenor (flat per row).
+        T S_;                     ///< Spot price.
+        Vector<T> rates_;         ///< Risk-free rates per tenor (flat per row).
+        Vector<T> dividends_;     ///< Dividend yields per tenor (flat per row).
 
-        Vector<Real> strikes_;       ///< Strike grid derived from mny_ and S_.
-        Vector<Real> forwards_;      ///< Forward prices per tenor.
+        Vector<T> strikes_;       ///< Strike grid derived from mny_ and S_.
+        Vector<T> forwards_;      ///< Forward prices per tenor.
 
-        Matrix<Real> callPrices_;    ///< Black–Scholes call prices [tenor][strike].
-        Matrix<Real> logKFMatrix_;   ///< log(F/K) values [tenor][strike] (or header row).
-        Matrix<Real> totVarMatrix_;  ///< Total variance w = vol^2 * T [tenor][strike].
+        Matrix<T> callPrices_;    ///< Black–Scholes call prices [tenor][strike].
+        Matrix<T> logKFMatrix_;   ///< log(F/K) values [tenor][strike] (or header row).
+        Matrix<T> totVarMatrix_;  ///< Total variance w = vol^2 * T [tenor][strike].
 
         //--------------------------------------------------------------------------
         // Internal helpers
@@ -104,21 +104,21 @@ namespace uv::core
          *
          * totVarMatrix_[i][j] = volMatrix[i][j]^2 * tenors_[i]
          */
-        void setTotVar_(const Matrix<Real>& volMatrix);
+        void setTotVar_(const Matrix<T>& volMatrix);
 
         /**
          * @brief Compute volMatrix_ from a total variance matrix.
          *
          * volMatrix_[i][j] = sqrt(totVarMatrix[i][j] / tenors_[i])
          */
-        void setVolFromVar_(const Matrix<Real>& totVarMatrix);
+        void setVolFromVar_(const Matrix<T>& totVarMatrix);
 
 
         /**
          * @brief Compute volMatrix_ from Call Prices solving for
          * implied volatility using the Black-Scholes formula.
          */
-        void setVolFromPrices_(const Matrix<Real>& callPrices);
+        void setVolFromPrices_(const Matrix<T>& callPrices);
 
     public:
         //--------------------------------------------------------------------------
@@ -139,10 +139,10 @@ namespace uv::core
          * @param volMatrix Implied vols [tenor][strike].
          * @param mktData   Market data (spot, rates, dividends).
          */
-        explicit VolSurface(Vector<Real> tenors,
-            Vector<Real> mny,
-            Matrix<Real> volMatrix,
-            const MarketData& mktData);
+        explicit VolSurface(Vector<T> tenors,
+            Vector<T> mny,
+            Matrix<T> volMatrix,
+            const MarketData<T>& mktData);
 
         //--------------------------------------------------------------------------
         // Setters
@@ -153,7 +153,7 @@ namespace uv::core
          *
          * Stores the given total variance surface and recomputes volMatrix_ from it.
          */
-        void setTotVar(const Matrix<Real>& totalVarMatrix);
+        void setTotVar(const Matrix<T>& totalVarMatrix);
 
         /**
          * @brief Set call price matrix and update implied vols.
@@ -161,25 +161,25 @@ namespace uv::core
          * Stores the given call price surface and recomputes volMatrix_ by inverting
          * Black–Scholes at each grid point.
          */
-        void setCallPrices(const Matrix<Real>& callPrices);
+        void setCallPrices(const Matrix<T>& callPrices);
 
         //--------------------------------------------------------------------------
         // Getters
         //--------------------------------------------------------------------------
 
-        const Vector<Real>& tenors() const noexcept;
+        const Vector<T>& tenors() const noexcept;
         std::size_t numTenors() const noexcept;
-        const Vector<Real>& mny() const noexcept;
+        const Vector<T>& mny() const noexcept;
         std::size_t numStrikes() const noexcept;
-        const Matrix<Real>& volMatrix() const noexcept;
-        Real S() const noexcept;
-        const Vector<Real>& rates() const noexcept;
-        const Vector<Real>& dividends() const noexcept;
-        const Vector<Real>& strikes() const noexcept;
-        const Vector<Real>& forwards() const noexcept;
-        const Matrix<Real>& callPrices() const noexcept;
-        const Matrix<Real>& logKFMatrix() const noexcept;
-        const Matrix<Real>& totVarMatrix() const noexcept;
+        const Matrix<T>& volMatrix() const noexcept;
+        T S() const noexcept;
+        const Vector<T>& rates() const noexcept;
+        const Vector<T>& dividends() const noexcept;
+        const Vector<T>& strikes() const noexcept;
+        const Vector<T>& forwards() const noexcept;
+        const Matrix<T>& callPrices() const noexcept;
+        const Matrix<T>& logKFMatrix() const noexcept;
+        const Matrix<T>& totVarMatrix() const noexcept;
 
         //--------------------------------------------------------------------------
         // Printing
@@ -213,3 +213,5 @@ namespace uv::core
             bool mnyFlag = true) const noexcept;
     };
 }
+
+#include "VolSurface.inl"

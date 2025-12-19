@@ -23,15 +23,113 @@
  */
 
 #include "Utils/Aux/Errors.hpp"  
+#include "Core/Functions.hpp"
 
+#include <string> 
+#include <vector>
+#include <numeric>  
 #include <algorithm>
-#include <numeric>
-#include <span>
 
 namespace uv::core
 {
+    template <std::floating_point T>
+    Vector<T> generateGrid(const T bound1,
+        const T bound2,
+        const size_t steps
+    ) noexcept
+    {
+        // ---------- Allocate memory ----------
+
+        Vector<T> grid;
+        grid.reserve(steps);
+
+        // ---------- Handle special case ----------
+
+        if (steps <= 1)
+        {
+            grid.push_back(static_cast<T>(bound1));
+            return grid;
+        }
+
+        // ---------- Generate grid ----------
+
+        const T dx{ (bound2 - bound1) / static_cast<T>(steps - 1) };
+
+        for (std::size_t i = 0; i < steps; ++i)
+        {
+            grid.push_back(static_cast<T>(bound1) + dx * static_cast<T>(i));
+        }
+
+        return grid;
+    }
+
+    template <std::floating_point T>
+    T sum(std::span<const T> x) noexcept
+    {
+        return std::accumulate(x.begin(), x.end(), T{});
+    }
+
+    template <std::floating_point T>
+    Vector<T> multiply(std::span<const T> v,
+        const T x) noexcept
+    {
+        std::size_t vSize{ v.size() };
+
+        Vector<T> result(vSize);
+
+        for (std::size_t i = 0; i < vSize; ++i)
+        {
+            result[i] = v[i] * x;
+        }
+
+        return result;
+    }
+
+    template <std::floating_point T>
+    Vector<T> reciprocal(std::span<const T> v) noexcept
+    {
+        std::size_t vSize{ v.size() };
+
+        Vector<T> result(vSize);
+
+        for (std::size_t i = 0; i < vSize; ++i)
+        {
+            result[i] = T(1.0) / v[i];
+        }
+
+        return result;
+    }
+
+    template <std::floating_point T>
+    Vector<T> hadamard(std::span<const T> a,
+        std::span<const T> b)
+    {
+        // ---------- Check dimensions ----------
+
+        std::size_t aSize{ a.size() };
+        std::size_t bSize{ b.size() };
+
+        UV_REQUIRE(
+            aSize == bSize,
+            ErrorCode::InvalidArgument,
+            "hadamard: vectors must have same size (got " +
+            std::to_string(aSize) + " and " + std::to_string(bSize) + ")"
+        );
+
+        // ---------- Element-wise multiplication ----------
+
+        Vector<T> c(aSize);
+
+        for (std::size_t i = 0; i < aSize; ++i)
+        {
+            c[i] = a[i] * b[i];
+        }
+
+        return c;
+    }
+
     template <typename T>
-    Vector<T> makeSequence(std::size_t n, 
+    Vector<T> makeSequence(std::size_t n,
         T start) noexcept
     {
         Vector<T> v(n);

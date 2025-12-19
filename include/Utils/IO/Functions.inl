@@ -63,4 +63,20 @@ namespace uv::utils
 
         UV_INFO(oss.str());
     }
+
+    template <typename Vector>
+    void printVector(const Vector& v,
+        unsigned int valuePrec) noexcept
+    {
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(valuePrec);
+
+        for (const auto& x : v)
+            oss << x << '\t';
+
+        oss << '\n';
+
+        UV_INFO(oss.str());
+    }
+
 } // namespace uv::utils

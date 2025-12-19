@@ -25,8 +25,6 @@
 
 #pragma once
 
-#include "Utils/Types.hpp"
-
 #include <chrono>
 
 namespace uv::utils
@@ -45,6 +43,7 @@ namespace uv::utils
      * @note This class measures wall-clock time, not CPU time.
      * @note Not thread-safe.
      */
+
     class StopWatch
     {
     private:
@@ -115,7 +114,7 @@ namespace uv::utils
          * @return Elapsed time expressed in the given period.
          */
         template <typename Period = std::ratio<1>>
-        Real GetTime() const noexcept;
+        double GetTime() const noexcept;
 
         /**
          * @brief Log the elapsed time using the UnifiedVol logger.

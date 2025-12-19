@@ -27,37 +27,12 @@
 #include <cstddef>
 #include <span>
 #include <cmath>
-#include <functional>
 
 namespace uv::core
 {
     template <std::floating_point T, typename F>
-    Matrix<T> applyIndexed(const Matrix<T>& m,
-        F&& f)
-    {
-        return applyIndexed<T>(
-            m.rows(),
-            m.cols(),
-            [&](std::size_t i, std::size_t j)
-            {
-                return std::invoke(f, i, j, m[i][j]);
-            }
-        );
-    }
-    template <std::floating_point T, typename F>
-    void applyIndexedInplace(Matrix<T>& m,
-        F&& f)
-    {
-        applyIndexedInplace<T>(
-            m,
-            m.rows(),
-            m.cols(),
-            std::forward<F>(f)
-        );
-    }
-
-    template <std::floating_point T, typename F>
-    Matrix<T> applyIndexed(std::size_t rows,
+    requires std::invocable<F&, std::size_t, std::size_t>
+    Matrix<T> generateIndexed(std::size_t rows,
         std::size_t cols,
         F&& f)
     {
@@ -72,32 +47,36 @@ namespace uv::core
                 row[j] = std::invoke(f, i, j);
             }
         }
-
         return out;
     }
 
     template <std::floating_point T, typename F>
-    void applyIndexedInplace(
-        Matrix<T>& m,
-        std::size_t rows,
-        std::size_t cols,
-        F&& f
-    )
+    requires std::invocable<F&, std::size_t, std::size_t, T>
+    Matrix<T> transformIndexed(const Matrix<T>& m, F&& f)
     {
-        UV_REQUIRE(
-            m.rows() == rows && m.cols() == cols,
-            ErrorCode::InvalidArgument,
-            "applyIndexedInplace(shape): matrix shape mismatch"
+        return generateIndexed<T>
+            (
+            m.rows(), 
+            m.cols(),
+            [&](std::size_t i, std::size_t j)
+            {
+                return std::invoke(f, i, j, m[i][j]);
+            }
         );
+    }
 
-        for (std::size_t i = 0; i < rows; ++i)
+    template <std::floating_point T, typename F>
+    requires std::invocable<F&, std::size_t, std::size_t, T>
+    void transformIndexedInplace(Matrix<T>& m, F&& f)
+    {
+        for (std::size_t i = 0; i < m.rows(); ++i)
         {
             std::span<T> row{ m[i] };
 
-            for (std::size_t j = 0; j < cols; ++j)
+            for (std::size_t j = 0; j < m.cols(); ++j)
             {
-                row[j] = std::invoke(f, i, j);
-            }
+                row[j] = std::invoke(f, i, j, row[j]);
+            }  
         }
     }
 
@@ -173,7 +152,66 @@ namespace uv::core
     }
 
     template <std::floating_point T>
-    Matrix<T> square(const Matrix<T>& m)
+    Matrix<T> divide(const Matrix<T>& lhs,
+        const Matrix<T>& rhs)
+    {
+        Matrix<T> out{lhs};
+        divideInplace(out, rhs);
+        return out;
+    }
+
+    template <std::floating_point T>
+    void divideInplace(Matrix<T>& lhs,
+        const Matrix<T>& rhs)
+    {
+        const std::size_t numRows{ lhs.rows() };
+        const std::size_t numCols{ lhs.cols() };
+
+        UV_REQUIRE
+        (
+            numRows == rhs.rows() && numCols == rhs.cols(),
+            ErrorCode::InvalidArgument,
+            "divideInplace: matrix dimensions must match"
+        );
+
+        for (std::size_t i = 0; i < numRows; ++i)
+        {
+            std::span<T> lhsRow{ lhs[i] };
+            std::span<const T> rhsRow{ rhs[i] };
+
+            for (std::size_t j = 0; j < numCols; ++j)
+            {
+                lhsRow[j] /= rhsRow[j];
+            }
+        }
+    }
+
+    template<std::floating_point T>
+    Matrix<T> reciprocal(const Matrix<T>& m) noexcept
+    {
+        Matrix<T> out{ m };
+        reciprocalInplace(out);
+        return out;
+    }
+
+    template<std::floating_point T>
+    void reciprocalInplace(Matrix<T>& m) noexcept
+    {
+        const std::size_t numCols{ m.cols() };
+
+        for (std::size_t i = 0; i <  m.rows(); ++i)
+        {
+            std::span<T> mRow{ m[i] };
+
+            for (std::size_t j = 0; j < numCols; ++j)
+            {
+                mRow[j] = T{ 1 } / mRow[j];
+            }
+        }
+    }
+ 
+    template <std::floating_point T>
+    Matrix<T> square(const Matrix<T>& m) noexcept
     {
         Matrix<T> out{ m };
         squareInplace(out);
@@ -181,12 +219,11 @@ namespace uv::core
     }
 
     template <std::floating_point T>
-    void squareInplace(Matrix<T>& m)
+    void squareInplace(Matrix<T>& m) noexcept
     {
-        const std::size_t numRows{ m.rows() };
         const std::size_t numCols{ m.cols() };
 
-        for (std::size_t i = 0; i < numRows; ++i)
+        for (std::size_t i = 0; i < m.rows(); ++i)
         {
             std::span<T> row{ m[i] };
 

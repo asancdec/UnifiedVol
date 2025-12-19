@@ -52,14 +52,14 @@ int main(int argc, char* argv[])
 
         // ---------- Market data ----------
 
-        MarketData marketData
+        MarketData<Real> marketData
         { 
-          Real(0.0),          // r
-          Real(0.0),          // q
-          Real(485.77548)     // S
+          0.0,          // r
+          0.0,          // q
+          485.77548     // S
         };
 
-        VolSurface mktVolSurface{ readVolSurface(path.string(), marketData) };
+        VolSurface<Real> mktVolSurface{ readVolSurface<Real>(path.string(), marketData) };
         mktVolSurface.printTotVar();
 
         // ---------- SVI Calibration ----------
@@ -76,9 +76,9 @@ int main(int argc, char* argv[])
             }
         };
 
-        Vector<svi::Params> sviParams
+        Vector<svi::Params<Real>> sviParams
         { 
-            svi::calibrate
+            svi::calibrate<Real>
             (
                 mktVolSurface.tenors(),
                 mktVolSurface.logKFMatrix(),
@@ -88,9 +88,9 @@ int main(int argc, char* argv[])
         
         };
 
-        const VolSurface sviVolSurface
+        const VolSurface<Real> sviVolSurface
         {
-            svi::buildSurface
+            svi::buildSurface<Real>
             (
                 mktVolSurface,
                 sviParams
@@ -99,17 +99,28 @@ int main(int argc, char* argv[])
        
         sviVolSurface.printTotVar();
 
+        // ---------- Local Vol calibration ----------
+
+        localvol::Pricer<Real> lvPricer
+        {
+            sviVolSurface.rates(),
+            core::generateGrid<Real>(0, 3.0, 10),
+            core::generateGrid<Real>(-3.0, 3.0, 10)
+        };
+
+        const Real testPrice(lvPricer.price(0.04));
+
         // ---------- Heston model calibration ----------
 
         static constexpr std::size_t HestonNodes = 300;
-        const TanHSinH<HestonNodes> quad{};
+        const TanHSinH<Real, HestonNodes> quad{};
         
-        heston::Pricer hestonPricer
+        heston::Pricer<Real, HestonNodes> hestonPricer
         {
-            std::make_shared<const TanHSinH<HestonNodes>>(quad),
+            std::make_shared<const TanHSinH<Real, HestonNodes>>(quad),
             {
-                Real(-2.0),   // Damping parameter ITM
-                Real(2.0)     // Damping parameter OTM
+                -2.0,   // Damping parameter ITM
+                2.0     // Damping parameter OTM
             }
         };
 
@@ -136,7 +147,7 @@ int main(int argc, char* argv[])
 
         hestonPricer.setParams
         (
-            heston::calibrator::calibrate
+            heston::calibrator::calibrate<Real>
             (
                 sviVolSurface.tenors(),
                 sviVolSurface.strikes(),
@@ -148,9 +159,9 @@ int main(int argc, char* argv[])
             )
         );
 
-        const VolSurface hestonVolSurface
+        const VolSurface<Real> hestonVolSurface
         { 
-            heston::calibrator::buildSurface
+            heston::calibrator::buildSurface<Real>
             (
                 sviVolSurface, 
                 hestonPricer

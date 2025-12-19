@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "Utils/Types.hpp"
+#include <concepts>
 
 namespace uv::models::heston
 {
@@ -39,12 +39,13 @@ namespace uv::models::heston
      *
      * This struct stores the five scalar parameters required by the model.
      */
+    template <std::floating_point T>
     struct Params
     {
-        Real kappa;  ///< Mean reversion speed of variance (kappa > 0).
-        Real theta;  ///< Long-run variance level (theta >= 0).
-        Real sigma;  ///< Volatility of variance ("vol-of-vol", sigma >= 0).
-        Real rho;    ///< Correlation between spot and variance Brownian motions (rho in [-1, 1]).
-        Real v0;     ///< Initial variance at t = 0 (v0 >= 0).
+        T kappa;  ///< Mean reversion speed of variance (kappa > 0).
+        T theta;  ///< Long-run variance level (theta >= 0).
+        T sigma;  ///< Volatility of variance ("vol-of-vol", sigma >= 0).
+        T rho;    ///< Correlation between spot and variance Brownian motions (rho in [-1, 1]).
+        T v0;     ///< Initial variance at t = 0 (v0 >= 0).
     };
 }

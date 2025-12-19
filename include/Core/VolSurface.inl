@@ -23,13 +23,11 @@
  */
 
 
-#include "Core/VolSurface.hpp"
 #include "Core/Functions.hpp"
 #include "Core/Matrix/Functions.hpp"
 #include "Core/MarketData.hpp"
 #include "Math/Functions.hpp"
 #include "Utils/IO/Functions.hpp"
-#include "Utils/Types.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -38,10 +36,11 @@
 
 namespace uv::core
 {
-    VolSurface::VolSurface(Vector<Real> tenors,
-        Vector<Real> mny,
-        Matrix<Real> volMatrix,
-        const MarketData& mktData)
+    template <std::floating_point T>
+    VolSurface<T>::VolSurface(Vector<T> tenors,
+        Vector<T> mny,
+        Matrix<T> volMatrix,
+        const MarketData<T>& mktData)
         : tenors_(std::move(tenors)),
         numTenors_(tenors_.size()),
         mny_(std::move(mny)),
@@ -55,18 +54,19 @@ namespace uv::core
         callPrices_(numTenors_, numStrikes_),
         logKFMatrix_(numTenors_, numStrikes_),
         totVarMatrix_(numTenors_, numStrikes_)
-    {   
+    {
 
         // ---------- Initialize member variables ---------- 
 
-        strikes_ = core::multiply(mny_, S_);
+        strikes_ = core::multiply<T>(mny_, S_);
         setForwards_();
         setCallPrices_();
         setLogKFMatrix_();
         setTotVar_(volMatrix_);
     }
 
-    void VolSurface::setForwards_() noexcept
+    template <std::floating_point T>
+    void VolSurface<T>::setForwards_() noexcept
     {
         for (std::size_t i = 0; i < numTenors_; ++i)
         {
@@ -74,12 +74,13 @@ namespace uv::core
         }
     }
 
-    void VolSurface::setCallPrices_()
+    template <std::floating_point T>
+    void VolSurface<T>::setCallPrices_()
     {
-        callPrices_ = applyIndexed
+        callPrices_ = transformIndexed<T>
             (
                 volMatrix_,
-                [&](std::size_t i, std::size_t j, Real sigma)
+                [&](std::size_t i, std::size_t j, T sigma)
                 {
                     return math::blackScholes(
                         tenors_[i],
@@ -93,9 +94,10 @@ namespace uv::core
             );
     }
 
-    void VolSurface::setLogKFMatrix_()
+    template <std::floating_point T>
+    void VolSurface<T>::setLogKFMatrix_()
     {
-        logKFMatrix_ = applyIndexed<Real>
+        logKFMatrix_ = generateIndexed<T>
             (
                 numTenors_,
                 numStrikes_,
@@ -106,40 +108,44 @@ namespace uv::core
             );
     }
 
-    void VolSurface::setTotVar_(const Matrix<Real>& volMatrix)
+    template <std::floating_point T>
+    void VolSurface<T>::setTotVar_(const Matrix<T>& volMatrix)
     {
         totVarMatrix_ = volMatrix;
         squareInplace(totVarMatrix_);
         hadamardInplace(totVarMatrix_, tenors_);
     }
 
-    void VolSurface::setVolFromVar_(const Matrix<Real>& totVarMatrix)
+    template <std::floating_point T>
+    void VolSurface<T>::setVolFromVar_(const Matrix<T>& totVarMatrix)
     {
         volMatrix_ = totVarMatrix;
-        hadamardInplace(volMatrix_, reciprocal(tenors_));
+        hadamardInplace(volMatrix_, reciprocal<T>(tenors_));
         sqrtInplace(volMatrix_);
     }
 
-    void VolSurface::setVolFromPrices_(const Matrix<Real>& callPrices)
+    template <std::floating_point T>
+    void VolSurface<T>::setVolFromPrices_(const Matrix<T>& callPrices)
     {
-        volMatrix_ = applyIndexed
-        (
-            callPrices,
-            [&](std::size_t i, std::size_t j, Real callPrice)
-            {
-                return math::impliedVolBS(
-                    callPrice,
-                    tenors_[i],
-                    rates_[i],
-                    dividends_[i],
-                    S_,
-                    strikes_[j]
-                );
-            }
-        );
+        volMatrix_ = transformIndexed<T>
+            (
+                callPrices,
+                [&](std::size_t i, std::size_t j, T callPrice)
+                {
+                    return math::impliedVolBS(
+                        callPrice,
+                        tenors_[i],
+                        rates_[i],
+                        dividends_[i],
+                        S_,
+                        strikes_[j]
+                    );
+                }
+            );
     }
 
-    void VolSurface::setTotVar(const Matrix<Real>& totVarMatrix) 
+    template <std::floating_point T>
+    void VolSurface<T>::setTotVar(const Matrix<T>& totVarMatrix)
     {
         UV_REQUIRE
         (
@@ -154,7 +160,8 @@ namespace uv::core
         setCallPrices_();
     }
 
-    void VolSurface::setCallPrices(const Matrix<Real>& callPrices)
+    template <std::floating_point T>
+    void VolSurface<T>::setCallPrices(const Matrix<T>& callPrices)
     {
         UV_REQUIRE
         (
@@ -169,77 +176,91 @@ namespace uv::core
         setTotVar_(volMatrix_);
     }
 
-    const Vector<Real>& VolSurface::tenors() const noexcept
+    template <std::floating_point T>
+    const Vector<T>& VolSurface<T>::tenors() const noexcept
     {
         return tenors_;
     }
 
-    std::size_t VolSurface::numTenors() const noexcept
+    template <std::floating_point T>
+    std::size_t VolSurface<T>::numTenors() const noexcept
     {
         return numTenors_;
     }
 
-    const Vector<Real>& VolSurface::mny() const noexcept
+    template <std::floating_point T>
+    const Vector<T>& VolSurface<T>::mny() const noexcept
     {
         return mny_;
     }
 
-    std::size_t VolSurface::numStrikes() const noexcept
+    template <std::floating_point T>
+    std::size_t VolSurface<T>::numStrikes() const noexcept
     {
         return numStrikes_;
     }
 
-    const Matrix<Real>& VolSurface::volMatrix() const noexcept
+    template <std::floating_point T>
+    const Matrix<T>& VolSurface<T>::volMatrix() const noexcept
     {
         return volMatrix_;
     }
 
-    Real VolSurface::S() const noexcept
+    template <std::floating_point T>
+    T VolSurface<T>::S() const noexcept
     {
         return S_;
     }
 
-    const Vector<Real>& VolSurface::rates() const noexcept
+    template <std::floating_point T>
+    const Vector<T>& VolSurface<T>::rates() const noexcept
     {
         return rates_;
     }
 
-    const Vector<Real>& VolSurface::dividends() const noexcept
+    template <std::floating_point T>
+    const Vector<T>& VolSurface<T>::dividends() const noexcept
     {
         return dividends_;
     }
 
-    const Vector<Real>& VolSurface::strikes() const noexcept
+    template <std::floating_point T>
+    const Vector<T>& VolSurface<T>::strikes() const noexcept
     {
         return strikes_;
     }
 
-    const Vector<Real>& VolSurface::forwards() const noexcept
+    template <std::floating_point T>
+    const Vector<T>& VolSurface<T>::forwards() const noexcept
     {
         return forwards_;
     }
 
-    const Matrix<Real>& VolSurface::callPrices() const noexcept
+    template <std::floating_point T>
+    const Matrix<T>& VolSurface<T>::callPrices() const noexcept
     {
         return callPrices_;
     }
 
-    const Matrix<Real>& VolSurface::logKFMatrix() const noexcept
+    template <std::floating_point T>
+    const Matrix<T>& VolSurface<T>::logKFMatrix() const noexcept
     {
         return logKFMatrix_;
     }
 
-    const Matrix<Real>& VolSurface::totVarMatrix() const noexcept
+    template <std::floating_point T>
+    const Matrix<T>& VolSurface<T>::totVarMatrix() const noexcept
     {
         return totVarMatrix_;
     }
 
-    void VolSurface::printVol(const unsigned int valuePrec,
+    template <std::floating_point T>
+    void VolSurface<T>::printVol(const unsigned int valuePrec,
         const bool mnyFlag) const noexcept
     {
-        const std::span<const Real> header
+        const std::span<const T> header
         {
-            mnyFlag ? std::span<const Real>(mny_) : logKFMatrix_[0]
+            mnyFlag ? std::span<const T>(mny_) : logKFMatrix_[0]
         };
         const int headerPrec{ mnyFlag ? 2 : 4 };
         const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
@@ -255,12 +276,13 @@ namespace uv::core
         );
     }
 
-    void VolSurface::printTotVar(const unsigned int valuePrec,
+    template <std::floating_point T>
+    void VolSurface<T>::printTotVar(const unsigned int valuePrec,
         const bool mnyFlag) const noexcept
     {
-        const std::span<const Real> header
-        { 
-            mnyFlag ? std::span<const Real>(mny_) : logKFMatrix_[0]
+        const std::span<const T> header
+        {
+            mnyFlag ? std::span<const T>(mny_) : logKFMatrix_[0]
         };
         const int headerPrec{ mnyFlag ? 2 : 4 };
         const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
@@ -276,12 +298,13 @@ namespace uv::core
         );
     }
 
-    void VolSurface::printBSCall(const unsigned int valuePrec,
+    template <std::floating_point T>
+    void VolSurface<T>::printBSCall(const unsigned int valuePrec,
         const bool mnyFlag) const noexcept
     {
-        const std::span<const Real> header
+        const std::span<const T> header
         {
-            mnyFlag ? std::span<const Real>(mny_) : logKFMatrix_[0]
+            mnyFlag ? std::span<const T>(mny_) : logKFMatrix_[0]
         };
         const int headerPrec{ mnyFlag ? 2 : 4 };
         const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };

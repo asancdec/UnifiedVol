@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * File:        MarketData.hpp
+ * File:        Pricer.hpp
  * Author:      Alvaro Sanchez de Carlos
  * Created:     2025-12-08
  *
@@ -22,30 +22,44 @@
  * limitations under this License.
  */
 
-
 #pragma once
 
 #include <concepts>
+#include <cstddef>
+#include <span>
 
-namespace uv::core
+namespace uv::models::localvol
 {
-    /**
-     * @brief Container for basic market inputs.
-     *
-     * Holds the minimal set of continuously compounded market parameters
-     * required by pricing and calibration routines.
-     *
-     * All quantities are expressed under the same measure and conventions:
-     * - interest rates and yields are continuously compounded
-     * - spot price is expressed in domestic currency units
-     *
-     * This struct is a passive data holder with no invariants enforced.
-     */
-    template <std::floating_point T>
-    struct MarketData
-    {
-        T r;   // Continuously compounded risk-free rate
-        T q;   // Continuously compounded dividend yield
-        T S;   // Spot price
-    };
-} // namespace uv::core
+	template <std::floating_point T>
+	class Pricer
+	{ 
+	private:
+
+
+		Vector<T> r_;
+		Vector<T> tGrid_;
+		Vector<T> xGrid_;
+
+		std::size_t nt_;
+		std::size_t nx_;
+		std::size_t nxMid_;
+
+		T dt_;
+		T dx_;
+
+		Vector<T> initGuess_;
+		Vector<T> xMidGrid_;
+
+	public:
+
+		Pricer() = delete;
+		Pricer(std::span<const T> r,
+			std::span<const T> tGrid,
+			std::span<const T> xGrid);
+
+
+		T price(T sigma) const;
+	};
+} // namespace uv::models::localvol
+
+#include "Pricer.inl"

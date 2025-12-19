@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include "Core/Types.hpp"
+
 #include <concepts>
 #include <cstddef>
 #include <span>
@@ -48,9 +50,9 @@ namespace uv::core
 
 		// ----------Member variables ----------
 
-		std::size_t numRows_{ 0 };
-		std::size_t numCols_{ 0 };
-		Vector<T> data_{};
+		std::size_t numRows_;
+		std::size_t numCols_;
+		Vector<T> data_;
 
 	public:
 

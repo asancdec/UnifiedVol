@@ -35,31 +35,24 @@ namespace uv::utils
 	/**
 	 * @brief Pretty-print a 2D matrix with a header row and row labels.
 	 *
-	 * Prints a table-like view to the console/logger via UV_INFO. The first line
-	 * contains @p title, followed by a header row (e.g., strikes or moneyness).
-	 * Each subsequent line prints the corresponding row label (e.g., tenor) and
-	 * the values of that matrix row.
-	 *
-	 * Expected layout:
-	 * - Row 0: title + header entries
-	 * - Rows i>0: rowLabels[i] + M[i][*]
+	 * Outputs a table-like view via UV_INFO. The first row contains @p title and
+	 * header entries; each subsequent row prints the corresponding row label
+	 * followed by the matrix values.
 	 *
 	 * @tparam HeaderVec  Iterable container type for the header row.
-	 * @tparam RowLabels  Indexable container type for row labels (operator[]).
-	 * @tparam Matrix     2D container type where M.size() gives row count and
-	 *                    M[i] is iterable over the row values.
+	 * @tparam RowLabels Indexable container type for row labels.
+	 * @tparam Matrix    2D container type with iterable rows.
 	 *
-	 * @param title       Title printed at the top-left of the table.
-	 * @param header      Header entries printed across the top row.
-	 * @param rowLabels   Labels printed at the start of each matrix row.
-	 * @param M           Matrix to print (rows x columns).
-	 * @param headerPrec  Decimal precision for header values.
+	 * @param title        Title printed at the top-left of the table.
+	 * @param header       Header entries printed across the top row.
+	 * @param rowLabels    Labels printed at the start of each matrix row.
+	 * @param M            Matrix to print (rows × columns).
+	 * @param headerPrec   Decimal precision for header values.
 	 * @param rowLabelPrec Decimal precision for row-label values.
-	 * @param valuePrec   Decimal precision for matrix values.
+	 * @param valuePrec    Decimal precision for matrix values.
 	 *
-	 * @note This function does not validate dimensions. It assumes:
-	 *       - rowLabels has at least M.size() elements
-	 *       - each M[i] is iterable
+	 * @note This function assumes compatible dimensions and does not perform
+	 *       bounds or consistency checks.
 	 */
 	template <typename HeaderVec, typename RowLabels, typename Matrix>
 	void printMatrix(std::string_view title,
@@ -68,6 +61,21 @@ namespace uv::utils
 		const Matrix& M,
 		unsigned int headerPrec = 2,
 		unsigned int rowLabelPrec = 2,
+		unsigned int valuePrec = 5) noexcept;
+
+	/**
+	 * @brief Pretty-print a 1D vector.
+	 *
+	 * Prints all elements of @p v on a single line using fixed-point formatting
+	 * and the specified decimal precision, and outputs via UV_INFO.
+	 *
+	 * @tparam Vector   Iterable container type.
+	 *
+	 * @param v         Vector to print.
+	 * @param valuePrec Decimal precision for values.
+	 */
+	template <typename Vector>
+	void printVector(const Vector& v,
 		unsigned int valuePrec = 5) noexcept;
 
 } // namespace uv::utils
