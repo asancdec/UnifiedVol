@@ -35,7 +35,7 @@
 #include <iostream>
 #include <bitset>
 
-namespace uv::math
+namespace uv::math::integration
 {
 	template <std::floating_point T, std::size_t N>
 	TanHSinH<T, N>::TanHSinH() :
@@ -313,4 +313,4 @@ namespace uv::math
 			y / twoMinusY 									        // transformed input LHS
 		};
 	}
-}
+}  // namespace uv::math::integration

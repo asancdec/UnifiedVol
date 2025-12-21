@@ -24,41 +24,57 @@
 
 #pragma once
 
+#include "Core/Types.hpp"
+
 #include <concepts>
 #include <cstddef>
 #include <span>
+#include <array>
 
 namespace uv::models::localvol
 {
-	template <std::floating_point T>
+	template 
+	<
+		std::floating_point T, 
+		std::size_t nT, 
+		std::size_t nX,
+		typename Fn
+	>
 	class Pricer
 	{ 
 	private:
 
+		// Chang-Cooper coefficients
+		std::array<T, nX - 1 > B_{};
+		std::array<T, nX - 1 > C_{};
 
-		Vector<T> r_;
-		Vector<T> tGrid_;
-		Vector<T> xGrid_;
+		// Payoff data
+		T t_;
+		T r_;
+		T F_;
+		T K_;
+		Fn payoff_;
 
-		std::size_t nt_;
-		std::size_t nx_;
-		std::size_t nxMid_;
-
+		// Grid data
+		std::array<T, nX> xGrid_;
 		T dt_;
 		T dx_;
+		std::array<T, nX> pdfGrid_;
 
-		Vector<T> initGuess_;
-		Vector<T> xMidGrid_;
-
+		// Private functions
+		T normalizeForward_(T F) const noexcept;
+		
 	public:
 
 		Pricer() = delete;
-		Pricer(std::span<const T> r,
-			std::span<const T> tGrid,
-			std::span<const T> xGrid);
+		Pricer(T t,
+			T r,
+			T F,
+			T K,
+			Fn payoff,
+			const std::array<T, nX>& xGrid);
 
-
-		T price(T sigma) const;
+		T price(T localVar);
 	};
 } // namespace uv::models::localvol
 

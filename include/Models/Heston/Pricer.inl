@@ -34,7 +34,7 @@
 namespace uv::models::heston
 {
 	template <std::floating_point T, std::size_t N>
-	Pricer<T, N>::Pricer(std::shared_ptr<const math::TanHSinH<T, N>> quad,
+	Pricer<T, N>::Pricer(std::shared_ptr<const math::integration::TanHSinH<T, N>> quad,
 		const Config<T>& config) :
 		quad_(std::move(quad)),
 		config_(config)

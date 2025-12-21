@@ -22,9 +22,9 @@
  * limitations under this License.
  */
 
-#include "Core/Matrix/Functions.hpp"
-#include "Utils/Aux/Errors.hpp"
+#include "Math/Integration/Functions.hpp"
 #include "Utils/IO/Log.hpp"
+#include "Utils/Aux/StopWatch.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -34,81 +34,25 @@
 
 namespace uv::math::pde
 {
-
-    template <std::floating_point T>
-    Vector<T> createXMidGrid(std::span<const T> xGrid)
+    template <std::floating_point T, std::size_t N>
+    constexpr std::array<T, N> fokkerPlanckInit(T x0,
+        std::span<const T, N> xGrid) noexcept
     {
         // ---------- Check size ----------
 
-        const std::size_t n{ xGrid.size() };
-
-        // Throw if less than two elements
-        UV_REQUIRE
-        (
-            n >= 2,
-            ErrorCode::InvalidArgument,
-            "createXMidGrid: grid must have at least 2 points"
-        );
-
-
-        // ---------- Check sorted ----------
-
-        // Throw if not sorted
-        UV_REQUIRE(
-            std::is_sorted(xGrid.begin(), xGrid.end()),
-            ErrorCode::InvalidArgument,
-            "createXMidGrid: xGrid must be non-decreasing"
-        );
-
-        // ---------- Allocate ----------
-
-        Vector<T> xMidGrid(n - 1);
-
-        for (std::size_t i = 0; i < n - 1; ++i)
-        {
-            xMidGrid[i] = T{ 0.5 } *(xGrid[i] + xGrid[i + 1]);
-        }
-
-        return xMidGrid;
-    }
-
-    template <std::floating_point T>
-    Vector<T> fokkerPlankInit(const T x0,
-        std::span<const T> xGrid)
-    {
-        // ---------- Check size ----------
-
-        std::size_t nx{ xGrid.size() };
-
-        // Throw if grid size is one or less
-        UV_REQUIRE(
-            nx > 1,
-            ErrorCode::InvalidArgument,
-            "fokkerPlankInit: grid size must be > 1 (got " + std::to_string(nx) + ")"
-        );
-
-        // ---------- Check sorted ----------
-
-        // Throw if not sorted
-        UV_REQUIRE(
-            std::is_sorted(xGrid.begin(), xGrid.end()),
-            ErrorCode::InvalidArgument,
-            "fokkerPlankInit: xGrid must be non-decreasing"
-        );
-
-        // ---------- Check in bounds ----------
-
-        // Throw if out of bounds
-        UV_REQUIRE(
-            x0 >= xGrid.front() && x0 <= xGrid.back(),
-            ErrorCode::InvalidArgument,
-            "fokkerPlankInit: Initial value must lie within the grid domain"
-        );
+        static_assert
+            (
+                N >= 2, 
+                "fokkerPlanckInit: grid must have at least 2 points"
+             );
 
         // ---------- Binary search index ----------
 
         auto it = std::lower_bound(xGrid.begin(), xGrid.end(), x0);
-        std::size_t idx{ static_cast<std::size_t>(std::distance(xGrid.begin(), it)) };
+        std::size_t idx{ static_cast<std::size_t>(it - xGrid.begin()) };
+
+        // Clamp
+        if (idx == N) idx = N - 1;
 
         // If there is an element to the left
         if (idx > 0)
@@ -122,8 +66,9 @@ namespace uv::math::pde
 
         // ---------- Dirac approximation ----------
 
-        Vector<T> p0(nx, T(0));
-        T dX;
+        // Zero initialized
+        std::array<T, N> p0{};
+        T dX{};
 
         // Step size at the left 
         if (idx == 0)
@@ -131,246 +76,250 @@ namespace uv::math::pde
             dX = xGrid[1] - xGrid[0];
         }
         // Step size at the right
-        else if (idx == nx - 1)
+        else if (idx == N - 1)
         {
-            dX = xGrid[nx - 1] - xGrid[nx - 2];
+            dX = xGrid[N - 1] - xGrid[N - 2];
         }
         else
         {
             // Average step sizes
             const T dXLeft{ xGrid[idx] - xGrid[idx - 1] };
             const T dXRight{ xGrid[idx + 1] - xGrid[idx] };
-            dX = T(0.5) * (dXLeft + dXRight);
+            dX = T{ 0.5 } * (dXLeft + dXRight);
         }
 
         // Probability mass under p0 is 1
         // Therefore the following must hold approximately
-        p0[idx] = T(1) / dX;
+        p0[idx] = T{ 1 } / dX;
 
         return p0;
     }
 
+    template<std::floating_point T, std::size_t nT, std::size_t nX>
+    void fokkerPlanckSolve(std::span<T, nX> pdfGrid,
+        std::span<T, nX-1> B,
+        std::span<T, nX-1> C,
+        T dt,
+        T dx) noexcept
+    {
+        // ---------- Check size ----------
+
+        static_assert(nX >= 2, "fokkerPlanckSolve: nX must be >= 2");
+        static_assert(nT >= 2, "fokkerPlanckSolve: nT must be >= 2");
+
+        // ---------- Set ----------
+
+        // Buffers
+        std::array<T, nX> upper{};
+        std::array<T, nX> middle{};
+        std::array<T, nX> lower{};
+        std::array<T, nX> scratch{};
+
+        // Precompute
+        T invdx{ T{ 1 } / dx };
+        T alpha{ dt * invdx };
+
+        for (std::size_t i = 0; i < nT - 1; ++i)
+        {
+            // ---------- Tridiagonal coefficients  ----------
+
+            detail::changCooperDiagonals<T, nX>
+                (
+                    upper,
+                    middle,
+                    lower,
+                    B,
+                    C,
+                    dx,
+                    invdx,
+                    alpha
+                );
+
+            // ---------- Solve ----------
+
+            detail::thomasSolve<T, nX>
+                (
+                    pdfGrid,
+                    upper,
+                    middle,
+                    lower,
+                    scratch
+                );
+        }
+    }
+
+    template<std::floating_point T, std::size_t nT, std::size_t nX>
+    void fokkerPlanckLog(std::span<T, nX> pdfGrid,
+        std::span<T, nX - 1> B,
+        std::span<T, nX - 1> C,
+        T dt,
+        T dx) noexcept
+    {
+        // Start timer
+        utils::StopWatch timer_;
+        timer_.StartStopWatch();
+
+        // Solve
+        math::pde::fokkerPlanckSolve<Real, nT, nX>
+            (
+                pdfGrid,
+                B,
+                C,
+                dt,
+                dx
+            );
+
+        // Stop timer
+        timer_.StopStopWatch();
+
+        // Log information
+        UV_INFO
+        (
+            std::format
+            (
+                "[Fokker-Planck] mass={:.8e} ({:.4f} s nT={:L} nX={:L})",
+                integration::trapezoidal(pdfGrid, dx),
+                timer_.GetTime<std::ratio<1>>(),
+                nT,
+                nX
+            )
+        );
+    }
+} // namespace uv::math::pde
+
+namespace uv::math::pde::detail
+{
+    template <std::floating_point T, std::size_t N>
+    void changCooperDiagonals(std::span<T, N> upper,
+        std::span<T, N> middle,
+        std::span<T, N> lower,
+        std::span<const T, N - 1> B,
+        std::span<const T, N - 1> C,
+        T dx,
+        T invdx,
+        T alpha) noexcept
+    {
+
+        // ---------- Dimension checks ----------
+
+        static_assert
+            (
+                N >= 2,
+                "changCooperDiagonals: grid must have at least 2 points"
+                );
+
+        // ---------- Calculate coefficients ----------
+
+        // Precompute
+        const T b0{ B[0] };
+        const T c0{ C[0] };
+
+        // Calculate the first weight
+        T weight{ changCooperWeight(b0, c0, dx) };
+
+        // Left boundary 
+        upper[0] = -alpha * ((T{ 1 } - weight) * b0 + invdx * c0);
+        middle[0] = T{ 1 } + alpha * (invdx * c0 - weight * b0);
+        lower[0] = T{ 0 };
+
+        for (std::size_t j = 1; j < N - 1; ++j)
+        {
+            // Calculate the next weight
+            const T wRight{ changCooperWeight(B[j], C[j], dx) };
+
+            // Precompute
+            const T bRight{ B[j] };
+            const T bLeft{ B[j - 1] };
+
+            const T cRight{ C[j] };
+            const T cLeft{ C[j - 1] };
+
+            // Update coefficients
+            upper[j] = -alpha *
+                (
+                    (T{ 1 } - wRight) * bRight
+                    + invdx * cRight
+                    );
+
+            middle[j] = T{ 1 } + alpha *
+                (
+                    invdx * (cRight + cLeft)
+                    + (T{ 1 } - weight) * bLeft
+                    - wRight * bRight
+                    );
+
+            lower[j] = -alpha *
+                (
+                    invdx * cLeft
+                    - weight * bLeft
+                    );
+
+            // Update the weight
+            weight = wRight;
+        }
+
+        // Right boundary
+
+        const std::size_t k{ N - 2 };
+        const T bK{ B[k] };
+        const T cK{ C[k] };
+
+        upper[N - 1] = T{ 0 }; 
+        middle[N - 1] = T{ 1 } + alpha * (invdx * cK + (T{ 1 } - weight) * bK);
+        lower[N - 1] = -alpha * (invdx * cK - weight * bK);
+    }
+
     template <std::floating_point T>
-    core::Matrix<T> changCooperWeights(const core::Matrix<T>& B,
-        const core::Matrix<T>& C,
-        T dx)
+    constexpr T changCooperWeight(T B,
+        T C,
+        T dx) noexcept
+    {
+        // Precompute
+        const T omega{ dx * B / C };
+        const T omegaCubed{ omega * omega * omega };
+
+        // Taylor series expansion
+        return  T{ 0.5 } - omega / T{ 12 }
+        + omegaCubed / T{ 720 }
+        - omegaCubed * omega * omega / T{ 30240 };
+    }
+
+    template <std::floating_point T, std::size_t N>
+    void thomasSolve(std::span<T, N> x,
+        std::span<const T, N> upper,
+        std::span<const T, N> middle,
+        std::span<const T, N> lower,
+        std::span<T, N> scratch) noexcept
     {
         // ---------- Dimension checks ----------
 
-        UV_REQUIRE
-        (
-            B.rows() == C.rows() &&
-            B.cols() == C.cols(),
-            ErrorCode::InvalidArgument,
-            "changCooperWeights: invalid dimensions"
-        );
-
-        // ---------- Calculate weights ----------
-
-        core::Matrix<T> w{ core::divide(B, C) };
-        w *= dx;
-
-        core::Matrix<T> weights
-        {
-            core::transformIndexed<T>
+        static_assert
             (
-                w,
-               [](std::size_t i, std::size_t j, T x)
-                {
-                    // ---------- Chang-Cooper weight ----------
+                N >= 2,
+                "thomasSolve: N must be >= 2"
+                );
 
-                    // expm1(x) = exp(x)-1
-                    T delta {T{1} / x - T{1} / std::expm1(x)};
+        // ---------- Solve ----------
 
-                    // ---------- Handle NaN/Inf ----------
+        scratch[0] = upper[0] / middle[0];
+        x[0] = x[0] / middle[0];
 
-                    if (!std::isfinite(delta))
-                    {
-                        UV_WARN(
-                            true,
-                            std::format(
-                                "ChangCooperWeights: non-finite delta at ({}, {}), "
-                                "omega = {:.6e} -> forcing 0.5",
-                                i, j, x
-                            )
-                        );
-                        return T{ 0.5 };
-                    }
+        for (std::size_t i = 1; i < N; i++)
+        {
+            // Precompute
+            const T lowerI{ lower[i] };
+            const T invDenom{ T{1} / (middle[i] - lowerI * scratch[i - 1]) };
 
-                    const T clamped{ std::clamp(delta, T{ 0 }, T{ 1 }) };
+            if (i < N - 1)
+            {
+                scratch[i] = upper[i] * invDenom;
+            }
+            x[i] = (x[i] - lowerI * x[i - 1]) * invDenom;
+        }
 
-                    // Warn only if clamping occurred
-                    UV_WARN(
-                        clamped != delta,
-                        std::format(
-                            "ChangCooperWeights: delta clamped at ({}, {}): "
-                            "omega = {:.6e}, delta = {:.6e} -> {:.6e}",
-                            i, j, x, delta, clamped
-                        )
-                    );
-
-                    return clamped;
-                }
-            )
-        };
-
-        return weights;
+        for (std::size_t i = N - 1; i-- > 0; )
+        {
+            x[i] -= scratch[i] * x[i + 1];
+        }
     }
-
-    //Matrix<T> fokkerPlankSolve(const Vector<T>& pdeInitCond,
-    //    const Vector<T>& dTGrid,
-    //    const Vector<T>& dXGrid,
-    //    const TriDiag& coefficients)
-    //{
-    //    // ---------- Dimension checks ----------
-
-    //    const std::size_t nT{ drift.size() };
-    //    const std::size_t nX{ drift[0].size() };
-
-    //    UV_REQUIRE(
-    //        diffusion.size() == nT,
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: diffusion must have same number of rows as drift"
-    //    );
-
-    //    UV_REQUIRE(
-    //        diffusion[0].size() == nX,
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: diffusion must have same number of columns as drift"
-    //    );
-
-    //    UV_REQUIRE(
-    //        pdeInitCond.size() == nX,
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: pdeInitCond size must equal number of spatial points (got " +
-    //        std::to_string(pdeInitCond.size()) + " and " + std::to_string(nX) + ")"
-    //    );
-
-    //    UV_REQUIRE(
-    //        dTGrid.size() == (nT - 1),
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: dTGrid size must be nTimeLevels - 1 (got " +
-    //        std::to_string(dTGrid.size()) + " and " + std::to_string(nT - 1) + ")"
-    //    );
-
-    //    UV_REQUIRE(
-    //        dXGrid.size() == (nX - 1),
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: dXGrid size must be nSpacePoints - 1 (got " +
-    //        std::to_string(dXGrid.size()) + " and " + std::to_string(nX - 1) + ")"
-    //    );
-
-    //    // ---------- Math checks ----------
-
-    //    UV_REQUIRE(
-    //        std::all_of(dTGrid.begin(), dTGrid.end(),
-    //            [](T dt) { return dt > T(0); }),
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: all time steps dTGrid must be strictly positive"
-    //    );
-
-    //    UV_REQUIRE(
-    //        std::all_of(dXGrid.begin(), dXGrid.end(),
-    //            [](T dx) { return dx > T(0); }),
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: all space steps dXGrid must be strictly positive"
-    //    );
-
-    //    UV_REQUIRE(
-    //        std::all_of(diffusion.begin(), diffusion.end(),
-    //            [](const Vector<T>& row)
-    //            {
-    //                return std::all_of(row.begin(), row.end(),
-    //                    [](T v) { return v >= T(0); });
-    //            }),
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: diffusion coefficients must be non-negative"
-    //    );
-
-    //    // ---------- Internal coefficients ----------
-
-
-
-
-    //    return diffusion;
-    //}
-    //Matrix<T> fokkerPlankSolve(const Vector<T>& pdeInitCond,
-    //    const Vector<T>& dTGrid,
-    //    const Vector<T>& dXGrid,
-    //    const TriDiag& coefficients)
-    //{
-    //    // ---------- Dimension checks ----------
-
-    //    const std::size_t nT{ drift.size() };
-    //    const std::size_t nX{ drift[0].size() };
-
-    //    UV_REQUIRE(
-    //        diffusion.size() == nT,
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: diffusion must have same number of rows as drift"
-    //    );
-
-    //    UV_REQUIRE(
-    //        diffusion[0].size() == nX,
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: diffusion must have same number of columns as drift"
-    //    );
-
-    //    UV_REQUIRE(
-    //        pdeInitCond.size() == nX,
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: pdeInitCond size must equal number of spatial points (got " +
-    //        std::to_string(pdeInitCond.size()) + " and " + std::to_string(nX) + ")"
-    //    );
-
-    //    UV_REQUIRE(
-    //        dTGrid.size() == (nT - 1),
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: dTGrid size must be nTimeLevels - 1 (got " +
-    //        std::to_string(dTGrid.size()) + " and " + std::to_string(nT - 1) + ")"
-    //    );
-
-    //    UV_REQUIRE(
-    //        dXGrid.size() == (nX - 1),
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: dXGrid size must be nSpacePoints - 1 (got " +
-    //        std::to_string(dXGrid.size()) + " and " + std::to_string(nX - 1) + ")"
-    //    );
-
-    //    // ---------- Math checks ----------
-
-    //    UV_REQUIRE(
-    //        std::all_of(dTGrid.begin(), dTGrid.end(),
-    //            [](T dt) { return dt > T(0); }),
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: all time steps dTGrid must be strictly positive"
-    //    );
-
-    //    UV_REQUIRE(
-    //        std::all_of(dXGrid.begin(), dXGrid.end(),
-    //            [](T dx) { return dx > T(0); }),
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: all space steps dXGrid must be strictly positive"
-    //    );
-
-    //    UV_REQUIRE(
-    //        std::all_of(diffusion.begin(), diffusion.end(),
-    //            [](const Vector<T>& row)
-    //            {
-    //                return std::all_of(row.begin(), row.end(),
-    //                    [](T v) { return v >= T(0); });
-    //            }),
-    //        ErrorCode::InvalidArgument,
-    //        "fokkerPlankSolve: diffusion coefficients must be non-negative"
-    //    );
-
-    //    // ---------- Internal coefficients ----------
-
-
-
-
-    //    return diffusion;
-    //}
-
-
-} // namespace uv::math::pde
+} // namespace uv::math::pde::detail

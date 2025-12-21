@@ -29,18 +29,18 @@
 #include <cstddef>
 #include <concepts>
 #include <functional>
+#include <array>
 
 namespace uv::core
 {
     /**
      * @brief Generate an evenly spaced 1D grid.
      *
-     * Returns a vector of values from bound1 to bound2 (inclusive).
+     * Returns an array of values from bound1 to bound2 (inclusive).
      */
-    template <std::floating_point T>
-    Vector<T> generateGrid(T bound1,
-        T bound2,
-        size_t steps) noexcept;
+    template <std::floating_point T, std::size_t N>
+    constexpr std::array<T, N> generateGrid(T bound1,
+        T bound2) noexcept;
 
     /**
      * @brief Accumulate the elements in a span

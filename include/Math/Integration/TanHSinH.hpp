@@ -29,7 +29,7 @@
 #include <cstddef>
 #include <concepts>
 
-namespace uv::math
+namespace uv::math::integration
 {
     /**
      * @brief Fixed Tanh–Sinh quadrature rule for integrals on (0, +∞).
@@ -151,6 +151,6 @@ namespace uv::math
          */
         void printGrid() const noexcept;
     };
-}  // namespace uv::Math
+}  // namespace uv::math::integration
 
 #include "TanHSinH.inl"

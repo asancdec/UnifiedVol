@@ -31,33 +31,23 @@
 #include <algorithm>
 
 namespace uv::core
-{
-    template <std::floating_point T>
-    Vector<T> generateGrid(const T bound1,
-        const T bound2,
-        const size_t steps
-    ) noexcept
+{       
+    template <std::floating_point T, std::size_t N>
+    constexpr std::array<T, N> generateGrid(T bound1,
+        T bound2) noexcept
     {
-        // ---------- Allocate memory ----------
+        static_assert(N >= 2, "generateGrid: grid must have at least 2 points");
 
-        Vector<T> grid;
-        grid.reserve(steps);
+        std::array<T, N> grid{};
+        grid[0] = bound1;
 
-        // ---------- Handle special case ----------
+        // Calculate step size
+        const T dx{ (bound2 - bound1) / static_cast<T>(N - 1) };
 
-        if (steps <= 1)
+        for (std::size_t i = 1; i < N; ++i)
         {
-            grid.push_back(static_cast<T>(bound1));
-            return grid;
-        }
-
-        // ---------- Generate grid ----------
-
-        const T dx{ (bound2 - bound1) / static_cast<T>(steps - 1) };
-
-        for (std::size_t i = 0; i < steps; ++i)
-        {
-            grid.push_back(static_cast<T>(bound1) + dx * static_cast<T>(i));
+            // Set grid elements
+            grid[i] = bound1 + dx * static_cast<T>(i);
         }
 
         return grid;

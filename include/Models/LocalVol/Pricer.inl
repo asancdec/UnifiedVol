@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+﻿// SPDX-License-Identifier: Apache-2.0
 /*
  * File:        Pricer.inl
  * Author:      Alvaro Sanchez de Carlos
@@ -22,51 +22,101 @@
  * limitations under this License.
  */
 
-
-#include "Core/Matrix/Functions.hpp"
 #include "Math/PDE/Functions.hpp"
-#include "Utils/IO/Functions.hpp"
+#include "Math/Integration/Functions.hpp"
 
 #include <cmath>
 #include <iostream>
+#include <numeric>
+#include <iomanip>
+#include <utility>
 
 namespace uv::models::localvol
 {
-    template <std::floating_point T>
-    Pricer<T>::Pricer(std::span<const T> r,
-        std::span<const T> tGrid,
-        std::span<const T> xGrid)
+    template
+        <
+        std::floating_point T,
+        std::size_t nT,
+        std::size_t nX,
+        typename Fn
+        >
+    Pricer<T, nT, nX, Fn>::Pricer(T t,
+        T r,
+        T F,
+        T K,
+        Fn payoff,
+        const std::array<T, nX>& xGrid)
         :
-        r_(r.begin(), r.end()),
-        tGrid_(tGrid.begin(), tGrid.end()),
-        xGrid_(xGrid.begin(), xGrid.end()),
-        nt_(tGrid_.size()),
-        nx_(xGrid_.size()),
-        nxMid_(nx_ - 1),
-        dt_(tGrid_[1] - tGrid_[0]),
+        t_(t),
+        r_(r),
+        F_(F),
+        K_(K),
+        payoff_(std::move(payoff)),
+        xGrid_(xGrid),
+        dt_(t_ / T(nT - 1)),
         dx_(xGrid_[1] - xGrid_[0]),
-        initGuess_(math::pde::fokkerPlankInit<T>(0, xGrid_)),
-        xMidGrid_(math::pde::createXMidGrid<T>(xGrid_))
+        pdfGrid_(math::pde::fokkerPlanckInit<T, nX>(T{ 0 }, xGrid_))
     {
         // TODO: Validate inputs
         // TODO: Set grid of strikes and tenors to price
     }
 
-    template <std::floating_point T>
-    T Pricer<T>::price(T localVar) const
+    template
+        <
+        std::floating_point T,
+        std::size_t nT,
+        std::size_t nX,
+        typename Fn
+        >
+    T Pricer<T, nT, nX, Fn>::price(T localVar)
     {
         // TODO: Assume non constant localVar
-        // TODO: Return a price grid, not just a T
+        // TODO:: derivative of vol
 
-        core::Matrix<T> B(nt_, nxMid_, -0.5 * localVar);
-        core::Matrix<T> C{ B };  // TODO:: derivative of vol
+        B_.fill(T{0.5} * localVar);
+        C_.fill(T{ 0.5 } *localVar);
 
-        core::Matrix<T> weight{ math::pde::changCooperWeights<T>(B, C, dx_) };
+        // ---------- Solve Fokker-Plank PDE ----------
 
-        weight.print();
+        math::pde::fokkerPlanckLog<Real, nT, nX>
+        (
+            pdfGrid_,
+            B_,
+            C_,
+            dt_,
+            dx_
+        );
 
+        // ---------- Price the payoff ----------
 
-        return T(3);
+        return std::exp(-r_ * 3.0) *
+                math::integration::trapezoidalWeighted
+                (
+                    [this] (T x) ->T
+                    {
+                        return payoff_(K_, normalizeForward_(F_) * std::exp(x));
+                    },
+                    pdfGrid_,
+                    xGrid_
+                );
+        }
+
+    template
+        <
+        std::floating_point T,
+        std::size_t nT,
+        std::size_t nX,
+        typename Fn
+        >
+    T Pricer<T, nT, nX, Fn>::normalizeForward_(T F) const noexcept
+    {
+        return F / math::integration::trapezoidalWeighted
+        (
+            [](T x) {return std::exp(x); },
+            pdfGrid_,
+            xGrid_
+        );
     }
+
 
 } // namespace uv::models::localvol

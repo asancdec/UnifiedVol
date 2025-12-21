@@ -27,7 +27,7 @@
 
 #include "Models/Heston/Params.hpp"
 #include "Models/Heston/Config.hpp"
-#include "Math/Quadratures/TanHSinH.hpp"
+#include "Math/Integration/TanHSinH.hpp"
 #include "Core/VolSurface.hpp"
 
 #include <memory>
@@ -95,9 +95,9 @@ namespace uv::models::heston
         //--------------------------------------------------------------------------
         // Private member variables
         //--------------------------------------------------------------------------
-        std::optional<Params<T>> params_;                    ///< Stored model parameters (optional).
-        std::shared_ptr<const math::TanHSinH<T, N>> quad_;      ///< Quadrature engine (shared).
-        const Config<T> config_;                                ///< Pricer configuration (alphas, eps, etc).
+        std::optional<Params<T>> params_;                                    ///< Stored model parameters (optional).
+        std::shared_ptr<const math::integration::TanHSinH<T, N>> quad_;      ///< Quadrature engine (shared).
+        const Config<T> config_;                                             ///< Pricer configuration (alphas, eps, etc).
 
         //--------------------------------------------------------------------------
         // Pricing helpers
@@ -188,7 +188,7 @@ namespace uv::models::heston
          *
          * @note The constructor validates alpha ranges (see implementation).
          */
-        explicit Pricer(std::shared_ptr<const math::TanHSinH<T, N>> quad,
+        explicit Pricer(std::shared_ptr<const math::integration::TanHSinH<T, N>> quad,
             const Config<T>& config);
 
         //--------------------------------------------------------------------------

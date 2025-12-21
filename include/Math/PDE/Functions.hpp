@@ -25,98 +25,113 @@
 
 #pragma once
 
-#include "Utils/Aux/Errors.hpp"
-#include "Math/PDE/TriDiag.hpp"
-#include "Core/Matrix/Matrix.hpp"
-
 #include <cstddef>
 #include <concepts>
 #include <span>
+#include <array>
 
 namespace uv::math::pde
 {
-	/**
-	 * @brief Construct the mid-point (face) grid from a cell-centered grid.
-	 *
-	 * Returns a vector of size n-1 where each entry is the average of two
-	 * consecutive points in xGrid. The input grid must be sorted.
-	 */
-	template <std::floating_point T>
-	Vector<T> createXMidGrid(std::span<const T> xGrid);
+    /**
+     * @brief Discrete initial density for Fokker–Planck evolution.
+     *
+     * Approximates a Dirac delta at x0 by assigning unit mass to the nearest node
+     * (scaled by the local step size). Requires x0 within the grid domain.
+     */
+    template <std::floating_point T, std::size_t N>
+    constexpr std::array<T, N> fokkerPlanckInit(T x0,
+        std::span<const T, N> xGrid) noexcept;
 
-	/**
-	 * @brief Construct a discrete initial density for Fokker–Planck evolution.
-	 *
-	 * This function creates a probability density vector `p0` on a spatial grid
-	 * suitable for forward (Fokker–Planck) PDE solvers.  The returned density
-	 * approximates a Dirac delta located at the initial spatial point `x0`,
-	 * ensuring that the total probability mass is approximately one.
-	 *
-	 *
-	 * ### Behavior
-	 * - Performs a binary search (`std::lower_bound`) to locate the closest grid
-	 *   index to `x0`
-	 * - Accounts for non-uniform grid spacing by estimating a local step size
-	 * - Ensures total mass conservation under the discrete inner product
-	 *
-	 * @param x0     Initial spatial location where the density is concentrated
-	 * @param xGrid  Sorted spatial grid defining the PDE domain
-	 *
-	 * @return A vector `p0` of the same size as `xGrid`, containing a discrete
-	 *         probability density suitable for use as initial data in a
-	 *         Fokker–Planck PDE solver.
-	 */
-	template <std::floating_point T>
-	Vector<T> fokkerPlankInit(T x0,
-	std::span<const T> xGrid);
+    /**
+     * @brief 1D Fokker–Planck solver (Chang–Cooper + Thomas).
+     *
+     * Marches `pdfGrid` forward `nT-1` implicit steps on a uniform grid, building a
+     * Chang–Cooper tridiagonal system each step and solving it with the Thomas algorithm.
+     *
+     * Reference: Chang, J. S. & Cooper, G., "A Practical Difference Scheme for Fokker-Planck Equations",
+     * Journal of Computational Physics 6, 1–16 (1970).
+     */
+    template<std::floating_point T, std::size_t nT, std::size_t nX>
+    void fokkerPlanckSolve(std::span<T, nX> pdfGrid,
+        std::span<T, nX - 1> B,
+        std::span<T, nX - 1> C,
+        T dt,
+        T dx) noexcept;
 
-	/**
-	 * @brief Compute the Chang-Cooper interpolation weight at a cell interface.
-	 *
-	 * This function evaluates the Chang-Cooper weight
-	 *
-	 *   delta(w) = 1 / w - 1 / (exp(w) - 1)
-	 *
-	 * where
-	 *
-	 *   w = (B / C) * dx
-	 *
-	 * is the dimensionless drift-diffusion ratio at the cell interface.
-	 *
-	 * The weight delta in [0, 1] determines the upwind bias in the conservative
-	 * finite-difference discretisation of the Fokker-Planck flux.
-	 *
-	 * Properties of the Chang-Cooper scheme:
-	 *  - preserves non-negativity of the solution,
-	 *  - conserves total probability mass,
-	 *  - exactly reproduces the stationary (equilibrium) solution,
-	 *  - smoothly interpolates between central differencing (w -> 0, delta -> 0.5)
-	 *    and full upwinding (|w| -> infinity).
-	 *
-	 * Numerical safeguards:
-	 *  - Non-finite values (NaN or Inf) are detected and replaced by delta = 0.5.
-	 *  - The result is clamped to the theoretical bounds [0, 1].
-	 *  - A warning is emitted if clamping occurs.
-	 *
-	 * Reference:
-	 *   J. S. Chang and G. Cooper,
-	 *   "A Practical Difference Scheme for Fokker-Planck Equations",
-	 *   Journal of Computational Physics, Vol. 6, pp. 1-16, 1970.
-	 *
-	 * @param i Grid index in the first dimension.
-	 * @param j Grid index in the second dimension.
-	 * @param x Dimensionless drift-diffusion ratio w at the cell interface.
-	 * @return Chang-Cooper weight delta in the interval [0, 1].
-	 */
-	template <std::floating_point T>
-	core::Matrix<T> changCooperWeights(const core::Matrix<T>& B,
-		const core::Matrix<T>& C,
-        T dx);
+    /**
+     * @brief Solve a 1D Fokker–Planck system and log mass + runtime.
+     *
+     * Runs `fokkerPlanckSolve` for a log-space grid and prints a short diagnostic:
+     * total mass (trapezoidal) and elapsed time, together with nT and nX.
+     *
+     * Reference: Chang, J. S. & Cooper, G., Journal of Computational Physics 6, 1–16 (1970).
+     */
+    template<std::floating_point T, std::size_t nT, std::size_t nX>
+    void fokkerPlanckLog(std::span<T, nX> pdfGrid,
+        std::span<T, nX - 1> B,
+        std::span<T, nX - 1> C,
+        T dt,
+        T dx) noexcept;
 
-	//core::Matrix<Real> fokkerPlankSolve(const Vector<Real>& pdeInitCond,
-	//	const Vector<Real>& dTGrid,
-	//	const Vector<Real>& dXGrid,
-	//	const TriDiag& coefficients);
+    namespace detail
+    {
+
+        /**
+         * @brief Compute a Chang–Cooper weight using a Taylor approximation.
+         *
+         * Uses omega = dx * B / C and a short Taylor series to avoid expensive exponentials.
+         *
+         * Reference: Chang, J. S. & Cooper, G., "A Practical Difference Scheme for Fokker-Planck Equations",
+         * Journal of Computational Physics 6, 1–16 (1970).
+         */
+        template <std::floating_point T>
+        constexpr T changCooperWeight(T B,
+            T C,
+            T dx) noexcept;
+
+        /**
+         * @brief Build Chang–Cooper tridiagonal coefficients (with reflecting boundaries) in one pass.
+         *
+         * Computes the tridiagonal diagonals `lower/middle/upper` for the Chang–Cooper
+         * discretization of a 1D Fokker–Planck operator, and applies reflective (zero-flux)
+         * boundary conditions at both ends of the grid.
+         *
+         * Weights are computed on-the-fly (rolling left/right) to avoid storing an
+         * intermediate weights array.
+         *
+         * Reference: Chang, J. S. & Cooper, G., "A Practical Difference Scheme for Fokker-Planck Equations",
+         * Journal of Computational Physics 6, 1–16 (1970).
+         */
+        template <std::floating_point T, std::size_t N>
+        void changCooperDiagonals(std::span<T, N> upper,
+            std::span<T, N> middle,
+            std::span<T, N> lower,
+            std::span<const T, N - 1> B,
+            std::span<const T, N - 1> C,
+            T dx,
+            T invdx,
+            T alpha) noexcept;
+
+        /**
+         * @brief Solve a tridiagonal linear system using the Thomas algorithm.
+         *
+         * Solves A * x = rhs in-place, where A is tridiagonal with:
+         * - lower[i]  = sub-diagonal entry
+         * - middle[i] = main diagonal entry b_i
+         * - upper[i]  = super-diagonal entry c_i
+         *
+         * References:
+         * - Tridiagonal matrix algorithm (Thomas algorithm), Wikipedia.
+         *   https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm
+         */
+        template <std::floating_point T, std::size_t N>
+        void thomasSolve(std::span<T, N> x,
+            std::span<const T, N> upper,
+            std::span<const T, N> middle,
+            std::span<const T, N> lower,
+            std::span<T, N> scratch) noexcept;
+
+    } // namespace detail
 
 } // namespace uv::math::pde
 

@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
 {
     try
     {
-        // ---------- Configurations ----------
+        // ---------- Configure ----------
         
         // Choose the CSV path
         const std::filesystem::path path = (argc > 1) ?
@@ -99,25 +99,53 @@ int main(int argc, char* argv[])
        
         sviVolSurface.printTotVar();
 
-        // ---------- Local Vol calibration ----------
+        // ---------- Local Volatility ----------
 
-        localvol::Pricer<Real> lvPricer
-        {
-            sviVolSurface.rates(),
-            core::generateGrid<Real>(0, 3.0, 10),
-            core::generateGrid<Real>(-3.0, 3.0, 10)
-        };
+        constexpr std::size_t nT{ 10000 };  // Time steps
+        constexpr std::size_t nX{ 10000 };  // Space steps
 
-        const Real testPrice(lvPricer.price(0.04));
+        // Test payoff data
+        const Real t{3.0};
+        const Real r{ marketData.r };
+        const Real q{ marketData.q };
+        const Real vol{ 0.2 };
+        const Real S{ marketData.S };
+        const Real K{ S };
+        auto payoff = [](Real K, Real S) -> Real {return (S > K) ? (S - K) : Real{ 0 }; };
+
+        // Allocate to heap
+        auto lvPricer = std::make_unique<localvol::Pricer<Real, nT, nX, decltype(payoff)>>
+            (
+                t,
+                r,
+                S * std::exp((r - q) * t),
+                K,
+                payoff,
+                core::generateGrid<Real, nX>(-3.0, 5.0)
+            );
+
+        const Real testPrice{ lvPricer->price(vol * vol) };
+        const Real bsPrice{ math::blackScholes(t, r, q, vol, S, K) };
+        
+        UV_INFO
+        (
+            std::format
+            (
+                "[Price] LV={:.8f}  BS={:.8f} (RE={:+.6f}%)",
+                testPrice,
+                bsPrice,
+                Real{ 100 } * (testPrice / bsPrice - Real{ 1 })
+            )
+        );
 
         // ---------- Heston model calibration ----------
 
-        static constexpr std::size_t HestonNodes = 300;
-        const TanHSinH<Real, HestonNodes> quad{};
+        constexpr std::size_t HestonNodes{ 300 };
+        const integration::TanHSinH<Real, HestonNodes> quad{};
         
         heston::Pricer<Real, HestonNodes> hestonPricer
         {
-            std::make_shared<const TanHSinH<Real, HestonNodes>>(quad),
+            std::make_shared<const integration::TanHSinH<Real, HestonNodes>>(quad),
             {
                 -2.0,   // Damping parameter ITM
                 2.0     // Damping parameter OTM
