@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * File:        Pricer.hpp
+ * File:        AHCache.hpp
  * Author:      Alvaro Sanchez de Carlos
- * Created:     2025-12-08
+ * Created:     2026-01-20
  *
  * Description:
  *   [Brief description of what this file declares or implements.]
@@ -21,60 +21,40 @@
  * See the LICENSE for the specific language governing permissions and
  * limitations under this License.
  */
-
 #pragma once
 
-#include "Core/Types.hpp"
-#include "Models/LocalVol/AHCache.hpp"
-
+#include <array>
 #include <concepts>
 #include <cstddef>
-#include <span>
-#include <array>
 
 namespace uv::models::localvol
 {
-	template
-		<
-		std::floating_point T,
-		std::size_t NT,
-		std::size_t NX
-		>
-		class Pricer
-	{
-	private:
+    template <std::floating_point T, std::size_t NX>
+    struct AHCache
+    {
+        // ---------- Precomputed variables ----------
 
-		// Market data
-		T r_;
-		T q_;
+        T invDXSquared{};
+        T invDXSquaredTimesTwo{};
 
-		// Grids
-		std::array<T, NX> xGrid_;
-		std::array<T, NX> c_;
-		std::array<T, NX> cInit_;
+        T lowerFactor{};
+        T upperFactor{};
 
+        T aL{};
+        T bL{};
+        T aR{};
+        T bR{};
 
-		// Cached variables and buffers
-		AHCache<T, NX> ahCache_{};
+        T zLower{};
+        T zMiddle{};
+        T zUpper{};
 
-	public:
+        // ---------- Buffers ----------
 
-		Pricer() = delete;
+        std::array<T, NX - 2 > scratch{};
+        std::array<T, NX - 2 > lower{};
+        std::array<T, NX - 2 > middle{};
+        std::array<T, NX - 2 > upper{};
 
-		template <typename F>
-		Pricer(F&& payoff,
-			Vector<T> r,
-			Vector<T> q,
-			T xBound
-		);
-
-		Vector<T> price(T maturity,
-			std::span<const T> logKF,
-			std::span<const T> localVar
-		);
-
-	};
-
+    };
 } // namespace uv::models::localvol
-
-#include "Pricer.inl"

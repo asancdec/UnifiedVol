@@ -113,7 +113,6 @@ namespace uv::core
          */
         void setVolFromVar_(const Matrix<T>& totVarMatrix);
 
-
         /**
          * @brief Compute volMatrix_ from Call Prices solving for
          * implied volatility using the Black-Scholes formula.

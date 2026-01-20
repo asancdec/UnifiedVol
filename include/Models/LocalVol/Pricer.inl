@@ -23,7 +23,8 @@
  */
 
 #include "Math/PDE/Functions.hpp"
-#include "Math/Integration/Functions.hpp"
+#include "Core/Functions.hpp"
+#include "Utils/Aux/Errors.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -31,92 +32,112 @@
 #include <iomanip>
 #include <utility>
 
+
 namespace uv::models::localvol
 {
     template
         <
         std::floating_point T,
-        std::size_t nT,
-        std::size_t nX,
-        typename Fn
+        std::size_t NT,
+        std::size_t NX
         >
-    Pricer<T, nT, nX, Fn>::Pricer(T t,
-        T r,
-        T F,
-        T K,
-        Fn payoff,
-        const std::array<T, nX>& xGrid)
+        template <typename F>
+    Pricer<T, NT, NX>::Pricer(F&& payoff,
+        Vector<T> r,
+        Vector<T> q,
+        T xBound
+    )
         :
-        t_(t),
-        r_(r),
-        F_(F),
-        K_(K),
-        payoff_(std::move(payoff)),
-        xGrid_(xGrid),
-        dt_(t_ / T(nT - 1)),
-        dx_(xGrid_[1] - xGrid_[0]),
-        pdfGrid_(math::pde::fokkerPlanckInit<T, nX>(T{ 0 }, xGrid_))
+        r_(r[0]),    // Constant r for now
+        q_(q[0]),    // Constant q for now
+        xGrid_(core::generateGrid<T, NX>(-xBound, xBound)),
+        cInit_(math::pde::andreasenHugeInit<T, NX, F>(xGrid_, payoff))
     {
-        // TODO: Validate inputs
-        // TODO: Set grid of strikes and tenors to price
+        // ---------- Validate ----------
+
+        UV_REQUIRE
+        (
+            xBound > 0.0,
+            ErrorCode::InvalidArgument,
+            "andreasenHugeInit: xBound must be positive"
+        );
+
+        // ---------- Precompute ----------
+        
+        // Helpers
+
+        const T dX{ (2.0 * xBound) / (NX - 1) };
+        const T invDX{ 1.0 / dX };
+        const T invDXDivTwo{0.5 * invDX};
+        const T invDXSquared{ invDX * invDX };
+        const T invDXSquaredTimesTwo{ invDXSquared * 2.0 };
+        const T lowerFactor{ invDXSquared + invDXDivTwo };
+        const T upperFactor{ invDXSquared - invDXDivTwo };
+
+        // Boundaries
+
+        const T rL{ std::exp(-dX) };
+        const T rR{ std::exp(dX) };
+
+        const T aL{ 1.0 + rL };
+        const T bL{ - rL};
+        const T aR{1.0 + rR};
+        const T bR{ -rR };
+
+        // ---------- Store ----------
+
+        ahCache_.invDXSquared = invDXSquared;
+        ahCache_.invDXSquaredTimesTwo = invDXSquaredTimesTwo;
+
+        ahCache_.lowerFactor = lowerFactor;
+        ahCache_.upperFactor = upperFactor;
+
+        ahCache_.aL = aL;
+        ahCache_.bL = bL;
+        ahCache_.aR = aR;
+        ahCache_.bR = bR;
     }
 
     template
         <
         std::floating_point T,
-        std::size_t nT,
-        std::size_t nX,
-        typename Fn
+        std::size_t NT,
+        std::size_t NX
         >
-    T Pricer<T, nT, nX, Fn>::price(T localVar)
+        Vector<T> Pricer<T, NT, NX>::price(T maturity,
+            std::span<const T> logKF,
+            std::span<const T> localVar    
+        )
     {
-        // TODO: Assume non constant localVar
-        // TODO:: derivative of vol
+        // ---------- Precompute ----------
 
-        B_.fill(T{0.5} * localVar);
-        C_.fill(T{ 0.5 } *localVar);
+        T dt{ maturity / NT };
+        T dtDivTwo{ 0.5 * dt };
 
-        // ---------- Solve Fokker-Plank PDE ----------
+        ahCache_.zLower = -dtDivTwo * ahCache_.lowerFactor;
+        ahCache_.zMiddle = dtDivTwo * ahCache_.invDXSquaredTimesTwo;
+        ahCache_.zUpper = -dtDivTwo * ahCache_.upperFactor;
 
-        math::pde::fokkerPlanckLog<Real, nT, nX>
+        // ---------- Solve PDE ----------
+
+        std::array<T, NX> test{};
+        std::copy(localVar.begin(), localVar.end(), test.begin());
+
+
+        math::pde::andreasenHugeSolve<T, NT, NX>
         (
-            pdfGrid_,
-            B_,
-            C_,
-            dt_,
-            dx_
+            c_,
+            cInit_,
+            test,
+            ahCache_
         );
 
-        // ---------- Price the payoff ----------
 
-        return std::exp(-r_ * 3.0) *
-                math::integration::trapezoidalWeighted
-                (
-                    [this] (T x) ->T
-                    {
-                        return payoff_(K_, normalizeForward_(F_) * std::exp(x));
-                    },
-                    pdfGrid_,
-                    xGrid_
-                );
-        }
-
-    template
-        <
-        std::floating_point T,
-        std::size_t nT,
-        std::size_t nX,
-        typename Fn
-        >
-    T Pricer<T, nT, nX, Fn>::normalizeForward_(T F) const noexcept
-    {
-        return F / math::integration::trapezoidalWeighted
-        (
-            [](T x) {return std::exp(x); },
-            pdfGrid_,
-            xGrid_
-        );
+        return Vector<T>(NX, 0);
     }
+
+
+
 
 
 } // namespace uv::models::localvol

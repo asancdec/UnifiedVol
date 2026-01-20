@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include "Models/LocalVol/AHCache.hpp"
+
 #include <cstddef>
 #include <concepts>
 #include <span>
@@ -32,86 +34,28 @@
 
 namespace uv::math::pde
 {
-    /**
-     * @brief Discrete initial density for Fokker–Planck evolution.
-     *
-     * Approximates a Dirac delta at x0 by assigning unit mass to the nearest node
-     * (scaled by the local step size). Requires x0 within the grid domain.
-     */
-    template <std::floating_point T, std::size_t N>
-    constexpr std::array<T, N> fokkerPlanckInit(T x0,
-        std::span<const T, N> xGrid) noexcept;
 
-    /**
-     * @brief 1D Fokker–Planck solver (Chang–Cooper + Thomas).
-     *
-     * Marches `pdfGrid` forward `nT-1` implicit steps on a uniform grid, building a
-     * Chang–Cooper tridiagonal system each step and solving it with the Thomas algorithm.
-     *
-     * Reference: Chang, J. S. & Cooper, G., "A Practical Difference Scheme for Fokker-Planck Equations",
-     * Journal of Computational Physics 6, 1–16 (1970).
-     */
-    template<std::floating_point T, std::size_t nT, std::size_t nX>
-    void fokkerPlanckSolve(std::span<T, nX> pdfGrid,
-        std::span<T, nX - 1> B,
-        std::span<T, nX - 1> C,
-        T dt,
-        T dx) noexcept;
+    template
+        <
+        std::floating_point T,
+        std::size_t N,
+        typename F
+        >
+        std::array<T, N> andreasenHugeInit(const std::array<T, N>& xGrid, F&& payoff);
 
-    /**
-     * @brief Solve a 1D Fokker–Planck system and log mass + runtime.
-     *
-     * Runs `fokkerPlanckSolve` for a log-space grid and prints a short diagnostic:
-     * total mass (trapezoidal) and elapsed time, together with nT and nX.
-     *
-     * Reference: Chang, J. S. & Cooper, G., Journal of Computational Physics 6, 1–16 (1970).
-     */
-    template<std::floating_point T, std::size_t nT, std::size_t nX>
-    void fokkerPlanckLog(std::span<T, nX> pdfGrid,
-        std::span<T, nX - 1> B,
-        std::span<T, nX - 1> C,
-        T dt,
-        T dx) noexcept;
+    template
+        <
+        std::floating_point T,
+        std::size_t NT,
+        std::size_t NX
+        >
+        void andreasenHugeSolve(std::array<T, NX>& c,
+            const std::array<T, NX>& cInit,
+            const std::array<T, NX>& localVar,
+            models::localvol::AHCache<T, NX>& aHCache);
 
     namespace detail
     {
-
-        /**
-         * @brief Compute a Chang–Cooper weight using a Taylor approximation.
-         *
-         * Uses omega = dx * B / C and a short Taylor series to avoid expensive exponentials.
-         *
-         * Reference: Chang, J. S. & Cooper, G., "A Practical Difference Scheme for Fokker-Planck Equations",
-         * Journal of Computational Physics 6, 1–16 (1970).
-         */
-        template <std::floating_point T>
-        constexpr T changCooperWeight(T B,
-            T C,
-            T dx) noexcept;
-
-        /**
-         * @brief Build Chang–Cooper tridiagonal coefficients (with reflecting boundaries) in one pass.
-         *
-         * Computes the tridiagonal diagonals `lower/middle/upper` for the Chang–Cooper
-         * discretization of a 1D Fokker–Planck operator, and applies reflective (zero-flux)
-         * boundary conditions at both ends of the grid.
-         *
-         * Weights are computed on-the-fly (rolling left/right) to avoid storing an
-         * intermediate weights array.
-         *
-         * Reference: Chang, J. S. & Cooper, G., "A Practical Difference Scheme for Fokker-Planck Equations",
-         * Journal of Computational Physics 6, 1–16 (1970).
-         */
-        template <std::floating_point T, std::size_t N>
-        void changCooperDiagonals(std::span<T, N> upper,
-            std::span<T, N> middle,
-            std::span<T, N> lower,
-            std::span<const T, N - 1> B,
-            std::span<const T, N - 1> C,
-            T dx,
-            T invdx,
-            T alpha) noexcept;
-
         /**
          * @brief Solve a tridiagonal linear system using the Thomas algorithm.
          *

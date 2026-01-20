@@ -36,6 +36,7 @@ namespace uv::core
     constexpr std::array<T, N> generateGrid(T bound1,
         T bound2) noexcept
     {
+        // Check dimensions
         static_assert(N >= 2, "generateGrid: grid must have at least 2 points");
 
         std::array<T, N> grid{};
@@ -51,6 +52,20 @@ namespace uv::core
         }
 
         return grid;
+    }
+
+    template <std::floating_point T, std::size_t N, typename F>
+    std::array<T, N> eval(std::array<T, N> grid, F&& f) noexcept
+    {
+        evalInplace<T, N, F>(grid, f);
+        return grid;
+    }
+
+    template <std::floating_point T, std::size_t N, typename F>
+    void evalInplace(std::array<T, N>& grid, F&& f) noexcept
+    {
+        for (std::size_t i{ 0 }; i < N; ++i)
+            grid[i] = f(grid[i]);
     }
 
     template <std::floating_point T>

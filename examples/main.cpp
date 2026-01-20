@@ -97,106 +97,100 @@ int main(int argc, char* argv[])
             )
         };
        
-        sviVolSurface.printTotVar();
+        sviVolSurface.printVol();
 
         // ---------- Local Volatility ----------
 
-        constexpr std::size_t nT{ 10000 };  // Time steps
-        constexpr std::size_t nX{ 10000 };  // Space steps
+        constexpr std::size_t nT{ 10 };   // Time steps
+        constexpr std::size_t nX{ 10 };   // Space steps
+        constexpr Real xBound{ 2.0 };     // log(K/F) grid bound
 
-        // Test payoff data
-        const Real t{3.0};
-        const Real r{ marketData.r };
-        const Real q{ marketData.q };
-        const Real vol{ 0.2 };
-        const Real S{ marketData.S };
-        const Real K{ S };
-        auto payoff = [](Real K, Real S) -> Real {return (S > K) ? (S - K) : Real{ 0 }; };
+        // Declare payoff function
+        // TODO: Parametrize as a function
+        auto payoff = [](Real S, Real K) -> Real { return (S > K) ? (S - K) :  0.0; };
 
         // Allocate to heap
-        auto lvPricer = std::make_unique<localvol::Pricer<Real, nT, nX, decltype(payoff)>>
-            (
-                t,
-                r,
-                S * std::exp((r - q) * t),
-                K,
-                payoff,
-                core::generateGrid<Real, nX>(-3.0, 5.0)
-            );
-
-        const Real testPrice{ lvPricer->price(vol * vol) };
-        const Real bsPrice{ math::blackScholes(t, r, q, vol, S, K) };
-        
-        UV_INFO
-        (
-            std::format
-            (
-                "[Price] LV={:.8f}  BS={:.8f} (RE={:+.6f}%)",
-                testPrice,
-                bsPrice,
-                Real{ 100 } * (testPrice / bsPrice - Real{ 1 })
-            )
+        auto lvPricer = std::make_unique<localvol::Pricer<Real, nT, nX>>
+        (   
+            payoff,
+            sviVolSurface.rates(),
+            sviVolSurface.dividends(),
+            xBound
         );
+
+        Vector<Real> localVar(nX, 0.25);
+
+        Vector<Real> callPrices
+        {
+            lvPricer->price
+            (
+                3.0,
+                sviVolSurface.logKFMatrix()[0],
+                localVar
+            )
+        };
+
+
 
         // ---------- Heston model calibration ----------
 
-        constexpr std::size_t HestonNodes{ 300 };
-        const integration::TanHSinH<Real, HestonNodes> quad{};
-        
-        heston::Pricer<Real, HestonNodes> hestonPricer
-        {
-            std::make_shared<const integration::TanHSinH<Real, HestonNodes>>(quad),
-            {
-                -2.0,   // Damping parameter ITM
-                2.0     // Damping parameter OTM
-            }
-        };
+        //constexpr std::size_t HestonNodes{ 300 };
+        //const integration::TanHSinH<Real, HestonNodes> quad{};
+        //
+        //heston::Pricer<Real, HestonNodes> hestonPricer
+        //{
+        //    std::make_shared<const integration::TanHSinH<Real, HestonNodes>>(quad),
+        //    {
+        //        -2.0,   // Damping parameter ITM
+        //        2.0     // Damping parameter OTM
+        //    }
+        //};
 
-        opt::ceres::Optimizer<5, opt::ceres::Policy
-                <
-                    ceres::HuberLoss,             
-                    ceres::LEVENBERG_MARQUARDT,   
-                    ceres::DENSE_QR               
-                >
-            > ceresOptimizer
-        { 
-            opt::ceres::Config<5>
-            {   
-                
-                1000,                                          
-                1e-16,                                        
-                1e-16,                                         
-                { "kappa", "theta", "sigma", "rho", "v0" },      
-                1e-16,                                           
-                1.0,                                               
-                false                                           
-            }
-        };
+        //opt::ceres::Optimizer<5, opt::ceres::Policy
+        //        <
+        //            ceres::HuberLoss,             
+        //            ceres::LEVENBERG_MARQUARDT,   
+        //            ceres::DENSE_QR               
+        //        >
+        //    > ceresOptimizer
+        //{ 
+        //    opt::ceres::Config<5>
+        //    {   
+        //        
+        //        1000,                                          
+        //        1e-16,                                        
+        //        1e-16,                                         
+        //        { "kappa", "theta", "sigma", "rho", "v0" },      
+        //        1e-16,                                           
+        //        1.0,                                               
+        //        false                                           
+        //    }
+        //};
 
-        hestonPricer.setParams
-        (
-            heston::calibrator::calibrate<Real>
-            (
-                sviVolSurface.tenors(),
-                sviVolSurface.strikes(),
-                sviVolSurface.forwards(),
-                sviVolSurface.rates(),
-                sviVolSurface.callPrices(),
-                hestonPricer,
-                ceresOptimizer
-            )
-        );
+        //hestonPricer.setParams
+        //(
+        //    heston::calibrator::calibrate<Real>
+        //    (
+        //        sviVolSurface.tenors(),
+        //        sviVolSurface.strikes(),
+        //        sviVolSurface.forwards(),
+        //        sviVolSurface.rates(),
+        //        sviVolSurface.callPrices(),
+        //        hestonPricer,
+        //        ceresOptimizer
+        //    )
+        //);
 
-        const VolSurface<Real> hestonVolSurface
-        { 
-            heston::calibrator::buildSurface<Real>
-            (
-                sviVolSurface, 
-                hestonPricer
-            ) 
-        };
+        //const VolSurface<Real> hestonVolSurface
+        //{ 
+        //    heston::calibrator::buildSurface<Real>
+        //    (
+        //        sviVolSurface, 
+        //        hestonPricer
+        //    ) 
+        //};
 
-        hestonVolSurface.printVol();
+        //hestonVolSurface.printVol();
 
         // ---------- Outputs ----------
 

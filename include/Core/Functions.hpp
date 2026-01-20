@@ -43,6 +43,22 @@ namespace uv::core
         T bound2) noexcept;
 
     /**
+     * @brief Evaluate a function on an array
+     *
+     * Returns a copy of the evaluated array
+     */
+    template <std::floating_point T, std::size_t N, typename F>
+    std::array<T, N> eval(std::array<T, N> grid, F&& f) noexcept;
+
+    /**
+     * @brief Evaluate a function in-place on an array
+     *
+     * Returns the same modified array
+     */
+    template <std::floating_point T, std::size_t N, typename F>
+    void evalInplace(std::array<T, N>& grid, F&& f) noexcept;
+
+    /**
      * @brief Accumulate the elements in a span
      *
      * Returns the sum of the elements
