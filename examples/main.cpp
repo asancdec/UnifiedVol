@@ -97,13 +97,13 @@ int main(int argc, char* argv[])
             )
         };
        
-        sviVolSurface.printVol();
+        sviVolSurface.printBSCall();
 
         // ---------- Local Volatility ----------
 
-        constexpr std::size_t nT{ 10 };   // Time steps
-        constexpr std::size_t nX{ 10 };   // Space steps
-        constexpr Real xBound{ 2.0 };     // log(K/F) grid bound
+        constexpr std::size_t nT{ 100 };    // Time steps
+        constexpr std::size_t nX{ 1000 };   // Space steps
+        constexpr Real xBound{ 2.5 };       // log(K/F) grid bound
 
         // Declare payoff function
         // TODO: Parametrize as a function
@@ -113,22 +113,35 @@ int main(int argc, char* argv[])
         auto lvPricer = std::make_unique<localvol::Pricer<Real, nT, nX>>
         (   
             payoff,
-            sviVolSurface.rates(),
-            sviVolSurface.dividends(),
             xBound
         );
 
-        Vector<Real> localVar(nX, 0.25);
 
-        Vector<Real> callPrices
+        Vector<Real> localVar(
+            nX, 
+            sviVolSurface.volMatrix()[10][2] * sviVolSurface.volMatrix()[10][2]
+        );
+
+        Real callPrice
         {
             lvPricer->price
             (
-                3.0,
-                sviVolSurface.logKFMatrix()[0],
-                localVar
+                sviVolSurface.tenors().back(),
+                sviVolSurface.forwards().back(),
+                sviVolSurface.discountFactors().back(),
+                sviVolSurface.logKFMatrix()[sviVolSurface.logKFMatrix().rows() - 1][2],
+                localVar               
             )
         };
+
+
+        std::cout << std::fixed << std::setprecision(10);
+
+
+
+        std::cout << callPrice << '\n';
+        std::cout << sviVolSurface.callPrices()[10][2] << '\n';
+
 
 
 

@@ -32,6 +32,7 @@
 #include <iterator>
 #include <string>
 #include <format>
+#include <utility>
 
 namespace uv::math::pde
 {   
@@ -41,7 +42,7 @@ namespace uv::math::pde
         std::size_t N,
         typename F
     >
-        std::array<T, N> andreasenHugeInit(const std::array<T, N>& xGrid, F&& payoff)
+    std::array<T, N> andreasenHugeInit(const std::array<T, N>& xGrid, F&& payoff)
     {
         // ---------- Bind to log-space ----------
 
@@ -65,24 +66,91 @@ namespace uv::math::pde
         std::size_t NT,
         std::size_t NX
         >
-        void andreasenHugeSolve(std::array<T, NX>& c,
-            const std::array<T, NX>& cInit,
-            const std::array<T, NX>& localVar,
-            models::localvol::AHCache<T, NX>& aHCache)
+    void andreasenHugeSolve(std::array<T, NX>& c,
+        const std::array<T, NX>& localVar,
+        models::localvol::AHCache<T, NX>& aHCache)
     {
 
-        // Write the initial values into the buffer
-        c = cInit;
+        // ---------- Validate ----------
 
-        //for (std::size_t i{ 0 }; i < NT; ++i)
-        //{
-        //    lower = localVar;
+        static_assert(NX >= 4, "Needs at least 4 grid points for boundaries.");
 
-        //}
+        // ---------- Precompute ----------
+
+        constexpr std::size_t innerNX{ NX - 2 };
+
+        // ---------- Extract ----------
+
+        const T aL{ aHCache.aL };
+        const T bL{ aHCache.bL };
+        const T aR{ aHCache.aR };
+        const T bR{ aHCache.bR };
+
+        const T zLower{ aHCache.zLower };
+        const T zMiddle{ aHCache.zMiddle };
+        const T zUpper{ aHCache.zUpper };
+
+        std::array<T, NX - 2>& scratch { aHCache.scratch };
+        std::array<T, NX - 2>& lower { aHCache.lower };
+        std::array<T, NX - 2>& middle { aHCache.middle };
+        std::array<T, NX - 2>& upper { aHCache.upper};
+
+        T& lowerFirst{ lower.front()};
+        T& middleFirst { middle.front()};
+        T& upperFirst { upper.front()};
+
+        T& lowerLast { lower.back()};
+        T& middleLast { middle.back()};
+        T& upperLast { upper.back()};
+
+        std::span<T, NX - 2> cInner{ c.data() + 1, NX - 2};
+
+        // Temp
+        T var{localVar[0]};
+
+        // ---------- Calculate ----------
+
+        for (std::size_t i{ 0 }; i < NT; ++i)
+        {
+            // Inner coefficients
+
+            // TODO: Fuse in one loop
+            for (std::size_t j{ 0 }; j < innerNX; ++j)
+            {
+                lower[j] = zLower * var;
+                middle[j] = zMiddle * var + 1.0;
+                upper[j] = zUpper * var;
+            }
+
+            // Left boundary
+            // NOTE: lowerFirst does not enter the Thomas solver
+
+            middleFirst += lowerFirst * aL;
+            upperFirst += lowerFirst * bL;
+
+
+            // Right boundary
+            // NOTE: upperLast does not enter the Thomas solver
+
+            lowerLast += upperLast * bR;
+            middleLast += upperLast * aR;
+            
+            // Solve tridiagonal matrix
+            detail::thomasSolve<T, NX - 2>
+            (
+                cInner,
+                upper, 
+                middle, 
+                lower, 
+                scratch
+            );
+        }
+
+        // Explicit Neumann conditions (zero-curvature)
+
+        c.front() = aL * c[1] + bL * c[2];
+        c.back() = aR * c[NX - 2] + bR * c[NX - 3];
     }
-
-
-
 } // namespace uv::math::pde
 
 namespace uv::math::pde::detail
@@ -111,7 +179,7 @@ namespace uv::math::pde::detail
         {
             // Precompute
             const T lowerI{ lower[i] };
-            const T invDenom{ T{1} / (middle[i] - lowerI * scratch[i - 1]) };
+            const T invDenom{ 1.0 / (middle[i] - lowerI * scratch[i - 1]) };
 
             if (i < N - 1)
             {
@@ -120,7 +188,7 @@ namespace uv::math::pde::detail
             x[i] = (x[i] - lowerI * x[i - 1]) * invDenom;
         }
 
-        for (std::size_t i = N - 1; i-- > 0; )
+        for (std::size_t i = N - 1; i-- > 0;)
         {
             x[i] -= scratch[i] * x[i + 1];
         }

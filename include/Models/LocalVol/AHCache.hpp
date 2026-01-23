@@ -5,7 +5,8 @@
  * Created:     2026-01-20
  *
  * Description:
- *   [Brief description of what this file declares or implements.]
+ *   Cache and reusable buffers for the Andreasen–Huge (AH) forward PDE solver
+ *   on a uniform x-grid (log-moneyness / log-forward-moneyness).
  *
  * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
@@ -29,32 +30,56 @@
 
 namespace uv::models::localvol
 {
-    template <std::floating_point T, std::size_t NX>
+    //--------------------------------------------------------------------------
+    /**
+     * @brief Cached coefficients and work buffers for the Andreasen–Huge PDE step.
+     *
+     * @details
+     * Internal cache used by the Andreasen–Huge solver to avoid recomputing
+     * grid-dependent constants and to reuse tridiagonal work buffers.
+     *
+     * The normalized call price C(x,t) is advanced on a uniform x-grid using a
+     * Crank–Nicolson scheme, resulting in a tridiagonal system solved in-place
+     * via a Thomas algorithm.
+     *
+     * Simple linear boundary closures are applied at the first and last grid
+     * points:
+     *
+     *   C_0     = aL*C_1     + bL*C_2
+     *   C_{N-1} = aR*C_{N-2} + bR*C_{N-3}
+     *
+     * Grid-dependent terms are computed once in the pricer constructor, while
+     * time-step-dependent coefficients are updated per maturity.
+     */
+    template <std::floating_point T, std::size_t N>
     struct AHCache
     {
-        // ---------- Precomputed variables ----------
+        // ---------- Grid-dependent constants (set once) ----------
 
-        T invDXSquared{};
-        T invDXSquaredTimesTwo{};
+        T invDXSquared{};          ///< 1 / dx^2, where dx is the uniform x-grid spacing.
+        T invDXSquaredTimesTwo{};  ///< 2 / dx^2 (precomputed to avoid repeated multiply).
 
-        T lowerFactor{};
-        T upperFactor{};
+        T lowerFactor{};           ///< (1/dx^2 + 1/(2dx)) factor used in lower diagonal assembly.
+        T upperFactor{};           ///< (1/dx^2 - 1/(2dx)) factor used in upper diagonal assembly.
 
-        T aL{};
-        T bL{};
-        T aR{};
-        T bR{};
+        // ---------- Boundary closure coefficients (set once) ----------
 
-        T zLower{};
-        T zMiddle{};
-        T zUpper{};
+        T aL{};                    ///< Left boundary: C_0 = aL*C_1 + bL*C_2.
+        T bL{};                    ///< Left boundary: C_0 = aL*C_1 + bL*C_2.
+        T aR{};                    ///< Right boundary: C_{N-1} = aR*C_{N-2} + bR*C_{N-3}.
+        T bR{};                    ///< Right boundary: C_{N-1} = aR*C_{N-2} + bR*C_{N-3}.
 
-        // ---------- Buffers ----------
+        // ---------- Time-step coefficients (update per dt) ----------
 
-        std::array<T, NX - 2 > scratch{};
-        std::array<T, NX - 2 > lower{};
-        std::array<T, NX - 2 > middle{};
-        std::array<T, NX - 2 > upper{};
+        T zLower{};                ///< zLower  = -(dt/2) * lowerFactor.
+        T zMiddle{};               ///< zMiddle =  (dt/2) * (2/dx^2).
+        T zUpper{};                ///< zUpper  = -(dt/2) * upperFactor.
 
+        // ---------- Work buffers (reused every time step) ----------
+
+        std::array<T, N - 2> scratch{}; ///< Thomas scratch buffer (e.g. modified upper or temp).
+        std::array<T, N - 2> lower{};   ///< Tridiagonal lower diagonal (interior nodes only).
+        std::array<T, N - 2> middle{};  ///< Tridiagonal main diagonal (interior nodes only).
+        std::array<T, N - 2> upper{};   ///< Tridiagonal upper diagonal (interior nodes only).
     };
 } // namespace uv::models::localvol

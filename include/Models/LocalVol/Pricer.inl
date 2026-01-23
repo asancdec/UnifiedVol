@@ -23,6 +23,7 @@
  */
 
 #include "Math/PDE/Functions.hpp"
+#include "Math/Interpolation/Policies.hpp"
 #include "Core/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
 
@@ -36,22 +37,20 @@
 namespace uv::models::localvol
 {
     template
-        <
+    <
         std::floating_point T,
         std::size_t NT,
         std::size_t NX
-        >
-        template <typename F>
-    Pricer<T, NT, NX>::Pricer(F&& payoff,
-        Vector<T> r,
-        Vector<T> q,
+    >
+    template <typename F>
+    Pricer<T, NT, NX>::Pricer
+    (
+        F&& payoff,
         T xBound
     )
         :
-        r_(r[0]),    // Constant r for now
-        q_(q[0]),    // Constant q for now
         xGrid_(core::generateGrid<T, NX>(-xBound, xBound)),
-        cInit_(math::pde::andreasenHugeInit<T, NX, F>(xGrid_, payoff))
+        cInit_(math::pde::andreasenHugeInit<T, NX>(xGrid_, std::forward<F>(payoff)))
     {
         // ---------- Validate ----------
 
@@ -99,15 +98,17 @@ namespace uv::models::localvol
     }
 
     template
-        <
-        std::floating_point T,
-        std::size_t NT,
-        std::size_t NX
-        >
-        Vector<T> Pricer<T, NT, NX>::price(T maturity,
-            std::span<const T> logKF,
-            std::span<const T> localVar    
-        )
+    <
+    std::floating_point T,
+    std::size_t NT,
+    std::size_t NX
+    >
+    Vector<T> Pricer<T, NT, NX>::priceNormalized
+    (
+        T maturity,
+        std::span<const T> logKF,
+        std::span<const T> localVar    
+    )
     {
         // ---------- Precompute ----------
 
@@ -118,22 +119,98 @@ namespace uv::models::localvol
         ahCache_.zMiddle = dtDivTwo * ahCache_.invDXSquaredTimesTwo;
         ahCache_.zUpper = -dtDivTwo * ahCache_.upperFactor;
 
-        // ---------- Solve PDE ----------
+        // ---------- Solve ----------
 
+        // Write the initial values into the buffer
+        c_ = cInit_;
+
+        // Temp
         std::array<T, NX> test{};
         std::copy(localVar.begin(), localVar.end(), test.begin());
-
 
         math::pde::andreasenHugeSolve<T, NT, NX>
         (
             c_,
-            cInit_,
             test,
             ahCache_
         );
 
+        // ---------- Interpolate ----------
 
-        return Vector<T>(NX, 0);
+        return math::interp::PchipInterpolator<T>{}
+        (
+            logKF,
+            xGrid_,
+            c_
+        );
+    }
+
+    template
+    <
+        std::floating_point T,
+        std::size_t NT,
+        std::size_t NX
+    >
+    Vector<T> Pricer<T, NT, NX>::price
+    (
+        T maturity,
+        T forward,
+        T discountFactor,
+        std::span<const T> logKF,
+        std::span<const T> localVar
+    )
+    {
+        // ---------- Price ----------
+
+        Vector <T> cNormalized
+        { 
+            priceNormalized
+            (
+                maturity,
+                logKF,
+                localVar            
+            ) 
+        };
+
+        // ---------- Transform ----------
+
+        return core::multiply<T>
+        (
+            cNormalized,
+            forward * discountFactor
+        );
+    }
+
+    template
+    <
+        std::floating_point T,
+        std::size_t NT,
+        std::size_t NX
+    >
+    T Pricer<T, NT, NX>::price
+    (
+        T maturity,
+        T forward, 
+        T discountFactor,
+        T logKF,
+        std::span<const T> localVar
+    )
+    {
+        // Helper
+        const std::array<T, 1> x{ logKF };
+
+        return price
+        (
+            maturity,
+            forward,
+            discountFactor,
+            std::span<const T>
+            {
+                x.data(),
+                x.size()
+            },
+            localVar
+        ).front();
     }
 
 

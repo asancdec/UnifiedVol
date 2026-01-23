@@ -57,29 +57,36 @@ namespace uv::core
         // Member variables
         //--------------------------------------------------------------------------
 
-        Vector<T> tenors_;        ///< Tenors (years), one per surface row.
-        std::size_t numTenors_;   ///< Number of tenors (rows).
+        Vector<T> tenors_;          ///< Tenors (years), one per surface row.
+        std::size_t numTenors_;     ///< Number of tenors (rows).
 
-        Vector<T> mny_;           ///< Moneyness grid (%S), one per surface column.
-        std::size_t numStrikes_;  ///< Number of strikes/moneyness points (cols).
+        Vector<T> mny_;             ///< Moneyness grid (%S), one per surface column.
+        std::size_t numStrikes_;    ///< Number of strikes/moneyness points (cols).
 
-        Matrix<T> volMatrix_;     ///< Implied vols [tenor][strike].
+        Matrix<T> volMatrix_;       ///< Implied vols [tenor][strike].
 
-        T S_;                     ///< Spot price.
-        Vector<T> rates_;         ///< Risk-free rates per tenor (flat per row).
-        Vector<T> dividends_;     ///< Dividend yields per tenor (flat per row).
+        T S_;                       ///< Spot price.
+        Vector<T> rates_;           ///< Risk-free rates per tenor (flat for row).
+        Vector<T> dividends_;       ///< Dividend yields per tenor (flat for row).
 
-        Vector<T> strikes_;       ///< Strike grid derived from mny_ and S_.
-        Vector<T> forwards_;      ///< Forward prices per tenor.
+        Vector<T> strikes_;         ///< Strike grid derived from mny_ and S_.
+        Vector<T> discountFactors_; ///< Discount factors per tenor.
+        Vector<T> forwards_;        ///< Forward prices per tenor.
 
-        Matrix<T> callPrices_;    ///< Black–Scholes call prices [tenor][strike].
-        Matrix<T> logKFMatrix_;   ///< log(F/K) values [tenor][strike] (or header row).
-        Matrix<T> totVarMatrix_;  ///< Total variance w = vol^2 * T [tenor][strike].
+        Matrix<T> callPrices_;      ///< Black–Scholes call prices [tenor][strike].
+        Matrix<T> logKFMatrix_;     ///< log(F/K) values [tenor][strike] (or header row).
+        Matrix<T> totVarMatrix_;    ///< Total variance w = vol^2 * T [tenor][strike].
 
         //--------------------------------------------------------------------------
         // Internal helpers
         //--------------------------------------------------------------------------
 
+         /**
+         * @brief Compute discountFactors_ from rates_, dividends_, and tenors_.
+         *
+         * DF_i = exp(-r_i * T_i)
+         */
+        void setDiscountFactors_() noexcept;
         /**
          * @brief Compute forwards_ from S_, rates_, dividends_, and tenors_.
          *
@@ -175,6 +182,7 @@ namespace uv::core
         const Vector<T>& rates() const noexcept;
         const Vector<T>& dividends() const noexcept;
         const Vector<T>& strikes() const noexcept;
+        const Vector<T>& discountFactors() const noexcept;
         const Vector<T>& forwards() const noexcept;
         const Matrix<T>& callPrices() const noexcept;
         const Matrix<T>& logKFMatrix() const noexcept;
@@ -208,9 +216,9 @@ namespace uv::core
          * @param valuePrec Decimal precision for matrix values.
          * @param mnyFlag   If true, header is moneyness; otherwise header is log(F/K).
          */
-        void printBSCall(unsigned int valuePrec = 5,
+        void printBSCall(unsigned int valuePrec = 3,
             bool mnyFlag = true) const noexcept;
     };
-}
+}  // namespace uv::core
 
 #include "VolSurface.inl"

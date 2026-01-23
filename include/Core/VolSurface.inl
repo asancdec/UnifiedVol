@@ -51,6 +51,7 @@ namespace uv::core
         dividends_(numTenors_, mktData.q),      // Constant dividends for now
         strikes_(numStrikes_),
         forwards_(numTenors_),
+        discountFactors_(numTenors_),
         callPrices_(numTenors_, numStrikes_),
         logKFMatrix_(numTenors_, numStrikes_),
         totVarMatrix_(numTenors_, numStrikes_)
@@ -59,10 +60,20 @@ namespace uv::core
         // ---------- Initialize member variables ---------- 
 
         strikes_ = core::multiply<T>(mny_, S_);
+        setDiscountFactors_();
         setForwards_();
         setCallPrices_();
         setLogKFMatrix_();
         setTotVar_(volMatrix_);
+    }
+
+    template <std::floating_point T>
+    void VolSurface<T>::setDiscountFactors_() noexcept
+    {
+        for (std::size_t i = 0; i < numTenors_; ++i)
+        {
+            discountFactors_[i] = std::exp(-rates_[i] * tenors_[i]);
+        }
     }
 
     template <std::floating_point T>
@@ -222,6 +233,12 @@ namespace uv::core
     const Vector<T>& VolSurface<T>::dividends() const noexcept
     {
         return dividends_;
+    }
+
+    template <std::floating_point T>
+    const Vector<T>& VolSurface<T>::discountFactors() const noexcept
+    {
+        return discountFactors_;
     }
 
     template <std::floating_point T>

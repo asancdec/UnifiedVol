@@ -35,24 +35,19 @@
 namespace uv::models::localvol
 {
 	template
-		<
+	<
 		std::floating_point T,
 		std::size_t NT,
 		std::size_t NX
-		>
-		class Pricer
+	>
+	class Pricer
 	{
 	private:
 
-		// Market data
-		T r_;
-		T q_;
-
 		// Grids
 		std::array<T, NX> xGrid_;
-		std::array<T, NX> c_;
 		std::array<T, NX> cInit_;
-
+		std::array<T, NX> c_;
 
 		// Cached variables and buffers
 		AHCache<T, NX> ahCache_{};
@@ -62,14 +57,34 @@ namespace uv::models::localvol
 		Pricer() = delete;
 
 		template <typename F>
-		Pricer(F&& payoff,
-			Vector<T> r,
-			Vector<T> q,
+		Pricer
+		(
+			F&& payoff,
 			T xBound
 		);
 
-		Vector<T> price(T maturity,
+		Vector<T> priceNormalized
+		(
+			T maturity,
 			std::span<const T> logKF,
+			std::span<const T> localVar
+		);
+
+		Vector<T> price
+		(
+			T maturity,
+			T forward,
+			T discountFactor,
+			std::span<const T> logKF,
+			std::span<const T> localVar
+		);
+
+		T price
+		(
+			T maturity,
+			T forward,
+			T discountFactor,
+			T logKF,
 			std::span<const T> localVar
 		);
 

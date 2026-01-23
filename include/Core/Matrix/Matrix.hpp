@@ -48,7 +48,7 @@ namespace uv::core
 	{
 	private:
 
-		// ----------Member variables ----------
+		// ---------- Member variables ----------
 
 		std::size_t numRows_;
 		std::size_t numCols_;
@@ -73,7 +73,7 @@ namespace uv::core
 		 */
 		Matrix(std::size_t numRows,
 			std::size_t numCols,
-			T val = T(0)) noexcept;
+			T val = 0.0) noexcept;
 
 		// ---------- Unary operators ----------
 

@@ -156,16 +156,16 @@ namespace uv::math
      * the Black–Scholes model with continuous dividend yield:
      *
      *   Call:
-     *      C = S e^{-q t} Φ(d1) − K e^{-r t} Φ(d2)
+     *      C = S e^{-q t} psi(d1) − K e^{-r t} psi(d2)
      *
      *   Put:
-     *      P = K e^{-r t} Φ(-d2) − S e^{-q t} Φ(-d1)
+     *      P = K e^{-r t} psi(-d2) − S e^{-q t} psi(-d1)
      *
      * @tparam T   Floating-point type.
      * @param t    Time to maturity (years).
      * @param r    Risk-free rate (continuous compounding).
      * @param q    Dividend yield (continuous compounding).
-     * @param vol  Volatility σ.
+     * @param vol  Volatility sog,a.
      * @param S    Spot price.
      * @param K    Strike price.
      * @param isCall True for call, false for put.
@@ -182,7 +182,7 @@ namespace uv::math
         bool isCall = true) noexcept;
 
     /**
-     * @brief Black–Scholes Vega (∂Price / ∂σ).
+     * @brief Black–Scholes Vega (dPrice / dsigma).
      *
      * Computes:
      *      Vega = S e^{-q t} φ(d1) sqrt(t).

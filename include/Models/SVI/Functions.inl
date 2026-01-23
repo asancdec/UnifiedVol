@@ -5,7 +5,7 @@
  * Created:     2025-12-08
  *
  * Description:
- *   [Brief description of what this file declares or implements.]
+ *   Inline definitions for SVI calibration and fitted surface generation.
  *
  * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
@@ -22,7 +22,7 @@
  * limitations under this License.
  */
 
-#include "Math/Interpolation.hpp"
+#include "Math/Interpolation/Policies.hpp"
 #include "Core/Matrix/Functions.hpp"
 #include "Core/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
@@ -293,7 +293,7 @@ namespace uv::models::svi::detail
     {
         // ---------- Calculate  ----------
 
-        const double atmWK{ math::interp::pchipInterp<double>(0.0, kSlice, wKSlice) };
+        const double atmWK{ math::interp::PchipInterpolator<double>{}(0.0, kSlice, wKSlice) };
         const double logKFMin{ core::minValue(kSlice) };
         const double logKFMax{ core::maxValue(kSlice) };
 

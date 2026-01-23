@@ -41,7 +41,7 @@ namespace uv::math::pde
         std::size_t N,
         typename F
         >
-        std::array<T, N> andreasenHugeInit(const std::array<T, N>& xGrid, F&& payoff);
+    std::array<T, N> andreasenHugeInit(const std::array<T, N>& xGrid, F&& payoff);
 
     template
         <
@@ -49,10 +49,9 @@ namespace uv::math::pde
         std::size_t NT,
         std::size_t NX
         >
-        void andreasenHugeSolve(std::array<T, NX>& c,
-            const std::array<T, NX>& cInit,
-            const std::array<T, NX>& localVar,
-            models::localvol::AHCache<T, NX>& aHCache);
+    void andreasenHugeSolve(std::array<T, NX>& c,
+        const std::array<T, NX>& localVar,
+        models::localvol::AHCache<T, NX>& aHCache);
 
     namespace detail
     {
@@ -74,6 +73,7 @@ namespace uv::math::pde
             std::span<const T, N> middle,
             std::span<const T, N> lower,
             std::span<T, N> scratch) noexcept;
+
 
     } // namespace detail
 

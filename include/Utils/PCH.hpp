@@ -5,7 +5,9 @@
  * Created:     2025-12-08
  *
  * Description:
- *   [Brief description of what this file declares or implements.]
+ *   Project precompiled header (PCH) that centralizes frequently used core,
+ *   model, math, and optimization headers—including Ceres and NLopt—to reduce
+ *   compile times and provide a single common include for implementation files.
  *
  * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
@@ -25,11 +27,13 @@
 #pragma once
 
 // ---------- Core I/O ----------
+
 #include "Utils/IO/CSV/Functions.hpp"
 #include "Utils/IO/Log.hpp"
 #include "Utils/Aux/StopWatch.hpp"
 
 // ---------- Core Data ----------
+
 #include "Core/VolSurface.hpp"
 #include "Core/MarketData.hpp"
 #include "Core/Matrix/Matrix.hpp"
@@ -37,6 +41,7 @@
 #include "Core/Types.hpp"
 
 // ---------- Models ----------
+
 #include "Models/SVI/Functions.hpp"
 #include "Models/SVI/Params.hpp"
 #include "Models/LocalVol/Pricer.hpp"
@@ -45,19 +50,23 @@
 #include "Models/Heston/Calibrator.hpp"
 
 // ---------- Utils ----------
+
 #include "Utils/Aux/Errors.hpp"
 
 // ---------- Math ----------
+
 #include "Math/Integration/TanHSinH.hpp"
 #include "Math/Optimization/Ceres/Policy.hpp"
 #include "Math/Optimization/Ceres/Config.hpp"
 
 // ---------- Third-party ----------
+
 #include <ceres/loss_function.h>
 #include <ceres/types.h>
 #include <nlopt.hpp>
 
 // ---------- STL ----------
+
 #include <ratio>
 #include <cstdlib>
 #include <exception>
