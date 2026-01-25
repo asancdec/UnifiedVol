@@ -30,253 +30,332 @@
 #include <concepts>
 
 namespace uv::math::interp
-{	
-	/**
-	 * @brief Policy for generating monotone PCHIP first derivatives.
-	 *
-	 * Guarantees that all users of this policy compute node derivatives
-	 * using the same PCHIP scheme. Implementation is delegated to
-	 * detail:: namespace.
-	 */
-	template <std::floating_point T>
-    struct PchipDerivatives
+{
+    /**
+     * @brief Concept: policy provides node-derivative computation.
+     *
+     * Requires a member function:
+     * `void derivatives(xs, ys, dydx, doValidate)`.
+     *
+     * @tparam D Policy type.
+     * @tparam T Value type.
+     */
+    template<class D, class T>
+    concept HasDerivatives = requires
+    (
+        const D& d,
+        std::span<const T> xs,
+        std::span<const T> ys,
+        std::span<T> dydx,
+        bool doValidate
+    )
     {
-		Vector<T> operator()
-		(
-			std::span<const T> xs,
-			std::span<const T> ys,
-			bool doValidate = true
-	    ) const;
+        { d.derivatives(xs, ys, dydx, doValidate) } -> std::same_as<void>;
     };
 
-	/**
-	 * @brief Policy for evaluating cubic Hermite interpolation.
-	 *
-	 * Guarantees consistent Hermite interpolation given precomputed
-	 * node derivatives. Actual evaluation logic is implemented in
-	 * the detail:: namespace.
-	 */
-    template <std::floating_point T>
-    struct HermiteInterpolator
+    /**
+     * @brief Concept: policy provides spline evaluation given node derivatives.
+     *
+     * Requires a member function:
+     * `void evaluate(x, xs, ys, dydx, y, doValidate)`.
+     *
+     * @tparam D Policy type.
+     * @tparam T Value type.
+     */
+    template <class D, class T>
+    concept HasEvaluate = requires
+    (
+        const D& d,
+        std::span<const T> x,
+        std::span<const T> xs,
+        std::span<const T> ys,
+        std::span<const T> dydx,
+        std::span<T> y,
+        bool doValidate
+    )
     {
-		Vector<T> operator()
-		(
-			std::span<const T> x,
-			std::span<const T> xs,
-			std::span<const T> ys,
-			std::span<const T> dydx,
-			bool doValidate = true
-		) const;
+        { d.evaluate(x, xs, ys, dydx, y, doValidate) } -> std::same_as<void>;
     };
 
-	/**
-	 * @brief Policy for PCHIP interpolation.
-	 *
-	 * Combines PCHIP derivative construction and Hermite evaluation to
-	 * ensure a consistent, shape-preserving interpolation scheme across
-	 * all consumers. The numerical details are implemented in detail:: 
-	 * namespace.
-	 */
-    template <std::floating_point T>
-    struct PchipInterpolator
+    /**
+     * @brief CRTP base for derivative-computation policies.
+     *
+     * Provides:
+     * - `operator()(xs, ys)` returning a fresh derivative vector.
+     * - `operator()(xs, ys, dydx)` filling a provided buffer.
+     *
+     * @tparam Derived Concrete policy type (CRTP).
+     * @tparam T Floating-point type.
+     */
+    template<class Derived, std::floating_point T>
+    struct Derivatives
     {
+        /**
+         * @brief Compute node derivatives and return them as a vector.
+         *
+         * @param xs Knot locations (strictly increasing).
+         * @param ys Knot values.
+         * @param doValidate If true, validates inputs and throws on error.
+         * @return Vector of size `xs.size()` with derivatives at knots.
+         */
+        Vector<T> operator()
+        (
+            std::span<const T> xs,
+            std::span<const T> ys,
+            bool doValidate = true
+        ) const
+            requires HasDerivatives<Derived, T>;
+
+        /**
+         * @brief Compute node derivatives into a caller-provided buffer.
+         *
+         * @param xs Knot locations (strictly increasing).
+         * @param ys Knot values.
+         * @param dydx Output buffer (size `xs.size()`).
+         * @param doValidate If true, validates inputs and throws on error.
+         */
+        void operator()
+        (
+            std::span<const T> xs,
+            std::span<const T> ys,
+            std::span<T> dydx,
+            bool doValidate = true
+        ) const
+            requires HasDerivatives<Derived, T>;
+    };
+
+    /**
+     * @brief PCHIP derivative policy (shape-preserving).
+     *
+     * Computes knot derivatives suitable for monotone/shape-preserving
+     * cubic Hermite interpolation.
+     *
+     * @tparam T Floating-point type.
+     */
+    template <std::floating_point T>
+    struct PchipDerivatives : Derivatives<PchipDerivatives<T>, T>
+    {
+        /**
+         * @brief Compute PCHIP knot derivatives.
+         *
+         * @param xs Knot locations.
+         * @param ys Knot values.
+         * @param dydx Output buffer for derivatives (size `xs.size()`).
+         * @param doValidate If true, validates inputs and throws on error.
+         */
+        void derivatives
+        (
+            std::span<const T> xs,
+            std::span<const T> ys,
+            std::span<T> dydx,
+            bool doValidate
+        ) const;
+    };
+
+    /**
+     * @brief CRTP base for evaluation policies.
+     *
+     * Provides:
+     * - vector evaluation `operator()(x, xs, ys, dydx)`
+     * - in-place evaluation `operator()(x, xs, ys, dydx, y)`
+     * - scalar evaluation `operator()(x0, xs, ys, dydx)`
+     *
+     * @tparam Derived Concrete policy type (CRTP).
+     * @tparam T Floating-point type.
+     */
+    template<class Derived, std::floating_point T>
+    struct Evaluate
+    {
+        /**
+         * @brief Evaluate interpolant at multiple points (allocates output).
+         *
+         * @param x Query points.
+         * @param xs Knot locations.
+         * @param ys Knot values.
+         * @param dydx Knot derivatives.
+         * @param doValidate If true, validates inputs and throws on error.
+         * @return Values at `x` (size `x.size()`).
+         */
         Vector<T> operator()
         (
             std::span<const T> x,
             std::span<const T> xs,
             std::span<const T> ys,
+            std::span<const T> dydx,
             bool doValidate = true
-        ) const;
+        ) const
+            requires HasEvaluate<Derived, T>;
 
+        /**
+         * @brief Evaluate interpolant at multiple points into a buffer.
+         *
+         * @param x Query points.
+         * @param xs Knot locations.
+         * @param ys Knot values.
+         * @param dydx Knot derivatives.
+         * @param y Output buffer (size `x.size()`).
+         * @param doValidate If true, validates inputs and throws on error.
+         */
+        void operator()
+        (
+            std::span<const T> x,
+            std::span<const T> xs,
+            std::span<const T> ys,
+            std::span<const T> dydx,
+            std::span<T> y,
+            bool doValidate = true
+        ) const
+            requires HasEvaluate<Derived, T>;
+
+        /**
+         * @brief Evaluate interpolant at a single point.
+         *
+         * @param x Query point.
+         * @param xs Knot locations.
+         * @param ys Knot values.
+         * @param dydx Knot derivatives.
+         * @param doValidate If true, validates inputs and throws on error.
+         * @return Interpolated value at `x`.
+         */
         T operator()
         (
             T x,
             std::span<const T> xs,
             std::span<const T> ys,
+            std::span<const T> dydx,
             bool doValidate = true
+        ) const
+            requires HasEvaluate<Derived, T>;
+    };
+
+    /**
+     * @brief Cubic Hermite spline evaluation policy.
+     *
+     * Evaluates a cubic Hermite interpolant given knots (xs, ys)
+     * and knot derivatives (dydx).
+     *
+     * @tparam T Floating-point type.
+     */
+    template<std::floating_point T>
+    struct HermiteEval : Evaluate<HermiteEval<T>, T>
+    {
+        /**
+         * @brief Evaluate cubic Hermite spline at points x.
+         *
+         * @param x Query points.
+         * @param xs Knot locations.
+         * @param ys Knot values.
+         * @param dydx Knot derivatives.
+         * @param y Output buffer (size `x.size()`).
+         * @param doValidate If true, validates inputs and throws on error.
+         */
+        void evaluate
+        (
+            std::span<const T> x,
+            std::span<const T> xs,
+            std::span<const T> ys,
+            std::span<const T> dydx,
+            std::span<T> y,
+            bool doValidate
         ) const;
     };
 
-	namespace detail
-	{	
-		/**
-		 * @brief Piecewise cubic Hermite interpolation (PCHIP) for multiple query points.
-		 *
-		 * Computes PCHIP node derivatives from (xs, ys) and evaluates the resulting
-		 * Hermite spline at query points x. Uses flat extrapolation outside
-		 * [xs.front(), xs.back()].
-		 *
-		 * Requirements:
-		 * - xs is strictly increasing
-		 * - xs.size() == ys.size() >= 2
-		 *
-		 * Complexity:
-		 * - O(N) to compute derivatives, O(M log N) to evaluate (binary search)
-		 *
-		 * @tparam T Floating-point type.
-		 * @param x Query points.
-		 * @param xs Strictly increasing knot locations.
-		 * @param ys Knot values corresponding to xs.
-		 * @param doValidate If true, validate inputs and throw on invalid data.
-		 * @return Interpolated values at each point in x.
-		 */
-		template <std::floating_point T>
-		Vector<T> pchipInterp(std::span<const T> x,
-			std::span<const T> xs,
-			std::span<const T> ys,
-			bool doValidate);
+    namespace detail
+    {
+        /**
+         * @brief Core cubic Hermite spline implementation.
+         *
+         * Handles validation (optional), interval search, interpolation, and
+         * out-of-bounds behavior (current implementation uses flat extrapolation).
+         *
+         * @tparam T Floating-point type.
+         */
+        template <std::floating_point T>
+        void hermiteSplineInterp
+        (
+            std::span<const T> x,
+            std::span<const T> xs,
+            std::span<const T> ys,
+            std::span<const T> dydx,
+            std::span<T> y,
+            bool doValidate
+        );
 
-		/**
-		 * @brief Piecewise cubic Hermite interpolation (PCHIP) for a single query point.
-		 *
-		 * Convenience overload of pchipInterp that evaluates at one x. Uses flat
-		 * extrapolation outside [xs.front(), xs.back()].
-		 *
-		 * Requirements:
-		 * - xs is strictly increasing
-		 * - xs.size() == ys.size() >= 2
-		 *
-		 * Complexity:
-		 * - O(N) to compute derivatives, O(log N) to evaluate
-		 *
-		 * @tparam T Floating-point type.
-		 * @param x Query point.
-		 * @param xs Strictly increasing knot locations.
-		 * @param ys Knot values corresponding to xs.
-		 * @param doValidate If true, validate inputs and throw on invalid data.
-		 * @return Interpolated value at x.
-		 */
-		template <std::floating_point T>
-		T pchipInterp(T x,
-			std::span<const T> xs,
-			std::span<const T> ys,
-			bool doValidate);
+        /**
+         * @brief Compute shape-preserving PCHIP knot derivatives.
+         *
+         * @param xs Knot locations (strictly increasing).
+         * @param ys Knot values.
+         * @param dydx Output buffer (size `xs.size()`).
+         * @param doValidate If true, validates inputs and throws on error.
+         */
+        template <std::floating_point T>
+        void pchipDerivatives
+        (
+            std::span<const T> xs,
+            std::span<const T> ys,
+            std::span<T> dydx,
+            bool doValidate
+        );
 
-		/**
-		 * @brief Evaluate a cubic Hermite spline with precomputed node derivatives.
-		 *
-		 * Evaluates the piecewise cubic defined by knots (xs, ys) and node slopes dydx.
-		 * Uses flat extrapolation outside [xs.front(), xs.back()].
-		 *
-		 * Requirements:
-		 * - xs is strictly increasing
-		 * - xs.size() == ys.size() == dydx.size() >= 2
-		 * - all inputs are finite if validateInputs is true
-		 *
-		 * Complexity:
-		 * - O(N) preprocessing, O(M log N) evaluation
-		 *
-		 * @tparam T Floating-point type.
-		 * @param x Query points.
-		 * @param xs Strictly increasing knot locations.
-		 * @param ys Knot values corresponding to xs.
-		 * @param dydx Node derivatives at xs.
-		 * @param doValidate If true, validate inputs and throw on invalid data.
-		 * @return Interpolated values at each point in x.
-		 */
-		template <std::floating_point T>
-		Vector<T> hermiteSplineInterp(std::span<const T> x,
-			std::span<const T> xs,
-			std::span<const T> ys,
-			std::span<const T> dydx,
-			bool doValidate);
+        /**
+         * @brief Shape-preserving one-sided endpoint derivative for PCHIP.
+         *
+         * @param h1 First interval length (> 0).
+         * @param h2 Second interval length (> 0).
+         * @param S1 Secant slope over first interval.
+         * @param S2 Secant slope over second interval.
+         * @return Endpoint derivative.
+         */
+        template <std::floating_point T>
+        T pchipEndpointSlope
+        (
+            T h1,
+            T h2,
+            T S1,
+            T S2
+        ) noexcept;
 
-		/**
-		 * @brief Compute shape-preserving PCHIP node derivatives.
-		 *
-		 * Computes first-derivative values at the knots (xs, ys) suitable for
-		 * piecewise cubic Hermite interpolation (PCHIP). Interior derivatives
-		 * are computed using a weighted harmonic mean when adjacent secant
-		 * slopes have the same sign; otherwise the derivative is set to zero.
-		 * Endpoint derivatives use a one-sided, shape-preserving rule.
-		 *
-		 * Special case:
-		 * - If xs.size() == 2, returns {S, S}, where S is the secant slope.
-		 *
-		 * Requirements:
-		 * - xs is strictly increasing
-		 * - xs.size() == ys.size() >= 2
-		 *
-		 * @tparam T Floating-point type.
-		 * @param xs Knot locations.
-		 * @param ys Knot values.
-		 * @param doValidate If true, validate inputs and throw on error.
-		 * @return Vector of node derivatives with size xs.size().
-		 *
-		 * @note Complexity: O(N).
-		 *
-		 * References:
-		 * - Fritsch and Carlson (1980), Monotone Piecewise Cubic Interpolation.
-		 * - MATLAB PCHIP implementation.
-		 */
-		template <std::floating_point T>
-		Vector<T> pchipDerivatives(std::span<const T> xs,
-			std::span<const T> ys,
-			bool doValidate);
+        /**
+         * @brief Validate inputs for derivative computation.
+         *
+         * Checks sizes, finiteness, and strict monotonicity of xs.
+         *
+         * @param xs Knot locations.
+         * @param ys Knot values.
+         * @param dydx Derivative buffer (size check only).
+         */
+        template <std::floating_point T>
+        void validateInputsDerivatives
+        (
+            std::span<const T> xs,
+            std::span<const T> ys,
+            std::span<const T> dydx
+        );
 
-		/**
-		 * @brief Compute a shape-preserving PCHIP endpoint derivative.
-		 *
-		 * Computes a one-sided derivative at an endpoint using three consecutive
-		 * points. The initial estimate is clamped to enforce monotonicity:
-		 * - Set to 0 if it disagrees in sign with the adjacent secant.
-		 * - Clamped to 3*|S1| if neighboring secants have opposite signs.
-		 *
-		 * @tparam T Floating-point type.
-		 * @param h1 First interval length (must be > 0).
-		 * @param h2 Second interval length (must be > 0).
-		 * @param S1 Secant slope on the first interval.
-		 * @param S2 Secant slope on the second interval.
-		 * @return Shape-preserving endpoint derivative.
-		 *
-		 * References:
-		 * - Fritsch and Carlson (1980).
-		 * - Moler, Numerical Computing with MATLAB (2004).
-		 */
-		template <std::floating_point T>
-		T pchipEndpointSlope(T h1,
-			T h2,
-			T S1,
-			T S2) noexcept;
+        /**
+         * @brief Validate inputs for spline evaluation.
+         *
+         * Validates knot grid and derivative array, checks x/y sizes, and
+         * ensures values are finite.
+         *
+         * @param x Query points.
+         * @param xs Knot locations.
+         * @param ys Knot values.
+         * @param dydx Knot derivatives.
+         * @param y Output buffer (size check only).
+         */
+        template <std::floating_point T>
+        void validateInputsEvaluate
+        (
+            std::span<const T> x,
+            std::span<const T> xs,
+            std::span<const T> ys,
+            std::span<const T> dydx,
+            std::span<const T> y
+        );
 
-		/**
-		 * @brief Validate interpolation grid inputs.
-		 *
-		 * Checks that xs and ys have equal size, contain at least two points,
-		 * consist only of finite values, and that xs is strictly increasing.
-		 *
-		 * @tparam T Floating-point type.
-		 * @param xs Interpolation grid.
-		 * @param ys Values at grid points.
-		 *
-		 * @throws ErrorCode::InvalidArgument on invalid input.
-		 */
-		template <std::floating_point T>
-		void validateInputs(std::span<const T> xs,
-			std::span<const T> ys);
-
-		/**
-		 * @brief Validate inputs for Hermite spline interpolation.
-		 *
-		 * Extends validateInputs(xs, ys) by also checking that:
-		 * - dydx has the same size as xs
-		 * - x and dydx contain only finite values
-		 *
-		 * @tparam T Floating-point type.
-		 * @param x Query points.
-		 * @param xs Knot locations.
-		 * @param ys Knot values.
-		 * @param dydx Node derivatives.
-		 *
-		 * @throws ErrorCode::InvalidArgument on invalid input.
-		 */
-		template <std::floating_point T>
-		void validateInputsHermiteSpline(std::span<const T> x,
-			std::span<const T> xs,
-			std::span<const T> ys,
-			std::span<const T> dydx);
-
-	} // namespace detail
+    } // namespace detail
 } // namespace uv::math::interp
 
 #include "Policies.inl"

@@ -34,35 +34,40 @@
 
 namespace uv::math::interp
 {
-	template <std::floating_point T>
-	Vector<T> PchipDerivatives<T>::operator()
+	template<class Derived, std::floating_point T>
+	Vector<T> Derivatives<Derived, T>::operator()
 	(
 		std::span<const T> xs,
 		std::span<const T> ys,
 		bool doValidate
-	) const
+	) const 
+		requires HasDerivatives<Derived, T>
 	{
-		return detail::pchipDerivatives<T>
-			(
-				xs,
-				ys,
-				doValidate
-			);
+		Vector<T> dydx(xs.size());
+
+		(*this)
+		(
+			xs,
+			ys,
+			dydx,
+			doValidate
+		);
+
+		return dydx;
 	}
 
-	template <std::floating_point T>
-	Vector<T> HermiteInterpolator<T>::operator()
-	(
-		std::span<const T> x,
-		std::span<const T> xs,
-		std::span<const T> ys,
-		std::span<const T> dydx,
-		bool doValidate
-    ) const
-	{
-		return detail::hermiteSplineInterp<T>
+	template<class Derived, std::floating_point T>
+	void Derivatives<Derived, T>::operator()
 		(
-			x,
+			std::span<const T> xs,
+			std::span<const T> ys,
+			std::span<T> dydx,
+			bool doValidate
+		) const
+		requires HasDerivatives<Derived, T>
+	{
+		static_cast<const Derived&>(*this).derivatives
+		(
 			xs,
 			ys,
 			dydx,
@@ -70,38 +75,115 @@ namespace uv::math::interp
 		);
 	}
 
-	template <std::floating_point T>
-	Vector<T> PchipInterpolator<T>::operator()
+	template<std::floating_point T>
+	void PchipDerivatives<T>::derivatives
 	(
-		std::span<const T> x,
 		std::span<const T> xs,
 		std::span<const T> ys,
+		std::span<T> dydx,
 		bool doValidate
-     ) const
+	) const 
 	{
-		return detail::pchipInterp<T>
+		detail::pchipDerivatives<T>
 		(
-			x,
 			xs,
 			ys,
+			dydx,
 			doValidate
 		);
 	}
 
-	template <std::floating_point T>
-	T PchipInterpolator<T>::operator()
+	template<class Derived, std::floating_point T>
+	Vector<T> Evaluate<Derived, T>::operator()
 	(
-		T x,
+		std::span<const T> x,
 		std::span<const T> xs,
 		std::span<const T> ys,
+		std::span<const T> dydx,
 		bool doValidate
 	) const
-	{
-		return detail::pchipInterp<T>
+		requires HasEvaluate<Derived, T>
+	{	
+		Vector<T> y(x.size());
+		(*this)
 		(
 			x,
 			xs,
 			ys,
+			dydx,
+			y,
+			doValidate 
+		);
+		return y;
+	}
+
+	template<class Derived, std::floating_point T>
+	void Evaluate<Derived, T>::operator()
+	(
+		std::span<const T> x,
+		std::span<const T> xs,
+		std::span<const T> ys,
+		std::span<const T> dydx,
+		std::span<T> y,
+		bool doValidate
+	) const
+		requires HasEvaluate<Derived, T>
+	{
+		static_cast<const Derived&>(*this).evaluate
+		(
+			x,
+			xs,
+			ys,
+			dydx,
+			y,
+			doValidate 
+		);
+	}
+
+	template<class Derived, std::floating_point T>
+	T Evaluate<Derived, T>::operator()
+	(
+		T x,
+		std::span<const T> xs,
+		std::span<const T> ys,
+		std::span<const T> dydx,
+		bool doValidate
+	) const
+		requires HasEvaluate<Derived, T>
+	{
+		const std::array<T, 1> xIn{ x };
+		std::array<T, 1> y{};
+		(*this)
+		(
+			xIn,
+			xs,
+			ys,
+			dydx,
+			y,
+			doValidate
+		);
+
+		return y.front();
+	}
+
+	template<std::floating_point T>
+	void HermiteEval<T>::evaluate
+	(
+		std::span<const T> x,
+		std::span<const T> xs,
+		std::span<const T> ys,
+		std::span<const T> dydx,
+		std::span<T> y,
+		bool doValidate
+	) const
+	{
+		detail::hermiteSplineInterp<T>
+		(
+			x,
+			xs,
+			ys,
+			dydx,
+			y,
 			doValidate
 		);
 	}
@@ -110,69 +192,27 @@ namespace uv::math::interp
 namespace uv::math::interp::detail
 {	
 	template <std::floating_point T>
-	Vector<T> pchipInterp(std::span<const T> x,
-		std::span<const T> xs,
-		std::span<const T> ys,
-		bool doValidate)
-	{
-
-		Vector<T> dydx
-		{
-			pchipDerivatives<T>
-			(
-				xs,
-				ys,
-				doValidate
-			)
-		};
-
-		return hermiteSplineInterp<T>
-		(
-			x,
-			xs,
-			ys,
-			std::span<const T>
-			{
-				dydx.data(),
-				dydx.size()
-			},
-		    doValidate
-		);
-	}
-
-	template <std::floating_point T>
-	T pchipInterp(T x,
-		std::span<const T> xs,
-		std::span<const T> ys,
-		bool doValidate)
-	{
-		const std::array<T, 1> x1{ x };
-		return pchipInterp<T>
-			(
-				std::span<const T>{ x1 },
-				xs,
-				ys,
-				doValidate
-			).front();
-	}
-
-	template <std::floating_point T>
-	Vector<T> hermiteSplineInterp(std::span<const T> x,
+	void hermiteSplineInterp
+	(
+		std::span<const T> x,
 		std::span<const T> xs,
 		std::span<const T> ys,
 		std::span<const T> dydx,
-		bool doValidate)
+		std::span<T> y,
+		bool doValidate
+	)
 	{
 		// ---------- Validate ----------
 
 		if (doValidate)
 		{
-			validateInputsHermiteSpline
+			validateInputsEvaluate<T>
 			(
 				x,
 				xs,
 				ys,
-				dydx
+				dydx,
+				y
 			);
 		}
 
@@ -209,15 +249,12 @@ namespace uv::math::interp::detail
 		}
 
 		// Interpolate
-
-		Vector<T> y(xSize);
 		const T xsMin{ xs.front() };
 		const T xsMax{ xs.back() };
 
 		for (std::size_t i{ 0 }; i < xSize; ++i)
 		{
 			// Out of bounds
-
 			const T xi{ x[i] };
 
 			// Left bounds
@@ -250,18 +287,20 @@ namespace uv::math::interp::detail
 				+ c2s[idx] * dx * dx
 				+ c3s[idx] * dx * dx * dx;
 		}
-
-		return y;
 	}
 
 	template <std::floating_point T>
-	Vector<T> pchipDerivatives(std::span<const T> xs,
+	void pchipDerivatives
+	(
+		std::span<const T> xs,
 		std::span<const T> ys,
-		bool doValidate)
+		std::span< T> dydx,
+		bool doValidate
+	)
 	{
 		// ---------- Validate ----------
 
-		if (doValidate) validateInputs(xs, ys);
+		if (doValidate) validateInputsDerivatives<T>(xs, ys, dydx);
 
 		// ---------- Special cases  ----------
 
@@ -272,7 +311,11 @@ namespace uv::math::interp::detail
 			// Single secant slope
 			const T S{ (ys.back() - ys.front()) / (xs.back() - xs.front()) };
 
-			return Vector<T>{ S, S };
+			dydx.front() = S;
+			dydx.back() = S;
+
+			// End function
+			return;
 		}
 
 		// ---------- Calculate ----------
@@ -293,8 +336,8 @@ namespace uv::math::interp::detail
 
 		// Inner derivatives
 
-		// Initialized to zero
-		Vector<T> dydx(xsSize);
+		// Set to zero
+		std::fill(dydx.begin(), dydx.end(), 0.0);
 
 		for (std::size_t i{ 1 }; i < numSteps; ++i)
 		{
@@ -335,12 +378,12 @@ namespace uv::math::interp::detail
 				S[numSteps - 1],   // S1 = (ys[n-1] - ys[n-2]) / h1
 				S[numSteps - 2]    // S2 = (ys[n-2] - ys[n-3]) / h2
 			);
-
-		return dydx;
 	}
 
 	template <std::floating_point T>
-	T pchipEndpointSlope(const T h1,
+	T pchipEndpointSlope
+	(
+		const T h1,
 		const T h2,
 		const T S1,
 		const T S2
@@ -367,8 +410,12 @@ namespace uv::math::interp::detail
 	}
 
 	template<std::floating_point T>
-	void validateInputs(std::span<const T> xs,
-		std::span<const T> ys)
+	void validateInputsDerivatives
+	(
+		std::span<const T> xs,
+		std::span<const T> ys,
+		std::span<const T> dydx
+	)
 	{
 		// ---------- Size ----------
 
@@ -376,15 +423,26 @@ namespace uv::math::interp::detail
 		const std::size_t ysSize{ ys.size() };
 
 		// Throw if sizes do not match
-		UV_REQUIRE(
+		UV_REQUIRE
+		(
 			xsSize == ysSize,
 			ErrorCode::InvalidArgument,
 			"validateInputs: size mismatch — xs vector has " + std::to_string(xsSize) +
 			" elements but ys vector has " + std::to_string(ysSize) + " elements"
 		);
 
+		// Throw if dydx size does not match xs/ys
+		UV_REQUIRE
+		(
+			dydx.size() == xsSize,
+			ErrorCode::InvalidArgument,
+			"validateInputs: size mismatch — dydx vector has " + std::to_string(dydx.size()) +
+			" elements but xs/ys have " + std::to_string(xsSize) + " elements"
+		);
+
 		// Throw if one point or less
-		UV_REQUIRE(
+		UV_REQUIRE
+		(
 			xsSize > 1,
 			ErrorCode::InvalidArgument,
 			"validateInputs: xs/ys must contain at least 2 points, but got " +
@@ -437,23 +495,34 @@ namespace uv::math::interp::detail
 	}
 
 	template<std::floating_point T>
-	void validateInputsHermiteSpline(std::span<const T> x,
+	void validateInputsEvaluate
+	(
+		std::span<const T> x,
 		std::span<const T> xs,
 		std::span<const T> ys,
-		std::span<const T> dydx)
+		std::span<const T> dydx,
+		std::span<const T> y
+
+	)
 	{
 		// ---------- Grid ----------
 
-		validateInputs(xs, ys);
+		validateInputsDerivatives<T>
+		(
+			xs, 
+			ys,
+			dydx
+		);
 
 		// ---------- Size ----------
 
-		// Throw if derivatives do not match grid size
-		UV_REQUIRE(
-			dydx.size() == xs.size(),
+
+		UV_REQUIRE
+		(
+			y.size() == x.size(),
 			ErrorCode::InvalidArgument,
-			"validateInputsHermiteSpline: size mismatch — dydx has " + std::to_string(dydx.size()) +
-			" elements but xs has " + std::to_string(xs.size()) + " elements"
+			"validateInputsHermiteSpline: y has " + std::to_string(y.size()) +
+			" elements but x has " + std::to_string(x.size()) +	" elements"
 		);
 
 		// ---------- NaNs ----------

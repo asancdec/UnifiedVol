@@ -60,9 +60,9 @@ int main(int argc, char* argv[])
         };
 
         VolSurface<Real> mktVolSurface{ readVolSurface<Real>(path.string(), marketData) };
-        mktVolSurface.printTotVar();
+        mktVolSurface.printTotVar(5, false);
 
-        // ---------- SVI Calibration ----------
+        // ---------- SVI calibration ----------
 
         opt::nlopt::Optimizer<4, nlopt::LD_SLSQP> nloptOptimizer
         {
@@ -85,7 +85,6 @@ int main(int argc, char* argv[])
                 mktVolSurface.totVarMatrix(),
                 nloptOptimizer
             ) 
-        
         };
 
         const VolSurface<Real> sviVolSurface
@@ -97,9 +96,9 @@ int main(int argc, char* argv[])
             )
         };
        
-        sviVolSurface.printBSCall();
+        sviVolSurface.printTotVar(5, false);
 
-        // ---------- Local Volatility ----------
+        // ---------- Local volatility calibration ----------
 
         constexpr std::size_t nT{ 100 };    // Time steps
         constexpr std::size_t nX{ 1000 };   // Space steps
@@ -116,94 +115,77 @@ int main(int argc, char* argv[])
             xBound
         );
 
-
-        Vector<Real> localVar(
-            nX, 
-            sviVolSurface.volMatrix()[10][2] * sviVolSurface.volMatrix()[10][2]
-        );
-
-        Real callPrice
-        {
-            lvPricer->price
+        localvol::Surface<Real> localVolSurface
+        { 
+            localvol::calibrator::calibrate<Real, nT, nX>
             (
-                sviVolSurface.tenors().back(),
-                sviVolSurface.forwards().back(),
-                sviVolSurface.discountFactors().back(),
-                sviVolSurface.logKFMatrix()[sviVolSurface.logKFMatrix().rows() - 1][2],
-                localVar               
+                sviVolSurface.callPrices(),
+                sviVolSurface.tenors(),
+                sviVolSurface.logKFMatrix(),
+                sviVolSurface.totVarMatrix(),
+                *lvPricer
             )
         };
 
-
-        std::cout << std::fixed << std::setprecision(10);
-
-
-
-        std::cout << callPrice << '\n';
-        std::cout << sviVolSurface.callPrices()[10][2] << '\n';
-
-
-
-
         // ---------- Heston model calibration ----------
 
-        //constexpr std::size_t HestonNodes{ 300 };
-        //const integration::TanHSinH<Real, HestonNodes> quad{};
-        //
-        //heston::Pricer<Real, HestonNodes> hestonPricer
-        //{
-        //    std::make_shared<const integration::TanHSinH<Real, HestonNodes>>(quad),
-        //    {
-        //        -2.0,   // Damping parameter ITM
-        //        2.0     // Damping parameter OTM
-        //    }
-        //};
+        constexpr std::size_t HestonNodes{ 300 };
+        const integration::TanHSinH<Real, HestonNodes> quad{};
+        
+        heston::Pricer<Real, HestonNodes> hestonPricer
+        {
+            std::make_shared<const integration::TanHSinH<Real, HestonNodes>>(quad),
+            {
+                -2.0,   // Damping parameter ITM
+                2.0     // Damping parameter OTM
+            }
+        };
 
-        //opt::ceres::Optimizer<5, opt::ceres::Policy
-        //        <
-        //            ceres::HuberLoss,             
-        //            ceres::LEVENBERG_MARQUARDT,   
-        //            ceres::DENSE_QR               
-        //        >
-        //    > ceresOptimizer
-        //{ 
-        //    opt::ceres::Config<5>
-        //    {   
-        //        
-        //        1000,                                          
-        //        1e-16,                                        
-        //        1e-16,                                         
-        //        { "kappa", "theta", "sigma", "rho", "v0" },      
-        //        1e-16,                                           
-        //        1.0,                                               
-        //        false                                           
-        //    }
-        //};
+        opt::ceres::Optimizer<5, opt::ceres::Policy
+        <
+            ceres::HuberLoss,             
+            ceres::LEVENBERG_MARQUARDT,   
+            ceres::DENSE_QR               
+        >
+        > ceresOptimizer
+        { 
+            opt::ceres::Config<5>
+            {   
+                
+                1000,                                          
+                1e-16,                                        
+                1e-16,                                         
+                { "kappa", "theta", "sigma", "rho", "v0" },      
+                1e-16,                                           
+                1.0,                                               
+                false                                           
+            }
+        };
 
-        //hestonPricer.setParams
-        //(
-        //    heston::calibrator::calibrate<Real>
-        //    (
-        //        sviVolSurface.tenors(),
-        //        sviVolSurface.strikes(),
-        //        sviVolSurface.forwards(),
-        //        sviVolSurface.rates(),
-        //        sviVolSurface.callPrices(),
-        //        hestonPricer,
-        //        ceresOptimizer
-        //    )
-        //);
+        hestonPricer.setParams
+        (
+            heston::calibrator::calibrate<Real>
+            (
+                sviVolSurface.tenors(),
+                sviVolSurface.strikes(),
+                sviVolSurface.forwards(),
+                sviVolSurface.rates(),
+                sviVolSurface.callPrices(),
+                hestonPricer,
+                ceresOptimizer
+            )
+        );
 
-        //const VolSurface<Real> hestonVolSurface
-        //{ 
-        //    heston::calibrator::buildSurface<Real>
-        //    (
-        //        sviVolSurface, 
-        //        hestonPricer
-        //    ) 
-        //};
+        const VolSurface<Real> hestonVolSurface
+        { 
+            heston::calibrator::buildSurface<Real>
+            (
+                sviVolSurface, 
+                hestonPricer
+            ) 
+        };
 
-        //hestonVolSurface.printVol();
+        hestonVolSurface.printVol();
 
         // ---------- Outputs ----------
 

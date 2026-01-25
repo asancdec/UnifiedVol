@@ -23,7 +23,6 @@
  */
 
 #include "Math/PDE/Functions.hpp"
-#include "Math/Interpolation/Policies.hpp"
 #include "Core/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
 
@@ -107,7 +106,7 @@ namespace uv::models::localvol
     (
         T maturity,
         std::span<const T> logKF,
-        std::span<const T> localVar    
+        VarianceView<T> localVar
     )
     {
         // ---------- Precompute ----------
@@ -126,7 +125,7 @@ namespace uv::models::localvol
 
         // Temp
         std::array<T, NX> test{};
-        std::copy(localVar.begin(), localVar.end(), test.begin());
+        std::copy(localVar.ys.begin(), localVar.ys.end(), test.begin());
 
         math::pde::andreasenHugeSolve<T, NT, NX>
         (
@@ -157,7 +156,7 @@ namespace uv::models::localvol
         T forward,
         T discountFactor,
         std::span<const T> logKF,
-        std::span<const T> localVar
+        VarianceView<T> localVar
     )
     {
         // ---------- Price ----------
@@ -179,38 +178,6 @@ namespace uv::models::localvol
             cNormalized,
             forward * discountFactor
         );
-    }
-
-    template
-    <
-        std::floating_point T,
-        std::size_t NT,
-        std::size_t NX
-    >
-    T Pricer<T, NT, NX>::price
-    (
-        T maturity,
-        T forward, 
-        T discountFactor,
-        T logKF,
-        std::span<const T> localVar
-    )
-    {
-        // Helper
-        const std::array<T, 1> x{ logKF };
-
-        return price
-        (
-            maturity,
-            forward,
-            discountFactor,
-            std::span<const T>
-            {
-                x.data(),
-                x.size()
-            },
-            localVar
-        ).front();
     }
 
 

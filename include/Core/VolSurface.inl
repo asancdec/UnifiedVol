@@ -280,7 +280,7 @@ namespace uv::core
             mnyFlag ? std::span<const T>(mny_) : logKFMatrix_[0]
         };
         const int headerPrec{ mnyFlag ? 2 : 4 };
-        const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
+        const char* title{ mnyFlag ? "T\\%S" : "T\\lnKF" };
 
         utils::printMatrix(
             /*title=*/title,
@@ -302,7 +302,7 @@ namespace uv::core
             mnyFlag ? std::span<const T>(mny_) : logKFMatrix_[0]
         };
         const int headerPrec{ mnyFlag ? 2 : 4 };
-        const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
+        const char* title{ mnyFlag ? "T\\%S" : "T\\lnKF" };
 
         utils::printMatrix(
             /*title=*/title,
@@ -324,7 +324,7 @@ namespace uv::core
             mnyFlag ? std::span<const T>(mny_) : logKFMatrix_[0]
         };
         const int headerPrec{ mnyFlag ? 2 : 4 };
-        const char* title{ mnyFlag ? "T\\%S" : "T\\log(F/K)" };
+        const char* title{ mnyFlag ? "T\\%S" : "T\\lnKF" };
 
         utils::printMatrix(
             /*title=*/title,

@@ -121,7 +121,8 @@ namespace uv::math::opt::nlopt
         );
 
         // Log calibration results 
-        logResults(
+        logResults
+        (
             x,                                       // Parameters
             config_.paramNames,                      // Parameter names
             sse,                                     // SSE

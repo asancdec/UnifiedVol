@@ -1,12 +1,11 @@
-﻿
-// SPDX-License-Identifier: Apache-2.0
+﻿// SPDX-License-Identifier: Apache-2.0
 /*
  * File:        Functions.hpp
  * Author:      Alvaro Sanchez de Carlos
  * Created:     2025-12-08
  *
  * Description:
- *   [Brief description of what this file declares or implements.]
+ *   Public interface and documentation for SVI calibration and surface construction.
  *
  * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
@@ -17,12 +16,11 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under this License is distributed on an "AS IS" BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the LICENSE for the specific language governing permissions and
- * limitations under this License.
+ * limitations under the License.
  */
-
 
 #pragma once
 
@@ -106,6 +104,7 @@ namespace uv::models::svi
 	 * @return Value of g(k).
 	 */
 	template <std::floating_point T>
+	[[gnu::hot]]
 	T gk(T a, T b, T rho, T m, T sigma, T k) noexcept;
 
 	namespace detail
@@ -175,13 +174,21 @@ namespace uv::models::svi
 		);
 
 		/**
-		 * @brief Return an initial guess for (b, rho, m, sigma).
+		 * @brief Cold-start initial guess for (b, rho, m, sigma).
 		 *
-		 * Provides a reasonable starting point for the slice optimization.
-		 *
-		 * @return Initial guess vector [b, rho, m, sigma].
+		 * Used when no previous calibration is available.
 		 */
-		std::array<double, 4> initGuess() noexcept;
+		std::array<double, 4> coldGuess() noexcept;
+
+		/**
+		 * @brief Warm-start initial guess from previous parameters.
+		 *
+		 * Extracts (b, rho, m, sigma) from an existing parameter set.
+		 *
+		 * @param params Previously calibrated parameters.
+		 */
+		template <std::floating_point T>
+		std::array<double, 4> warmGuess(const Params<T>& params) noexcept;
 
 		/**
 		 * @brief Lower bounds for (b, rho, m, sigma).
@@ -217,7 +224,7 @@ namespace uv::models::svi
 		 * @param optimizer Optimizer instance.
 		 */
 		template <::nlopt::algorithm Algo>
-		void addWMinConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer);
+		void addWMinConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept;
 
 		/**
 		 * @brief Add Roger–Lee minimum wing slope constraints.
@@ -229,7 +236,7 @@ namespace uv::models::svi
 		 * @param optimizer Optimizer instance.
 		 */
 		template <::nlopt::algorithm Algo>
-		void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer);
+		void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept;
 
 		/**
 		 * @brief Add Roger–Lee maximum wing slope constraints.
@@ -241,7 +248,61 @@ namespace uv::models::svi
 		 * @param optimizer Optimizer instance.
 		 */
 		template <::nlopt::algorithm Algo>
-		void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer);
+		void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept;
+
+		/**
+		 * @brief Build a calendar-spread constraint context at strike k.
+		 *
+		 * Computes w_prev(k) from the supplied previous-slice SVI parameters and returns
+		 * a CalendarContexts entry used by calendar monotonicity constraints.
+		 *
+		 * @tparam T Floating-point type of the SVI parameters.
+		 * @param k Log-moneyness at which the constraint is enforced.
+		 * @param params SVI parameters of the previous maturity slice.
+		 * @param eps Non-negative slack for the calendar constraint.
+		 * @param atmWK ATM total variance (used for normalization/weighting).
+		 * @return Calendar constraint context for strike k.
+		 */
+		template <std::floating_point T>
+		CalendarContexts genCalendarContext
+		(
+			double k,
+			const Params<T>& params,
+			double eps,
+			double atmWK
+		) noexcept;
+
+		/**
+		 * @brief Populate calendar-spread constraint contexts for a maturity slice.
+		 *
+		 * Fills @p out with one CalendarContexts entry per strike in @p kSlice and
+		 * optionally adds two extra points outside the market range using @p delta.
+		 *
+		 * @tparam T Floating-point type of the SVI parameters.
+		 * @tparam Algo NLopt algorithm.
+		 * @param out Output container for calendar constraint contexts (must outlive optimize()).
+		 * @param numStrikes Number of strikes in @p kSlice.
+		 * @param params SVI parameters of the previous maturity slice.
+		 * @param optimizer Optimizer instance (for eps/slack settings).
+		 * @param kSlice Strike grid (log-moneyness), assumed sorted.
+		 * @param atmWK ATM total variance (used for normalization/weighting).
+		 * @param logKFMin Minimum log(K/F) of the market range.
+		 * @param logKFMax Maximum log(K/F) of the market range.
+		 * @param delta Extension added to both sides of the market range.
+		 */
+		template <std::floating_point T, ::nlopt::algorithm Algo>
+		void fillCalendarContexts
+		(
+			Vector<CalendarContexts>& calendarContexts,
+			std::size_t numStrikes,
+			const Params<T>& params,
+			const opt::nlopt::Optimizer<4, Algo>& optimizer,
+			std::span<const double> kSlice,
+			double atmWK,
+			double logKFMin,
+			double logKFMax,
+			double delta = 0.15
+		) noexcept;
 
 		/**
 		 * @brief Add calendar-spread constraint against a previous slice.
@@ -257,7 +318,7 @@ namespace uv::models::svi
 		 */
 		template <::nlopt::algorithm Algo>
 		void addCalendarConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer,
-			Vector<CalendarContexts>& ctx);
+			Vector<CalendarContexts>& ctx) noexcept;
 
 		/**
 		 * @brief Add convexity (no-butterfly) constraint at one k.
@@ -273,7 +334,7 @@ namespace uv::models::svi
 		 */
 		template <::nlopt::algorithm Algo>
 		void addConvexityConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer,
-			ConvexityContexts& ctx);
+			ConvexityContexts& ctx) noexcept;
 
 		/**
 		 * @brief Set the least-squares objective for one slice.
@@ -289,7 +350,7 @@ namespace uv::models::svi
 		 */
 		template <::nlopt::algorithm Algo>
 		void setMinObjective(opt::nlopt::Optimizer<4, Algo>& optimizer,
-			const ObjectiveContexts& ctx);
+			const ObjectiveContexts& ctx) noexcept;
 
 		/**
 		 * @brief Compute SVI total variance w(k).
@@ -306,6 +367,7 @@ namespace uv::models::svi
 		 * @return Total variance w(k).
 		 */
 		template <std::floating_point T>
+		[[gnu::hot]]
 		T calculateWk(T a,
 			T b,
 			T rho,
@@ -327,6 +389,7 @@ namespace uv::models::svi
 		 *
 		 * @return The implied `a` value for this slice.
 		 */
+		[[gnu::hot]]
 		double aParam(double atmWK,
 			double b,
 			double rho,
@@ -343,6 +406,7 @@ namespace uv::models::svi
 		 *
 		 * @return Value of g(k).
 		 */
+		[[gnu::hot]]
 		double gk(const GkCache& p) noexcept;
 
 		/**
@@ -361,6 +425,7 @@ namespace uv::models::svi
 		 *
 		 * @return Gradient vector [db, drho, dm, dsigma].
 		 */
+		[[gnu::hot]]
 		std::array<double, 4> gkGrad(double b,
 			double rho,
 			double m,
@@ -369,6 +434,6 @@ namespace uv::models::svi
 			const GkCache& p) noexcept;
 
 	} // namespace detail
-} 
+}
 
 #include "Functions.inl"

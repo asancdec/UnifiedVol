@@ -38,7 +38,7 @@ namespace uv::core
      *
      * Holds an implied volatility surface with rows indexed by tenor and columns
      * indexed by moneyness (and the corresponding strike grid). The class also
-     * stores commonly used derived quantities: forwards, log(F/K), total variance,
+     * stores commonly used derived quantities: forwards, log(K/F), total variance,
      * and Black–Scholes call prices.
      *
      * Indexing convention:
@@ -74,7 +74,7 @@ namespace uv::core
         Vector<T> forwards_;        ///< Forward prices per tenor.
 
         Matrix<T> callPrices_;      ///< Black–Scholes call prices [tenor][strike].
-        Matrix<T> logKFMatrix_;     ///< log(F/K) values [tenor][strike] (or header row).
+        Matrix<T> logKFMatrix_;     ///< log(K/F) values [tenor][strike] (or header row).
         Matrix<T> totVarMatrix_;    ///< Total variance w = vol^2 * T [tenor][strike].
 
         //--------------------------------------------------------------------------
@@ -137,7 +137,7 @@ namespace uv::core
          * @brief Construct a surface from an implied vol matrix.
          *
          * Initializes the tenor/moneyness grid, spot and term-structure data, then
-         * builds derived quantities (strikes, forwards, log(F/K), total variance,
+         * builds derived quantities (strikes, forwards, log(K/F), total variance,
          * and Black–Scholes call prices).
          *
          * @param tenors    Tenors in years (rows).
@@ -196,7 +196,7 @@ namespace uv::core
          * @brief Print implied vol surface to the console/logger.
          *
          * @param valuePrec Decimal precision for matrix values.
-         * @param mnyFlag   If true, header is moneyness; otherwise header is log(F/K).
+         * @param mnyFlag   If true, header is moneyness; otherwise header is log(K/F).
          */
         void printVol(unsigned int valuePrec = 5,
             bool mnyFlag = true) const noexcept;
@@ -205,7 +205,7 @@ namespace uv::core
          * @brief Print total variance surface to the console/logger.
          *
          * @param valuePrec Decimal precision for matrix values.
-         * @param mnyFlag   If true, header is moneyness; otherwise header is log(F/K).
+         * @param mnyFlag   If true, header is moneyness; otherwise header is log(K/F).
          */
         void printTotVar(unsigned int valuePrec = 5,
             bool mnyFlag = true) const noexcept;
@@ -214,7 +214,7 @@ namespace uv::core
          * @brief Print Black–Scholes call price surface to the console/logger.
          *
          * @param valuePrec Decimal precision for matrix values.
-         * @param mnyFlag   If true, header is moneyness; otherwise header is log(F/K).
+         * @param mnyFlag   If true, header is moneyness; otherwise header is log(K/F).
          */
         void printBSCall(unsigned int valuePrec = 3,
             bool mnyFlag = true) const noexcept;

@@ -26,6 +26,7 @@
 
 #include "Core/Types.hpp"
 #include "Models/LocalVol/AHCache.hpp"
+#include "Models/LocalVol/VarianceView.hpp"
 
 #include <concepts>
 #include <cstddef>
@@ -49,6 +50,9 @@ namespace uv::models::localvol
 		std::array<T, NX> cInit_;
 		std::array<T, NX> c_;
 
+		//// Interpolation Policy
+		//math::interp::HermiteInterpolator<T> interpol_{};
+
 		// Cached variables and buffers
 		AHCache<T, NX> ahCache_{};
 
@@ -67,7 +71,7 @@ namespace uv::models::localvol
 		(
 			T maturity,
 			std::span<const T> logKF,
-			std::span<const T> localVar
+			VarianceView<T> localVar
 		);
 
 		Vector<T> price
@@ -76,17 +80,21 @@ namespace uv::models::localvol
 			T forward,
 			T discountFactor,
 			std::span<const T> logKF,
-			std::span<const T> localVar
+			VarianceView<T> localVar
 		);
 
-		T price
+		Vector<T> price
 		(
-			T maturity,
+			Vector<T> maturity,
 			T forward,
 			T discountFactor,
-			T logKF,
-			std::span<const T> localVar
+			std::span<const T> logKF,
+			VarianceView<T> localVar
 		);
+
+
+
+
 
 	};
 

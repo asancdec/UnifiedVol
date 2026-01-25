@@ -45,6 +45,7 @@
 #include "Models/SVI/Functions.hpp"
 #include "Models/SVI/Params.hpp"
 #include "Models/LocalVol/Pricer.hpp"
+#include "Models/LocalVol/Calibrator.hpp"
 #include "Models/Heston/Pricer.hpp"
 #include "Models/Heston/Config.hpp"
 #include "Models/Heston/Calibrator.hpp"

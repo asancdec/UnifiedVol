@@ -22,7 +22,6 @@
  * limitations under this License.
  */
 
-
 #pragma once
 
 #include <complex>

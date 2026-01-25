@@ -5,7 +5,7 @@
  * Created:     2025-12-08
  *
  * Description:
- *   Inline definitions for SVI calibration and fitted surface generation.
+ *   Inline implementations of performance-critical SVI routines.
  *
  * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
@@ -22,7 +22,7 @@
  * limitations under this License.
  */
 
-#include "Math/Interpolation/Policies.hpp"
+#include "Math/Interpolation/Interpolator.hpp"
 #include "Core/Matrix/Functions.hpp"
 #include "Core/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
@@ -136,18 +136,27 @@ namespace uv::models::svi
     T gk(T a, T b, T rho, T m, T sigma, T k) noexcept
     {
         T x{ k - m };                                          // x := k-m
-        T R{ std::hypot(x, sigma) };                           // R:= sqrt(x^2 + sigma^2)
+        T sigmaSquared{ sigma * sigma };                       // sigma^2
+
+        // R := sqrt(x^2 + sigma^2)
+        T R{ std::sqrt(std::fma(x, x, sigmaSquared)) };       
         T invR{ 1.0 / R };                                     // invR := 1 / R
+
         T wk{ std::fma(b, (rho * x + R), a) };                 // w(k) = a + b*(rho*x + R)
+        T wkInv{ 1.0 / wk };                                   // 1 / w(k)
+
         T wkD1{ b * (rho + x * invR) };                        // w'(k) = b * (rho + x/R)
         T wkD1Squared{ wkD1 * wkD1 };                          // w'(k)^2
-        T invRCubed{ invR * invR * invR };                     // 1/(R^3)
-        T sigmaSquared{ sigma * sigma };                       // sigma^2
-        T wkD2{ b * sigmaSquared * invRCubed };                // w''(k) = b * sigma^2 / R^3
-        T A{ 1.0 - 0.5 * k * wkD1 / wk };                      // A := 1 - k * w'/(2 * w)                        
-        T B{ (1.0 / wk) + 0.25 };                              // B := 1/w(k) + 1/4
 
-        return (A * A) - T(0.25) * wkD1Squared * B + wkD2 * T(0.5);
+        T invR2{ invR * invR };                                // 1 / R^2
+        T invRCubed{ invR2 * invR };                           // 1 / R^3
+
+        T wkD2{ b * sigmaSquared * invRCubed };                // w''(k) = b * sigma^2 / R^3
+
+        T A{ 1.0 - 0.5 * k * wkD1 * wkInv };                   // A := 1 - k * w'/(2 * w)
+        T B{ wkInv + 0.25 };                                   // B := 1/w(k) + 1/4
+
+        return (A * A) - 0.25 * wkD1Squared * B + wkD2 * 0.5;
     }
 
 } // namespace uv::models::svi
@@ -197,22 +206,29 @@ namespace uv::models::svi::detail
 
         explicit GkCache(double a, double b, double rho, double m, double sigma, double k) noexcept
         {
-            R0 = std::hypot(m, sigma);
-            invR0 = 1.0 / R0;
-            x = k - m;
-            R = std::hypot(x, sigma);
-            invR = 1.0 / R;
-            wk = std::fma(b, (rho * x + R), a);
-            wkInv = 1.0 / wk;
-            wkSquaredInv = wkInv * wkInv;
-            wkD1 = b * (rho + x * invR);
-            wkD1Squared = wkD1 * wkD1;
-            invRCubed = invR * invR * invR;
-            invR5 = invRCubed * invR * invR;
-            sigmaSquared = sigma * sigma;
-            wkD2 = b * sigmaSquared * invRCubed;
-            A = 1.0 - 0.5 * k * wkD1 * wkInv;
-            B = wkInv + 0.25;
+            sigmaSquared = sigma * sigma;                           // sigma^2
+
+            R0 = std::sqrt(std::fma(m, m, sigmaSquared));           // R0 := sqrt(m^2 + sigma^2)
+            invR0 = 1.0 / R0;                                       // 1/R0
+
+            x = k - m;                                              // x := k-m
+            R = std::sqrt(std::fma(x, x, sigmaSquared));            // R:= sqrt(x^2 + sigma^2)
+            invR = 1.0 / R;                                         // invR := 1 / R
+
+            wk = std::fma(b, (rho * x + R), a);                     // w(k) = a + b*(rho*x + R)
+            wkInv = 1.0 / wk;                                       // 1/w(k)
+            wkSquaredInv = wkInv * wkInv;                           // 1/w(k)^2
+
+            wkD1 = b * (rho + x / R);                               // w'(k) = b * (rho + x/R)
+            wkD1Squared = wkD1 * wkD1;                              // w'(k)^2
+
+            invRCubed = invR * invR * invR;                         // 1/(R^3)
+            invR5 = invRCubed * invR * invR;                        // 1/(R^5)
+
+            wkD2 = b * sigmaSquared * invRCubed;                    // w''(k) = b * sigma^2 / R^3
+
+            A = 1.0 - 0.5 * k * wkD1 * wkInv;                        // A := 1 - k * w'/(2 * w)
+            B = wkInv + 0.25;                                       // B := 1/w(k) + 1/4
         }
     };
 
@@ -297,52 +313,66 @@ namespace uv::models::svi::detail
         const double logKFMin{ core::minValue(kSlice) };
         const double logKFMax{ core::maxValue(kSlice) };
 
-        // ---------- Fresh optimizer  ----------
+        // ---------- Clone  ----------
 
         opt::nlopt::Optimizer optimizer{ prototype.fresh() };
         optimizer.setUserValue(atmWK);
 
-        // ---------- Bounds and init guess ----------
+        // ---------- Allocate  ----------
 
-        optimizer.setGuessBounds(
-            initGuess(),
-            lowerBounds(logKFMin),
-            upperBounds(logKFMax)
-        );
+        // NOTE: Must outlive optimizer.optimize(); 
+        // NLopt holds pointers to elements.
+        Vector<CalendarContexts> calendarContexts{};
+
+        // ---------- Configure ----------
+
+        if (!prevParams)
+        {
+            // Bounds and guess
+            optimizer.setGuessBounds
+            (
+                coldGuess(),
+                lowerBounds(logKFMin),
+                upperBounds(logKFMax)
+            );
+        }
+        else
+        {
+            // Bounds and guess
+            optimizer.setGuessBounds
+            (
+                warmGuess(*prevParams),
+                lowerBounds(logKFMin),
+                upperBounds(logKFMax)
+            );
+
+            // Calendar constraints
+            calendarContexts.resize(numStrikes + 2);
+
+            fillCalendarContexts<T, Algo>
+            (
+                calendarContexts,
+                numStrikes,
+                *prevParams,
+                optimizer,
+                kSlice,
+                atmWK,
+                logKFMin,
+                logKFMax
+            );
+
+            addCalendarConstraint
+            (
+                optimizer,
+                calendarContexts
+            );
+        }
 
         // ---------- Standard constraints ----------
 
         addWMinConstraint(optimizer);
         addMinSlopeConstraint(optimizer);
         addMaxSlopeConstraint(optimizer);
-
-        // ---------- Calendar constraints ----------
-
-        Vector<CalendarContexts> calCtx;
-
-        if (prevParams)
-        {
-            calCtx.resize(numStrikes);
-
-            // Extract data
-            const Params<T>& prev{ *prevParams };
-            const double a0{ double(prev.a) };
-            const double b0{ double(prev.b) };
-            const double rho0{ double(prev.rho) };
-            const double m0{ double(prev.m) };
-            const double sigma0{ double(prev.sigma) };
-            const double eps{ optimizer.eps() };
-
-            for (std::size_t i = 0; i < numStrikes; ++i)
-            {
-                // Vector of calendar constraints context
-                const double k{ kSlice[i] };
-                const double wPrev{ detail::calculateWk(a0, b0, rho0, m0, sigma0, k) };
-                calCtx[i] = { k, wPrev, eps, atmWK };
-            }
-
-            addCalendarConstraint(optimizer, calCtx);
-        }
 
         // ---------- Convexity constraints ----------
 
@@ -385,14 +415,27 @@ namespace uv::models::svi::detail
         };
     }
 
+    template <std::floating_point T>
+    std::array<double, 4> warmGuess(const Params<T>& params)  noexcept
+    {
+        return
+        {
+            // Explicit conversion
+            double(params.b),     // b
+            double(params.rho),   // rho
+            double(params.m),     // m
+            double(params.sigma)  // sigma
+        };
+    }
+
     template <::nlopt::algorithm Algo>
-    void addWMinConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
+    void addWMinConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept
     {
         optimizer.addInequalityConstraint(
-            +[](unsigned /*n*/, const double* x, double* grad, void* data) -> double
+            +[](unsigned /*n*/, const double* x, double* grad, void* data) noexcept -> double
             {
-                // Reinterpret opaque pointer
-                const auto& opt = *static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data);
+                const auto& opt =
+                    *static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data);
 
                 // Extract data
                 const double eps{ opt.eps() };
@@ -403,19 +446,24 @@ namespace uv::models::svi::detail
                 const double sigma{ x[3] };
 
                 // Precomputes
-                const double R{ std::sqrt(m * m + sigma * sigma) };
+                const double s2{ sigma * sigma };
+                const double R{ std::sqrt(m * m + s2) };
                 const double S{ std::sqrt(1.0 - rho * rho) };
-              
-                // Calculate
-                const double a{ aParam(atmWK, b, rho, m, sigma) };
+
+                // ATM base and a
+                const double base{ -rho * m + R };
+                const double a{ atmWK - b * base };
+
+                // wMin = a + b * sigma * S
                 const double wMin{ std::fma(b, sigma * S, a) };
 
                 if (grad)
                 {
-                    grad[0] = -(rho * m - R + sigma * S);       
-                    grad[1] = -(b * (m - sigma * rho / S));      
-                    grad[2] = -(b * (rho - m / R));            
-                    grad[3] = -(b * (S - sigma / R));            
+                    // same formulas you had
+                    grad[0] = -(rho * m - R + sigma * S);
+                    grad[1] = -(b * (m - sigma * rho / S));
+                    grad[2] = -(b * (rho - m / R));
+                    grad[3] = -(b * (S - sigma / R));
                 }
 
                 return eps - wMin;
@@ -425,12 +473,12 @@ namespace uv::models::svi::detail
     }
 
     template <::nlopt::algorithm Algo>
-    void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
+    void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept
     {
         // ---------- Right wing: b*(1 + rho) >= eps ----------
         
         optimizer.addInequalityConstraint(
-            +[](unsigned, const double* x, double* grad, void* data) -> double
+            +[](unsigned, const double* x, double* grad, void* data) noexcept -> double
             {  
                 // Reinterpret opaque pointer
                 const auto& opt = *static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data);
@@ -438,17 +486,17 @@ namespace uv::models::svi::detail
                 // Extract data
                 const double eps{ opt.eps() };
                 const double b{ x[0] };
-                const double rho{ x[1] };
+                const double onePlusRho{ 1.0 + x[1] };
 
                 if (grad)
                 {
-                    grad[0] = -(1.0 + rho);  
+                    grad[0] = -onePlusRho;
                     grad[1] = -b;             
                     grad[2] = 0.0;
                     grad[3] = 0.0;
                 }
 
-                return eps - b * (1.0 + rho);
+                return eps - b * onePlusRho;
             },
             &optimizer
         );
@@ -456,7 +504,7 @@ namespace uv::models::svi::detail
         // ---------- Left wing: b*(1 - rho) >= eps ----------
 
         optimizer.addInequalityConstraint(
-            +[](unsigned, const double* x, double* grad, void* data) -> double
+            +[](unsigned, const double* x, double* grad, void* data) noexcept -> double
             {
                 // Reinterpret opaque pointer
                 const auto& opt = *static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data);
@@ -464,29 +512,118 @@ namespace uv::models::svi::detail
                 // Extract data
                 const double eps{ opt.eps() };
                 const double b{ x[0] };
-                const double rho{ x[1] };
+                const double oneMinusRho{ 1.0 - x[1] };
 
                 if (grad)
                 {
-                    grad[0] = -(1.0 - rho);   
+                    grad[0] = -oneMinusRho;
                     grad[1] = b;              
                     grad[2] = 0.0;
                     grad[3] = 0.0;
                 }
 
-                return eps - b * (1.0 - rho);
+                return eps - b * oneMinusRho;
             },
             &optimizer
         );
     }
 
+    template <std::floating_point T>
+    CalendarContexts genCalendarContext
+    (
+        double k,
+        const Params<T>& params,
+        double eps,
+        double atmWK
+    ) noexcept
+    {
+        return  CalendarContexts 
+        {
+            k, 
+            calculateWk
+            (   
+                // Avoid implicit conversions
+                double(params.a),
+                double(params.b),
+                double(params.rho), 
+                double(params.m), 
+                double(params.sigma),
+                k
+            ),
+            eps, 
+            atmWK 
+        };
+    }
+
+    template <std::floating_point T, ::nlopt::algorithm Algo>
+    void fillCalendarContexts
+    (
+        Vector<CalendarContexts>& calendarContexts,
+        std::size_t numStrikes,
+        const Params<T>& params,
+        const opt::nlopt::Optimizer<4, Algo>& optimizer,
+        std::span<const double> kSlice,
+        double atmWK,
+        double logKFMin,
+        double logKFMax,
+        double delta
+    ) noexcept
+    {
+        // ---------- Extract  ----------
+
+        const double eps{ optimizer.eps() };
+
+        // ---------- Fill  ----------
+
+        // Market strikes
+        for (std::size_t i = 0; i < numStrikes; ++i)
+        {
+            calendarContexts[i] = 
+            (
+                genCalendarContext<T>
+                (
+                    kSlice[i],
+                    params,
+                    eps,
+                    atmWK
+                )
+            );
+        }
+
+        // Strikes outside market range
+
+        // Lower strike
+        calendarContexts[numStrikes] =
+        (
+            genCalendarContext<T>
+            (
+                logKFMin - delta,
+                params,
+                eps,
+                atmWK
+            )
+        );
+
+        // Upper strike
+        calendarContexts[numStrikes + 1] =
+        (
+            genCalendarContext<T>
+            (
+                logKFMax + delta,
+                params,
+                eps,
+                atmWK
+            )
+        );
+    }
+
     template <::nlopt::algorithm Algo>
-    void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
+    void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept
     {
         // ---------- Right wing: b*(1 + rho) <= 2 ----------
 
         optimizer.addInequalityConstraint(
-            +[](unsigned, const double* x, double* grad, void*) -> double
+            +[](unsigned, const double* x, double* grad, void*) noexcept -> double
             {
                 // Extract data
                 const double b{ x[0] };
@@ -508,7 +645,7 @@ namespace uv::models::svi::detail
         // ---------- Left wing: b*(1 - rho) <= 2 ----------
 
         optimizer.addInequalityConstraint(
-            +[](unsigned, const double* x, double* grad, void*) -> double
+            +[](unsigned, const double* x, double* grad, void*) noexcept -> double
             {
                 // Extract data
                 const double b{ x[0] };
@@ -527,18 +664,16 @@ namespace uv::models::svi::detail
             nullptr
         );
     }
-  
 
     template <::nlopt::algorithm Algo>
     void addCalendarConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer,
-        Vector<CalendarContexts>& ctx)
+        Vector<CalendarContexts>& ctx) noexcept
     {
         for (auto& ctxK : ctx)
         {
             optimizer.addInequalityConstraint(
-                +[](unsigned, const double* x, double* grad, void* data) -> double
+                +[](unsigned, const double* x, double* grad, void* data) noexcept -> double
                 {
-                    // Reinterpret opaque pointer
                     const CalendarContexts& ctxK{ *static_cast<const CalendarContexts*>(data) };
 
                     // Extract data
@@ -553,22 +688,32 @@ namespace uv::models::svi::detail
 
                     // Precomputes
                     const double xi{ k - m };
-                    const double Rk{ std::hypot(xi, sigma) };
+                    const double s2{ sigma * sigma };
+
+                    // ATM pieces
+                    const double R0{ std::sqrt(m * m + s2) };
+                    const double base{ -rho * m + R0 };
+                    const double a{ atmWK - b * base };       
+
+                    // Strike-specific
+                    const double Rk{ std::sqrt(xi * xi + s2) };
+                    const double wK{ std::fma(b, (rho * xi + Rk), a) };
+
+                    // ----------- No-grad path -----------
+
+                    if (!grad)
+                        return prevWk + eps - wK;
+
+                    // ----------- Grad path -----------
                     const double invRk{ 1.0 / Rk };
-                    const double R0{ std::sqrt(m * m + sigma * sigma) };
                     const double invR0{ 1.0 / R0 };
+                    const double mInvR0{ m * invR0 };
+                    const double sigmaInvR0{ sigma * invR0 };
 
-                    // Calculate
-                    const double a{ aParam(atmWK, b, rho, m, sigma) };
-                    const double wK{ calculateWk(a, b, rho, m, sigma, k) };
-
-                    if (grad)
-                    {
-                        grad[0] = -(rho * xi + Rk - (-rho * m + R0));        
-                        grad[1] = -b * (xi + m);                             
-                        grad[2] = b * (m * invR0 + xi * invRk);              
-                        grad[3] = -b * (sigma * invRk - sigma * invR0);      
-                    }
+                    grad[0] = -((rho * xi + Rk) - base);
+                    grad[1] = -(b * (xi + m));
+                    grad[2] = (b * (mInvR0 + xi * invRk));
+                    grad[3] = -(b * (sigma * invRk - sigmaInvR0));
 
                     return prevWk + eps - wK;
                 },
@@ -578,13 +723,12 @@ namespace uv::models::svi::detail
     }
 
     template <::nlopt::algorithm Algo>
-    void addConvexityConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer, 
-        ConvexityContexts& ctx)
+    void addConvexityConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer,
+        ConvexityContexts& ctx) noexcept
     {
         optimizer.addInequalityConstraint(
-            +[](unsigned /*n*/, const double* x, double* grad, void* data) -> double
+            +[](unsigned /*n*/, const double* x, double* grad, void* data) noexcept -> double
             {
-                // Reinterpret opaque pointer
                 const auto& ctx = *static_cast<const ConvexityContexts*>(data);
 
                 // Extract data
@@ -595,20 +739,29 @@ namespace uv::models::svi::detail
                 const double m{ x[2] };
                 const double sigma{ x[3] };
 
-                // Calculate
-                const double a{ aParam(atmWK, b, rho, m, sigma) };
+                // ATM precomputes
+                const double s2{ sigma * sigma };
+                const double R0{ std::sqrt(m * m + s2) };
+                const double base{ -rho * m + R0 };
+                const double a{ atmWK - b * base };
+
+                // Cache once
                 const GkCache p{ a, b, rho, m, sigma, k };
                 const double g{ gk(p) };
 
-                if (grad)
-                {
-                    const auto dg{ gkGrad(b, rho, m, sigma, k, p) };
+                // ----------- No-grad path -----------
 
-                    grad[0] = -dg[0]; 
-                    grad[1] = -dg[1]; 
-                    grad[2] = -dg[2]; 
-                    grad[3] = -dg[3]; 
-                }
+                if (!grad)
+                    return -g;
+
+                // ----------- Grad path -----------
+
+                const std::array<double, 4> dg{ gkGrad(b, rho, m, sigma, k, p) };
+
+                grad[0] = -dg[0];
+                grad[1] = -dg[1];
+                grad[2] = -dg[2];
+                grad[3] = -dg[3];
 
                 return -g;
             },
@@ -617,66 +770,83 @@ namespace uv::models::svi::detail
     }
 
     template <::nlopt::algorithm Algo>
-    void setMinObjective(opt::nlopt::Optimizer<4, Algo>& optimizer,  
-        const ObjectiveContexts& ctx)
+    void setMinObjective(opt::nlopt::Optimizer<4, Algo>& optimizer,
+        const ObjectiveContexts& ctx) noexcept
     {
         optimizer.setMinObjective(
-            +[](unsigned n, const double* x, double* grad, void* data) -> double
-            {
-                // Reinterpret opaque pointer
-                const ObjectiveContexts& ctx = *static_cast<const ObjectiveContexts*>(data);
+            +[](unsigned /*n*/, const double* x, double* grad, void* data) noexcept -> double
+            { 
+                const ObjectiveContexts& ctx =
+                    *static_cast<const ObjectiveContexts*>(data);
 
                 // Extract data
                 const double atmWK{ ctx.atmWK };
-                std::size_t N{ ctx.n };
+                const std::size_t N{ ctx.n };
                 const double b{ x[0] };
                 const double rho{ x[1] };
                 const double m{ x[2] };
                 const double sigma{ x[3] };
 
-                // Precomputes
-                const double R0{ std::sqrt(m * m + sigma * sigma) };
+                // Precomputes (ATM)
+                const double s2{ sigma * sigma };
+                const double R0{ std::sqrt(m * m + s2) };
                 const double invR0{ 1.0 / R0 };
-
-                // Calculate
-                const double a{ aParam(atmWK, b, rho, m, sigma) };
+                const double base{ -rho * m + R0 };
+                const double a{ atmWK - b * base }; 
 
                 // Initialize
                 double SSE{ 0.0 };
-                std::array<double, 4> g{}; 
+
+                // ----------- No-grad path -----------
+                if (!grad)
+                {
+                    for (std::size_t i = 0; i < N; ++i)
+                    {
+                        const double k{ ctx.k[i] };
+                        const double wM{ ctx.wM[i] };
+
+                        const double xi{ k - m };
+                        const double R{ std::sqrt(xi * xi + s2) };
+
+                        const double wK{ std::fma(b, (rho * xi + R), a) };
+                        const double r{ wK - wM };
+
+                        SSE = std::fma(r, r, SSE); 
+                    }
+                    return SSE;
+                }
+
+                // ----------- Grad path -----------
+
+                double g0{ 0.0 }, g1{ 0.0 }, g2{ 0.0 }, g3{ 0.0 };
+                const double sigmaInvR0{ sigma * invR0 };
+                const double mInvR0{ m * invR0 };
 
                 for (std::size_t i = 0; i < N; ++i)
                 {
-                    // Extract data
                     const double k{ ctx.k[i] };
                     const double wM{ ctx.wM[i] };
 
-                    // Precomputes
                     const double xi{ k - m };
-                    const double R{ std::hypot(xi, sigma) };
+                    const double R{ std::sqrt(xi * xi + s2) };
+                    const double invR{ 1.0 / R };
 
-                    // Calculate
-                    const double wK{ calculateWk(a, b, rho, m, sigma, k) };
+                    const double wK{ std::fma(b, (rho * xi + R), a) };
                     const double r{ wK - wM };
-                    SSE += r * r;
 
-                    if (grad)
-                    {
-                        // Precomputes
-                        const double invR{ 1.0 / R };
+                    SSE = std::fma(r, r, SSE); 
 
-                        g[0] += 2.0 * r * ((rho * xi + R) - (-rho * m + R0));
-                        g[1] += 2.0 * r * (b * (xi + m));
-                        g[2] += 2.0 * r * (-b * (m * invR0 + xi * invR));
-                        g[3] += 2.0 * r * (b * (sigma * invR - sigma * invR0));
-                    }
+                    // keep your exact algebra
+                    g0 += 2.0 * r * ((rho * xi + R) - base);
+                    g1 += 2.0 * r * (b * (xi + m));
+                    g2 += 2.0 * r * (-b * (mInvR0 + xi * invR));
+                    g3 += 2.0 * r * (b * (sigma * invR - sigmaInvR0));
                 }
 
-                if (grad)
-                {
-                    const unsigned mCopy = (std::min)(n, static_cast<unsigned>(g.size()));
-                    std::copy_n(g.data(), mCopy, grad);
-                }
+                grad[0] = g0;
+                grad[1] = g1;
+                grad[2] = g2;
+                grad[3] = g3;
 
                 return SSE;
             },
@@ -693,6 +863,7 @@ namespace uv::models::svi::detail
         T k) noexcept
     {
         const T x{ k - m };
-        return std::fma(b, (rho * x + std::hypot(x, sigma)), a);
+        const T R{ std::sqrt(std::fma(x, x, sigma * sigma)) };
+        return std::fma(b, (rho * x + R), a);
     }
 } 

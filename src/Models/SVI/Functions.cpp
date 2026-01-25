@@ -5,7 +5,7 @@
  * Created:     2025-12-08
  *
  * Description:
- *   [Brief description of what this file declares or implements.]
+ *   Compilation unit for non-templated SVI helpers and linkage.
  *
  * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
@@ -37,7 +37,7 @@
 
 namespace uv::models::svi::detail
 {
-    std::array<double, 4> initGuess() noexcept
+    std::array<double, 4> coldGuess() noexcept
     {
         return 
         { 
@@ -54,7 +54,7 @@ namespace uv::models::svi::detail
         {
             0.001,                               // b            
             -0.9999,                             // rho
-            5.0 * logKFMin,                      // m
+            10.0 * logKFMin,                     // m
             0.01                                 // sigma
         };
     }
@@ -65,7 +65,7 @@ namespace uv::models::svi::detail
         {
             2.0,                                // b
             0.9999,                             // rho
-            5.0 * logKFMax,                     // m
+            10.0 * logKFMax,                    // m
             10.0                                // sigma
         };
     }
