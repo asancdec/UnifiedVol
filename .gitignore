@@ -8,7 +8,6 @@
 build/
 build-*/
 out/
-tools/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
@@ -131,6 +130,11 @@ desktop.ini
 # ───────────────────────────────
 python/
 .venv/
+
+# ───────────────────────────────
+# Local / developer-only tools
+# ───────────────────────────────
+tools/
 
 ###############################################################################
 # End of file
