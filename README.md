@@ -76,6 +76,7 @@ VolSurface<Real> sviVolSurface =
 ## Documentation
 
 - Build instructions: [docs/BUILD.md](docs/BUILD.md)
+- File tree: [docs/TREE.md](docs/TREE.md)
 - Data sources: [docs/DATA.md](docs/DATA.md)
 - Dependencies: [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)
 - Bibliography: [docs/citations.bib](docs/citations.bib)
