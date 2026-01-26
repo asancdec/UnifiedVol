@@ -40,27 +40,50 @@ namespace opt = uv::math::opt;
 
 namespace uv::models::svi
 {
+
 /**
- * @brief Calibrate an SVI surface slice-by-slice.
+ * @brief Calibrate an SVI surface from a volatility surface.
  *
- * Fits SVI parameters independently for each maturity, enforcing:
- * - positive total variance
- * - Roger–Lee slope bounds
- * - convexity (no butterfly arbitrage)
- * - calendar monotonicity across maturities
+ * Extracts maturities and total variances from a @ref core::VolSurface
+ * and performs slice-by-slice SVI calibration.
  *
- * The ATM total variance is used to pin the `a` parameter.
+ * @note
+ * Calibration follows the arbitrage-free methodology of
+ * Tahar Ferhati (2020), *Robust Calibration for SVI Model Arbitrage Free*,
+ * enforcing butterfly and calendar-spread constraints.
  *
- * @tparam Algo NLopt algorithm type.
+ * @tparam T     Floating-point type.
+ * @tparam Algo  NLopt algorithm type.
  *
- * @param tenors   Maturities (years), strictly increasing.
- * @param kMatrix  Log-forward moneyness grid per tenor.
- * @param wMMatrix Market total variance per tenor and strike.
- * @param prototype Prototype NLopt optimizer (used to spawn fresh instances).
+ * @param volSurface Market volatility surface.
+ * @param prototype  Prototype NLopt optimizer.
  *
- * @return Vector of calibrated SVI parameters, one per tenor.
+ * @return Calibrated SVI parameters, one per maturity.
+ */
+template <std::floating_point T, ::nlopt::algorithm Algo>
+Vector<Params<T>> calibrate(
+    const core::VolSurface<T>& volSurface,
+    const opt::nlopt::Optimizer<4, Algo>& prototype
+);
+
+/**
+ * @brief Calibrate SVI parameters independently per maturity.
  *
- * @throws ErrorCode::InvalidArgument if inputs are inconsistent or unsorted.
+ * Fits one SVI slice per tenor using total variance data.
+ *
+ * @note
+ * Arbitrage-free constraints follow Ferhati (2020),
+ * *Robust Calibration for SVI Model Arbitrage Free*.
+ *
+ * @tparam T     Floating-point type.
+ * @tparam Algo  NLopt algorithm type.
+ *
+ * @param tenors    Maturities (years).
+ * @param kMatrix   Log-forward moneyness grid.
+ * @param wMMatrix  Market total variance matrix.
+ * @param prototype Prototype NLopt optimizer.
+ *
+ * @return Calibrated SVI parameters, one per maturity.
  */
 template <std::floating_point T, ::nlopt::algorithm Algo>
 Vector<Params<T>> calibrate(

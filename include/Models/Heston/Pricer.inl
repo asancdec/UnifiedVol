@@ -82,7 +82,8 @@ T Pricer<T, N>::callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T F, T r,
 
         // Evaluate characteristic function at h(x) - i
         const Complex<T> psi{
-            Pricer<T, N>::charFunction(kappa, theta, sigma, rho, v0, t, hMinusI)};
+            Pricer<T, N>::charFunction(kappa, theta, sigma, rho, v0, t, hMinusI)
+        };
 
         // Calculate and return integrand
         return std::real(std::exp(x * c) * psi / (hMinusI * h) * onePlusITanPhi);
@@ -163,7 +164,8 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
 
         // Characteristic function and cached intermediates
         const CharFunCache cfData{
-            Pricer<T, N>::charFunctionCal(kappa, theta, sigma, rho, v0, t, hMinusI)};
+            Pricer<T, N>::charFunctionCal(kappa, theta, sigma, rho, v0, t, hMinusI)
+        };
 
         // Reuse intermediates
         const Complex<T> psi{cfData.psi};
@@ -365,21 +367,24 @@ Complex<T> Pricer<T, N>::charFunction(
 
     // beta - D
     const Complex<T> r{
-        (std::real(beta * std::conj(D)) > T(0.0)) ? -sigma2 * uu / betaPlusD : beta - D};
+        (std::real(beta * std::conj(D)) > T(0.0)) ? -sigma2 * uu / betaPlusD : beta - D
+    };
 
     // y := expm1(−D * T) / (2 * D) with D≈0 fallback
     const Complex<T> DT{D * t};
     Complex<T> y{
         (std::norm(D) > std::numeric_limits<T>::epsilon() * (T(1) + std::abs(DT)))
             ? math::expm1Complex(-DT) / (T(2) * D)
-            : Complex<T>(-t / T(2))};
+            : Complex<T>(-t / T(2))
+    };
 
     // r * y
     const Complex<T> ry{r * y};
 
     // A := (κ * theta / sigma^2) * (r * T − 2 * log1p(−r * y))
     const Complex<T> A{
-        (kappa * theta / sigma2) * (r * t - T(2) * math::log1pComplex<T>(-ry))};
+        (kappa * theta / sigma2) * (r * t - T(2) * math::log1pComplex<T>(-ry))
+    };
 
     // B := u * (u + i) * y / (1 − r * y)
     const Complex<T> B{uu * y / (T(1) - ry)};
@@ -425,7 +430,8 @@ Pricer<T, N>::CharFunCache Pricer<T, N>::charFunctionCal(
 
     // beta - D  (stable branch)
     const Complex<T> betaMinusD{
-        (std::real(beta * std::conj(D)) > T(0.0)) ? -sigma2 * uu / betaPlusD : beta - D};
+        (std::real(beta * std::conj(D)) > T(0.0)) ? -sigma2 * uu / betaPlusD : beta - D
+    };
 
     // DT := D * T
     const Complex<T> DT{D * t};
@@ -434,7 +440,8 @@ Pricer<T, N>::CharFunCache Pricer<T, N>::charFunctionCal(
     const Complex<T> y{
         (std::norm(D) > std::numeric_limits<T>::epsilon() * (T(1) + std::abs(DT)))
             ? math::expm1Complex(-DT) / (T(2) * D)
-            : Complex<T>(-t / T(2))};
+            : Complex<T>(-t / T(2))
+    };
 
     // r * y
     const Complex<T> ry{betaMinusD * y};

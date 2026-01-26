@@ -47,11 +47,8 @@ concept HasDerivatives = requires(
     std::span<const T> ys,
     std::span<T> dydx,
     bool doValidate
-)
-{
-    {
-        d.derivatives(xs, ys, dydx, doValidate)
-        } -> std::same_as<void>;
+) {
+    { d.derivatives(xs, ys, dydx, doValidate) } -> std::same_as<void>;
 };
 
 /**
@@ -72,11 +69,8 @@ concept HasEvaluate = requires(
     std::span<const T> dydx,
     std::span<T> y,
     bool doValidate
-)
-{
-    {
-        d.evaluate(x, xs, ys, dydx, y, doValidate)
-        } -> std::same_as<void>;
+) {
+    { d.evaluate(x, xs, ys, dydx, y, doValidate) } -> std::same_as<void>;
 };
 
 /**
@@ -100,8 +94,8 @@ template <class Derived, std::floating_point T> struct Derivatives
      * @return Vector of size `xs.size()` with derivatives at knots.
      */
     Vector<T>
-    operator()(std::span<const T> xs, std::span<const T> ys, bool doValidate = true)
-        const requires HasDerivatives<Derived, T>;
+    operator()(std::span<const T> xs, std::span<const T> ys, bool doValidate = true) const
+    requires HasDerivatives<Derived, T>;
 
     /**
      * @brief Compute node derivatives into a caller-provided buffer.
@@ -116,7 +110,8 @@ template <class Derived, std::floating_point T> struct Derivatives
         std::span<const T> ys,
         std::span<T> dydx,
         bool doValidate = true
-    ) const requires HasDerivatives<Derived, T>;
+    ) const
+    requires HasDerivatives<Derived, T>;
 };
 
 /**
@@ -175,7 +170,8 @@ template <class Derived, std::floating_point T> struct Evaluate
         std::span<const T> ys,
         std::span<const T> dydx,
         bool doValidate = true
-    ) const requires HasEvaluate<Derived, T>;
+    ) const
+    requires HasEvaluate<Derived, T>;
 
     /**
      * @brief Evaluate interpolant at multiple points into a buffer.
@@ -194,7 +190,8 @@ template <class Derived, std::floating_point T> struct Evaluate
         std::span<const T> dydx,
         std::span<T> y,
         bool doValidate = true
-    ) const requires HasEvaluate<Derived, T>;
+    ) const
+    requires HasEvaluate<Derived, T>;
 
     /**
      * @brief Evaluate interpolant at a single point.
@@ -212,7 +209,8 @@ template <class Derived, std::floating_point T> struct Evaluate
         std::span<const T> ys,
         std::span<const T> dydx,
         bool doValidate = true
-    ) const requires HasEvaluate<Derived, T>;
+    ) const
+    requires HasEvaluate<Derived, T>;
 };
 
 /**

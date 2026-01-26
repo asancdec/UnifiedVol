@@ -79,8 +79,8 @@ template <std::floating_point T, std::size_t N> struct AHCache
 
     // ---------- Work buffers (reused every time step) ----------
 
-    std::array<T, N - 2>
-        scratch{}; ///< Thomas scratch buffer (e.g. modified upper or temp).
+    std::array<T, N - 2> scratch{
+    }; ///< Thomas scratch buffer (e.g. modified upper or temp).
     std::array<T, N - 2> lower{};  ///< Tridiagonal lower diagonal (interior nodes only).
     std::array<T, N - 2> middle{}; ///< Tridiagonal main diagonal (interior nodes only).
     std::array<T, N - 2> upper{};  ///< Tridiagonal upper diagonal (interior nodes only).

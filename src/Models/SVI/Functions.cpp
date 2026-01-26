@@ -108,7 +108,8 @@ gkGrad(double b, double rho, double m, double sigma, double k, const GkCache& p)
         (rho * x + R) + (rho * m - R0),
         (b * x) + (b * m),
         (-b * (rho + x * invR)) + (b * (rho - m * invR0)),
-        (b * sigma * invR) + (-b * (sigma * invR0))};
+        (b * sigma * invR) + (-b * (sigma * invR0))
+    };
 
     // ---------- ∂w′/dtheta ----------
 
@@ -116,7 +117,8 @@ gkGrad(double b, double rho, double m, double sigma, double k, const GkCache& p)
         rho + x * invR,
         b,
         -b * sigmaSquared * invRCubed,
-        -b * x * sigma * invRCubed};
+        -b * x * sigma * invRCubed
+    };
 
     // ---------- ∂w″/ddtheta ----------
 
@@ -124,7 +126,8 @@ gkGrad(double b, double rho, double m, double sigma, double k, const GkCache& p)
         sigmaSquared * invRCubed,
         0.0,
         3.0 * b * sigmaSquared * x * invR5,
-        b * (2.0 * sigma * invRCubed - 3.0 * sigmaSquared * sigma * invR5)};
+        b * (2.0 * sigma * invRCubed - 3.0 * sigmaSquared * sigma * invR5)
+    };
 
     // ---------- Chain rule ----------
 

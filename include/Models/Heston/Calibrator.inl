@@ -33,6 +33,27 @@
 
 namespace uv::models::heston::calibrator
 {
+
+template <std::floating_point T, std::size_t N, typename Policy>
+Params<T> calibrate(
+    const core::VolSurface<T>& volSurface,
+    Pricer<T, N>& pricer,
+    opt::ceres::Optimizer<5, Policy>& optimizer,
+    const opt::WeightATM<double>& weightATM
+)
+{
+    return calibrate<T, N, Policy>(
+        volSurface.tenors(),
+        volSurface.strikes(),
+        volSurface.forwards(),
+        volSurface.rates(),
+        volSurface.callPrices(),
+        pricer,
+        optimizer,
+        weightATM
+    );
+}
+
 template <std::floating_point T, std::size_t N, typename Policy>
 Params<T> calibrate(
     const Vector<T>& tenors,

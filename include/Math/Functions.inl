@@ -46,7 +46,8 @@ template <std::floating_point T> Complex<T> log1pComplex(const Complex<T>& z) no
         // Im := atan2(b, 1 + a)
         return {
             T(0.5) * std::log1p(std::fma(a, a, std::fma(T(2), a, b * b))),
-            std::atan2(b, T(1) + a)};
+            std::atan2(b, T(1) + a)
+        };
     }
 
     // General case: ln(1 + z)
@@ -174,7 +175,8 @@ template <std::floating_point T> T impliedVolBS(T callPrice, T t, T r, T q, T S,
 
     // Heuristic guess
     const T volGuess{
-        (std::fabs(logKF) < T(1e-6)) ? T(0.3) : std::sqrt(T(2) * std::fabs(logKF) / t)};
+        (std::fabs(logKF) < T(1e-6)) ? T(0.3) : std::sqrt(T(2) * std::fabs(logKF) / t)
+    };
 
     // Clamp bounds
     const T volMin{T(1e-4)};

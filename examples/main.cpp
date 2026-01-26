@@ -28,7 +28,10 @@ using namespace uv;
 using namespace models;
 using namespace utils;
 using namespace core;
-using namespace math;
+using namespace math::integration;
+using namespace math::interp;
+using namespace models::heston;
+using namespace models::localvol;
 
 int main(int argc, char* argv[])
 {
@@ -64,17 +67,16 @@ int main(int argc, char* argv[])
             .tol = 1e-12,
             .ftolRel = 1e-12,
             .maxEval = 10000,
-            .paramNames = {"b", "rho", "m", "sigma"}}};
+            .paramNames = {"b", "rho", "m", "sigma"}
+        }};
 
-        Vector<svi::Params<Real>> sviParams{svi::calibrate<Real>(
-            mktVolSurface.tenors(),
-            mktVolSurface.logKFMatrix(),
-            mktVolSurface.totVarMatrix(),
-            nloptOptimizer
-        )};
+        Vector<svi::Params<Real>> sviParams{
+            svi::calibrate<Real>(mktVolSurface, nloptOptimizer)
+        };
 
         const VolSurface<Real> sviVolSurface{
-            svi::buildSurface<Real>(mktVolSurface, sviParams)};
+            svi::buildSurface<Real>(mktVolSurface, sviParams)
+        };
 
         sviVolSurface.printBSCall();
 
@@ -92,33 +94,35 @@ int main(int argc, char* argv[])
         };
 
         // Allocate to heap
-        auto lvPricer = std::make_unique<
-            localvol::Pricer<Real, nT, nX, math::interp::PchipInterpolator<Real>>>(
-            payoff,
-            xBound
-        );
+        auto lvPricer =
+            std::make_unique<localvol::Pricer<Real, nT, nX, PchipInterpolator<Real>>>(
+                payoff,
+                xBound
+            );
 
-        localvol::Surface<Real> localVolSurface{
-            localvol::calibrator::
-                calibrate<Real, nT, nX, math::interp::PchipInterpolator<Real>>(
-                    sviVolSurface.callPrices(),
-                    sviVolSurface.tenors(),
-                    sviVolSurface.logKFMatrix(),
-                    sviVolSurface.totVarMatrix(),
-                    *lvPricer
-                )};
+        // TODO: wrap
+        Surface<Real> localVolSurface{
+            localvol::calibrator::calibrate<Real, nT, nX, PchipInterpolator<Real>>(
+                sviVolSurface.callPrices(),
+                sviVolSurface.tenors(),
+                sviVolSurface.logKFMatrix(),
+                sviVolSurface.totVarMatrix(),
+                *lvPricer
+            )
+        };
 
         // ---------- Heston model calibration ----------
 
         constexpr std::size_t HestonNodes{300};
-        const integration::TanHSinH<Real, HestonNodes> quad{};
+        const TanHSinH<Real, HestonNodes> quad{};
 
         heston::Pricer<Real, HestonNodes> hestonPricer{
-            std::make_shared<const integration::TanHSinH<Real, HestonNodes>>(quad),
+            std::make_shared<const TanHSinH<Real, HestonNodes>>(quad),
             {
                 -2.0, // Damping parameter ITM
                 2.0   // Damping parameter OTM
-            }};
+            }
+        };
 
         opt::ceres::Optimizer<
             5,
@@ -133,21 +137,19 @@ int main(int argc, char* argv[])
                 .paramTol = 1e-12,
                 .gradientTol = 1e-12,
                 .paramNames = {"kappa", "theta", "sigma", "rho", "v0"},
-                .verbose = false}};
+                .verbose = false
+            }};
 
         hestonPricer.setParams(heston::calibrator::calibrate<Real>(
-            sviVolSurface.tenors(),
-            sviVolSurface.strikes(),
-            sviVolSurface.forwards(),
-            sviVolSurface.rates(),
-            sviVolSurface.callPrices(),
+            sviVolSurface,
             hestonPricer,
             lmOptimizer,
             opt::WeightATM{.wATM = 8.0, .k0 = 0.3}
         ));
 
         const VolSurface<Real> hestonVolSurface{
-            heston::calibrator::buildSurface<Real>(sviVolSurface, hestonPricer)};
+            heston::calibrator::buildSurface<Real>(sviVolSurface, hestonPricer)
+        };
 
         hestonVolSurface.printBSCall();
 

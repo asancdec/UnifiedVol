@@ -40,6 +40,36 @@ namespace uv::models::heston::calibrator
 namespace opt = uv::math::opt;
 
 /**
+ * @brief Calibrate model parameters using a full volatility surface.
+ *
+ * Convenience wrapper that extracts the required market inputs
+ * (tenors, strikes, forwards, rates, and call prices) from a
+ * @ref core::VolSurface and forwards them to the low-level
+ * calibration routine.
+ *
+ * This overload is intended for user-facing workflows where market
+ * data is already packaged in a volatility surface object.
+ *
+ * @tparam T        Floating-point type.
+ * @tparam N        Number of spatial grid points used by the pricer.
+ * @tparam Policy  Optimization policy used by the Ceres optimizer.
+ *
+ * @param volSurface  Market volatility surface containing all inputs.
+ * @param pricer      Local volatility pricer used during calibration.
+ * @param optimizer   Ceres-based optimizer configuration.
+ * @param weightATM   ATM weighting scheme applied to the objective.
+ *
+ * @return Calibrated model parameters.
+ */
+template <std::floating_point T, std::size_t N, typename Policy>
+Params<T> calibrate(
+    const core::VolSurface<T>& volSurface,
+    Pricer<T, N>& pricer,
+    opt::ceres::Optimizer<5, Policy>& optimizer,
+    const opt::WeightATM<double>& weightATM
+);
+
+/**
  * @brief Calibrate Heston parameters to a matrix of market call prices using
  * Ceres.
  *
@@ -63,7 +93,6 @@ namespace opt = uv::math::opt;
  *
  * @return Calibrated Heston parameters (kappa, theta, sigma, rho, v0).
  *
- * @throws (via UV_REQUIRE) if input dimensions are inconsistent or invalid.
  */
 template <std::floating_point T, std::size_t N, typename Policy>
 Params<T> calibrate(
@@ -74,7 +103,7 @@ Params<T> calibrate(
     const core::Matrix<T>& callM,
     Pricer<T, N>& pricer,
     opt::ceres::Optimizer<5, Policy>& optimizer,
-    opt::WeightATM<double>& weightATM
+    const opt::WeightATM<double>& weightATM
 );
 
 /**

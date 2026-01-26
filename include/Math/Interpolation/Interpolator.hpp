@@ -82,7 +82,8 @@ template <std::floating_point T, class DerivPolicy, class EvalPolicy> struct Int
         std::span<const T> dydx,
         std::span<T> y,
         bool doValidate = true
-    ) const requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>;
+    ) const
+    requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>;
 
     // ---------- Convenience ----------
 
@@ -100,7 +101,8 @@ template <std::floating_point T, class DerivPolicy, class EvalPolicy> struct Int
         std::span<const T> xs,
         std::span<const T> ys,
         bool doValidate = true
-    ) const requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>;
+    ) const
+    requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>;
 
     /**
      * @brief Evaluate interpolant (derivatives computed internally) into an
@@ -122,7 +124,8 @@ template <std::floating_point T, class DerivPolicy, class EvalPolicy> struct Int
         std::span<const T> ys,
         std::span<T> y,
         bool doValidate = true
-    ) const requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>;
+    ) const
+    requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>;
 
     /**
      * @brief Evaluate interpolant with externally provided derivatives.
@@ -140,7 +143,8 @@ template <std::floating_point T, class DerivPolicy, class EvalPolicy> struct Int
         std::span<const T> ys,
         std::span<const T> dydx,
         bool doValidate = true
-    ) const requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>;
+    ) const
+    requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>;
 
     /**
      * @brief Evaluate interpolant at a single point.
@@ -158,7 +162,8 @@ template <std::floating_point T, class DerivPolicy, class EvalPolicy> struct Int
         std::span<const T> xs,
         std::span<const T> ys,
         bool doValidate = true
-    ) const requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>;
+    ) const
+    requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>;
 
     /**
      * @brief Evaluate interpolant at a single point using given derivatives.
@@ -176,7 +181,8 @@ template <std::floating_point T, class DerivPolicy, class EvalPolicy> struct Int
         std::span<const T> ys,
         std::span<const T> dydx,
         bool doValidate = true
-    ) const requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>;
+    ) const
+    requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>;
 };
 
 /**

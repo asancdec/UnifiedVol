@@ -38,7 +38,8 @@ Vector<T> Derivatives<Derived, T>::operator()(
     std::span<const T> xs,
     std::span<const T> ys,
     bool doValidate
-) const requires HasDerivatives<Derived, T>
+) const
+requires HasDerivatives<Derived, T>
 {
     Vector<T> dydx(xs.size());
 
@@ -53,7 +54,8 @@ void Derivatives<Derived, T>::operator()(
     std::span<const T> ys,
     std::span<T> dydx,
     bool doValidate
-) const requires HasDerivatives<Derived, T>
+) const
+requires HasDerivatives<Derived, T>
 {
     static_cast<const Derived&>(*this).derivatives(xs, ys, dydx, doValidate);
 }
@@ -76,7 +78,8 @@ Vector<T> Evaluate<Derived, T>::operator()(
     std::span<const T> ys,
     std::span<const T> dydx,
     bool doValidate
-) const requires HasEvaluate<Derived, T>
+) const
+requires HasEvaluate<Derived, T>
 {
     Vector<T> y(x.size());
     (*this)(x, xs, ys, dydx, y, doValidate);
@@ -91,7 +94,8 @@ void Evaluate<Derived, T>::operator()(
     std::span<const T> dydx,
     std::span<T> y,
     bool doValidate
-) const requires HasEvaluate<Derived, T>
+) const
+requires HasEvaluate<Derived, T>
 {
     static_cast<const Derived&>(*this).evaluate(x, xs, ys, dydx, y, doValidate);
 }
@@ -103,7 +107,8 @@ T Evaluate<Derived, T>::operator()(
     std::span<const T> ys,
     std::span<const T> dydx,
     bool doValidate
-) const requires HasEvaluate<Derived, T>
+) const
+requires HasEvaluate<Derived, T>
 {
     const std::array<T, 1> xIn{x};
     std::array<T, 1> y{};

@@ -31,8 +31,8 @@
 namespace uv::core
 {
 template <std::floating_point T, typename F>
-requires std::invocable<F&, std::size_t, std::size_t> Matrix<T>
-generateIndexed(std::size_t rows, std::size_t cols, F&& f)
+requires std::invocable<F&, std::size_t, std::size_t>
+Matrix<T> generateIndexed(std::size_t rows, std::size_t cols, F&& f)
 {
     Matrix<T> out(rows, cols);
 
@@ -49,8 +49,8 @@ generateIndexed(std::size_t rows, std::size_t cols, F&& f)
 }
 
 template <std::floating_point T, typename F>
-requires std::invocable<F&, std::size_t, std::size_t, T> Matrix<T>
-transformIndexed(const Matrix<T>& m, F&& f)
+requires std::invocable<F&, std::size_t, std::size_t, T>
+Matrix<T> transformIndexed(const Matrix<T>& m, F&& f)
 {
     return generateIndexed<T>(
         m.rows(),

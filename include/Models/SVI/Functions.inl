@@ -35,6 +35,21 @@
 
 namespace uv::models::svi
 {
+
+template <std::floating_point T, ::nlopt::algorithm Algo>
+Vector<Params<T>> calibrate(
+    const core::VolSurface<T>& volSurface,
+    const opt::nlopt::Optimizer<4, Algo>& prototype
+)
+{
+    return calibrate<Real, Algo>(
+        volSurface.tenors(),
+        volSurface.logKFMatrix(),
+        volSurface.totVarMatrix(),
+        prototype
+    );
+}
+
 template <std::floating_point T, ::nlopt::algorithm Algo>
 Vector<Params<T>> calibrate(
     const Vector<T>& tenors,
@@ -376,7 +391,8 @@ Params<T> calibrateSlice(
         kSlice.data(),
         wKSlice.data(),
         numStrikes,
-        optimizer.userValue()};
+        optimizer.userValue()
+    };
 
     setMinObjective(optimizer, obj);
 
@@ -390,7 +406,8 @@ Params<T> calibrateSlice(
         T(params[0]),
         T(params[1]),
         T(params[2]),
-        T(params[3])};
+        T(params[3])
+    };
 }
 
 template <std::floating_point T>
@@ -520,7 +537,8 @@ genCalendarContext(double k, const Params<T>& params, double eps, double atmWK) 
             k
         ),
         eps,
-        atmWK};
+        atmWK
+    };
 }
 
 template <std::floating_point T, ::nlopt::algorithm Algo>

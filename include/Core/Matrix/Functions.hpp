@@ -37,8 +37,8 @@ namespace uv::core
  * Computes out(i,j) = f(i,j).
  */
 template <std::floating_point T, typename F>
-requires std::invocable<F&, std::size_t, std::size_t> Matrix<T>
-generateIndexed(std::size_t rows, std::size_t cols, F&& f);
+requires std::invocable<F&, std::size_t, std::size_t>
+Matrix<T> generateIndexed(std::size_t rows, std::size_t cols, F&& f);
 
 /**
  * @brief Apply an index-aware element-wise transform to a matrix.
@@ -46,8 +46,8 @@ generateIndexed(std::size_t rows, std::size_t cols, F&& f);
  * Computes out(i,j) = f(i,j,m(i,j)).
  */
 template <std::floating_point T, typename F>
-requires std::invocable<F&, std::size_t, std::size_t, T> Matrix<T>
-transformIndexed(const Matrix<T>& m, F&& f);
+requires std::invocable<F&, std::size_t, std::size_t, T>
+Matrix<T> transformIndexed(const Matrix<T>& m, F&& f);
 
 /**
  * @brief Apply an index-aware element-wise transform in-place.
