@@ -32,12 +32,31 @@
 namespace uv::models::localvol::calibrator
 {
 
+ using core::Matrix;
+ using core::VolSurface;
+ using ErrorCode::InvalidArgument;
+
+ template <std::floating_point T, std::size_t NT, std::size_t NX, class Interpolator>
+ Surface<T> calibrate(
+     const VolSurface<T>& volSurface,
+     Pricer<T, NT, NX, Interpolator>& pricer
+ )
+ {
+     return calibrate<T, NT, NX, Interpolator>(
+         volSurface.callPrices(),
+         volSurface.tenors(),
+         volSurface.logKFMatrix(),
+         volSurface.totVarMatrix(),
+         pricer
+     );
+ }
+
 template <std::floating_point T, std::size_t NT, std::size_t NX, class Interpolator>
 Surface<T> calibrate(
-    const core::Matrix<T>& callM,
+    const Matrix<T>& callM,
     const Vector<T>& tenors,
-    const core::Matrix<T>& logKF,
-    const core::Matrix<T>& totVar,
+    const Matrix<T>& logKF,
+    const Matrix<T>& totVar,
     Pricer<T, NT, NX, Interpolator>& pricer
 )
 {
@@ -95,10 +114,10 @@ namespace uv::models::localvol::calibrator::detail
 {
 template <std::floating_point T>
 void validate(
-    const core::Matrix<T>& callM,
+    const Matrix<T>& callM,
     const Vector<T>& tenors,
-    const core::Matrix<T>& logKF,
-    const core::Matrix<T>& totVar
+    const Matrix<T>& logKF,
+    const Matrix<T>& totVar
 )
 {
     // ---------- Size ----------
@@ -108,13 +127,13 @@ void validate(
 
     UV_REQUIRE(
         nRows > 0 && nCols > 0,
-        ErrorCode::InvalidArgument,
+        InvalidArgument,
         std::format("validate: callM must be non-empty, got {}x{}", nRows, nCols)
     );
 
     UV_REQUIRE(
         nRows == logKF.rows() && nCols == logKF.cols(),
-        ErrorCode::InvalidArgument,
+        InvalidArgument,
         std::format(
             "validate: callM/logKF size mismatch — callM is "
             "{}x{}, logKF is {}x{}",
@@ -127,7 +146,7 @@ void validate(
 
     UV_REQUIRE(
         nRows == totVar.rows() && nCols == totVar.cols(),
-        ErrorCode::InvalidArgument,
+        InvalidArgument,
         std::format(
             "validate: callM/totVar size mismatch — callM is "
             "{}x{}, totVar is {}x{}",
@@ -140,7 +159,7 @@ void validate(
 
     UV_REQUIRE(
         tenors.size() == nRows,
-        ErrorCode::InvalidArgument,
+        InvalidArgument,
         std::format("validate: row mismatch — tenors={}, rows={}", tenors.size(), nRows)
     );
 
@@ -151,13 +170,13 @@ void validate(
     {
         UV_REQUIRE(
             std::isfinite(tenors[i]),
-            ErrorCode::InvalidArgument,
+            InvalidArgument,
             std::format("validate: tenors[{}]={} is not finite", i, tenors[i])
         );
 
         UV_REQUIRE(
             tenors[i] > 0.0,
-            ErrorCode::InvalidArgument,
+            InvalidArgument,
             std::format("validate: tenors[{}]={} must be > 0", i, tenors[i])
         );
 
@@ -165,7 +184,7 @@ void validate(
         {
             UV_REQUIRE(
                 tenors[i] > tenors[i - 1],
-                ErrorCode::InvalidArgument,
+                InvalidArgument,
                 std::format(
                     "validate: tenors must be strictly increasing, but "
                     "tenors[{}]={} <= tenors[{}]={}",
@@ -191,31 +210,31 @@ void validate(
 
             UV_REQUIRE(
                 std::isfinite(c),
-                ErrorCode::InvalidArgument,
+                InvalidArgument,
                 std::format("validate: callM({}, {})={} is not finite", t, k, c)
             );
 
             UV_REQUIRE(
                 c >= 0.0,
-                ErrorCode::InvalidArgument,
+                InvalidArgument,
                 std::format("validate: callM({}, {})={} must be >= 0", t, k, c)
             );
 
             UV_REQUIRE(
                 std::isfinite(xk),
-                ErrorCode::InvalidArgument,
+                InvalidArgument,
                 std::format("validate: logKF({}, {})={} is not finite", t, k, xk)
             );
 
             UV_REQUIRE(
                 std::isfinite(w),
-                ErrorCode::InvalidArgument,
+                InvalidArgument,
                 std::format("validate: totVar({}, {})={} is not finite", t, k, w)
             );
 
             UV_REQUIRE(
                 w >= 0.0,
-                ErrorCode::InvalidArgument,
+                InvalidArgument,
                 std::format("validate: totVar({}, {})={} must be >= 0", t, k, w)
             );
         }
@@ -229,7 +248,7 @@ void validate(
 
             UV_REQUIRE(
                 curr > prev,
-                ErrorCode::InvalidArgument,
+                InvalidArgument,
                 std::format(
                     "validate: logKF row {} must be strictly increasing, \
                          but logKF({}, {})={} <= logKF({}, {})={}",
@@ -257,7 +276,7 @@ void validate(
 
             UV_REQUIRE(
                 curr >= prev,
-                ErrorCode::InvalidArgument,
+                InvalidArgument,
                 std::format(
                     "validate: totVar must be non-decreasing in tenor at strike col {}, \
                          but totVar({}, {})={} < totVar({}, {})={}",

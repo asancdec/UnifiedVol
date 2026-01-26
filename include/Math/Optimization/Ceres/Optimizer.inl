@@ -34,7 +34,7 @@
 namespace uv::math::opt::ceres
 {
 template <std::size_t N, typename Policy>
-Optimizer<N, Policy>::Optimizer(const Config<N>& config)
+Optimizer<N, Policy>::Optimizer(const Config& config)
     : config_(config)
 {
 }
@@ -52,7 +52,7 @@ void Optimizer<N, Policy>::setGuessBounds(
     upperBounds_ = upperBounds;
 
     // Clamp initial guess within upper and lower bounds
-    clamp<N>(x_, lowerBounds_, upperBounds_, config_.paramNames);
+    clamp(x_, lowerBounds_, upperBounds_);
 
     // Set initial guess
     problem_.AddParameterBlock(x_.data(), static_cast<int>(N));
@@ -105,17 +105,17 @@ std::array<double, N> Optimizer<N, Policy>::optimize()
     }
 
     // Warn if upper or lower bounds are touched
-    warnBoundsHit(x_, lowerBounds_, upperBounds_, config_.paramNames);
+    warnBoundsHit(x_, lowerBounds_, upperBounds_);
 
     // Log calibration results
     logResults(
-        x_,                                     // Parameters
-        config_.paramNames,                     // Parameter names
-        summary.final_cost * 2.0,               // SSE
-        summary.iterations.size(),              // Iterations
-        summary.total_time_in_seconds * 1000.0, // Elapsed [ms]
+        x_,                                     
+        config_.paramNames,                    
+        summary.final_cost * 2.0,              
+        summary.iterations.size(),             
+        summary.total_time_in_seconds * 1000.0, 
         (summary.termination_type == ::ceres::CONVERGENCE ||
-         summary.termination_type == ::ceres::USER_SUCCESS) // Success flag
+         summary.termination_type == ::ceres::USER_SUCCESS) 
     );
 
     // Return calibrated parameters

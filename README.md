@@ -75,10 +75,10 @@ VolSurface<Real> sviVolSurface =
 
 ## Documentation
 
-- **Bibliography (BibTeX):** see [citations.bib](citations.bib)  
-- **Data sources:** see [DATA.md](DATA.md)  
-- **Dependencies:** see [DEPENDENCIES.md](DEPENDENCIES.md)
-- **Build instructions:** see [BUILD.md](BUILD.md)
+- Build instructions: [docs/BUILD.md](docs/BUILD.md)
+- Data sources: [docs/DATA.md](docs/DATA.md)
+- Dependencies: [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)
+- Bibliography: [docs/citations.bib](docs/citations.bib)
 
 ---
 

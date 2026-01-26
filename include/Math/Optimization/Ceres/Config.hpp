@@ -24,45 +24,36 @@
 
 #pragma once
 
+#include <vector>
 #include <array>
 #include <cstddef>
 #include <string_view>
 
 namespace uv::math::opt::ceres
 {
-//--------------------------------------------------------------------------
+
 /**
- * @brief Configuration for Ceres-based optimisation.
- *
- * @details
- * Groups numerical tolerances, iteration limits, robust loss scaling,
- * and diagnostic options used by the Ceres optimiser wrapper.
- *
- * Solver strategy (trust-region method, linear solver, loss type) is
- * selected at compile time via the optimisation Policy, while this
- * structure provides runtime tuning parameters.
- *
- * @tparam N Number of optimisation parameters.
+ * @brief Configuration parameters for a Ceres-based optimisation.
  */
-template <std::size_t N> struct Config
+struct Config
 {
     // ---------- Termination ----------
 
     unsigned maxEval;   ///< Maximum number of function evaluations.
-    double functionTol; ///< Stop when relative cost reduction falls below this
-                        ///< threshold.
-    double paramTol;    ///< Stop when parameter updates fall below this threshold.
-    double gradientTol; ///< Stop when norm of J^T r falls below this threshold.
+    double functionTol; ///< Relative cost reduction tolerance.
+    double paramTol;    ///< Parameter update tolerance.
+    double gradientTol; ///< Gradient norm tolerance (|J^2 * r|).
 
-    // ---------- Robust loss  ----------
+    // ---------- Robust loss ----------
 
-    double lossScale; ///< Robust loss scale (e.g. delta for Huber), in residual
-                      ///< units.
+    double lossScale; ///< Robust loss scale.
 
     // ---------- Logging ----------
 
-    std::array<std::string_view, N>
-        paramNames;      ///< Parameter names for logging and diagnostics.
-    bool verbose{false}; ///< Enable full Ceres solver report output.
+    /// Parameter names used for logging
+    std::vector<std::string_view> paramNames;
+
+    bool verbose{false}; ///< Enable detailed solver output.
 };
+
 } // namespace uv::math::opt::ceres

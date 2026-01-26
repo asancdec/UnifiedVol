@@ -70,9 +70,10 @@ int main(int argc, char* argv[])
             .paramNames = {"b", "rho", "m", "sigma"}
         }};
 
-        Vector<svi::Params<Real>> sviParams{
-            svi::calibrate<Real>(mktVolSurface, nloptOptimizer)
-        };
+        Vector<svi::Params<Real>> sviParams{svi::calibrate<Real>(
+            mktVolSurface,
+            nloptOptimizer
+        )};
 
         const VolSurface<Real> sviVolSurface{
             svi::buildSurface<Real>(mktVolSurface, sviParams)
@@ -94,21 +95,19 @@ int main(int argc, char* argv[])
         };
 
         // Allocate to heap
-        auto lvPricer =
-            std::make_unique<localvol::Pricer<Real, nT, nX, PchipInterpolator<Real>>>(
-                payoff,
-                xBound
-            );
+        auto lvPricer = std::make_unique<
+            localvol::Pricer<Real, nT, nX, PchipInterpolator<Real>>>(
+            payoff,
+            xBound
+        );
 
         // TODO: wrap
         Surface<Real> localVolSurface{
-            localvol::calibrator::calibrate<Real, nT, nX, PchipInterpolator<Real>>(
-                sviVolSurface.callPrices(),
-                sviVolSurface.tenors(),
-                sviVolSurface.logKFMatrix(),
-                sviVolSurface.totVarMatrix(),
-                *lvPricer
-            )
+            localvol::calibrator::
+                calibrate<Real, nT, nX, PchipInterpolator<Real>>(
+                    sviVolSurface,
+                    *lvPricer
+                )
         };
 
         // ---------- Heston model calibration ----------
@@ -130,7 +129,7 @@ int main(int argc, char* argv[])
                 void, // No Robust Loss
                 ceres::LEVENBERG_MARQUARDT,
                 ceres::DENSE_NORMAL_CHOLESKY>>
-            lmOptimizer{opt::ceres::Config<5>{
+            lmOptimizer{opt::ceres::Config{
 
                 .maxEval = 1000,
                 .functionTol = 1e-12,

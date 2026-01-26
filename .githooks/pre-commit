@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Get staged C/C++ files
+FILES=$(git diff --cached --name-only --diff-filter=ACMR \
+  | grep -E '\.(h|hpp|hh|hxx|c|cc|cxx|cpp|inl)$' || true)
+
+# Nothing to do
+[ -z "$FILES" ] && exit 0
+
+echo "[pre-commit] Running clang-format..."
+
+# Format in place using repo .clang-format
+clang-format -i --style=file $FILES
+
+# Re-stage formatted files
+git add $FILES

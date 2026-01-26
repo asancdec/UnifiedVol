@@ -57,7 +57,7 @@ void Optimizer<N, Algo>::setGuessBounds(
 ) noexcept
 {
     // Clamp initial guess within upper and lower bounds
-    clamp<N>(initGuess, lowerBounds, upperBounds, config_.paramNames);
+    clamp(initGuess, lowerBounds, upperBounds);
 
     // Store arrays
     initGuess_ = initGuess;
@@ -116,16 +116,16 @@ Vector<double> Optimizer<N, Algo>::optimize()
     timer_.StopStopWatch();
 
     // Warn if upper or lower bounds are touched
-    warnBoundsHit(x, lowerBounds_, upperBounds_, config_.paramNames);
+    warnBoundsHit(x, lowerBounds_, upperBounds_);
 
     // Log calibration results
     logResults(
-        x,                               // Parameters
-        config_.paramNames,              // Parameter names
-        sse,                             // SSE
-        iterCount_,                      // Iterations
-        timer_.GetTime<std::milli>(),    // Elapsed [ms]
-        (successCode > ::nlopt::FAILURE) // Success flag
+        x,                               
+        config_.paramNames,              
+        sse,                             
+        iterCount_,                      
+        timer_.GetTime<std::milli>(),    
+        (successCode > ::nlopt::FAILURE)
     );
 
     return x;

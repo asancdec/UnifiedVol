@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "Core/VolSurface.hpp"
 #include "Core/Matrix/Matrix.hpp"
 #include "Core/Types.hpp"
 #include "Models/LocalVol/Pricer.hpp"
@@ -35,6 +36,13 @@
 
 namespace uv::models::localvol::calibrator
 {
+
+template <std::floating_point T, std::size_t NT, std::size_t NX, class Interpolator>
+Surface<T> calibrate(
+    const core::VolSurface<T>& volSurface,
+    Pricer<T, NT, NX, Interpolator>& pricer
+);
+
 template <std::floating_point T, std::size_t NT, std::size_t NX, class Interpolator>
 Surface<T> calibrate(
     const core::Matrix<T>& callM,

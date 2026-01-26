@@ -61,7 +61,7 @@ template <std::size_t N, typename Policy = Policy<>> class Optimizer
     // Member variables
     //--------------------------------------------------------------------------
 
-    Config<N> config_;                  // Optimiser configuration
+    Config config_;                      // Optimiser configuration
     std::array<double, N> lowerBounds_; // Lower parameter bounds
     std::array<double, N> upperBounds_; // Upper parameter bounds
     std::array<double, N> x_;           // Parameter block (optimised in-place)
@@ -81,7 +81,7 @@ template <std::size_t N, typename Policy = Policy<>> class Optimizer
      * @param config Optimiser configuration (tolerances, parameter names,
      * logging options).
      */
-    explicit Optimizer(const Config<N>& config);
+    explicit Optimizer(const Config& config);
 
     //--------------------------------------------------------------------------
     // Calibration

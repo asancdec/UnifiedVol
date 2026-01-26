@@ -5,8 +5,7 @@
  * Created:     2025-01-26
  *
  * Description:
- *   Optimisation helper utilities: ATM weighting, bounds diagnostics,
- *   and logging.
+ *   Optimization helper utilities.
  *
  * Copyright (c) 2025 Álvaro Sánchez de Carlos
  *
@@ -27,10 +26,10 @@
 
 #include "Core/Types.hpp"
 
-#include <algorithm>
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <vector>
 #include <span>
 #include <string>
 #include <string_view>
@@ -82,74 +81,62 @@ void weightsATM(
 );
 
 /**
- * @brief Clamp an initial guess inside component-wise bounds.
+ * @brief Clamp parameters to their bounds.
  *
- * @details
- * For each component i:
+ * Optionally validates input sizes and bounds, then clamps each value
+ * in @p initGuess to the corresponding [lowerBounds, upperBounds] interval.
  *
- *   initGuess[i] = clamp(initGuess[i], lowerBounds[i], upperBounds[i])
- *
- * Logs a warning for any parameter that is modified.
- *
- * @tparam N Number of parameters.
- * @param initGuess Initial parameter vector (modified in-place).
- * @param lowerBounds Component-wise lower bounds.
- * @param upperBounds Component-wise upper bounds.
- * @param paramNames Parameter names used for logging.
+ * @param initGuess     Initial parameter guesses (modified in place).
+ * @param lowerBounds   Lower bounds per parameter.
+ * @param upperBounds   Upper bounds per parameter.
+ * @param doValidate    Enable input validation.
  */
-template <std::size_t N>
 void clamp(
-    std::array<double, N>& initGuess,
-    const std::array<double, N>& lowerBounds,
-    const std::array<double, N>& upperBounds,
-    const std::array<std::string_view, N>& paramNames
-) noexcept;
+    std::span<double> initGuess,
+    std::span<const double> lowerBounds,
+    std::span<const double> upperBounds,
+    bool doValidate = true
+);
 
 /**
- * @brief Emit warnings when parameters lie numerically on their bounds.
+ * @brief Emit warnings when parameters are close to their bounds.
  *
- * @details
- * Uses small absolute/relative tolerances to detect whether a value is
- * effectively equal to its lower or upper bound, and logs warnings.
+ * Checks whether any value in @p x is numerically close to its lower or
+ * upper bound and logs a warning if so.
  *
- * @tparam N Number of parameters.
- * @param x Optimised parameter vector.
- * @param lowerBounds Component-wise lower bounds.
- * @param upperBounds Component-wise upper bounds.
- * @param paramNames Parameter names used for logging.
+ * @param x            Parameter values to inspect.
+ * @param lowerBounds  Lower bounds per parameter.
+ * @param upperBounds  Upper bounds per parameter.
+ * @param doValidate   Enable input validation.
  */
-template <std::size_t N>
 void warnBoundsHit(
-    std::span<double> x,
-    const std::array<double, N>& lowerBounds,
-    const std::array<double, N>& upperBounds,
-    const std::array<std::string_view, N>& paramNames
-) noexcept;
+    std::span<const double> x,
+    std::span<const double> lowerBounds,
+    std::span<const double> upperBounds,
+    bool doValidate = true
+);
 
 /**
- * @brief Log optimisation results in a standardised calibration format.
+ * @brief Log calibration results.
  *
- * @details
- * Prints parameter values and summary diagnostics, including SSE, elapsed
- * time, iteration count, and a success flag.
+ * Logs parameter values (if names are provided), final error metric,
+ * timing information, iteration count, and success status.
  *
- * @tparam N Number of parameters.
- * @param x Optimised parameter vector.
- * @param paramNames Parameter names used for logging.
- * @param sse Final sum of squared errors.
- * @param iterCount Iteration count.
- * @param elapsedMs Elapsed time in milliseconds.
- * @param isSuccess Whether the optimiser reported success.
+ * @param x           Final parameter values.
+ * @param paramNames  Optional parameter names (must match @p x if non-empty).
+ * @param sse         Final sum of squared errors.
+ * @param iterCount   Number of iterations performed.
+ * @param elapsedMs   Elapsed wall-clock time in milliseconds.
+ * @param isSuccess   Whether calibration converged successfully.
  */
-template <std::size_t N>
 void logResults(
-    std::span<double> x,
-    const std::array<std::string_view, N>& paramNames,
+    std::span<const double> x,
+    std::span<const std::string_view> paramNames,
     double sse,
     unsigned iterCount,
     double elapsedMs,
     bool isSuccess
-) noexcept;
+);
 
 namespace detail
 {
@@ -171,6 +158,14 @@ void validateWeightsATM(
     const WeightATM<T>& params,
     std::span<T> out
 );
+
+void validateBounds(
+    std::span<const double> x,
+    std::span<const double> lowerBounds,
+    std::span<const double> upperBounds
+);
+
+
 } // namespace detail
 } // namespace uv::math::opt
 
