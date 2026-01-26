@@ -28,27 +28,27 @@
 
 // ---------- Core I/O ----------
 
+#include "Utils/Aux/StopWatch.hpp"
 #include "Utils/IO/CSV/Functions.hpp"
 #include "Utils/IO/Log.hpp"
-#include "Utils/Aux/StopWatch.hpp"
 
 // ---------- Core Data ----------
 
-#include "Core/VolSurface.hpp"
+#include "Core/Functions.hpp"
 #include "Core/MarketData.hpp"
 #include "Core/Matrix/Matrix.hpp"
-#include "Core/Functions.hpp"
 #include "Core/Types.hpp"
+#include "Core/VolSurface.hpp"
 
 // ---------- Models ----------
 
+#include "Models/Heston/Calibrator.hpp"
+#include "Models/Heston/Config.hpp"
+#include "Models/Heston/Pricer.hpp"
+#include "Models/LocalVol/Calibrator.hpp"
+#include "Models/LocalVol/Pricer.hpp"
 #include "Models/SVI/Functions.hpp"
 #include "Models/SVI/Params.hpp"
-#include "Models/LocalVol/Pricer.hpp"
-#include "Models/LocalVol/Calibrator.hpp"
-#include "Models/Heston/Pricer.hpp"
-#include "Models/Heston/Config.hpp"
-#include "Models/Heston/Calibrator.hpp"
 
 // ---------- Utils ----------
 
@@ -57,8 +57,8 @@
 // ---------- Math ----------
 
 #include "Math/Integration/TanHSinH.hpp"
-#include "Math/Optimization/Ceres/Policy.hpp"
 #include "Math/Optimization/Ceres/Config.hpp"
+#include "Math/Optimization/Ceres/Policy.hpp"
 
 // ---------- Third-party ----------
 
@@ -68,13 +68,10 @@
 
 // ---------- STL ----------
 
-#include <ratio>
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
+#include <format>
 #include <iostream>
 #include <memory>
-#include <format>
-
-
-
+#include <ratio>

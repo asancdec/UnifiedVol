@@ -22,30 +22,28 @@
  * limitations under this License.
  */
 
-
 #pragma once
 
 #include <concepts>
 
 namespace uv::models::svi
 {
-    /**
-     * @brief SVI parameters for one maturity.
-     *
-     * Represents a single calibrated SVI slice describing the
-     * total variance smile at a given maturity.
-     *
-     * The parameter `a` is typically fixed from the ATM total variance
-     * and not optimized directly.
-     */
-    template <std::floating_point T>
-    struct Params
-    {
-        T t;       ///< Maturity (years)
-        T a;       ///< ATM total variance level
-        T b;       ///< Smile amplitude
-        T rho;     ///< Skew parameter (-1 < rho < 1)
-        T m;       ///< Horizontal shift
-        T sigma;   ///< Smile curvature / smoothness
-    };
-}
+/**
+ * @brief SVI parameters for one maturity.
+ *
+ * Represents a single calibrated SVI slice describing the
+ * total variance smile at a given maturity.
+ *
+ * The parameter `a` is typically fixed from the ATM total variance
+ * and not optimized directly.
+ */
+template <std::floating_point T> struct Params
+{
+    T t;     ///< Maturity (years)
+    T a;     ///< ATM total variance level
+    T b;     ///< Smile amplitude
+    T rho;   ///< Skew parameter (-1 < rho < 1)
+    T m;     ///< Horizontal shift
+    T sigma; ///< Smile curvature / smoothness
+};
+} // namespace uv::models::svi

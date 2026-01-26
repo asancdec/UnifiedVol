@@ -5,7 +5,7 @@
  * Created:     2025-12-08
  *
  * Description:
- *   PDE solvers and 
+ *   PDE solvers and
  *
  * Copyright (c) 2025 Álvaro Sánchez de Carlos
  *
@@ -22,69 +22,52 @@
  * limitations under this License.
  */
 
-
 #pragma once
 
 #include "Math/PDE/AHCache.hpp"
 
-#include <cstddef>
-#include <concepts>
-#include <span>
 #include <array>
+#include <concepts>
+#include <cstddef>
+#include <span>
 
 namespace uv::math::pde
 {
 
-    template
-    <
-        std::floating_point T,
-        std::size_t N,
-        typename F
-    >
-    std::array<T, N> andreasenHugeInit
-    (
-        const std::array<T, N>& xGrid, 
-        F&& payoff
-    );
+template <std::floating_point T, std::size_t N, typename F>
+std::array<T, N> andreasenHugeInit(const std::array<T, N>& xGrid, F&& payoff);
 
-    template
-    <
-        std::floating_point T,
-        std::size_t NT,
-        std::size_t NX
-    >
-    [[gnu::hot]]
-    void andreasenHugeSolve
-    (
-        std::span<T, NX> c,
-        std::span<T, NX-2> cInner, 
-        AHCache<T, NX>& aHCache
-    ) noexcept;
+template <std::floating_point T, std::size_t NT, std::size_t NX>
+[[gnu::hot]] void andreasenHugeSolve(
+    std::span<T, NX> c,
+    std::span<T, NX - 2> cInner,
+    AHCache<T, NX>& aHCache
+) noexcept;
 
-    namespace detail
-    {
-        /**
-         * @brief Solve a tridiagonal linear system using the Thomas algorithm.
-         *
-         * Solves A * x = rhs in-place, where A is tridiagonal with:
-         * - lower[i]  = sub-diagonal entry
-         * - middle[i] = main diagonal entry b_i
-         * - upper[i]  = super-diagonal entry c_i
-         *
-         * References:
-         * - Tridiagonal matrix algorithm (Thomas algorithm), Wikipedia.
-         *   https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm
-         */
-        template <std::floating_point T, std::size_t N>
-        [[gnu::hot]]
-        void thomasSolve(std::span<T, N> x,
-            std::span<const T, N> upper,
-            std::span<const T, N> middle,
-            std::span<const T, N> lower,
-            std::span<T, N> scratch) noexcept;
+namespace detail
+{
+/**
+ * @brief Solve a tridiagonal linear system using the Thomas algorithm.
+ *
+ * Solves A * x = rhs in-place, where A is tridiagonal with:
+ * - lower[i]  = sub-diagonal entry
+ * - middle[i] = main diagonal entry b_i
+ * - upper[i]  = super-diagonal entry c_i
+ *
+ * References:
+ * - Tridiagonal matrix algorithm (Thomas algorithm), Wikipedia.
+ *   https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm
+ */
+template <std::floating_point T, std::size_t N>
+[[gnu::hot]] void thomasSolve(
+    std::span<T, N> x,
+    std::span<const T, N> upper,
+    std::span<const T, N> middle,
+    std::span<const T, N> lower,
+    std::span<T, N> scratch
+) noexcept;
 
-
-    } // namespace detail
+} // namespace detail
 
 } // namespace uv::math::pde
 

@@ -24,43 +24,29 @@
 
 #pragma once
 
-#include "Core/Types.hpp"
 #include "Core/Matrix/Matrix.hpp"
+#include "Core/Types.hpp"
 
-#include <span>
 #include <concepts>
+#include <span>
 
 namespace uv::models::localvol
 {
-	template <std::floating_point T>
-	class Surface
-	{
-	private:
+template <std::floating_point T> class Surface
+{
+  private:
+    Vector<T> tenors_;
+    core::Matrix<T> logKF_;
+    core::Matrix<T> localVar_;
 
-		Vector<T> tenors_;
-		core::Matrix<T> logKF_;
-		core::Matrix<T> localVar_;
+    // Matrix<T> dydx_;
 
+  public:
+    Surface() = delete;
 
+    explicit Surface(Vector<T> tenors, core::Matrix<T> logKF, core::Matrix<T> localVar);
+};
 
-
-		//Matrix<T> dydx_;
-
-	public:
-
-		Surface() = delete;
-
-		explicit Surface
-		(
-			Vector<T> tenors,
-			core::Matrix<T> logKF,
-			core::Matrix<T> localVar
-		);
-
-	};
-
-
-
-} // namespace uv::movels::localvol
+} // namespace uv::models::localvol
 
 #include "Surface.inl"

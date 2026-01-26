@@ -28,92 +28,70 @@
 #include "Math/PDE/AHCache.hpp"
 #include "Models/LocalVol/VarianceView.hpp"
 
+#include <array>
 #include <concepts>
 #include <cstddef>
 #include <span>
-#include <array>
 
 namespace uv::models::localvol
 {
-	template
-	<
-		std::floating_point T,
-		std::size_t NT,
-		std::size_t NX,
-		class Interpolator
-	>
-	class Pricer
-	{
-	private:
+template <std::floating_point T, std::size_t NT, std::size_t NX, class Interpolator>
+class Pricer
+{
+  private:
+    // ---------- Validate ----------
 
-		// ---------- Validate ----------
+    // Size
+    static_assert(NX >= 4, "NX must be >= 4");
 
-		// Size
-		static_assert(NX >= 4, "NX must be >= 4");
+    // Grids
+    std::array<T, NX> xGrid_;
+    std::array<T, NX> cInit_;
+    std::array<T, NX> c_;
 
-		// Grids
-		std::array<T, NX> xGrid_;
-		std::array<T, NX> cInit_;
-		std::array<T, NX> c_;
+    // Views
+    std::span<const T, NX - 2> xGridInner_;
+    std::span<T, NX - 2> cInner_;
 
-		// Views
-		std::span<const T, NX - 2> xGridInner_;
-		std::span<T, NX - 2> cInner_;
+    // Cached variables and buffers
+    math::pde::AHCache<T, NX> ahCache_{};
 
-		// Cached variables and buffers
-		math::pde::AHCache<T, NX> ahCache_{};
+    // Interpolator
+    Interpolator interpolator_{};
 
-		// Interpolator
-		Interpolator interpolator_{};
+  public:
+    // ---------- Typing ----------
 
-	public:
+    using interpolator_type = Interpolator;
+    using derivatives_type = typename interpolator_type::derivatives_type;
+    using evaluator_type = typename interpolator_type::evaluator_type;
 
-		// ---------- Typing ----------
+    Pricer() = delete;
 
-		using interpolator_type = Interpolator;
-		using derivatives_type = typename interpolator_type::derivatives_type;
-		using evaluator_type   = typename interpolator_type::evaluator_type;
+    template <typename F> Pricer(F&& payoff, T xBound);
 
+    Vector<T> priceNormalized(
+        T tenor,
+        std::span<const T> logKF,
+        const VarianceView<T>& localVarView
+    );
 
-		Pricer() = delete;
+    Vector<T> price(
+        T tenor,
+        T forward,
+        T discountFactor,
+        std::span<const T> logKF,
+        const VarianceView<T>& localVarView
+    );
 
-		template <typename F>
-		Pricer
-		(
-			F&& payoff,
-			T xBound
-		);
-
-		Vector<T> priceNormalized
-		(
-			T tenor,
-			std::span<const T> logKF,
-			const VarianceView<T>& localVarView
-		);
-
-		Vector<T> price
-		(
-			T tenor,
-			T forward,
-			T discountFactor,
-			std::span<const T> logKF,
-			const VarianceView<T>& localVarView
-		);
-
-		Vector<T> price
-		(
-			Vector<T> tenor,
-			T forward,
-			T discountFactor,
-			std::span<const T> logKF,
-			const VarianceView<T>& localVarView
-		);
-
-
-
-
-
-	};
+    Vector<T> price(
+        Vector<T> tenor,
+        T forward,
+        T discountFactor,
+        std::span<const T> logKF,
+        const VarianceView<T>& localVarView
+    );
+};
 
 } // namespace uv::models::localvol
 

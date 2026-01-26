@@ -22,43 +22,42 @@
  * limitations under this License.
  */
 
-
 #include "Utils/Aux/StopWatch.hpp"
 #include <chrono>
 
 namespace uv::utils
 {
-    StopWatch::StopWatch()   = default;
+StopWatch::StopWatch() = default;
 
-    void StopWatch::StartStopWatch() noexcept
+void StopWatch::StartStopWatch() noexcept
+{
+    if (!running_)
     {
-        if (!running_)
-        {
-            // Run
-            running_ = true;
+        // Run
+        running_ = true;
 
-            // Set startTime to now
-            startTime_ = std::chrono::high_resolution_clock::now();
-        }
-    }
-
-    void StopWatch::StopStopWatch() noexcept
-    {
-        if (running_)
-        {
-            // Set the endTime to now
-            endTime_ = std::chrono::high_resolution_clock::now();
-
-            // Stop
-            running_ = false;
-        }
-    }
-
-    void StopWatch::Reset() noexcept
-    {
-        // Reset all private variables
-        running_ = false;
-        startTime_ = std::chrono::high_resolution_clock::time_point();
-        endTime_ = std::chrono::high_resolution_clock::time_point();
+        // Set startTime to now
+        startTime_ = std::chrono::high_resolution_clock::now();
     }
 }
+
+void StopWatch::StopStopWatch() noexcept
+{
+    if (running_)
+    {
+        // Set the endTime to now
+        endTime_ = std::chrono::high_resolution_clock::now();
+
+        // Stop
+        running_ = false;
+    }
+}
+
+void StopWatch::Reset() noexcept
+{
+    // Reset all private variables
+    running_ = false;
+    startTime_ = std::chrono::high_resolution_clock::time_point();
+    endTime_ = std::chrono::high_resolution_clock::time_point();
+}
+} // namespace uv::utils

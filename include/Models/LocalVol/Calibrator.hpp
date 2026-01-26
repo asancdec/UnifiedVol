@@ -24,65 +24,43 @@
 
 #pragma once
 
-#include "Core/Types.hpp"
 #include "Core/Matrix/Matrix.hpp"
+#include "Core/Types.hpp"
 #include "Models/LocalVol/Pricer.hpp"
 #include "Models/LocalVol/Surface.hpp"
 
-#include <span>
 #include <concepts>
 #include <cstddef>
+#include <span>
 
 namespace uv::models::localvol::calibrator
-{	
-	template
-	<
-		std::floating_point T,
-		std::size_t NT,
-		std::size_t NX,
-        class Interpolator
-	>
-	Surface<T> calibrate
-	(
-		const core::Matrix<T>& callM,
-		const Vector<T>& tenors,
-		const core::Matrix<T>& logKF,
-		const core::Matrix<T>& totVar,
-		Pricer<T, NT, NX, Interpolator>& pricer
-	);
-	
+{
+template <std::floating_point T, std::size_t NT, std::size_t NX, class Interpolator>
+Surface<T> calibrate(
+    const core::Matrix<T>& callM,
+    const Vector<T>& tenors,
+    const core::Matrix<T>& logKF,
+    const core::Matrix<T>& totVar,
+    Pricer<T, NT, NX, Interpolator>& pricer
+);
 
-	namespace detail
-	{
-		template<std::floating_point T>
-		void validate
-		(
-			const core::Matrix<T>& callM,
-			const Vector<T>& tenors,
-			const core::Matrix<T>& logKF,
-			const core::Matrix<T>& totVar
-		);
+namespace detail
+{
+template <std::floating_point T>
+void validate(
+    const core::Matrix<T>& callM,
+    const Vector<T>& tenors,
+    const core::Matrix<T>& logKF,
+    const core::Matrix<T>& totVar
+);
 
-		template<std::floating_point T>
-		void coldGuess 
-		(
-			T tenor,
-			std::span<const T> totVar,
-			std::span<T> localVar
-		) noexcept;
+template <std::floating_point T>
+void coldGuess(T tenor, std::span<const T> totVar, std::span<T> localVar) noexcept;
 
-		template<std::floating_point T>
-		void warmGuess
-		(
-			std::span<const T> params,
-			std::span<T> localVar
-		) noexcept;
+template <std::floating_point T>
+void warmGuess(std::span<const T> params, std::span<T> localVar) noexcept;
 
-
-
-
-
-	} // namespace detail
-} // namespace uv::models::localvol
+} // namespace detail
+} // namespace uv::models::localvol::calibrator
 
 #include "Calibrator.inl"

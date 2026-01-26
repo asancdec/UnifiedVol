@@ -22,178 +22,144 @@
  * limitations under this License.
  */
 
-#include "Math/PDE/Functions.hpp"
 #include "Core/Functions.hpp"
+#include "Math/PDE/Functions.hpp"
 #include "Utils/Aux/Errors.hpp"
 
 #include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <numeric>
-#include <iomanip>
 #include <utility>
 
 namespace uv::models::localvol
 {
-    template
-    <
-        std::floating_point T,
-        std::size_t NT,
-        std::size_t NX,
-        class Interpolator
-    >
-    template <typename F>
-    Pricer<T, NT, NX, Interpolator>::Pricer
-    (
-        F&& payoff,
-        T xBound
-    )
-        :
-        xGrid_(core::generateGrid<T, NX>(-xBound, xBound)),
-        cInit_(math::pde::andreasenHugeInit<T, NX>(xGrid_, std::forward<F>(payoff))),
-        xGridInner_(xGrid_.data() + 1, NX - 2),
-        cInner_(c_.data() + 1, NX - 2)
-    {
-        // ---------- Validate ----------
+template <std::floating_point T, std::size_t NT, std::size_t NX, class Interpolator>
+template <typename F>
+Pricer<T, NT, NX, Interpolator>::Pricer(F&& payoff, T xBound)
+    : xGrid_(core::generateGrid<T, NX>(-xBound, xBound)),
+      cInit_(math::pde::andreasenHugeInit<T, NX>(xGrid_, std::forward<F>(payoff))),
+      xGridInner_(xGrid_.data() + 1, NX - 2),
+      cInner_(c_.data() + 1, NX - 2)
+{
+    // ---------- Validate ----------
 
-        UV_REQUIRE
-        (
-            xBound > 0.0,
-            ErrorCode::InvalidArgument,
-            "andreasenHugeInit: xBound must be positive"
-        );
+    UV_REQUIRE(
+        xBound > 0.0,
+        ErrorCode::InvalidArgument,
+        "andreasenHugeInit: xBound must be positive"
+    );
 
-        // ---------- Precompute ----------
-        
-        // Helpers
+    // ---------- Precompute ----------
 
-        const T dX{ (2.0 * xBound) / (NX - 1) };
-        const T invDX{ 1.0 / dX };
-        const T invDXDivTwo{0.5 * invDX};
-        const T invDXSquared{ invDX * invDX };
-        const T invDXSquaredTimesTwo{ invDXSquared * 2.0 };
-        const T lowerFactor{ invDXSquared + invDXDivTwo };
-        const T upperFactor{ invDXSquared - invDXDivTwo };
+    // Helpers
 
-        // Boundaries
+    const T dX{(2.0 * xBound) / (NX - 1)};
+    const T invDX{1.0 / dX};
+    const T invDXDivTwo{0.5 * invDX};
+    const T invDXSquared{invDX * invDX};
+    const T invDXSquaredTimesTwo{invDXSquared * 2.0};
+    const T lowerFactor{invDXSquared + invDXDivTwo};
+    const T upperFactor{invDXSquared - invDXDivTwo};
 
-        const T rL{ std::exp(-dX) };
-        const T rR{ std::exp(dX) };
+    // Boundaries
 
-        const T aL{ 1.0 + rL };
-        const T bL{ - rL};
-        const T aR{1.0 + rR};
-        const T bR{ -rR };
+    const T rL{std::exp(-dX)};
+    const T rR{std::exp(dX)};
 
-        // ---------- Store ----------
+    const T aL{1.0 + rL};
+    const T bL{-rL};
+    const T aR{1.0 + rR};
+    const T bR{-rR};
 
-        ahCache_.invDXSquared = invDXSquared;
-        ahCache_.invDXSquaredTimesTwo = invDXSquaredTimesTwo;
+    // ---------- Store ----------
 
-        ahCache_.lowerFactor = lowerFactor;
-        ahCache_.upperFactor = upperFactor;
+    ahCache_.invDXSquared = invDXSquared;
+    ahCache_.invDXSquaredTimesTwo = invDXSquaredTimesTwo;
 
-        ahCache_.aL = aL;
-        ahCache_.bL = bL;
-        ahCache_.aR = aR;
-        ahCache_.bR = bR;
-    }
+    ahCache_.lowerFactor = lowerFactor;
+    ahCache_.upperFactor = upperFactor;
 
-    template
-    <
-        std::floating_point T,
-        std::size_t NT,
-        std::size_t NX,
-        class Interpolator
-    >
-    Vector<T> Pricer<T, NT, NX, Interpolator>::priceNormalized
-    (
-        T tenor,
-        std::span<const T> logKF,
-        const VarianceView<T>& localVarView
-    )
-    {
-        // ---------- Precompute ----------
+    ahCache_.aL = aL;
+    ahCache_.bL = bL;
+    ahCache_.aR = aR;
+    ahCache_.bR = bR;
+}
 
-        T dt{ tenor / NT };
-        T dtDivTwo{ 0.5 * dt };
+template <std::floating_point T, std::size_t NT, std::size_t NX, class Interpolator>
+Vector<T> Pricer<T, NT, NX, Interpolator>::priceNormalized(
+    T tenor,
+    std::span<const T> logKF,
+    const VarianceView<T>& localVarView
+)
+{
+    // ---------- Precompute ----------
 
-        ahCache_.zLower = -dtDivTwo * ahCache_.lowerFactor;
-        ahCache_.zMiddle = dtDivTwo * ahCache_.invDXSquaredTimesTwo;
-        ahCache_.zUpper = -dtDivTwo * ahCache_.upperFactor;
+    T dt{tenor / NT};
+    T dtDivTwo{0.5 * dt};
 
-        // ---------- Configure ----------
+    ahCache_.zLower = -dtDivTwo * ahCache_.lowerFactor;
+    ahCache_.zMiddle = dtDivTwo * ahCache_.invDXSquaredTimesTwo;
+    ahCache_.zUpper = -dtDivTwo * ahCache_.upperFactor;
 
-        // Write the initial values into the buffer
-        c_ = cInit_;
+    // ---------- Configure ----------
 
-        // Local variance
-        interpolator_
-        (
-            xGridInner_,              
-            localVarView.logKF,
-            localVarView.localVar,
-            localVarView.dydx,
-            ahCache_.localVar     // Write into the buffer
-        );
+    // Write the initial values into the buffer
+    c_ = cInit_;
 
-        // ---------- Solve ----------
+    // Local variance
+    interpolator_(
+        xGridInner_,
+        localVarView.logKF,
+        localVarView.localVar,
+        localVarView.dydx,
+        ahCache_.localVar // Write into the buffer
+    );
 
-        math::pde::andreasenHugeSolve<T, NT, NX>
-        (
-            c_,
-            cInner_,
-            ahCache_
-        );
+    // ---------- Solve ----------
 
-        // ---------- Interpolate ----------
+    math::pde::andreasenHugeSolve<T, NT, NX>(c_, cInner_, ahCache_);
 
-        return interpolator_
-        (
-            logKF,
-            xGrid_,
-            c_
-        );
-    }
+    // ---------- Interpolate ----------
 
-    //template
-    //<
-    //    std::floating_point T,
-    //    std::size_t NT,
-    //    std::size_t NX,
-    //    class Interpolator
-    //>
-    //Vector<T> Pricer<T, NT, NX, Interpolator>::price
-    //(
-    //    T tenor,
-    //    T forward,
-    //    T discountFactor,
-    //    std::span<const T> logKF,
-    //    VarianceView<T>& localVarView
-    //)
-    //{
-    //    // ---------- Price ----------
+    return interpolator_(logKF, xGrid_, c_);
+}
 
-    //    Vector <T> cNormalized
-    //    { 
-    //        priceNormalized
-    //        (
-    //            tenor,
-    //            logKF,
-    //            localVarView
-    //        ) 
-    //    };
+// template
+//<
+//     std::floating_point T,
+//     std::size_t NT,
+//     std::size_t NX,
+//     class Interpolator
+//>
+// Vector<T> Pricer<T, NT, NX, Interpolator>::price
+//(
+//     T tenor,
+//     T forward,
+//     T discountFactor,
+//     std::span<const T> logKF,
+//     VarianceView<T>& localVarView
+//)
+//{
+//     // ---------- Price ----------
 
-    //    // ---------- Transform ----------
+//    Vector <T> cNormalized
+//    {
+//        priceNormalized
+//        (
+//            tenor,
+//            logKF,
+//            localVarView
+//        )
+//    };
 
-    //    return core::multiply<T>
-    //    (
-    //        cNormalized,
-    //        forward * discountFactor
-    //    );
-    //}
+//    // ---------- Transform ----------
 
-
-
-
+//    return core::multiply<T>
+//    (
+//        cNormalized,
+//        forward * discountFactor
+//    );
+//}
 
 } // namespace uv::models::localvol

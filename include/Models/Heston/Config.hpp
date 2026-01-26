@@ -22,25 +22,25 @@
  * limitations under this License.
  */
 
-
 #pragma once
 
-#include <limits>
 #include <concepts>
+#include <limits>
 
 namespace uv::models::heston
 {
-    /**
-     * @brief Configuration parameters for the Heston Fourier / contour-shift pricer.
-     *
-     * Stores damping parameters used to ensure integrability of the pricing integral,
-     * plus a small numerical epsilon used for stability guards.
-     */
-    template<std::floating_point T>
-    struct Config
-    {
-        T alphaItm;                                    ///< Damping parameter when ln(F/K) >= 0 (ITM region).
-        T alphaOtm;                                    ///< Damping parameter when ln(F/K) < 0  (OTM region).
-        T eps{ std::numeric_limits<T>::epsilon() };    ///< Numerical epsilon (defaults to machine epsilon).
-    };
-}
+/**
+ * @brief Configuration parameters for the Heston Fourier / contour-shift
+ * pricer.
+ *
+ * Stores damping parameters used to ensure integrability of the pricing
+ * integral, plus a small numerical epsilon used for stability guards.
+ */
+template <std::floating_point T> struct Config
+{
+    T alphaItm; ///< Damping parameter when ln(F/K) >= 0 (ITM region).
+    T alphaOtm; ///< Damping parameter when ln(F/K) < 0  (OTM region).
+    T eps{std::numeric_limits<T>::epsilon()}; ///< Numerical epsilon (defaults
+                                              ///< to machine epsilon).
+};
+} // namespace uv::models::heston

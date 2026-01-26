@@ -24,26 +24,25 @@
 
 #pragma once
 
-#include <span>
 #include <concepts>
+#include <span>
 
 namespace uv::models::localvol
 {
-    /**
-     * @brief Non-owning view of a local-variance row at a fixed maturity.
-     *
-     * Provides read-only access to the interpolation grid (log-forward moneyness),
-     * local variance values, and precomputed derivatives used by interpolation
-     * and PDE solvers.
-     *
-     * All spans are required to have the same length and remain valid for the
-     * lifetime of the view.
-     */
-    template <std::floating_point T>
-    struct VarianceView
-    {
-        std::span<const T> logKF;       ///< log(K/F) grid nodes.
-        std::span<const T> localVar;    ///< Local variance values at grid nodes.
-        std::span<const T> dydx;        ///< Derivatives d(var)/d(log(K/F)) at nodes.
-    };
+/**
+ * @brief Non-owning view of a local-variance row at a fixed maturity.
+ *
+ * Provides read-only access to the interpolation grid (log-forward moneyness),
+ * local variance values, and precomputed derivatives used by interpolation
+ * and PDE solvers.
+ *
+ * All spans are required to have the same length and remain valid for the
+ * lifetime of the view.
+ */
+template <std::floating_point T> struct VarianceView
+{
+    std::span<const T> logKF;    ///< log(K/F) grid nodes.
+    std::span<const T> localVar; ///< Local variance values at grid nodes.
+    std::span<const T> dydx;     ///< Derivatives d(var)/d(log(K/F)) at nodes.
+};
 } // namespace uv::models::localvol

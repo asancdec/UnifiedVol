@@ -22,348 +22,267 @@
  * limitations under this License.
  */
 
-#include "Utils/Aux/Errors.hpp"
-#include "Models/LocalVol/VarianceView.hpp"
 #include "Math/Interpolation/Interpolator.hpp"
 #include "Math/Interpolation/Policies.hpp"
+#include "Models/LocalVol/VarianceView.hpp"
+#include "Utils/Aux/Errors.hpp"
 
 #include <format>
 
 namespace uv::models::localvol::calibrator
 {
 
-	template
-	<
-		std::floating_point T,
-		std::size_t NT,
-		std::size_t NX,
-        class Interpolator
-	>
-	Surface<T> calibrate
-	(
-		const core::Matrix<T>& callM,
-		const Vector<T>& tenors,
-		const core::Matrix<T>& logKF,
-        const core::Matrix<T>& totVar, 
-        Pricer<T, NT, NX, Interpolator>& pricer
-	)
-	{
-		// ---------- Validate ----------
-		
-        detail::validate
-        (
-            callM, 
-            tenors,
-            logKF,
-            totVar
-        );
+template <std::floating_point T, std::size_t NT, std::size_t NX, class Interpolator>
+Surface<T> calibrate(
+    const core::Matrix<T>& callM,
+    const Vector<T>& tenors,
+    const core::Matrix<T>& logKF,
+    const core::Matrix<T>& totVar,
+    Pricer<T, NT, NX, Interpolator>& pricer
+)
+{
+    // ---------- Validate ----------
 
-		// ---------- Allocate ----------
+    detail::validate(callM, tenors, logKF, totVar);
 
-        // Size
-        std::size_t nTenors{ logKF.rows() };
-		std::size_t nStrikes{ logKF.cols() };
+    // ---------- Allocate ----------
 
-        // Buffers
-        Vector<T> localVar(nStrikes);
-        Vector<T> dydx(nStrikes);
+    // Size
+    std::size_t nTenors{logKF.rows()};
+    std::size_t nStrikes{logKF.cols()};
 
-        // Parameters
-        Vector<T> params;
+    // Buffers
+    Vector<T> localVar(nStrikes);
+    Vector<T> dydx(nStrikes);
 
-        // Derivatives policy
-        // NOTE: the architecture ensures the derivatives calculation policy
-        // matches that of the the interpolator used in the Pricer instance
-        typename Pricer<T, NT, NX, Interpolator>::derivatives_type derivPolicy{};
+    // Parameters
+    Vector<T> params;
 
-        // ---------- Initial guess ----------
+    // Derivatives policy
+    // NOTE: the architecture ensures the derivatives calculation policy
+    // matches that of the the interpolator used in the Pricer instance
+    typename Pricer<T, NT, NX, Interpolator>::derivatives_type derivPolicy{};
 
-        detail::coldGuess<T>
-        (
-            tenors.front(),
-            totVar[0],
-            localVar
-        );
+    // ---------- Initial guess ----------
 
-        // ---------- Extract ----------
+    detail::coldGuess<T>(tenors.front(), totVar[0], localVar);
 
-        std::span<const T> logKFSlice{logKF[0]};
-        T tenor{tenors[0]};
+    // ---------- Extract ----------
 
-        // Calculate derivatives at knots
-        derivPolicy
-        (
-            logKFSlice,
-            localVar,
-            dydx
-        );
+    std::span<const T> logKFSlice{logKF[0]};
+    T tenor{tenors[0]};
 
-        // Pack into VarianceView struct
-        VarianceView<T> localVarView
-        {
-            logKFSlice,
-            localVar,
-            dydx
-        };
+    // Calculate derivatives at knots
+    derivPolicy(logKFSlice, localVar, dydx);
 
-        // Price
-        Vector<T> prices 
-        {
-            pricer.priceNormalized
-            (
-                tenor,
-                logKFSlice,
-                localVarView
-            )
-        };
+    // Pack into VarianceView struct
+    VarianceView<T> localVarView{logKFSlice, localVar, dydx};
 
-        //for (std::size_t i = 0; i < results.size(); ++i)
-        //{
-        //    std::cout << results[i] * 485.77548 << ' ';
-        //}
+    // Price
+    Vector<T> prices{pricer.priceNormalized(tenor, logKFSlice, localVarView)};
 
-		return Surface<T>
-		{
-			tenors,
-			logKF,
-		    logKF
-		};
-	}
+    // for (std::size_t i = 0; i < results.size(); ++i)
+    //{
+    //     std::cout << results[i] * 485.77548 << ' ';
+    // }
 
-} // namespace uv::models::localvol
+    return Surface<T>{tenors, logKF, logKF};
+}
+
+} // namespace uv::models::localvol::calibrator
 
 namespace uv::models::localvol::calibrator::detail
 {
-	template<std::floating_point T>
-    void validate
-    (
-        const core::Matrix<T>& callM,
-        const Vector<T>& tenors,
-        const core::Matrix<T>& logKF,
-        const core::Matrix<T>& totVar
-    )
+template <std::floating_point T>
+void validate(
+    const core::Matrix<T>& callM,
+    const Vector<T>& tenors,
+    const core::Matrix<T>& logKF,
+    const core::Matrix<T>& totVar
+)
+{
+    // ---------- Size ----------
+
+    const std::size_t nRows{callM.rows()};
+    const std::size_t nCols{callM.cols()};
+
+    UV_REQUIRE(
+        nRows > 0 && nCols > 0,
+        ErrorCode::InvalidArgument,
+        std::format("validate: callM must be non-empty, got {}x{}", nRows, nCols)
+    );
+
+    UV_REQUIRE(
+        nRows == logKF.rows() && nCols == logKF.cols(),
+        ErrorCode::InvalidArgument,
+        std::format(
+            "validate: callM/logKF size mismatch — callM is "
+            "{}x{}, logKF is {}x{}",
+            nRows,
+            nCols,
+            logKF.rows(),
+            logKF.cols()
+        )
+    );
+
+    UV_REQUIRE(
+        nRows == totVar.rows() && nCols == totVar.cols(),
+        ErrorCode::InvalidArgument,
+        std::format(
+            "validate: callM/totVar size mismatch — callM is "
+            "{}x{}, totVar is {}x{}",
+            nRows,
+            nCols,
+            totVar.rows(),
+            totVar.cols()
+        )
+    );
+
+    UV_REQUIRE(
+        tenors.size() == nRows,
+        ErrorCode::InvalidArgument,
+        std::format("validate: row mismatch — tenors={}, rows={}", tenors.size(), nRows)
+    );
+
+    // ---------- Values ----------
+
+    // Tenors
+    for (std::size_t i = 0; i < nRows; ++i)
     {
-        // ---------- Size ----------
-
-        const std::size_t nRows{ callM.rows() };
-        const std::size_t nCols{ callM.cols() };
-
-        UV_REQUIRE
-        (
-            nRows > 0 && nCols > 0,
+        UV_REQUIRE(
+            std::isfinite(tenors[i]),
             ErrorCode::InvalidArgument,
-            std::format
-            (
-                "validate: callM must be non-empty, got {}x{}",
-                nRows, nCols
-            )
+            std::format("validate: tenors[{}]={} is not finite", i, tenors[i])
         );
 
-        UV_REQUIRE
-        (
-            nRows == logKF.rows() && nCols == logKF.cols(),
+        UV_REQUIRE(
+            tenors[i] > 0.0,
             ErrorCode::InvalidArgument,
-            std::format
-            (
-                "validate: callM/logKF size mismatch — callM is {}x{}, logKF is {}x{}",
-                nRows, nCols, logKF.rows(), logKF.cols()
-            )
+            std::format("validate: tenors[{}]={} must be > 0", i, tenors[i])
         );
 
-        UV_REQUIRE
-        (
-            nRows == totVar.rows() && nCols == totVar.cols(),
-            ErrorCode::InvalidArgument,
-            std::format
-            (
-                "validate: callM/totVar size mismatch — callM is {}x{}, totVar is {}x{}",
-                nRows, nCols, totVar.rows(), totVar.cols()
-            )
-        );
+        if (i > 0)
+        {
+            UV_REQUIRE(
+                tenors[i] > tenors[i - 1],
+                ErrorCode::InvalidArgument,
+                std::format(
+                    "validate: tenors must be strictly increasing, but "
+                    "tenors[{}]={} <= tenors[{}]={}",
+                    i,
+                    tenors[i],
+                    i - 1,
+                    tenors[i - 1]
+                )
+            );
+        }
+    }
 
-        UV_REQUIRE
-        (
-            tenors.size() == nRows,
-            ErrorCode::InvalidArgument,
-            std::format
-            (
-                "validate: row mismatch — tenors={}, rows={}",
-                tenors.size(), nRows
-            )
-        );
-
+    // logKF, callM, totVar matrices
+    for (std::size_t t = 0; t < nRows; ++t)
+    {
         // ---------- Values ----------
 
-        // Tenors
-        for (std::size_t i = 0; i < nRows; ++i)
+        for (std::size_t k = 0; k < nCols; ++k)
         {
-            UV_REQUIRE
-            (
-                std::isfinite(tenors[i]),
+            const T c{callM[t][k]};
+            const T xk{logKF[t][k]};
+            const T w{totVar[t][k]};
+
+            UV_REQUIRE(
+                std::isfinite(c),
                 ErrorCode::InvalidArgument,
-                std::format
-                (
-                    "validate: tenors[{}]={} is not finite",
-                    i, tenors[i]
-                )
+                std::format("validate: callM({}, {})={} is not finite", t, k, c)
             );
 
-            UV_REQUIRE
-            (
-                tenors[i] > 0.0,
+            UV_REQUIRE(
+                c >= 0.0,
                 ErrorCode::InvalidArgument,
-                std::format
-                (
-                    "validate: tenors[{}]={} must be > 0",
-                    i, tenors[i]
-                )
+                std::format("validate: callM({}, {})={} must be >= 0", t, k, c)
             );
 
-            if (i > 0)
-            {
-                UV_REQUIRE
-                (
-                    tenors[i] > tenors[i - 1],
-                    ErrorCode::InvalidArgument,
-                    std::format
-                    (
-                        "validate: tenors must be strictly increasing, but tenors[{}]={} <= tenors[{}]={}",
-                        i, tenors[i], i - 1, tenors[i - 1]
-                    )
-                );
-            }
+            UV_REQUIRE(
+                std::isfinite(xk),
+                ErrorCode::InvalidArgument,
+                std::format("validate: logKF({}, {})={} is not finite", t, k, xk)
+            );
+
+            UV_REQUIRE(
+                std::isfinite(w),
+                ErrorCode::InvalidArgument,
+                std::format("validate: totVar({}, {})={} is not finite", t, k, w)
+            );
+
+            UV_REQUIRE(
+                w >= 0.0,
+                ErrorCode::InvalidArgument,
+                std::format("validate: totVar({}, {})={} must be >= 0", t, k, w)
+            );
         }
 
-        // logKF, callM, totVar matrices
-        for (std::size_t t = 0; t < nRows; ++t)
+        // ---------- Monotonicity ----------
+
+        for (std::size_t k = 1; k < nCols; ++k)
         {
-            // ---------- Values ----------
+            const T prev{logKF[t][k - 1]};
+            const T curr{logKF[t][k]};
 
-            for (std::size_t k = 0; k < nCols; ++k)
-            {
-                const T c{ callM[t][k] };
-                const T xk{ logKF[t][k] };
-                const T w{ totVar[t][k] };
-
-                UV_REQUIRE
-                (
-                    std::isfinite(c),
-                    ErrorCode::InvalidArgument,
-                    std::format
-                    (
-                        "validate: callM({}, {})={} is not finite",
-                        t, k, c
-                    )
-                );
-
-                UV_REQUIRE
-                (
-                    c >= 0.0,
-                    ErrorCode::InvalidArgument,
-                    std::format
-                    (
-                        "validate: callM({}, {})={} must be >= 0",
-                        t, k, c
-                    )
-                );
-
-                UV_REQUIRE
-                (
-                    std::isfinite(xk),
-                    ErrorCode::InvalidArgument,
-                    std::format
-                    (
-                        "validate: logKF({}, {})={} is not finite",
-                        t, k, xk
-                    )
-                );
-
-                UV_REQUIRE
-                (
-                    std::isfinite(w),
-                    ErrorCode::InvalidArgument,
-                    std::format
-                    (
-                        "validate: totVar({}, {})={} is not finite",
-                        t, k, w
-                    )
-                );
-
-                UV_REQUIRE
-                (
-                    w >= 0.0,
-                    ErrorCode::InvalidArgument,
-                    std::format
-                    (
-                        "validate: totVar({}, {})={} must be >= 0",
-                        t, k, w
-                    )
-                );
-            }
-
-            // ---------- Monotonicity ----------
-
-            for (std::size_t k = 1; k < nCols; ++k)
-            {
-                const T prev{ logKF[t][k - 1] };
-                const T curr{ logKF[t][k] };
-
-                UV_REQUIRE
-                (
-                    curr > prev,
-                    ErrorCode::InvalidArgument,
-                    std::format
-                    (
-                        "validate: logKF row {} must be strictly increasing, \
+            UV_REQUIRE(
+                curr > prev,
+                ErrorCode::InvalidArgument,
+                std::format(
+                    "validate: logKF row {} must be strictly increasing, \
                          but logKF({}, {})={} <= logKF({}, {})={}",
-                        t, t, k, curr, t, k - 1, prev
-                    )
-                );
-            }
+                    t,
+                    t,
+                    k,
+                    curr,
+                    t,
+                    k - 1,
+                    prev
+                )
+            );
         }
-
-        // ---------- No-arbitrage ----------
-
-         // Total variance
-         for (std::size_t k = 0; k < nCols; ++k)
-         {
-             for (std::size_t t = 1; t < nRows; ++t)
-             {
-                 const T prev{ totVar[t - 1][k] };
-                 const T curr{ totVar[t][k] };
-        
-                 UV_REQUIRE
-                 (
-                     curr >= prev,
-                     ErrorCode::InvalidArgument,
-                     std::format
-                     (
-                         "validate: totVar must be non-decreasing in tenor at strike col {}, \
-                         but totVar({}, {})={} < totVar({}, {})={}",
-                         k, t, k, curr, t - 1, k, prev
-                     )
-                 );
-             }
-         }
     }
-    
-    template<std::floating_point T>
-    void coldGuess
-    (
-        T tenor,
-        std::span<const T> totVar,
-        std::span<T> localVar
-    ) noexcept
+
+    // ---------- No-arbitrage ----------
+
+    // Total variance
+    for (std::size_t k = 0; k < nCols; ++k)
     {
-        T invTenor{1.0/ tenor};
-
-        for (std::size_t i{ 0 }; i < localVar.size(); ++i)
+        for (std::size_t t = 1; t < nRows; ++t)
         {
-            localVar[i] = totVar[i] * invTenor;
+            const T prev{totVar[t - 1][k]};
+            const T curr{totVar[t][k]};
+
+            UV_REQUIRE(
+                curr >= prev,
+                ErrorCode::InvalidArgument,
+                std::format(
+                    "validate: totVar must be non-decreasing in tenor at strike col {}, \
+                         but totVar({}, {})={} < totVar({}, {})={}",
+                    k,
+                    t,
+                    k,
+                    curr,
+                    t - 1,
+                    k,
+                    prev
+                )
+            );
         }
     }
+}
 
+template <std::floating_point T>
+void coldGuess(T tenor, std::span<const T> totVar, std::span<T> localVar) noexcept
+{
+    T invTenor{1.0 / tenor};
 
-
+    for (std::size_t i{0}; i < localVar.size(); ++i)
+    {
+        localVar[i] = totVar[i] * invTenor;
+    }
+}
 
 } // namespace uv::models::localvol::calibrator::detail

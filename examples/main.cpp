@@ -5,7 +5,7 @@
  * Created:     2025-12-08
  *
  * Description:
- *   [Brief description of what this file declares or implements.]
+ *   Example script of model calibrations and pricing.
  *
  * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
@@ -24,7 +24,6 @@
 
 #include "Utils/PCH.hpp"
 
-
 using namespace uv;
 using namespace models;
 using namespace utils;
@@ -36,11 +35,11 @@ int main(int argc, char* argv[])
     try
     {
         // ---------- Configure ----------
-        
+
         // Choose the CSV path
-        const std::filesystem::path path = (argc > 1) ?
-            std::filesystem::path{ argv[1] } :
-            std::filesystem::path{ "data/VolSurface_SPY_04072011.csv"};
+        const std::filesystem::path path =
+            (argc > 1) ? std::filesystem::path{argv[1]}
+                       : std::filesystem::path{"data/VolSurface_SPY_04072011.csv"};
 
         // Set logger
         UV_LOG_TO_FILE("calibration.log");
@@ -52,175 +51,103 @@ int main(int argc, char* argv[])
 
         // ---------- Read ----------
 
-        MarketData<Real> marketData
-        { 
-          .r = 0.00,          // r
-          .q = 0.00,          // q
-          .S = 485.77548     // S
-        };
+        MarketData<Real> marketData{.r = 0.00, .q = 0.00, .S = 485.77548};
 
-        VolSurface<Real> mktVolSurface
-        { 
-            readVolSurface<Real>
-            (
-                path.string(), 
-                marketData
-            ) 
-        };
+        VolSurface<Real> mktVolSurface{readVolSurface<Real>(path.string(), marketData)};
 
         mktVolSurface.printTotVar();
 
         // ---------- SVI calibration ----------
 
-        opt::nlopt::Optimizer
-        <4, nlopt::LD_SLSQP> nloptOptimizer
-        {
-            opt::nlopt::Config<4>
-            {
-                .eps = 1e-12,                            
-                .tol = 1e-12,                              
-                .ftolRel = 1e-12,                            
-                .maxEval = 10000,                             
-                .paramNames = { "b", "rho", "m", "sigma" }   
-            }
-        };
+        opt::nlopt::Optimizer<4, nlopt::LD_SLSQP> nloptOptimizer{opt::nlopt::Config<4>{
+            .eps = 1e-12,
+            .tol = 1e-12,
+            .ftolRel = 1e-12,
+            .maxEval = 10000,
+            .paramNames = {"b", "rho", "m", "sigma"}}};
 
-        Vector<svi::Params<Real>> sviParams
-        { 
-            svi::calibrate<Real>
-            (
-                mktVolSurface.tenors(),
-                mktVolSurface.logKFMatrix(),
-                mktVolSurface.totVarMatrix(),
-                nloptOptimizer
-            ) 
-        };
+        Vector<svi::Params<Real>> sviParams{svi::calibrate<Real>(
+            mktVolSurface.tenors(),
+            mktVolSurface.logKFMatrix(),
+            mktVolSurface.totVarMatrix(),
+            nloptOptimizer
+        )};
 
-        const VolSurface<Real> sviVolSurface
-        {
-            svi::buildSurface<Real>
-            (
-                mktVolSurface,
-                sviParams
-            )
-        };
-       
+        const VolSurface<Real> sviVolSurface{
+            svi::buildSurface<Real>(mktVolSurface, sviParams)};
+
         sviVolSurface.printBSCall();
-
 
         // ---------- Local volatility calibration ----------
 
-        constexpr std::size_t nT{ 100 };    // Time steps
-        constexpr std::size_t nX{ 20 };     // Space steps
-        constexpr Real xBound{ 2.5 };       // log(K/F) grid bound
+        constexpr std::size_t nT{100}; // Time steps
+        constexpr std::size_t nX{20};  // Space steps
+        constexpr Real xBound{2.5};    // log(K/F) grid bound
 
         // Declare payoff function
         // TODO: Parametrize as a function
-        auto payoff = [](Real S, Real K) -> Real { return (S > K) ? (S - K) :  0.0; };
+        auto payoff = [](Real S, Real K) -> Real
+        {
+            return (S > K) ? (S - K) : 0.0;
+        };
 
         // Allocate to heap
-        auto lvPricer = std::make_unique
-         <
-            localvol::Pricer
-            <
-                Real, 
-                nT, 
-                nX, 
-                math::interp::PchipInterpolator<Real>
-            >
-         >
-        (   
+        auto lvPricer = std::make_unique<
+            localvol::Pricer<Real, nT, nX, math::interp::PchipInterpolator<Real>>>(
             payoff,
             xBound
         );
 
-        localvol::Surface<Real> localVolSurface
-        { 
-            localvol::calibrator::calibrate
-            <
-                Real, 
-                nT,
-                nX,
-                math::interp::PchipInterpolator<Real>
-            >
-            (
-                sviVolSurface.callPrices(),
-                sviVolSurface.tenors(),
-                sviVolSurface.logKFMatrix(),
-                sviVolSurface.totVarMatrix(),
-                *lvPricer
-            )
-        };
+        localvol::Surface<Real> localVolSurface{
+            localvol::calibrator::
+                calibrate<Real, nT, nX, math::interp::PchipInterpolator<Real>>(
+                    sviVolSurface.callPrices(),
+                    sviVolSurface.tenors(),
+                    sviVolSurface.logKFMatrix(),
+                    sviVolSurface.totVarMatrix(),
+                    *lvPricer
+                )};
 
         // ---------- Heston model calibration ----------
 
-        constexpr std::size_t HestonNodes{ 300 };
+        constexpr std::size_t HestonNodes{300};
         const integration::TanHSinH<Real, HestonNodes> quad{};
-        
-        heston::Pricer<Real, HestonNodes> hestonPricer
-        {
-            std::make_shared
-            <
-                const integration::TanHSinH
-                <
-                    Real, 
-                    HestonNodes
-                >
-            >
-            (quad),
-            {
-                -2.0,   // Damping parameter ITM
-                2.0     // Damping parameter OTM
-            }
-        };
 
-        opt::ceres::Optimizer<5, opt::ceres::Policy
-        <
-            void, // No Robust Loss                   
-            ceres::LEVENBERG_MARQUARDT,   
-            ceres::DENSE_NORMAL_CHOLESKY
-        >
-        > lmOptimizer
-        { 
-            opt::ceres::Config<5>
-            {   
-                
-                .maxEval = 1000,                                          
-                .functionTol = 1e-12,                                        
+        heston::Pricer<Real, HestonNodes> hestonPricer{
+            std::make_shared<const integration::TanHSinH<Real, HestonNodes>>(quad),
+            {
+                -2.0, // Damping parameter ITM
+                2.0   // Damping parameter OTM
+            }};
+
+        opt::ceres::Optimizer<
+            5,
+            opt::ceres::Policy<
+                void, // No Robust Loss
+                ceres::LEVENBERG_MARQUARDT,
+                ceres::DENSE_NORMAL_CHOLESKY>>
+            lmOptimizer{opt::ceres::Config<5>{
+
+                .maxEval = 1000,
+                .functionTol = 1e-12,
                 .paramTol = 1e-12,
                 .gradientTol = 1e-12,
-                .paramNames = { "kappa", "theta", "sigma", "rho", "v0" },                           
-                .verbose = false                                           
-            }
-        };
+                .paramNames = {"kappa", "theta", "sigma", "rho", "v0"},
+                .verbose = false}};
 
-        hestonPricer.setParams
-        (
-            heston::calibrator::calibrate<Real>
-            (
-                sviVolSurface.tenors(),
-                sviVolSurface.strikes(),
-                sviVolSurface.forwards(),
-                sviVolSurface.rates(),
-                sviVolSurface.callPrices(),
-                hestonPricer,
-                lmOptimizer,
-                opt::WeightATM
-                {
-                    .wATM = 8.0,
-                    .k0   = 0.3
-                }
-            )
-        );
+        hestonPricer.setParams(heston::calibrator::calibrate<Real>(
+            sviVolSurface.tenors(),
+            sviVolSurface.strikes(),
+            sviVolSurface.forwards(),
+            sviVolSurface.rates(),
+            sviVolSurface.callPrices(),
+            hestonPricer,
+            lmOptimizer,
+            opt::WeightATM{.wATM = 8.0, .k0 = 0.3}
+        ));
 
-        const VolSurface<Real> hestonVolSurface
-        { 
-            heston::calibrator::buildSurface<Real>
-            (
-                sviVolSurface, 
-                hestonPricer
-            ) 
-        };
+        const VolSurface<Real> hestonVolSurface{
+            heston::calibrator::buildSurface<Real>(sviVolSurface, hestonPricer)};
 
         hestonVolSurface.printBSCall();
 

@@ -26,21 +26,12 @@
 
 namespace uv::models::localvol
 {
-	template <std::floating_point T>
-	Surface<T>::Surface
-	(
-		Vector<T> tenors,
-		core::Matrix<T> logKF,
-		core::Matrix<T> localVar
-	)
-		:
-	tenors_(std::move(tenors)),
-	logKF_(std::move(logKF)),
-	localVar_(std::move(localVar))
-	{
+template <std::floating_point T>
+Surface<T>::Surface(Vector<T> tenors, core::Matrix<T> logKF, core::Matrix<T> localVar)
+    : tenors_(std::move(tenors)),
+      logKF_(std::move(logKF)),
+      localVar_(std::move(localVar))
+{
+}
 
-	}
-
-
-
-} // namespace uv::movels::localvol
+} // namespace uv::models::localvol

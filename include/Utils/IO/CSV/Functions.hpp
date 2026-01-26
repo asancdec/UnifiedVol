@@ -22,29 +22,32 @@
  * limitations under this License.
  */
 
-
 #pragma once
 
 #include "Core/VolSurface.hpp"
 
-#include <string>
 #include <concepts>
+#include <string>
 
 namespace uv::utils
 {
-	/**
-	 * @brief Reads a CSV file containing a volatility surface and returns a VolSurface object.
-	 *
-	 * The CSV file is expected to have the following structure:
-	 * - The first row contains moneyness (K/S).
-	 * - The first column of each subsequent row contains tenors.
-	 * - The remaining cells contain implied volatilities for each strike-maturity pair.
-	 *
-	 * @param filename Path to the CSV file.
-	 * @return VolSurface Object containing the strikes, tenors, and implied volatilities.
-	 */
-	template <std::floating_point T>
-	core::VolSurface<T> readVolSurface(const std::string& filename, const core::MarketData<T>& mktData);
+/**
+ * @brief Reads a CSV file containing a volatility surface and returns a
+ * VolSurface object.
+ *
+ * The CSV file is expected to have the following structure:
+ * - The first row contains moneyness (K/S).
+ * - The first column of each subsequent row contains tenors.
+ * - The remaining cells contain implied volatilities for each strike-maturity
+ * pair.
+ *
+ * @param filename Path to the CSV file.
+ * @return VolSurface Object containing the strikes, tenors, and implied
+ * volatilities.
+ */
+template <std::floating_point T>
+core::VolSurface<T>
+readVolSurface(const std::string& filename, const core::MarketData<T>& mktData);
 
 } // namespace uv::utils
 

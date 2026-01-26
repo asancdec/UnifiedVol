@@ -22,30 +22,28 @@
  * limitations under this License.
  */
 
-
 #pragma once
 
 #include <concepts>
 
 namespace uv::core
 {
-    /**
-     * @brief Container for basic market inputs.
-     *
-     * Holds the minimal set of continuously compounded market parameters
-     * required by pricing and calibration routines.
-     *
-     * All quantities are expressed under the same measure and conventions:
-     * - interest rates and yields are continuously compounded
-     * - spot price is expressed in domestic currency units
-     *
-     * This struct is a passive data holder with no invariants enforced.
-     */
-    template <std::floating_point T>
-    struct MarketData
-    {
-        T r;   // Continuously compounded risk-free rate
-        T q;   // Continuously compounded dividend yield
-        T S;   // Spot price
-    };
+/**
+ * @brief Container for basic market inputs.
+ *
+ * Holds the minimal set of continuously compounded market parameters
+ * required by pricing and calibration routines.
+ *
+ * All quantities are expressed under the same measure and conventions:
+ * - interest rates and yields are continuously compounded
+ * - spot price is expressed in domestic currency units
+ *
+ * This struct is a passive data holder with no invariants enforced.
+ */
+template <std::floating_point T> struct MarketData
+{
+    T r; // Continuously compounded risk-free rate
+    T q; // Continuously compounded dividend yield
+    T S; // Spot price
+};
 } // namespace uv::core

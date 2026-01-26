@@ -22,59 +22,58 @@
  * limitations under this License.
  */
 
-
 #pragma once
 
 #include "Utils/IO/Log.hpp"
 
-#include <iostream>   
-#include <sstream>     
-#include <string>       
+#include <iostream>
+#include <sstream>
+#include <string>
 
 namespace uv::utils
 {
+/**
+ * @brief RAII helper to temporarily redirect std::cout to an internal buffer.
+ *
+ * Upon construction, the current std::cout stream buffer is replaced so that
+ * all output written to std::cout is captured internally.
+ *
+ * Upon destruction, the original stream buffer is restored and the captured
+ * output is forwarded to the UnifiedVol logging system.
+ *
+ * Typical use case:
+ *   - Capturing verbose output from third-party libraries (e.g. Ceres)
+ *     and redirecting it into the UnifiedVol logger.
+ *
+ * @note This class is intended for scoped use only.
+ * @note Not thread-safe: redirects the global std::cout stream.
+ */
+struct ConsoleRedirect
+{
     /**
-     * @brief RAII helper to temporarily redirect std::cout to an internal buffer.
+     * @brief Redirect std::cout to an internal string buffer.
      *
-     * Upon construction, the current std::cout stream buffer is replaced so that
-     * all output written to std::cout is captured internally.
-     *
-     * Upon destruction, the original stream buffer is restored and the captured
-     * output is forwarded to the UnifiedVol logging system.
-     *
-     * Typical use case:
-     *   - Capturing verbose output from third-party libraries (e.g. Ceres)
-     *     and redirecting it into the UnifiedVol logger.
-     *
-     * @note This class is intended for scoped use only.
-     * @note Not thread-safe: redirects the global std::cout stream.
+     * Saves the original stream buffer so it can be restored on destruction.
      */
-    struct ConsoleRedirect
+    explicit ConsoleRedirect()
     {
-        /**
-         * @brief Redirect std::cout to an internal string buffer.
-         *
-         * Saves the original stream buffer so it can be restored on destruction.
-         */
-        explicit ConsoleRedirect()
-        {
-            oldBuf_ = std::cout.rdbuf(buffer_.rdbuf());
-        }
+        oldBuf_ = std::cout.rdbuf(buffer_.rdbuf());
+    }
 
-        /**
-         * @brief Restore std::cout and flush captured output to the logger.
-         *
-         * Restores the original std::cout stream buffer and logs the accumulated
-         * output using the UnifiedVol logging facility.
-         */
-        ~ConsoleRedirect()
-        {
-            std::cout.rdbuf(oldBuf_);
-            UV_INFO("\n" + buffer_.str());
-        }
+    /**
+     * @brief Restore std::cout and flush captured output to the logger.
+     *
+     * Restores the original std::cout stream buffer and logs the accumulated
+     * output using the UnifiedVol logging facility.
+     */
+    ~ConsoleRedirect()
+    {
+        std::cout.rdbuf(oldBuf_);
+        UV_INFO("\n" + buffer_.str());
+    }
 
-    private:
-        std::stringstream buffer_;   // Internal buffer capturing std::cout output
-        std::streambuf* oldBuf_{};   // Original std::cout stream buffer
-    };
+  private:
+    std::stringstream buffer_; // Internal buffer capturing std::cout output
+    std::streambuf* oldBuf_{}; // Original std::cout stream buffer
+};
 } // namespace uv::utils

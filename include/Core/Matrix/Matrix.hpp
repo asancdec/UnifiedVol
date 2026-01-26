@@ -32,135 +32,125 @@
 
 namespace uv::core
 {
-	/**
-	 * @brief Lightweight 2D matrix with contiguous row-major storage.
-	 *
-	 * The matrix stores all elements in a single contiguous buffer,
-	 * enabling cache-friendly access and efficient SIMD auto-vectorization.
-	 *
-	 * All arithmetic operators are implemented as bounds-unchecked,
-	 * in-place loops for maximum performance.
-	 *
-	 * @tparam T Floating-point element type.
-	 */
-	template <std::floating_point T>
-	class Matrix
-	{
-	private:
+/**
+ * @brief Lightweight 2D matrix with contiguous row-major storage.
+ *
+ * The matrix stores all elements in a single contiguous buffer,
+ * enabling cache-friendly access and efficient SIMD auto-vectorization.
+ *
+ * All arithmetic operators are implemented as bounds-unchecked,
+ * in-place loops for maximum performance.
+ *
+ * @tparam T Floating-point element type.
+ */
+template <std::floating_point T> class Matrix
+{
+  private:
+    // ---------- Member variables ----------
 
-		// ---------- Member variables ----------
+    std::size_t numRows_;
+    std::size_t numCols_;
+    Vector<T> data_;
 
-		std::size_t numRows_;
-		std::size_t numCols_;
-		Vector<T> data_;
+  public:
+    // ---------- Constructors ----------
 
-	public:
+    /** @brief Delete default constructor to avoid unwanted behaviour */
+    Matrix() = delete;
 
-		// ---------- Constructors ----------
-		
-		/** @brief Delete default constructor to avoid unwanted behaviour */
-		Matrix() = delete;
+    /**
+     * @brief Construct a matrix with given dimensions and initial value.
+     *
+     * Allocates a contiguous block of memory of size
+     * (numRows × numCols) and initializes all entries to the given value.
+     *
+     * @param numRows     Number of rows.
+     * @param numCols  Number of columns.
+     * @param val         Initial value for all elements (default = 0).
+     */
+    Matrix(std::size_t numRows, std::size_t numCols, T val = 0.0) noexcept;
 
-		/**
-		 * @brief Construct a matrix with given dimensions and initial value.
-		 *
-		 * Allocates a contiguous block of memory of size
-		 * (numRows × numCols) and initializes all entries to the given value.
-		 *
-		 * @param numRows     Number of rows.
-		 * @param numCols  Number of columns.
-		 * @param val         Initial value for all elements (default = 0).
-		 */
-		Matrix(std::size_t numRows,
-			std::size_t numCols,
-			T val = 0.0) noexcept;
+    // ---------- Unary operators ----------
 
-		// ---------- Unary operators ----------
+    /** @brief Returns a mutable view of row @p i (no bounds checking). */
+    std::span<T> operator[](std::size_t i) noexcept;
 
-		/** @brief Returns a mutable view of row @p i (no bounds checking). */
-		std::span<T> operator[](std::size_t i) noexcept;
+    /** @brief Returns a read-only view of row @p i (no bounds checking). */
+    std::span<const T> operator[](std::size_t i) const noexcept;
 
-		/** @brief Returns a read-only view of row @p i (no bounds checking). */
-		std::span<const T> operator[](std::size_t i) const noexcept;
+    /** @brief In-place element-wise addition with another matrix. */
+    Matrix& operator+=(const Matrix& rhs) noexcept;
 
-		/** @brief In-place element-wise addition with another matrix. */
-		Matrix& operator+=(const Matrix& rhs) noexcept;
+    /** @brief In-place element-wise subtraction with another matrix. */
+    Matrix& operator-=(const Matrix& rhs) noexcept;
 
-		/** @brief In-place element-wise subtraction with another matrix. */
-		Matrix& operator-=(const Matrix& rhs) noexcept;
+    /** @brief In-place addition of a scalar to all elements. */
+    Matrix& operator+=(T scalar) noexcept;
 
-		/** @brief In-place addition of a scalar to all elements. */
-		Matrix& operator+=(T scalar) noexcept;
+    /** @brief In-place subtraction of a scalar from all elements. */
+    Matrix& operator-=(T scalar) noexcept;
 
-		/** @brief In-place subtraction of a scalar from all elements. */
-		Matrix& operator-=(T scalar) noexcept;
+    /** @brief In-place multiplication of all elements by a scalar. */
+    Matrix& operator*=(T scalar) noexcept;
 
-		/** @brief In-place multiplication of all elements by a scalar. */
-		Matrix& operator*=(T scalar) noexcept;
+    /** @brief In-place division of all elements by a scalar. */
+    Matrix& operator/=(T scalar) noexcept;
 
-		/** @brief In-place division of all elements by a scalar. */
-		Matrix& operator/=(T scalar) noexcept;
+    /** @brief Returns a new matrix with all elements negated. */
+    Matrix operator-() const noexcept;
 
-		/** @brief Returns a new matrix with all elements negated. */
-		Matrix operator-() const noexcept;
+    // ---------- Utilities ----------
 
-		// ---------- Utilities ----------
+    /**
+     * @brief Print the matrix to standard output.
+     *
+     * Prints the matrix with optional formatting precision for values.
+     * Intended for debugging and diagnostics only.
+     *
+     * @param valuePrec Number of decimal places for matrix values.
+     */
+    void print(unsigned int valuePrec = 4) const noexcept;
 
-		/**
-		 * @brief Print the matrix to standard output.
-		 *
-		 * Prints the matrix with optional formatting precision for values.
-		 * Intended for debugging and diagnostics only.
-		 *
-		 * @param valuePrec Number of decimal places for matrix values.
-		 */
-		void print(unsigned int valuePrec = 4) const noexcept;
+    /**
+     * @brief Check whether the matrix is empty.
+     *
+     * A matrix is considered empty if it has zero rows or zero columns.
+     *
+     * @return True if the matrix is empty, false otherwise.
+     */
+    bool empty() const noexcept;
 
-		/**
-		 * @brief Check whether the matrix is empty.
-		 *
-		 * A matrix is considered empty if it has zero rows or zero columns.
-		 *
-		 * @return True if the matrix is empty, false otherwise.
-		 */
-		bool empty() const noexcept;
+    // ---------- Getters ----------
 
-		// ---------- Getters ----------
+    /**
+     * @brief Number of rows in the matrix.
+     */
+    std::size_t rows() const noexcept;
 
-		/**
-		 * @brief Number of rows in the matrix.
-		 */
-		std::size_t rows() const noexcept;
+    /**
+     * @brief Number of columns in the matrix.
+     */
+    std::size_t cols() const noexcept;
+};
 
-		/**
-		 * @brief Number of columns in the matrix.
-		 */
-		std::size_t cols() const noexcept;
+// ---------- Binary operators ----------
 
-	};
+/** @brief Returns the element-wise sum of two matrices. */
+template <std::floating_point T>
+Matrix<T> operator+(Matrix<T> lhs, const Matrix<T>& rhs) noexcept;
 
-	// ---------- Binary operators ----------
+/** @brief Returns the element-wise difference of two matrices. */
+template <std::floating_point T>
+Matrix<T> operator-(Matrix<T> lhs, const Matrix<T>& rhs) noexcept;
 
-	/** @brief Returns the element-wise sum of two matrices. */
-	template <std::floating_point T>
-	Matrix<T> operator+(Matrix<T> lhs, const Matrix<T>& rhs) noexcept;
+/** @brief Returns a matrix scaled by a scalar (right multiplication). */
+template <std::floating_point T> Matrix<T> operator*(Matrix<T> lhs, T scalar) noexcept;
 
-	/** @brief Returns the element-wise difference of two matrices. */
-	template <std::floating_point T>
-	Matrix<T> operator-(Matrix<T> lhs, const Matrix<T>& rhs) noexcept;
+/** @brief Returns a matrix divided by a scalar. */
+template <std::floating_point T> Matrix<T> operator/(Matrix<T> lhs, T scalar) noexcept;
 
-	/** @brief Returns a matrix scaled by a scalar (right multiplication). */
-	template <std::floating_point T>
-	Matrix<T> operator*(Matrix<T> lhs, T scalar) noexcept;
-
-	/** @brief Returns a matrix divided by a scalar. */
-	template <std::floating_point T>
-	Matrix<T> operator/(Matrix<T> lhs, T scalar) noexcept;
-
-	/** @brief Returns a matrix scaled by a scalar (left multiplication). */
-	template <std::floating_point T>
-	Matrix<T> operator*(T scalar, Matrix<T> rhs) noexcept;
-
+/** @brief Returns a matrix scaled by a scalar (left multiplication). */
+template <std::floating_point T> Matrix<T> operator*(T scalar, Matrix<T> rhs) noexcept;
 
 } // namespace uv::core
 
