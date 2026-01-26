@@ -1,22 +1,24 @@
 # Project Structure
 
-This file is auto-generated from git-tracked files.
-
 ```text
 UnifiedVol/
 ├── .clang-format
 ├── .gitattributes
+├── .githooks/
+│   ├── pre-commit
 ├── .gitignore
-├── BUILD.md
 ├── CMakeLists.txt
 ├── CMakePresets.json
-├── DATA.md
-├── DEPENDENCIES.md
 ├── LICENSE.txt
 ├── README.md
-├── citations.bib
 ├── data/
 │   ├── VolSurface_SPY_04072011.csv
+├── docs/
+│   ├── BUILD.md
+│   ├── DATA.md
+│   ├── DEPENDENCIES.md
+│   ├── TREE.md
+│   ├── citations.bib
 ├── examples/
 │   ├── main.cpp
 ├── include/
@@ -94,6 +96,9 @@ UnifiedVol/
 │   │   │   ├── Log.hpp
 │   │   ├── PCH.hpp
 ├── src/
+│   ├── Math/
+│   │   ├── Optimization/
+│   │   │   ├── Functions.cpp
 │   ├── Models/
 │   │   ├── Heston/
 │   │   │   ├── Calibrator.cpp
@@ -105,5 +110,8 @@ UnifiedVol/
 │   │   ├── IO/
 │   │   │   ├── Log.cpp
 │   │   │   ├── StopWatch.cpp
+├── tools/
+│   ├── gen_tree.sh
 ├── vcpkg.json
 ```
+
