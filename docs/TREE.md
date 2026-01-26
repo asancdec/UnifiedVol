@@ -110,8 +110,6 @@ UnifiedVol/
 │   │   ├── IO/
 │   │   │   ├── Log.cpp
 │   │   │   ├── StopWatch.cpp
-├── tools/
-│   ├── gen_tree.sh
 ├── vcpkg.json
 ```
 

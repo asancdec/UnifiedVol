@@ -1,17 +1,54 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Get staged C/C++ files
-FILES=$(git diff --cached --name-only --diff-filter=ACMR \
-  | grep -E '\.(h|hpp|hh|hxx|c|cc|cxx|cpp|inl)$' || true)
+# Ensure we run from repo root
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
 
-# Nothing to do
-[ -z "$FILES" ] && exit 0
+###############################################################################
+# 1) clang-format staged C/C++ files
+###############################################################################
 
 echo "[pre-commit] Running clang-format..."
 
-# Format in place using repo .clang-format
-clang-format -i --style=file $FILES
+FILES=$(git diff --cached --name-only --diff-filter=ACMR \
+  | grep -E '\.(h|hpp|hh|hxx|c|cc|cxx|cpp|inl)$' || true)
 
-# Re-stage formatted files
-git add $FILES
+if [ -n "$FILES" ]; then
+  echo "[pre-commit] Running clang-format..."
+  clang-format -i --style=file $FILES
+  git add $FILES
+fi
+
+###############################################################################
+# 2) Generate docs/TREE.md from git-tracked files (include docs/TREE.md)
+###############################################################################
+
+echo "[pre-commit] Generating docs/TREE.md..."
+mkdir -p docs
+
+git ls-files \
+  | LC_ALL=C sort \
+  | awk '
+      BEGIN{print "# Project Structure\n\n```text\nUnifiedVol/"}
+      {
+        n=split($0,a,"/");
+        path=""; indent="";
+        for(i=1;i<=n;i++){
+          path = (path=="" ? a[i] : path "/" a[i]);
+          if(!(path in seen)){
+            seen[path]=1;
+            for(k=1;k<i;k++) indent=indent "│   ";
+            if(i==n){
+              print indent "├── " a[i];
+            } else {
+              print indent "├── " a[i] "/";
+            }
+            indent="";
+          }
+        }
+      }
+      END{print "```\n"}
+    ' > docs/TREE.md
+
+git add docs/TREE.md
