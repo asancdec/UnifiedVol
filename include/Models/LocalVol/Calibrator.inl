@@ -23,6 +23,7 @@
  */
 
 #include "Utils/Aux/Errors.hpp"
+#include "Models/LocalVol/VarianceView.hpp"
 #include "Math/Interpolation/Interpolator.hpp"
 #include "Math/Interpolation/Policies.hpp"
 
@@ -35,7 +36,8 @@ namespace uv::models::localvol::calibrator
 	<
 		std::floating_point T,
 		std::size_t NT,
-		std::size_t NX
+		std::size_t NX,
+        class Interpolator
 	>
 	Surface<T> calibrate
 	(
@@ -43,7 +45,7 @@ namespace uv::models::localvol::calibrator
 		const Vector<T>& tenors,
 		const core::Matrix<T>& logKF,
         const core::Matrix<T>& totVar, 
-        const Pricer<T, NT, NX>& pricer
+        Pricer<T, NT, NX, Interpolator>& pricer
 	)
 	{
 		// ---------- Validate ----------
@@ -66,8 +68,13 @@ namespace uv::models::localvol::calibrator
         Vector<T> localVar(nStrikes);
         Vector<T> dydx(nStrikes);
 
+        // Parameters
+        Vector<T> params;
+
         // Derivatives policy
-        math::interp::PchipDerivatives<T> derivPolicy{};
+        // NOTE: the architecture ensures the derivatives calculation policy
+        // matches that of the the interpolator used in the Pricer instance
+        typename Pricer<T, NT, NX, Interpolator>::derivatives_type derivPolicy{};
 
         // ---------- Initial guess ----------
 
@@ -78,8 +85,42 @@ namespace uv::models::localvol::calibrator
             localVar
         );
 
+        // ---------- Extract ----------
 
+        std::span<const T> logKFSlice{logKF[0]};
+        T tenor{tenors[0]};
 
+        // Calculate derivatives at knots
+        derivPolicy
+        (
+            logKFSlice,
+            localVar,
+            dydx
+        );
+
+        // Pack into VarianceView struct
+        VarianceView<T> localVarView
+        {
+            logKFSlice,
+            localVar,
+            dydx
+        };
+
+        // Price
+        Vector<T> prices 
+        {
+            pricer.priceNormalized
+            (
+                tenor,
+                logKFSlice,
+                localVarView
+            )
+        };
+
+        //for (std::size_t i = 0; i < results.size(); ++i)
+        //{
+        //    std::cout << results[i] * 485.77548 << ' ';
+        //}
 
 		return Surface<T>
 		{
@@ -312,12 +353,17 @@ namespace uv::models::localvol::calibrator::detail
         T tenor,
         std::span<const T> totVar,
         std::span<T> localVar
-    )
+    ) noexcept
     {
+        T invTenor{1.0/ tenor};
+
         for (std::size_t i{ 0 }; i < localVar.size(); ++i)
         {
-            localVar[i] = totVar[i] / tenor;
+            localVar[i] = totVar[i] * invTenor;
         }
     }
+
+
+
 
 } // namespace uv::models::localvol::calibrator::detail

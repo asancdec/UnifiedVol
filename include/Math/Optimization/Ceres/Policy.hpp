@@ -5,7 +5,7 @@
  * Created:     2025-12-08
  *
  * Description:
- *   [Brief description of what this file declares or implements.]
+ *   Ceres optimized configuration policy
  *
  * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
@@ -42,9 +42,9 @@ namespace uv::math::opt::ceres
      */
     template    
     <
-    typename LossType = void,
-    ::ceres::TrustRegionStrategyType TrustRegionStrategy = ::ceres::LEVENBERG_MARQUARDT,
-    ::ceres::LinearSolverType LinearSolver = ::ceres::DENSE_QR
+        typename LossType = void,
+        ::ceres::TrustRegionStrategyType TrustRegionStrategy = ::ceres::LEVENBERG_MARQUARDT,
+        ::ceres::LinearSolverType LinearSolver = ::ceres::DENSE_QR
     >
     struct Policy
     {

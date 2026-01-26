@@ -39,7 +39,7 @@ namespace uv::models::heston::calibrator::detail
 			2.5,     // kappa
 			0.09,    // theta
 			0.60,    // sigma
-			-0.50,   // rho
+			-0.75,   // rho
 			0.09     // vo
 		};
 	}

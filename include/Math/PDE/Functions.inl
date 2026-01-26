@@ -42,7 +42,11 @@ namespace uv::math::pde
         std::size_t N,
         typename F
     >
-    std::array<T, N> andreasenHugeInit(const std::array<T, N>& xGrid, F&& payoff)
+    std::array<T, N> andreasenHugeInit
+    (
+        const std::array<T, N>& xGrid,
+        F&& payoff
+    )
     {
         // ---------- Bind to log-space ----------
 
@@ -61,15 +65,18 @@ namespace uv::math::pde
     }
 
     template
-        <
+    <
         std::floating_point T,
         std::size_t NT,
         std::size_t NX
-        >
-    void andreasenHugeSolve(std::array<T, NX>& c,
-        const std::array<T, NX>& localVar,
-        models::localvol::AHCache<T, NX>& aHCache)
-    {
+    >
+    void andreasenHugeSolve
+    (
+        std::span<T, NX> c,
+        std::span<T, NX - 2> cInner,
+        AHCache<T, NX>& aHCache
+    ) noexcept
+    { 
 
         // ---------- Validate ----------
 
@@ -95,18 +102,15 @@ namespace uv::math::pde
         std::array<T, NX - 2>& middle { aHCache.middle };
         std::array<T, NX - 2>& upper { aHCache.upper};
 
-        T& lowerFirst{ lower.front()};
+        const std::array<T, NX - 2>& localVar{ aHCache.localVar };
+
+        const T& lowerFirst{ lower.front()};
         T& middleFirst { middle.front()};
         T& upperFirst { upper.front()};
 
         T& lowerLast { lower.back()};
         T& middleLast { middle.back()};
-        T& upperLast { upper.back()};
-
-        std::span<T, NX - 2> cInner{ c.data() + 1, NX - 2};
-
-        // Temp
-        T var{localVar[0]};
+        const T& upperLast { upper.back()};
 
         // ---------- Calculate ----------
 
@@ -117,21 +121,22 @@ namespace uv::math::pde
             // TODO: Fuse in one loop
             for (std::size_t j{ 0 }; j < innerNX; ++j)
             {
-                lower[j] = zLower * var;
-                middle[j] = zMiddle * var + 1.0;
-                upper[j] = zUpper * var;
+                const T localVarCurr{ localVar[j] };
+
+                lower[j] = zLower * localVarCurr;
+                middle[j] = zMiddle * localVarCurr + 1.0;
+                upper[j] = zUpper * localVarCurr;
             }
 
             // Left boundary
+            
             // NOTE: lowerFirst does not enter the Thomas solver
-
             middleFirst += lowerFirst * aL;
             upperFirst += lowerFirst * bL;
 
-
             // Right boundary
+            
             // NOTE: upperLast does not enter the Thomas solver
-
             lowerLast += upperLast * bR;
             middleLast += upperLast * aR;
             
@@ -147,7 +152,6 @@ namespace uv::math::pde
         }
 
         // Explicit Neumann conditions (zero-curvature)
-
         c.front() = aL * c[1] + bL * c[2];
         c.back() = aR * c[NX - 2] + bR * c[NX - 3];
     }

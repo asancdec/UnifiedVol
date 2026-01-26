@@ -54,6 +54,14 @@ namespace uv::math::interp
     >
     struct Interpolator
     {
+        // ---------- Expose types ----------
+         
+        using value_type       = T;
+        using derivatives_type = DerivPolicy;
+        using evaluator_type   = EvalPolicy;
+
+        // ---------- Members ----------
+
         /// Derivative computation policy
         DerivPolicy deriv{};
 
@@ -100,6 +108,29 @@ namespace uv::math::interp
             std::span<const T> x,
             std::span<const T> xs,
             std::span<const T> ys,
+            bool doValidate = true
+        ) const
+            requires HasDerivatives<DerivPolicy, T> &&
+                     HasEvaluate<EvalPolicy, T>;
+
+        /**
+         * @brief Evaluate interpolant (derivatives computed internally) into an output buffer.
+         *
+         * Computes PCHIP/Hermite (or whatever DerivPolicy/EvalPolicy are) node derivatives
+         * internally, then evaluates the interpolant at @p x, writing results into @p y.
+         *
+         * @param x           Query points.
+         * @param xs          Node locations.
+         * @param ys          Node values.
+         * @param y           Output buffer (size = x.size()).
+         * @param doValidate  Enable input validation.
+         */
+        void operator()
+        (
+            std::span<const T> x,
+            std::span<const T> xs,
+            std::span<const T> ys,
+            std::span<T> y,
             bool doValidate = true
         ) const
             requires HasDerivatives<DerivPolicy, T> &&

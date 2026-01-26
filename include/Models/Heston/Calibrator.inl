@@ -5,7 +5,7 @@
  * Created:     2025-12-08
  *
  * Description:
- *   [Brief description of what this file declares or implements.]
+ *   Heston calibration routines.
  *
  * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
@@ -34,21 +34,26 @@
 namespace uv::models::heston::calibrator
 {
 	template <std::floating_point T, std::size_t N, typename Policy>
-	Params<T> calibrate(const Vector<T>& tenors,
+	Params<T> calibrate
+	(
+		const Vector<T>& tenors,
 		const Vector<T>& strikes,
 		const Vector<T>& forwards,
 		const Vector<T>& rates,
 		const core::Matrix<T>& callM,
 		Pricer<T, N>& pricer,
-		opt::ceres::Optimizer<5, Policy>& optimizer)
+		opt::ceres::Optimizer<5, Policy>& optimizer,
+		const opt::WeightATM<double>& weightATM
+	)
 	{
-		// ---------- Validate input data  ----------
+		// ---------- Validate  ----------
 
 		detail::validateInputs<T>(tenors, strikes, forwards, rates, callM);
 
 		// ---------- Convert data ----------
 
 		// Ceres API accepts doubles only
+
 		const Vector<double> tenorsD{ core::convertVector<double>(tenors) };
 		const Vector<double> strikesD{ core::convertVector<double>(strikes) };
 		const Vector<double> forwardsD{ core::convertVector<double>(forwards) };
@@ -69,13 +74,30 @@ namespace uv::models::heston::calibrator
 
 		// ---------- Add residual blocks ----------
 
+		// Allocate
+		Vector<double> bufferWeights(numStrikes);
+		Vector<double> logKF(numStrikes);
+
 		for (std::size_t i = 0; i < numTenors; ++i)
 		{
 			// Extract data
+
 			std::span<const double> callMDRow{callMD[i]};
 			const double t{ tenorsD[i] };
 			const double F{ forwardsD[i]};
 			const double r{ ratesD[i] };
+
+			// logKF strikes
+			for (std::size_t j{ 0 }; j < numStrikes; ++j)
+				logKF[j] = std::log(strikesD[j] / F);
+
+			// ATM weights
+			opt::weightsATM<double>
+			(
+				logKF,
+				weightATM,
+				bufferWeights
+			);
 
 			for (std::size_t j = 0; j < numStrikes; ++j)
 			{
@@ -83,7 +105,13 @@ namespace uv::models::heston::calibrator
 				(
 					std::make_unique<detail::PriceResidualJac<T, N>>
 					(
-						t, F, r, strikesD[j], callMDRow[j], pricer
+						t, 
+						F, 
+						r, 
+						strikesD[j], 
+						callMDRow[j], 
+						bufferWeights[j],
+						pricer
 					)
 				);
 			}
@@ -103,10 +131,13 @@ namespace uv::models::heston::calibrator
 	}
 
 	template <std::floating_point T, std::size_t N>
-	core::VolSurface<T> buildSurface(const core::VolSurface<T>& volSurface,
-		const Pricer<T, N>& pricer)
+	core::VolSurface<T> buildSurface
+	(
+		const core::VolSurface<T>& volSurface,
+		const Pricer<T, N>& pricer
+	)
 	{
-		// ---------- Extract data ----------
+		// ---------- Extract ----------
 		
 		const std::size_t numTenors{ volSurface.numTenors() };
 		const std::size_t numStrikes{ volSurface.numStrikes() };
@@ -146,11 +177,14 @@ namespace uv::models::heston::calibrator
 namespace uv::models::heston::calibrator::detail
 {   
 	template <std::floating_point T>
-	void validateInputs(const Vector<T>& tenors,
+	void validateInputs
+	(
+		const Vector<T>& tenors,
 		const Vector<T>& strikes,
 		const Vector<T>& forwards,
 		const Vector<T>& rates,
-		const core::Matrix<T>& callM)
+		const core::Matrix<T>& callM
+	)
 	{
 		UV_REQUIRE(!tenors.empty(),
 			ErrorCode::InvalidArgument,
@@ -234,33 +268,60 @@ namespace uv::models::heston::calibrator::detail
 	struct PriceResidualJac final
 		: public ceres::SizedCostFunction<1, 5> 
 	{
-		const double T_, F_, r_, K_, callPriceMkt_;
+		const double T_, F_, r_, K_, callPriceMkt_, w_;
 		const Pricer<T, N>* pricer_; 
 
-		PriceResidualJac(double t, double F, double r, double K, double callPriceMkt,
-			const Pricer<T, N>& pricer) noexcept
-			: T_(t), F_(F), r_(r), K_(K), callPriceMkt_(callPriceMkt), pricer_(&pricer) {}
+		PriceResidualJac
+		(
+			double t, 
+			double F, 
+			double r, 
+			double K, 
+			double callPriceMkt,
+			double w,
+			const Pricer<T, N>& pricer
+		) noexcept
+			: 
+			T_(t), 
+			F_(F), 
+			r_(r),
+			K_(K), 
+			w_(w),
+			callPriceMkt_(callPriceMkt),
+			pricer_(&pricer) 
+		{}
 
-		bool Evaluate(double const* const* parameters,
+		bool Evaluate
+		(
+			double const* const* parameters,
 			double* residuals,
-			double** jacobians) const override
+			double** jacobians
+		) const override
 		{
 			const double* p = parameters[0];
 			const auto pg = pricer_->callPriceWithGradient
 			(
-				p[0], p[1], p[2], p[3], p[4], T_, F_, r_, K_
+				p[0], 
+				p[1], 
+				p[2], 
+				p[3], 
+				p[4], 
+				T_, 
+				F_, 
+				r_,
+				K_
 			);
 
-			residuals[0] = double(pg[0] - callPriceMkt_);
+			residuals[0] = double((pg[0] - callPriceMkt_) * w_) ;
 
 			if ((jacobians != nullptr) && (jacobians[0] != nullptr)) 
 			{
 				double* J = jacobians[0];
-				J[0] = double(pg[1]);
-				J[1] = double(pg[2]);
-				J[2] = double(pg[3]);
-				J[3] = double(pg[4]);
-				J[4] = double(pg[5]);
+				J[0] = double(pg[1] * w_);
+				J[1] = double(pg[2] * w_);
+				J[2] = double(pg[3] * w_);
+				J[3] = double(pg[4] * w_);
+				J[4] = double(pg[5] * w_);
 			}
 			return true;
 		}

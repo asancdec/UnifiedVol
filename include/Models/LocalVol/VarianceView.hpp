@@ -42,8 +42,8 @@ namespace uv::models::localvol
     template <std::floating_point T>
     struct VarianceView
     {
-        std::span<const T> xs;    ///< log(F/K) grid nodes.
-        std::span<const T> ys;    ///< Local variance values at grid nodes.
-        std::span<const T> dydx;  ///< Derivatives d(var)/d(log(F/K)) at nodes.
+        std::span<const T> logKF;       ///< log(K/F) grid nodes.
+        std::span<const T> localVar;    ///< Local variance values at grid nodes.
+        std::span<const T> dydx;        ///< Derivatives d(var)/d(log(K/F)) at nodes.
     };
 } // namespace uv::models::localvol

@@ -165,7 +165,7 @@ namespace uv::math
     {
         // ---------- Optimization parameters ----------
 
-        const T TOL{ 1e-14 };
+        const T TOL{ 5e-14 };
         const unsigned int EVAL{ 100 };
 
         // ---------- Sanity checks ----------

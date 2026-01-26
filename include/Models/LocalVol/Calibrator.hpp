@@ -39,7 +39,8 @@ namespace uv::models::localvol::calibrator
 	<
 		std::floating_point T,
 		std::size_t NT,
-		std::size_t NX
+		std::size_t NX,
+        class Interpolator
 	>
 	Surface<T> calibrate
 	(
@@ -47,7 +48,7 @@ namespace uv::models::localvol::calibrator
 		const Vector<T>& tenors,
 		const core::Matrix<T>& logKF,
 		const core::Matrix<T>& totVar,
-		const Pricer<T, NT, NX>& pricer
+		Pricer<T, NT, NX, Interpolator>& pricer
 	);
 	
 
@@ -63,12 +64,19 @@ namespace uv::models::localvol::calibrator
 		);
 
 		template<std::floating_point T>
-		void coldGuess
+		void coldGuess 
 		(
 			T tenor,
 			std::span<const T> totVar,
 			std::span<T> localVar
-		);
+		) noexcept;
+
+		template<std::floating_point T>
+		void warmGuess
+		(
+			std::span<const T> params,
+			std::span<T> localVar
+		) noexcept;
 
 
 

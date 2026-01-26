@@ -32,24 +32,26 @@
 #include <iomanip>
 #include <utility>
 
-
 namespace uv::models::localvol
 {
     template
     <
         std::floating_point T,
         std::size_t NT,
-        std::size_t NX
+        std::size_t NX,
+        class Interpolator
     >
     template <typename F>
-    Pricer<T, NT, NX>::Pricer
+    Pricer<T, NT, NX, Interpolator>::Pricer
     (
         F&& payoff,
         T xBound
     )
         :
         xGrid_(core::generateGrid<T, NX>(-xBound, xBound)),
-        cInit_(math::pde::andreasenHugeInit<T, NX>(xGrid_, std::forward<F>(payoff)))
+        cInit_(math::pde::andreasenHugeInit<T, NX>(xGrid_, std::forward<F>(payoff))),
+        xGridInner_(xGrid_.data() + 1, NX - 2),
+        cInner_(c_.data() + 1, NX - 2)
     {
         // ---------- Validate ----------
 
@@ -98,45 +100,54 @@ namespace uv::models::localvol
 
     template
     <
-    std::floating_point T,
-    std::size_t NT,
-    std::size_t NX
+        std::floating_point T,
+        std::size_t NT,
+        std::size_t NX,
+        class Interpolator
     >
-    Vector<T> Pricer<T, NT, NX>::priceNormalized
+    Vector<T> Pricer<T, NT, NX, Interpolator>::priceNormalized
     (
-        T maturity,
+        T tenor,
         std::span<const T> logKF,
-        VarianceView<T> localVar
+        const VarianceView<T>& localVarView
     )
     {
         // ---------- Precompute ----------
 
-        T dt{ maturity / NT };
+        T dt{ tenor / NT };
         T dtDivTwo{ 0.5 * dt };
 
         ahCache_.zLower = -dtDivTwo * ahCache_.lowerFactor;
         ahCache_.zMiddle = dtDivTwo * ahCache_.invDXSquaredTimesTwo;
         ahCache_.zUpper = -dtDivTwo * ahCache_.upperFactor;
 
-        // ---------- Solve ----------
+        // ---------- Configure ----------
 
         // Write the initial values into the buffer
         c_ = cInit_;
 
-        // Temp
-        std::array<T, NX> test{};
-        std::copy(localVar.ys.begin(), localVar.ys.end(), test.begin());
+        // Local variance
+        interpolator_
+        (
+            xGridInner_,              
+            localVarView.logKF,
+            localVarView.localVar,
+            localVarView.dydx,
+            ahCache_.localVar     // Write into the buffer
+        );
+
+        // ---------- Solve ----------
 
         math::pde::andreasenHugeSolve<T, NT, NX>
         (
             c_,
-            test,
+            cInner_,
             ahCache_
         );
 
         // ---------- Interpolate ----------
 
-        return math::interp::PchipInterpolator<T>{}
+        return interpolator_
         (
             logKF,
             xGrid_,
@@ -144,41 +155,42 @@ namespace uv::models::localvol
         );
     }
 
-    template
-    <
-        std::floating_point T,
-        std::size_t NT,
-        std::size_t NX
-    >
-    Vector<T> Pricer<T, NT, NX>::price
-    (
-        T maturity,
-        T forward,
-        T discountFactor,
-        std::span<const T> logKF,
-        VarianceView<T> localVar
-    )
-    {
-        // ---------- Price ----------
+    //template
+    //<
+    //    std::floating_point T,
+    //    std::size_t NT,
+    //    std::size_t NX,
+    //    class Interpolator
+    //>
+    //Vector<T> Pricer<T, NT, NX, Interpolator>::price
+    //(
+    //    T tenor,
+    //    T forward,
+    //    T discountFactor,
+    //    std::span<const T> logKF,
+    //    VarianceView<T>& localVarView
+    //)
+    //{
+    //    // ---------- Price ----------
 
-        Vector <T> cNormalized
-        { 
-            priceNormalized
-            (
-                maturity,
-                logKF,
-                localVar            
-            ) 
-        };
+    //    Vector <T> cNormalized
+    //    { 
+    //        priceNormalized
+    //        (
+    //            tenor,
+    //            logKF,
+    //            localVarView
+    //        ) 
+    //    };
 
-        // ---------- Transform ----------
+    //    // ---------- Transform ----------
 
-        return core::multiply<T>
-        (
-            cNormalized,
-            forward * discountFactor
-        );
-    }
+    //    return core::multiply<T>
+    //    (
+    //        cNormalized,
+    //        forward * discountFactor
+    //    );
+    //}
 
 
 

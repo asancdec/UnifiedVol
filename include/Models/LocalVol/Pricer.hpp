@@ -25,7 +25,7 @@
 #pragma once
 
 #include "Core/Types.hpp"
-#include "Models/LocalVol/AHCache.hpp"
+#include "Math/PDE/AHCache.hpp"
 #include "Models/LocalVol/VarianceView.hpp"
 
 #include <concepts>
@@ -39,24 +39,41 @@ namespace uv::models::localvol
 	<
 		std::floating_point T,
 		std::size_t NT,
-		std::size_t NX
+		std::size_t NX,
+		class Interpolator
 	>
 	class Pricer
 	{
 	private:
+
+		// ---------- Validate ----------
+
+		// Size
+		static_assert(NX >= 4, "NX must be >= 4");
 
 		// Grids
 		std::array<T, NX> xGrid_;
 		std::array<T, NX> cInit_;
 		std::array<T, NX> c_;
 
-		//// Interpolation Policy
-		//math::interp::HermiteInterpolator<T> interpol_{};
+		// Views
+		std::span<const T, NX - 2> xGridInner_;
+		std::span<T, NX - 2> cInner_;
 
 		// Cached variables and buffers
-		AHCache<T, NX> ahCache_{};
+		math::pde::AHCache<T, NX> ahCache_{};
+
+		// Interpolator
+		Interpolator interpolator_{};
 
 	public:
+
+		// ---------- Typing ----------
+
+		using interpolator_type = Interpolator;
+		using derivatives_type = typename interpolator_type::derivatives_type;
+		using evaluator_type   = typename interpolator_type::evaluator_type;
+
 
 		Pricer() = delete;
 
@@ -69,27 +86,27 @@ namespace uv::models::localvol
 
 		Vector<T> priceNormalized
 		(
-			T maturity,
+			T tenor,
 			std::span<const T> logKF,
-			VarianceView<T> localVar
+			const VarianceView<T>& localVarView
 		);
 
 		Vector<T> price
 		(
-			T maturity,
+			T tenor,
 			T forward,
 			T discountFactor,
 			std::span<const T> logKF,
-			VarianceView<T> localVar
+			const VarianceView<T>& localVarView
 		);
 
 		Vector<T> price
 		(
-			Vector<T> maturity,
+			Vector<T> tenor,
 			T forward,
 			T discountFactor,
 			std::span<const T> logKF,
-			VarianceView<T> localVar
+			const VarianceView<T>& localVarView
 		);
 
 

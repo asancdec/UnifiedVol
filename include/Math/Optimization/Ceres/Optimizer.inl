@@ -85,9 +85,8 @@ namespace uv::math::opt::ceres
         options.parameter_tolerance        = config_.paramTol;           
         options.gradient_tolerance         = config_.gradientTol;        
         options.num_threads                = std::max(1u, std::thread::hardware_concurrency()); 
-        
        
-        // Capture Ceres' progress output and redirect it to the unified UV logger
+        // Capture Ceres' progress output and redirect it to the logger
         ::ceres::Solver::Summary summary;
         {
             // Enable live Ceres iteration table only if verbose mode is on
@@ -115,9 +114,9 @@ namespace uv::math::opt::ceres
         (
             x_,                                                     // Parameters
             config_.paramNames,                                     // Parameter names
-            summary.final_cost * double(2.0),                       // SSE
+            summary.final_cost * 2.0,                               // SSE
             summary.iterations.size(),                              // Iterations
-            summary.total_time_in_seconds * double(1000.0),         // Elapsed [ms]
+            summary.total_time_in_seconds * 1000.0,                 // Elapsed [ms]
             (summary.termination_type == ::ceres::CONVERGENCE ||
                 summary.termination_type == ::ceres::USER_SUCCESS)  // Success flag
         );

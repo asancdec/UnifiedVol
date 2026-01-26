@@ -2,10 +2,11 @@
 /*
  * File:        Functions.hpp
  * Author:      Álvaro Sánchez de Carlos
- * Created:     2025-12-08
+ * Created:     2025-01-26
  *
  * Description:
- *   [Brief description of what this file declares or implements.]
+ *   Optimisation helper utilities: ATM weighting, bounds diagnostics,
+ *   and logging.
  *
  * Copyright (c) 2025 Álvaro Sánchez de Carlos
  *
@@ -22,9 +23,11 @@
  * limitations under this License.
  */
 
-
 #pragma once
 
+#include "Core/Types.hpp"
+
+#include <concepts>
 #include <algorithm>
 #include <string> 
 #include <array>
@@ -35,82 +38,146 @@
 namespace uv::math::opt
 {
     /**
-     * @brief Clamp an initial parameter guess inside its admissible bounds.
+     * @brief Parameters for the ATM weighting kernel.
      *
-     * Each parameter is clamped component-wise:
-     *   initGuess[i] ← clamp(initGuess[i], lowerBounds[i], upperBounds[i])
+     * @details
+     * Defines the amplitude and width of a Gaussian bump applied around ATM
+     * in log-moneyness coordinates. The weight used is:
      *
-     * A warning is logged whenever a parameter is modified.
+     *   w(x) = sqrt( 1 + (wATM - 1) * exp( -(x/k0)^2 ) )
      *
-     * Typical use case:
-     *   - Sanitising user-provided initial guesses before starting an optimiser.
+     * where x = log(K/F).
      *
-     * @tparam N Number of parameters.
-     * @param[in,out] initGuess Initial parameter vector (modified in-place).
-     * @param[in] lowerBounds Component-wise lower bounds.
-     * @param[in] upperBounds Component-wise upper bounds.
-     * @param[in] paramNames Human-readable parameter names (for logging).
-     *
-     * @note This function never throws and is safe to call inside optimisation setup.
+     * @tparam T Floating-point type.
      */
-    template <std::size_t N>
-    void clamp(std::array<double, N>& initGuess,
-        const std::array<double, N>& lowerBounds,
-        const std::array<double, N>& upperBounds,
-        const std::array<std::string_view, N>& paramNames) noexcept;
+    template<std::floating_point T>
+    struct WeightATM
+    {
+        T wATM{ 1.0 };  ///< ATM weight amplitude (wATM = 1 means no reweighting).
+        T k0{};         ///< Width parameter controlling how quickly the bump decays.
+    };
 
     /**
-     * @brief Emit warnings if any parameter lies (numerically) on its bounds.
+     * @brief Compute ATM weights on a log(K/F) grid.
      *
-     * A parameter is considered to have hit a bound if it is within
-     * a small absolute/relative tolerance of the bound value.
+     * @details
+     * Fills @p out with weights computed from @p logKF and @p params:
      *
-     * Typical use case:
-     *   - Post-optimisation diagnostics to detect constrained solutions.
+     *   out[i] = sqrt( 1 + (wATM - 1) * exp( -(logKF[i]/k0)^2 ) )
+     *
+     * The output weight is intended to scale residuals (and their Jacobians)
+     * in a weighted least squares objective.
+     *
+     * @tparam T Floating-point type.
+     * @param logKF Log-moneyness grid values log(K/F).
+     * @param params ATM kernel parameters.
+     * @param out Output weights, same length as @p logKF.
+     * @param doValidate Enable input validation checks.
+     */
+    template<std::floating_point T>
+    void weightsATM
+    (
+        std::span<const T> logKF,
+        const WeightATM<T>& params,
+        std::span<T> out,
+        bool doValidate = true
+    );
+
+    /**
+     * @brief Clamp an initial guess inside component-wise bounds.
+     *
+     * @details
+     * For each component i:
+     *
+     *   initGuess[i] = clamp(initGuess[i], lowerBounds[i], upperBounds[i])
+     *
+     * Logs a warning for any parameter that is modified.
      *
      * @tparam N Number of parameters.
-     * @param[in] x Optimised parameter vector.
-     * @param[in] lowerBounds Component-wise lower bounds.
-     * @param[in] upperBounds Component-wise upper bounds.
-     * @param[in] paramNames Human-readable parameter names (for logging).
-     *
-     * @note This function does not modify the parameter vector.
-     * @note Warnings are informational only and do not imply optimisation failure.
+     * @param initGuess Initial parameter vector (modified in-place).
+     * @param lowerBounds Component-wise lower bounds.
+     * @param upperBounds Component-wise upper bounds.
+     * @param paramNames Parameter names used for logging.
      */
     template <std::size_t N>
-    void warnBoundsHit(std::span<double> x,
+    void clamp
+    (
+        std::array<double, N>& initGuess,
         const std::array<double, N>& lowerBounds,
         const std::array<double, N>& upperBounds,
-        const std::array<std::string_view, N>& paramNames) noexcept;
+        const std::array<std::string_view, N>& paramNames
+    ) noexcept;
+
+    /**
+     * @brief Emit warnings when parameters lie numerically on their bounds.
+     *
+     * @details
+     * Uses small absolute/relative tolerances to detect whether a value is
+     * effectively equal to its lower or upper bound, and logs warnings.
+     *
+     * @tparam N Number of parameters.
+     * @param x Optimised parameter vector.
+     * @param lowerBounds Component-wise lower bounds.
+     * @param upperBounds Component-wise upper bounds.
+     * @param paramNames Parameter names used for logging.
+     */
+    template <std::size_t N>
+    void warnBoundsHit
+    (
+        std::span<double> x,
+        const std::array<double, N>& lowerBounds,
+        const std::array<double, N>& upperBounds,
+        const std::array<std::string_view, N>& paramNames
+    ) noexcept;
 
     /**
      * @brief Log optimisation results in a standardised calibration format.
      *
-     * The output includes:
-     *   - parameter values
-     *   - sum of squared errors (SSE)
-     *   - elapsed time (ms)
-     *   - iteration count
-     *   - success flag
-     *
-     * Typical output:
-     *   [Calib] kappa=1.2345  theta=0.0456  ...  SSE=1.23e-06 (2.31 ms, 54 it, SUCCESS)
+     * @details
+     * Prints parameter values and summary diagnostics, including SSE, elapsed
+     * time, iteration count, and a success flag.
      *
      * @tparam N Number of parameters.
-     * @param[in] x Optimised parameter vector.
-     * @param[in] paramNames Human-readable parameter names.
-     * @param[in] sse Final sum of squared errors.
-     * @param[in] iterCount Number of optimiser iterations.
-     * @param[in] elapsedMs Elapsed wall-clock time in milliseconds.
-     * @param[in] isSuccess Whether the optimiser reported success.
+     * @param x Optimised parameter vector.
+     * @param paramNames Parameter names used for logging.
+     * @param sse Final sum of squared errors.
+     * @param iterCount Iteration count.
+     * @param elapsedMs Elapsed time in milliseconds.
+     * @param isSuccess Whether the optimiser reported success.
      */
     template <std::size_t N>
-    void logResults(std::span<double> x,
+    void logResults
+    (
+        std::span<double> x,
         const std::array<std::string_view, N>& paramNames,
         double sse,
         unsigned iterCount,
         double elapsedMs,
-        bool isSuccess) noexcept;
-}
+        bool isSuccess
+    ) noexcept;
+
+    namespace detail
+    {
+        /**
+         * @brief Validate inputs for weightsATM.
+         *
+         * @details
+         * Checks size consistency and basic parameter validity. Intended for
+         * debug or user-facing validation prior to computing weights.
+         *
+         * @tparam T Floating-point type.
+         * @param logKF Log-moneyness grid values.
+         * @param params ATM kernel parameters.
+         * @param out Output buffer for weights.
+         */
+        template<std::floating_point T>
+        void validateWeightsATM
+        (
+            std::span<const T> logKF,
+            const WeightATM<T>& params,
+            std::span<T> out
+        );
+    } // namespace detail
+} // namespace uv::math::opt
 
 #include "Functions.inl"

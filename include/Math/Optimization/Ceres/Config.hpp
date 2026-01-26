@@ -5,7 +5,7 @@
  * Created:     2025-12-08
  *
  * Description:
- *   [Brief description of what this file declares or implements.]
+ *   Ceres optimizer parameters configuration
  *
  * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
@@ -22,7 +22,6 @@
  * limitations under this License.
  */
 
-
 #pragma once
 
 #include <array>    
@@ -31,23 +30,37 @@
 
 namespace uv::math::opt::ceres
 {
+    //--------------------------------------------------------------------------
     /**
      * @brief Configuration for Ceres-based optimisation.
      *
-     * Groups solver tolerances, iteration limits, and logging options used by
-     * the Ceres optimiser wrapper.
+     * @details
+     * Groups numerical tolerances, iteration limits, robust loss scaling,
+     * and diagnostic options used by the Ceres optimiser wrapper.
+     *
+     * Solver strategy (trust-region method, linear solver, loss type) is
+     * selected at compile time via the optimisation Policy, while this
+     * structure provides runtime tuning parameters.
      *
      * @tparam N Number of optimisation parameters.
      */
     template <std::size_t N>
     struct Config
     {
-        unsigned maxEval;                               // Maximum number of iterations / function evaluations
-        double functionTol;                             // Function tolerance → stop when relative cost improvement < threshold
-        double paramTol;                                // Parameter tolerance → stop when parameter updates are below threshold
-        std::array<std::string_view, N> paramNames;     // Parameter names (for logging and diagnostics)
-        double gradientTol{ 0.0 };                      // Gradient tolerance → stop when ∥Jᵀr∥ < threshold (stationarity)
-        double lossScale{ 1.0 };                        // Loss function scale (e.g., δ for Huber or Cauchy)
-        bool verbose{ false };                          // Logs the full Ceres calibration report
+        // ---------- Termination ----------
+
+        unsigned maxEval;            ///< Maximum number of function evaluations.
+        double functionTol;          ///< Stop when relative cost reduction falls below this threshold.
+        double paramTol;             ///< Stop when parameter updates fall below this threshold.
+        double gradientTol;          ///< Stop when norm of J^T r falls below this threshold.
+
+        // ---------- Robust loss  ----------
+
+        double lossScale;            ///< Robust loss scale (e.g. delta for Huber), in residual units.
+
+        // ---------- Logging ----------
+
+        std::array<std::string_view, N> paramNames; ///< Parameter names for logging and diagnostics.
+        bool verbose{ false };                      ///< Enable full Ceres solver report output.
     };
-}
+} // namespace uv::math::opt::ceres

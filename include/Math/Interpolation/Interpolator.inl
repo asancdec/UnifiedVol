@@ -91,6 +91,36 @@ namespace uv::math::interp
 		class DerivPolicy,
 		class EvalPolicy
 	>
+	void Interpolator<T, DerivPolicy, EvalPolicy>::operator()
+	(
+		std::span<const T> x,
+		std::span<const T> xs,
+		std::span<const T> ys,
+		std::span<T> y,
+		bool doValidate
+	) const
+		requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>
+	{
+		Vector<T> dydx(xs.size());
+		deriv(xs, ys, dydx, doValidate);
+
+		(*this)
+		(
+			x,
+			xs,
+			ys,
+			dydx,
+			y,
+			doValidate
+		);
+	}
+
+	template
+	<
+		std::floating_point T,
+		class DerivPolicy,
+		class EvalPolicy
+	>
 	Vector<T> Interpolator<T, DerivPolicy, EvalPolicy>::operator()
 	(
 		std::span<const T> x,

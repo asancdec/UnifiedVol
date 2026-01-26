@@ -50,29 +50,38 @@ int main(int argc, char* argv[])
         StopWatch timer;
         timer.StartStopWatch();
 
-        // ---------- Market data ----------
+        // ---------- Read ----------
 
         MarketData<Real> marketData
         { 
-          0.0,          // r
-          0.0,          // q
-          485.77548     // S
+          .r = 0.00,          // r
+          .q = 0.00,          // q
+          .S = 485.77548     // S
         };
 
-        VolSurface<Real> mktVolSurface{ readVolSurface<Real>(path.string(), marketData) };
-        mktVolSurface.printTotVar(5, false);
+        VolSurface<Real> mktVolSurface
+        { 
+            readVolSurface<Real>
+            (
+                path.string(), 
+                marketData
+            ) 
+        };
+
+        mktVolSurface.printTotVar();
 
         // ---------- SVI calibration ----------
 
-        opt::nlopt::Optimizer<4, nlopt::LD_SLSQP> nloptOptimizer
+        opt::nlopt::Optimizer
+        <4, nlopt::LD_SLSQP> nloptOptimizer
         {
             opt::nlopt::Config<4>
             {
-                1e-12,                            
-                1e-9,                              
-                1e-10,                            
-                10000,                             
-                { "b", "rho", "m", "sigma" }   
+                .eps = 1e-12,                            
+                .tol = 1e-12,                              
+                .ftolRel = 1e-12,                            
+                .maxEval = 10000,                             
+                .paramNames = { "b", "rho", "m", "sigma" }   
             }
         };
 
@@ -96,12 +105,13 @@ int main(int argc, char* argv[])
             )
         };
        
-        sviVolSurface.printTotVar(5, false);
+        sviVolSurface.printBSCall();
+
 
         // ---------- Local volatility calibration ----------
 
         constexpr std::size_t nT{ 100 };    // Time steps
-        constexpr std::size_t nX{ 1000 };   // Space steps
+        constexpr std::size_t nX{ 20 };     // Space steps
         constexpr Real xBound{ 2.5 };       // log(K/F) grid bound
 
         // Declare payoff function
@@ -109,7 +119,16 @@ int main(int argc, char* argv[])
         auto payoff = [](Real S, Real K) -> Real { return (S > K) ? (S - K) :  0.0; };
 
         // Allocate to heap
-        auto lvPricer = std::make_unique<localvol::Pricer<Real, nT, nX>>
+        auto lvPricer = std::make_unique
+         <
+            localvol::Pricer
+            <
+                Real, 
+                nT, 
+                nX, 
+                math::interp::PchipInterpolator<Real>
+            >
+         >
         (   
             payoff,
             xBound
@@ -117,7 +136,13 @@ int main(int argc, char* argv[])
 
         localvol::Surface<Real> localVolSurface
         { 
-            localvol::calibrator::calibrate<Real, nT, nX>
+            localvol::calibrator::calibrate
+            <
+                Real, 
+                nT,
+                nX,
+                math::interp::PchipInterpolator<Real>
+            >
             (
                 sviVolSurface.callPrices(),
                 sviVolSurface.tenors(),
@@ -134,7 +159,15 @@ int main(int argc, char* argv[])
         
         heston::Pricer<Real, HestonNodes> hestonPricer
         {
-            std::make_shared<const integration::TanHSinH<Real, HestonNodes>>(quad),
+            std::make_shared
+            <
+                const integration::TanHSinH
+                <
+                    Real, 
+                    HestonNodes
+                >
+            >
+            (quad),
             {
                 -2.0,   // Damping parameter ITM
                 2.0     // Damping parameter OTM
@@ -143,22 +176,21 @@ int main(int argc, char* argv[])
 
         opt::ceres::Optimizer<5, opt::ceres::Policy
         <
-            ceres::HuberLoss,             
+            void, // No Robust Loss                   
             ceres::LEVENBERG_MARQUARDT,   
-            ceres::DENSE_QR               
+            ceres::DENSE_NORMAL_CHOLESKY
         >
-        > ceresOptimizer
+        > lmOptimizer
         { 
             opt::ceres::Config<5>
             {   
                 
-                1000,                                          
-                1e-16,                                        
-                1e-16,                                         
-                { "kappa", "theta", "sigma", "rho", "v0" },      
-                1e-16,                                           
-                1.0,                                               
-                false                                           
+                .maxEval = 1000,                                          
+                .functionTol = 1e-12,                                        
+                .paramTol = 1e-12,
+                .gradientTol = 1e-12,
+                .paramNames = { "kappa", "theta", "sigma", "rho", "v0" },                           
+                .verbose = false                                           
             }
         };
 
@@ -172,7 +204,12 @@ int main(int argc, char* argv[])
                 sviVolSurface.rates(),
                 sviVolSurface.callPrices(),
                 hestonPricer,
-                ceresOptimizer
+                lmOptimizer,
+                opt::WeightATM
+                {
+                    .wATM = 8.0,
+                    .k0   = 0.3
+                }
             )
         );
 
@@ -185,7 +222,7 @@ int main(int argc, char* argv[])
             ) 
         };
 
-        hestonVolSurface.printVol();
+        hestonVolSurface.printBSCall();
 
         // ---------- Outputs ----------
 

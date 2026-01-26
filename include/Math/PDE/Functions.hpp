@@ -5,7 +5,7 @@
  * Created:     2025-12-08
  *
  * Description:
- *   [Brief description of what this file declares or implements.]
+ *   PDE solvers and 
  *
  * Copyright (c) 2025 Álvaro Sánchez de Carlos
  *
@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "Models/LocalVol/AHCache.hpp"
+#include "Math/PDE/AHCache.hpp"
 
 #include <cstddef>
 #include <concepts>
@@ -36,22 +36,30 @@ namespace uv::math::pde
 {
 
     template
-        <
+    <
         std::floating_point T,
         std::size_t N,
         typename F
-        >
-    std::array<T, N> andreasenHugeInit(const std::array<T, N>& xGrid, F&& payoff);
+    >
+    std::array<T, N> andreasenHugeInit
+    (
+        const std::array<T, N>& xGrid, 
+        F&& payoff
+    );
 
     template
-        <
+    <
         std::floating_point T,
         std::size_t NT,
         std::size_t NX
-        >
-    void andreasenHugeSolve(std::array<T, NX>& c,
-        const std::array<T, NX>& localVar,
-        models::localvol::AHCache<T, NX>& aHCache);
+    >
+    [[gnu::hot]]
+    void andreasenHugeSolve
+    (
+        std::span<T, NX> c,
+        std::span<T, NX-2> cInner, 
+        AHCache<T, NX>& aHCache
+    ) noexcept;
 
     namespace detail
     {
@@ -68,6 +76,7 @@ namespace uv::math::pde
          *   https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm
          */
         template <std::floating_point T, std::size_t N>
+        [[gnu::hot]]
         void thomasSolve(std::span<T, N> x,
             std::span<const T, N> upper,
             std::span<const T, N> middle,

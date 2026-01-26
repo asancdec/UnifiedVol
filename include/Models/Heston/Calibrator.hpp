@@ -5,7 +5,7 @@
  * Created:     2025-12-08
  *
  * Description:
- *   [Brief description of what this file declares or implements.]
+ *   Heston calibration routines.
  *
  * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
@@ -22,12 +22,12 @@
  * limitations under this License.
  */
 
-
 #pragma once
 
 #include "Models/Heston/Pricer.hpp"
 #include "Models/Heston/Params.hpp"
 #include "Math/Optimization/Ceres/Optimizer.hpp"
+#include "Math/Optimization/Functions.hpp"
 #include "Core/VolSurface.hpp"
 #include "Core/Matrix/Matrix.hpp"
 
@@ -64,13 +64,17 @@ namespace uv::models::heston::calibrator
 	 * @throws (via UV_REQUIRE) if input dimensions are inconsistent or invalid.
 	 */
 	template <std::floating_point T, std::size_t N, typename Policy>
-	Params<T> calibrate(const Vector<T>& tenors,
+	Params<T> calibrate
+	(
+		const Vector<T>& tenors,
 		const Vector<T>& strikes,
 		const Vector<T>& forwards,
 		const Vector<T>& rates,
 		const core::Matrix<T>& callM,
 		Pricer<T, N>& pricer,
-		opt::ceres::Optimizer<5, Policy>& optimizer);
+		opt::ceres::Optimizer<5, Policy>& optimizer,
+		opt::WeightATM<double>& weightATM
+	);
 
 	/**
 	 * @brief Build a new volatility surface by repricing all options with the calibrated Heston pricer.
@@ -88,8 +92,11 @@ namespace uv::models::heston::calibrator
 	 * @return Copy of volSurface with call prices set to the Heston model prices.
 	*/
 	template <std::floating_point T, std::size_t N>
-	core::VolSurface<T> buildSurface(const core::VolSurface<T>& volSurface,
-		const Pricer<T, N>& pricer);
+	core::VolSurface<T> buildSurface
+	(
+		const core::VolSurface<T>& volSurface,
+		const Pricer<T, N>& pricer
+	);
 
 	namespace detail
 	{
@@ -114,11 +121,14 @@ namespace uv::models::heston::calibrator
 		 * @throws (via UV_REQUIRE) if any condition fails.
 		 */
 		template <std::floating_point T>
-		void validateInputs(const Vector<T>& tenors,
+		void validateInputs
+		(
+			const Vector<T>& tenors,
 			const Vector<T>& strikes,
 			const Vector<T>& forwards,
 			const Vector<T>& rates,
-			const core::Matrix<T>& callM);
+			const core::Matrix<T>& callM
+		);
 
 		/**
 		 * @brief Ceres analytic residual for a single call price point.
