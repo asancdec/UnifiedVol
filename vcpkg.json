@@ -5,7 +5,6 @@
   "dependencies": [
     "nlopt",
     "ceres",
-    "boost-math",
-    "pybind11"
+    "boost-math"
   ]
 }

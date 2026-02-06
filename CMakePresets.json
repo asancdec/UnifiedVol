@@ -1,49 +1,43 @@
 {
-  "version": 5,
-  "cmakeMinimumRequired": {
-    "major": 3,
-    "minor": 22
-  },
-  "configurePresets": [
-    {
-      "name": "wsl-gcc-debug",
-      "displayName": "WSL GCC Debug (vcpkg)",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/out/build/wsl-gcc-debug",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_CXX_COMPILER": "/usr/bin/g++-13",
-        "CMAKE_CXX_STANDARD": "20",
-        "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/vcpkg/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_TARGET_TRIPLET": "x64-linux"
-      },
-      "vendor": {
-        "microsoft.com/VisualStudioSettings/CMake/Real(1.0)": {
-          "hostOS": [ "Linux" ],
-          "wslDistribution": "Ubuntu-22.04"
+    "version": 5,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 22
+    },
+    "configurePresets": [
+        {
+            "name": "linux-gcc-debug",
+            "displayName": "Linux GCC Debug (vcpkg)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/linux-gcc-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "/usr/bin/gcc-13",
+                "CMAKE_CXX_COMPILER": "/usr/bin/g++-13",
+                "CMAKE_CXX_STANDARD": "20",
+                "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/dev/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_TARGET_TRIPLET": "x64-linux",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "linux-gcc-release",
+            "displayName": "Linux GCC Release (vcpkg)",
+            "inherits": "linux-gcc-debug",
+            "binaryDir": "${sourceDir}/build/linux-gcc-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
         }
-      }
-    },
-    {
-      "name": "wsl-gcc-release",
-      "displayName": "WSL GCC Release (vcpkg)",
-      "inherits": "wsl-gcc-debug",
-      "binaryDir": "${sourceDir}/out/build/wsl-gcc-release",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_CXX_COMPILER": "/usr/bin/g++-13",
-        "CMAKE_CXX_STANDARD": "20"
-      }
-    }
-  ],
-  "buildPresets": [
-    {
-      "name": "wsl-gcc-debug",
-      "configurePreset": "wsl-gcc-debug"
-    },
-    {
-      "name": "wsl-gcc-release",
-      "configurePreset": "wsl-gcc-release"
-    }
-  ]
+    ],
+    "buildPresets": [
+        {
+            "name": "linux-gcc-debug",
+            "configurePreset": "linux-gcc-debug"
+        },
+        {
+            "name": "linux-gcc-release",
+            "configurePreset": "linux-gcc-release"
+        }
+    ]
 }
