@@ -7,7 +7,6 @@ UnifiedVol/
 ├── .githooks/
 │   ├── pre-commit
 ├── .gitignore
-├── .gitmodules
 ├── CMakeLists.txt
 ├── CMakePresets.json
 ├── LICENSE.txt
@@ -23,7 +22,34 @@ UnifiedVol/
 ├── examples/
 │   ├── main.cpp
 ├── external/
-│   ├── lets_be_rational
+│   ├── lets_be_rational/
+│   │   ├── .gitignore
+│   │   ├── MANIFEST.in
+│   │   ├── README.MD
+│   │   ├── clean.sh
+│   │   ├── lets_be_rational.egg-info/
+│   │   │   ├── PKG-INFO
+│   │   │   ├── SOURCES.txt
+│   │   │   ├── dependency_links.txt
+│   │   │   ├── top_level.txt
+│   │   ├── lets_be_rational/
+│   │   │   ├── LetsBeRational.py
+│   │   │   ├── __init__.py
+│   │   ├── make.bat
+│   │   ├── make_linux.sh
+│   │   ├── make_osx.sh
+│   │   ├── setup.py
+│   │   ├── src/
+│   │   │   ├── LetsBeRational.cpp
+│   │   │   ├── LetsBeRational.i
+│   │   │   ├── LetsBeRational.py
+│   │   │   ├── erf_cody.cpp
+│   │   │   ├── importexport.h
+│   │   │   ├── normaldistribution.cpp
+│   │   │   ├── normaldistribution.h
+│   │   │   ├── rationalcubic.cpp
+│   │   │   ├── rationalcubic.h
+│   │   │   ├── version.h
 ├── include/
 │   ├── excluded/
 │   │   ├── Math/
