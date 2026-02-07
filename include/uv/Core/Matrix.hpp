@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <Base/Alias.hpp>
+#include "Base/Alias.hpp"
 
 #include <concepts>
 #include <cstddef>
@@ -79,4 +79,4 @@ template <std::floating_point T> Matrix<T> operator*(T scalar, Matrix<T> rhs) no
 
 } // namespace uv::core
 
-#include <Core/Detail/Matrix.inl>
+#include "Core/Detail/Matrix.inl"

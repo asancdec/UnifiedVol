@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <Base/Alias.hpp>
+#include "Base/Alias.hpp"
 
 #include <concepts>
 #include <span>
@@ -164,4 +164,4 @@ void validateInputsEvaluate(
 } // namespace detail
 } // namespace uv::math::interp
 
-#include <Math/Interpolation/Detail/Policies.inl>
+#include "Math/Interpolation/Detail/Policies.inl"

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+﻿// SPDX-License-Identifier: Apache-2.0
 /*
  * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
@@ -17,31 +17,40 @@
 
 #pragma once
 
-#include "Base/Alias.hpp"
-
+#include <array>
 #include <concepts>
 #include <cstddef>
-#include <span>
 
-namespace uv::core
+namespace uv::math::integration
 {
 
-template <std::floating_point T> class Curve
+template <std::floating_point T, std::size_t N> class TanHSinH
 {
   private:
-    std::size_t numMaturities_;
-    Vector<T> maturities_;
-    Vector<T> discountFactors_;
+    struct Node
+    {
+        T w;
+        T y;
+        T x;
+        T factorRight;
+        T inputRight;
+        T factorLeft;
+        T inputLeft;
+    };
+
+    const T h_;
+    std::array<Node, N> nodes_;
+
+    Node generateNode(T nh) const noexcept;
 
   public:
-    Curve() = delete;
+    TanHSinH();
 
-    explicit Curve(T continuouslyCompoundedRate, std::span<const T> maturities);
+    template <typename F> T integrateZeroToInf(F&& f) const noexcept;
 
-    T discountFactor(T maturity, bool doValidate = true) const;
-
-    Vector<T> discountFactor(std::span<const T> maturities, bool doValidate = true) const;
+    template <std::size_t M, typename F>
+    std::array<T, M> integrateZeroToInfMulti(F&& f) const noexcept;
 };
-} // namespace uv::core
+} // namespace uv::math::integration
 
-#include "Core/Detail/Curve.inl"
+#include "Math/Integration/Detail/TanHSinH.inl"

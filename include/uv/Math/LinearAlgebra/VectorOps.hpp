@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <Base/Alias.hpp>
+#include "Base/Alias.hpp"
 
 #include <array>
 #include <concepts>
@@ -57,4 +57,4 @@ Vector<To> convertVector(const Vector<From>& x) noexcept;
 
 } // namespace uv::math::linear_algebra
 
-#include <Math/LinearAlgebra/Detail/VectorOps.inl>
+#include "Math/LinearAlgebra/Detail/VectorOps.inl"

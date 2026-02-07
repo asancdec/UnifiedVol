@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include <Core/Curve.hpp>
-#include <Core/Matrix.hpp>
+#include "Core/Curve.hpp"
+#include "Core/Matrix.hpp"
 
 #include "concepts"
 #include <cstddef>
@@ -64,4 +64,4 @@ template <std::floating_point T> class VolSurface
 };
 } // namespace uv::core
 
-#include <Core/Detail/VolSurface.inl>
+#include "Core/Detail/VolSurface.inl"

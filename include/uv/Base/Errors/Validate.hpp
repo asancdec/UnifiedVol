@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright (c) 2025 Álvaro Sánchez de Carlos
+ * Copyright (c) 2025 ï¿½lvaro Sï¿½nchez de Carlos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -158,4 +158,4 @@ void validateFileOpened(
 
 } // namespace uv::errors
 
-#include <Base/Errors/Detail/Validate.inl>
+#include "Base/Errors/Detail/Validate.inl"

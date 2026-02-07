@@ -20,10 +20,7 @@
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
-#include <format>
 #include <iostream>
-#include <memory>
-#include <ratio>
 
 using namespace uv;
 // using namespace models;
@@ -66,32 +63,14 @@ int main(int argc, char* argv[])
 
         // --------------  SVI calibration -------------
 
-        for (std::size_t i = 0; i < 10000; ++i)
-        {
-            const core::VolSurface<Real> sviVolSurface{
-                models::svi::buildSurface(marketState)
+        const core::VolSurface<Real> sviVolSurface{models::svi::buildSurface(marketState)
+        };
 
-            };
-        }
+        io::report::volatility(sviVolSurface);
 
-        // io::report::volatility(sviVolSurface);
-
-        // io::report::volatility(sviVolSurface);
-
-        // 10000
-        // Benchmark 1: Clocked at: 35365.115536 ms
-        // B2: [2026-02-06 00:11:43.507][INFO] Clocked at: 34425.344441 ms
-        // Benchmark: [2026-02-06 00:57:53.970][INFO] Clocked at: 33997.815557 ms
-        // [2026-02-06 01:18:54.720][INFO] Clocked at: 29699.199613 ms
+        // --------------  Heston calibration --------------
 
         return 0;
-
-        // Vector<svi::Params<Real>> sviParams{svi::calibrate(mktVolSurface,
-        // nloptOptimizer)
-        // };
-
-        // const VolSurface<Real> sviVolSurface{svi::buildSurface(mktVolSurface,
-        // sviParams)};
 
         // sviVolSurface.printBSCall();
 

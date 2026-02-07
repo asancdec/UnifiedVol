@@ -28,8 +28,18 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "linux-gcc-perf",
+            "displayName": "Linux GCC RelWithDebInfo (perf, vcpkg)",
+            "inherits": "linux-gcc-debug",
+            "binaryDir": "${sourceDir}/build/linux-gcc-perf",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O3 -g -fno-omit-frame-pointer"
         }
-    ],
+        }
+            ],
     "buildPresets": [
         {
             "name": "linux-gcc-debug",
@@ -38,6 +48,10 @@
         {
             "name": "linux-gcc-release",
             "configurePreset": "linux-gcc-release"
+        },
+        {
+        "name": "linux-gcc-perf",
+        "configurePreset": "linux-gcc-perf"
         }
     ]
 }

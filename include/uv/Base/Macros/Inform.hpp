@@ -17,6 +17,6 @@
 
 #pragma once
 
-#include <Base/Utils/Detail/Log.hpp>
+#include "Base/Utils/Detail/Log.hpp"
 
 #define UV_INFO(msg) ::uv::utils::Log::instance().log(::uv::utils::Level::Info, (msg))

@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include <Core/Curve.hpp>
-#include <Core/VolSurface.hpp>
+#include "Core/Curve.hpp"
+#include "Core/VolSurface.hpp"
 
 #include <concepts>
 

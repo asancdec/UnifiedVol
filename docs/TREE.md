@@ -144,6 +144,10 @@ UnifiedVol/
 │   │   │   │   │   ├── Volatility.inl
 │   │   │   │   ├── Primitive.hpp
 │   │   │   │   ├── Volatility.hpp
+│   │   │   ├── Integration/
+│   │   │   │   ├── Detail/
+│   │   │   │   │   ├── TanHSinH.inl
+│   │   │   │   ├── TanHSinH.hpp
 │   │   │   ├── Interpolation/
 │   │   │   │   ├── Detail/
 │   │   │   │   │   ├── Interpolator.inl

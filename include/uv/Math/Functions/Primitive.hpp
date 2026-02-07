@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <Base/Alias.hpp>
+#include "Base/Alias.hpp"
 
 #include <concepts>
 
@@ -34,4 +34,4 @@ template <std::floating_point T> T normalCDF(T x) noexcept;
 template <std::floating_point T> T normalPDF(T x) noexcept;
 } // namespace uv::math
 
-#include <Math/Functions/Detail/Primitive.inl>
+#include "Math/Functions/Detail/Primitive.inl"

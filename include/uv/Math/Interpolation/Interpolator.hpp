@@ -17,8 +17,8 @@
 
 #pragma once
 
-#include <Base/Alias.hpp>
-#include <Math/Interpolation/Policies.hpp>
+#include "Base/Alias.hpp"
+#include "Math/Interpolation/Policies.hpp"
 
 #include <concepts>
 #include <span>
@@ -96,4 +96,4 @@ using PchipInterpolator = Interpolator<T, PchipDerivatives<T>, HermiteEval<T>>;
 
 } // namespace uv::math::interp
 
-#include <Math/Interpolation/Detail/Interpolator.inl>
+#include "Math/Interpolation/Detail/Interpolator.inl"

@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include <Core/Matrix.hpp>
+#include "Core/Matrix.hpp"
 
 #include <concepts>
 #include <functional>
@@ -73,4 +73,4 @@ core::Matrix<To> convertMatrix(const core::Matrix<From>& A) noexcept;
 
 } // namespace uv::math::linear_algebra
 
-#include <Math/LinearAlgebra/Detail/MatrixOps.inl>
+#include "Math/LinearAlgebra/Detail/MatrixOps.inl"
