@@ -18,15 +18,21 @@
 #pragma once
 
 #include <concepts>
+#include <cstddef>
 #include <limits>
 
-namespace uv::models::heston
+namespace uv::models::heston::price
 {
-
 template <std::floating_point T> struct Config
 {
-    T alphaItm;
-    T alphaOtm;
+    T alphaItm{T{-2}};
+    T alphaOtm{T{2}};
     T eps{std::numeric_limits<T>::epsilon()};
 };
-} // namespace uv::models::heston
+
+namespace detail
+{
+inline constexpr std::size_t defaultNodes{300};
+}
+
+} // namespace uv::models::heston::price

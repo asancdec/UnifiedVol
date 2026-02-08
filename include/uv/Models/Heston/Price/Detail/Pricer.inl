@@ -18,14 +18,20 @@
 #include "Base/Macros/Require.hpp"
 #include "Math/Functions/Primitive.hpp"
 
-#include <ceres/types.h>
 #include <cmath>
 #include <limits>
 #include <numbers>
 #include <utility>
 
-namespace uv::models::heston
+namespace uv::models::heston::price
 {
+
+template <std::floating_point T, std::size_t N>
+Pricer<T, N>::Pricer()
+    : Pricer(std::make_shared<const math::integration::TanHSinH<T, N>>())
+{
+}
+
 template <std::floating_point T, std::size_t N>
 Pricer<T, N>::Pricer(
     std::shared_ptr<const math::integration::TanHSinH<T, N>> quad,
@@ -35,6 +41,7 @@ Pricer<T, N>::Pricer(
       config_(config)
 {
 
+    UV_REQUIRE_NON_NULL(quad_);
     validateAlphaDomain_();
 }
 
@@ -491,4 +498,4 @@ detail::CharFunCache<T> Pricer<T, N>::charFunctionCached(
         betaMinusD * invSigma2
     };
 }
-} // namespace uv::models::heston
+} // namespace uv::models::heston::price

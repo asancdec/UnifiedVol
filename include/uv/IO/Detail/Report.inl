@@ -28,7 +28,7 @@ void volatility(const core::VolSurface<T>& volSurface, unsigned int valuePrec) n
 {
 
     utils::printMatrix(
-        "T\\K",
+        "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
         volSurface.vol(),
@@ -49,7 +49,7 @@ void totalVariance(const core::VolSurface<T>& volSurface, unsigned int valuePrec
 {
 
     utils::printMatrix(
-        "T\\K",
+        "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
         math::vol::totalVariance(volSurface),
@@ -73,7 +73,7 @@ void variance(const core::VolSurface<T>& volSurface, unsigned int valuePrec) noe
 {
 
     utils::printMatrix(
-        "T\\K",
+        "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
         math::vol::variance(volSurface),
@@ -93,7 +93,7 @@ void logKF(const core::VolSurface<T>& volSurface, unsigned int valuePrec) noexce
 {
 
     utils::printMatrix(
-        "T\\K",
+        "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
         math::vol::logKF(volSurface),
@@ -116,7 +116,7 @@ void callPrices(
 ) noexcept
 {
     utils::printMatrix(
-        "T\\K",
+        "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
         math::black::priceB76(volSurface, curve, true),
@@ -132,7 +132,7 @@ void callPrices(const core::MarketState<T>& marketState, unsigned int valuePrec)
     const core::VolSurface<T>& volSurface{marketState.volSurface};
 
     utils::printMatrix(
-        "T\\K",
+        "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
         math::black::priceB76(volSurface, marketState.interestCurve, true),
@@ -150,7 +150,7 @@ void putPrices(
 ) noexcept
 {
     utils::printMatrix(
-        "T\\K",
+        "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
         math::black::priceB76(volSurface, curve, false),
@@ -166,7 +166,7 @@ void putPrices(const core::MarketState<T>& marketState, unsigned int valuePrec) 
     const core::VolSurface<T>& volSurface{marketState.volSurface};
 
     utils::printMatrix(
-        "T\\K",
+        "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
         math::black::priceB76(volSurface, marketState.interestCurve, false),

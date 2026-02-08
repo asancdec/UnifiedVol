@@ -19,8 +19,8 @@
 #include "Core/Generate.hpp"
 #include "Core/Matrix.hpp"
 #include "Math/Functions/Volatility.hpp"
-
-#include <span>
+#include "Models/Heston/Calibrate/Calibrate.hpp"
+#include "Models/Heston/Calibrate/CeresAdapter.hpp"
 
 namespace uv::models::heston
 {
@@ -29,7 +29,31 @@ template <std::floating_point T, std::size_t N>
 core::VolSurface<T> buildSurface(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
-    const Pricer<T, N>& pricer
+    const calibrate::Config& config
+)
+{
+    models::heston::price::Pricer<T> hestonPricer{};
+
+    auto hestonOptimizer{calibrate::detail::makeOptimizer(config)};
+
+    Params<T> hestonParams{calibrate::calibrate(
+        volSurface,
+        curve,
+        hestonOptimizer,
+        opt::cost::WeightATM{.wATM = 8.0, .k0 = 0.3},
+        hestonPricer
+    )};
+
+    hestonPricer.setParams(hestonParams);
+
+    return buildSurface<T>(volSurface, curve, hestonPricer);
+}
+
+template <std::floating_point T, std::size_t N>
+core::VolSurface<T> buildSurface(
+    const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
+    const price::Pricer<T, N>& pricer
 )
 {
     return core::generateVolSurface<T>(

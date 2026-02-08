@@ -27,16 +27,16 @@
 #include <memory>
 #include <span>
 
-namespace uv::models::heston
+namespace uv::models::heston::calibrate
 {
 
 template <std::floating_point T, std::size_t N, typename Policy>
 Params<T> calibrate(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
-    Pricer<T, N>& pricer,
     opt::ceres::Optimizer<Policy>& optimizer,
-    const opt::cost::WeightATM<double>& weightATM
+    const opt::cost::WeightATM<double>& weightATM,
+    price::Pricer<T, N>& pricer
 )
 {
     std::span<const T> maturities{volSurface.maturities()};
@@ -47,9 +47,9 @@ Params<T> calibrate(
         volSurface.forwards(),
         volSurface.strikes(),
         math::black::priceB76(volSurface, curve),
-        pricer,
         optimizer,
-        weightATM
+        weightATM,
+        pricer
     );
 }
 
@@ -60,9 +60,9 @@ Params<T> calibrate(
     const std::span<const T> forwards,
     const std::span<const T> strikes,
     const core::Matrix<T>& callM,
-    Pricer<T, N>& pricer,
     opt::ceres::Optimizer<Policy>& optimizer,
-    const opt::cost::WeightATM<double>& weightATM
+    const opt::cost::WeightATM<double>& weightATM,
+    price::Pricer<T, N>& pricer
 )
 {
     detail::validateInputs<T>(maturities, discountFactors, forwards, strikes, callM);
@@ -121,9 +121,9 @@ Params<T> calibrate(
     };
 }
 
-} // namespace uv::models::heston
+} // namespace uv::models::heston::calibrate
 
-namespace uv::models::heston::detail
+namespace uv::models::heston::calibrate::detail
 {
 template <std::floating_point T>
 void validateInputs(
@@ -166,7 +166,7 @@ template <std::floating_point T, std::size_t N>
 struct PriceResidualJac final : public ceres::SizedCostFunction<1, 5>
 {
     const double t_, dF_, F_, K_, callPriceMkt_, w_;
-    const Pricer<T, N>* pricer_;
+    const price::Pricer<T, N>* pricer_;
 
     PriceResidualJac(
         double t,
@@ -175,7 +175,7 @@ struct PriceResidualJac final : public ceres::SizedCostFunction<1, 5>
         double K,
         double callPriceMkt,
         double w,
-        const Pricer<T, N>& pricer
+        const price::Pricer<T, N>& pricer
     ) noexcept
         : t_(t),
           dF_(dF),
@@ -208,4 +208,4 @@ struct PriceResidualJac final : public ceres::SizedCostFunction<1, 5>
         return true;
     }
 };
-} // namespace uv::models::heston::detail
+} // namespace uv::models::heston::calibrate::detail

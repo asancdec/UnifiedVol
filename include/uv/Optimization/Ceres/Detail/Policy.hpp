@@ -25,9 +25,9 @@ namespace uv::opt::ceres
 {
 
 template <
-    typename LossType = void,
     ::ceres::TrustRegionStrategyType TrustRegionStrategy = ::ceres::LEVENBERG_MARQUARDT,
-    ::ceres::LinearSolverType LinearSolver = ::ceres::DENSE_QR>
+    ::ceres::LinearSolverType LinearSolver = ::ceres::DENSE_QR,
+    typename LossType = void>
 struct Policy
 {
     using loss_type = LossType;

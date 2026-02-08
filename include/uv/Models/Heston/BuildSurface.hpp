@@ -19,6 +19,8 @@
 
 #include "Core/Curve.hpp"
 #include "Core/VolSurface.hpp"
+#include "Models/Heston/Calibrate/Config.hpp"
+#include "Models/Heston/Price/Config.hpp"
 #include "Models/Heston/Price/Pricer.hpp"
 
 #include <concepts>
@@ -26,13 +28,20 @@
 namespace uv::models::heston
 {
 
+template <std::floating_point T, std::size_t N = price::detail::defaultNodes>
+core::VolSurface<T> buildSurface(
+    const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
+    const calibrate::Config& config = {}
+);
+
 template <std::floating_point T, std::size_t N>
 core::VolSurface<T> buildSurface(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
-    const Pricer<T, N>& pricer
+    const price::Pricer<T, N>& pricer
 );
 
-}
+} // namespace uv::models::heston
 
 #include "Models/Heston/Detail/BuildSurface.inl"

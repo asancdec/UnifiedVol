@@ -21,7 +21,7 @@
 
 #include <concepts>
 
-namespace uv::models::heston::detail
+namespace uv::models::heston::price::detail
 {
 
 template <std::floating_point T> struct CharFunCache
@@ -52,4 +52,4 @@ template <std::floating_point T> struct CharFunCache
     Complex<T> denomG;
     Complex<T> betaMinusDinvSigma2;
 };
-} // namespace uv::models::heston::detail
+} // namespace uv::models::heston::price::detail

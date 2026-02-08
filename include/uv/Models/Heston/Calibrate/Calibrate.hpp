@@ -30,16 +30,16 @@
 #include <cstddef>
 #include <span>
 
-namespace uv::models::heston
+namespace uv::models::heston::calibrate
 {
 
 template <std::floating_point T, std::size_t N, typename Policy>
 Params<T> calibrate(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
-    Pricer<T, N>& pricer,
     opt::ceres::Optimizer<Policy>& optimizer,
-    const opt::cost::WeightATM<double>& weightATM
+    const opt::cost::WeightATM<double>& weightATM,
+    price::Pricer<T, N>& pricer = {}
 );
 
 template <std::floating_point T, std::size_t N, typename Policy>
@@ -49,9 +49,9 @@ Params<T> calibrate(
     const std::span<const T> forwards,
     const std::span<const T> strikes,
     const core::Matrix<T>& callM,
-    Pricer<T, N>& pricer,
     opt::ceres::Optimizer<Policy>& optimizer,
-    const opt::cost::WeightATM<double>& weightATM
+    const opt::cost::WeightATM<double>& weightATM,
+    price::Pricer<T, N>& pricer = {}
 );
 
 namespace detail
@@ -75,6 +75,6 @@ std::array<double, 5> lowerBounds() noexcept;
 std::array<double, 5> upperBounds() noexcept;
 
 } // namespace detail
-} // namespace uv::models::heston
+} // namespace uv::models::heston::calibrate
 
 #include "Models/Heston/Calibrate/Detail/Calibrate.inl"

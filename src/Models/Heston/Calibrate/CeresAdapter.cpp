@@ -15,26 +15,26 @@
  * limitations under the License.
  */
 
-#pragma once
+#include "Models/Heston/Calibrate/CeresAdapter.hpp"
 
-#include <Base/Types.hpp>
-
-#include <string_view>
-
-namespace uv::models::heston::calibrate
+namespace uv::models::heston::calibrate::detail
+{
+opt::ceres::Config makeCeresConfig(const Config& config) noexcept
 {
 
-struct Config
-{
-    double tolerance{1e-12};
-    unsigned int maxEval{10000};
-    bool weightAtm{true};
-    bool verbose{false};
-};
-
-namespace detail
-{
-inline Vector<std::string_view> paramNames{"kappa", "theta", "sigma", "rho", "v0"};
+    return opt::ceres::Config{
+        .maxEval = config.maxEval,
+        .functionTol = config.tolerance,
+        .paramTol = config.tolerance,
+        .gradientTol = config.tolerance,
+        .paramNames = paramNames,
+        .verbose = config.verbose
+    };
 }
 
-} // namespace uv::models::heston::calibrate
+opt::ceres::Optimizer<HestonPolicy> makeOptimizer(const Config& config) noexcept
+{
+    return opt::ceres::Optimizer<HestonPolicy>{makeCeresConfig(config)};
+}
+
+} // namespace uv::models::heston::calibrate::detail

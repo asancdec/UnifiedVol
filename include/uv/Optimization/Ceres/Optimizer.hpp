@@ -19,7 +19,7 @@
 
 #include "Base/Types.hpp"
 #include "Optimization/Ceres/Config.hpp"
-#include "Optimization/Ceres/Policy.hpp"
+#include "Optimization/Ceres/Detail/Policy.hpp"
 
 #include <ceres/ceres.h>
 #include <optional>

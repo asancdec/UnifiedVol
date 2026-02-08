@@ -17,8 +17,9 @@
 
 #pragma once
 
+#include <Base/Types.hpp>
+
 #include <string_view>
-#include <vector>
 
 namespace uv::opt::ceres
 {
@@ -33,7 +34,7 @@ struct Config
 
     double lossScale;
 
-    std::vector<std::string_view> paramNames;
+    Vector<std::string_view> paramNames;
 
     bool verbose{false};
 };

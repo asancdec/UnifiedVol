@@ -17,24 +17,17 @@
 
 #pragma once
 
-#include <Base/Types.hpp>
+#include "Models/Heston/Calibrate/Config.hpp"
+#include "Optimization/Ceres/Config.hpp"
+#include "Optimization/Ceres/Optimizer.hpp"
 
-#include <string_view>
-
-namespace uv::models::heston::calibrate
+namespace uv::models::heston::calibrate::detail
 {
+opt::ceres::Config makeCeresConfig(const Config& config) noexcept;
 
-struct Config
-{
-    double tolerance{1e-12};
-    unsigned int maxEval{10000};
-    bool weightAtm{true};
-    bool verbose{false};
-};
+using HestonPolicy =
+    opt::ceres::Policy<ceres::LEVENBERG_MARQUARDT, ceres::DENSE_NORMAL_CHOLESKY>;
 
-namespace detail
-{
-inline Vector<std::string_view> paramNames{"kappa", "theta", "sigma", "rho", "v0"};
-}
+opt::ceres::Optimizer<HestonPolicy> makeOptimizer(const Config& config) noexcept;
 
-} // namespace uv::models::heston::calibrate
+} // namespace uv::models::heston::calibrate::detail

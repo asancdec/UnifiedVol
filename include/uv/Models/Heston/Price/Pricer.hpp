@@ -28,15 +28,14 @@
 
 #include <array>
 #include <concepts>
-#include <cstddef>
 #include <memory>
 #include <optional>
 #include <span>
 
-namespace uv::models::heston
+namespace uv::models::heston::price
 {
 
-template <std::floating_point T, std::size_t N> class Pricer
+template <std::floating_point T, std::size_t N = detail::defaultNodes> class Pricer
 {
   private:
     std::optional<Params<T>> params_;
@@ -72,11 +71,11 @@ template <std::floating_point T, std::size_t N> class Pricer
     ) noexcept;
 
   public:
-    Pricer() = delete;
+    Pricer();
 
-    explicit Pricer(
+    Pricer(
         std::shared_ptr<const math::integration::TanHSinH<T, N>> quad,
-        const Config<T>& config
+        const Config<T>& config = {}
     );
 
     T callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F, T K)
@@ -106,6 +105,6 @@ template <std::floating_point T, std::size_t N> class Pricer
     void setParams(const Params<T>& params) noexcept;
 };
 
-} // namespace uv::models::heston
+} // namespace uv::models::heston::price
 
 #include "Models/Heston/Price/Detail/Pricer.inl"

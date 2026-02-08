@@ -30,6 +30,9 @@ struct Config
     bool verbose{true};
 };
 
+namespace detail
+{
 inline constexpr std::array<std::string_view, 4> paramNames{"b", "rho", "m", "sigma"};
+}
 
 } // namespace uv::models::svi

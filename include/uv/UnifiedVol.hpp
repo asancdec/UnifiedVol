@@ -32,7 +32,6 @@
 
 #include "Optimization/Ceres/Config.hpp"
 #include "Optimization/Ceres/Optimizer.hpp"
-#include "Optimization/Ceres/Policy.hpp"
 #include "Optimization/Cost.hpp"
 #include "Optimization/NLopt/Config.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"

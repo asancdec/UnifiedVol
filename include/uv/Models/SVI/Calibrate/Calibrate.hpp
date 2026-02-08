@@ -23,9 +23,7 @@
 #include "Models/SVI/Params.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"
 
-#include <chrono>
 #include <concepts>
-#include <iostream>
 #include <span>
 
 namespace uv::models::svi

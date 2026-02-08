@@ -17,7 +17,7 @@
 
 #include "Models/Heston/Calibrate/Calibrate.hpp"
 
-namespace uv::models::heston::detail
+namespace uv::models::heston::calibrate::detail
 {
 std::array<double, 5> initGuess() noexcept
 {
@@ -33,4 +33,4 @@ std::array<double, 5> upperBounds() noexcept
 {
     return {10.0, 0.5, 10.0, 0.999, 0.5};
 }
-} // namespace uv::models::heston::detail
+} // namespace uv::models::heston::calibrate::detail
