@@ -16,9 +16,11 @@
  */
 
 #include "Base/Macros/Require.hpp"
+#include "Core/Generate.hpp"
 #include "Math/Functions/Volatility.hpp"
 #include "Math/LinearAlgebra/MatrixOps.hpp"
 #include "Models/SVI/Calibrate/Calibrate.hpp"
+#include "Models/SVI/Calibrate/NLoptAdapter.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"
 
 #include <cmath>
@@ -40,13 +42,7 @@ core::VolSurface<T>
 buildSurface(const core::VolSurface<T>& volSurface, const Config& config)
 {
     opt::nlopt::Optimizer<4, opt::nlopt::Algorithm::LD_SLSQP> nloptOptimizer{
-        uv::opt::nlopt::Config<4>{
-            .tol = config.tol,
-            .ftolRel = config.ftolRel,
-            .maxEval = config.maxEval,
-            .verbose = config.verbose,
-            .paramNames = {"b", "rho", "m", "sigma"}
-        }
+        detail::makeNLoptConfig(config)
     };
 
     return buildSurface(volSurface, calibrate(volSurface, nloptOptimizer));
@@ -63,11 +59,8 @@ buildSurface(const core::VolSurface<T>& volSurface, const Vector<Params<T>>& par
 
     const core::Matrix<T> logKF{math::vol::logKF(volSurface)};
 
-    return core::VolSurface{
-        maturities,
-        volSurface.forwards(),
-        volSurface.strikes(),
-        volSurface.moneyness(),
+    return core::generateVolSurface<T>(
+        volSurface,
         math::vol::volFromTotalVariance<T>(
             maturities,
             math::linear_algebra::generateIndexed<T>(
@@ -81,6 +74,6 @@ buildSurface(const core::VolSurface<T>& volSurface, const Vector<Params<T>>& par
                 }
             )
         )
-    };
+    );
 }
 } // namespace uv::models::svi

@@ -12,7 +12,6 @@
             "binaryDir": "${sourceDir}/build/linux-gcc-debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "CMAKE_C_COMPILER": "/usr/bin/gcc-13",
                 "CMAKE_CXX_COMPILER": "/usr/bin/g++-13",
                 "CMAKE_CXX_STANDARD": "20",
                 "CMAKE_TOOLCHAIN_FILE": "$env{HOME}/dev/vcpkg/scripts/buildsystems/vcpkg.cmake",

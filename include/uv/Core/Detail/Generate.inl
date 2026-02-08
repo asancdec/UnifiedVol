@@ -42,6 +42,19 @@ MarketState<T> generateMarketState(
     };
 }
 
+template <std::floating_point T>
+VolSurface<T>
+generateVolSurface(const VolSurface<T>& volSurface, const core::Matrix<T>& vol)
+{
+    return VolSurface<T>{
+        volSurface.maturities(),
+        volSurface.forwards(),
+        volSurface.strikes(),
+        volSurface.moneyness(),
+        vol
+    };
+}
+
 } // namespace uv::core
 
 namespace uv::core::detail
@@ -96,8 +109,8 @@ Vector<T> generateForwards(
     for (std::size_t i{0}; i < n; ++i)
     {
         const T maturity{maturities[i]};
-        forwards[i] = spot * dividendCurve.discountFactor(maturity) /
-                      interestCurve.discountFactor(maturity);
+        forwards[i] = spot * dividendCurve.interpolateDF(maturity) /
+                      interestCurve.interpolateDF(maturity);
     }
 
     return forwards;

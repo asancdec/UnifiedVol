@@ -149,7 +149,7 @@ core::Matrix<T> Pricer<T, N>::callPrice(
 
     std::span<const T> maturities{volSurface.maturities()};
 
-    Vector<T> discountFactors{curve.discountFactor(maturities)};
+    const Vector<T> discountFactors{curve.interpolateDF(maturities)};
 
     std::span<const T> forwards(volSurface.forwards());
     std::span<const T> strikes{volSurface.strikes()};

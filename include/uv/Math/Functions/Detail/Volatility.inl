@@ -16,6 +16,7 @@
  */
 
 #include "Base/Macros/Require.hpp"
+#include "Base/Types.hpp"
 #include "Math/Interpolation/Interpolator.hpp"
 
 namespace uv::math::vol
@@ -290,7 +291,7 @@ void impliedVol(
 
 template <std::floating_point T>
 core::Matrix<T> impliedVol(
-    const core::Matrix<T> callPrices,
+    const core::Matrix<T>& callPrices,
     std::span<const T> maturities,
     std::span<const T> discountFactors,
     std::span<const T> forwards,
@@ -327,6 +328,27 @@ core::Matrix<T> impliedVol(
     }
 
     return out;
+}
+
+template <std::floating_point T>
+core::Matrix<T> impliedVol(
+    const core::Matrix<T>& callPrices,
+    const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
+    bool doValidate
+)
+{
+
+    std::span<const T> maturities{volSurface.maturities()};
+    const Vector<T> discountFactors{curve.interpolateDF(maturities)};
+
+    return impliedVol<T>(
+        callPrices,
+        maturities,
+        discountFactors,
+        volSurface.forwards(),
+        volSurface.strikes()
+    );
 }
 
 } // namespace uv::math::vol

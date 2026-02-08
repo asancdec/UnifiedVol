@@ -17,15 +17,21 @@
 
 #pragma once
 
-namespace uv::models::svi
+#include "Models/SVI/Calibrate/Config.hpp"
+#include "Optimization/NLopt/Config.hpp"
+
+namespace uv::models::svi::detail
+{
+inline opt::nlopt::Config<4> makeNLoptConfig(const Config& config) noexcept
 {
 
-struct Config
-{
-    double tol{1e-12};
-    double ftolRel{1e-12};
-    unsigned int maxEval{10000};
-    bool verbose{true};
-};
+    return opt::nlopt::Config<4>{
+        .tol = config.objectiveTol,
+        .ftolRel = config.objectiveTol,
+        .maxEval = config.maxEval,
+        .verbose = config.verbose,
+        .paramNames = paramNames
+    };
+}
 
-} // namespace uv::models::svi
+} // namespace uv::models::svi::detail

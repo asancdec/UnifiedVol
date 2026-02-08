@@ -22,9 +22,9 @@
 #include "Core/Matrix.hpp"
 #include "Core/VolSurface.hpp"
 #include "Math/Integration/TanHSinH.hpp"
-#include "Models/Heston/Config.hpp"
-#include "Models/Heston/Detail/CharFunCache.hpp"
 #include "Models/Heston/Params.hpp"
+#include "Models/Heston/Price/Config.hpp"
+#include "Models/Heston/Price/Detail/CharFunCache.hpp"
 
 #include <array>
 #include <concepts>
@@ -108,4 +108,4 @@ template <std::floating_point T, std::size_t N> class Pricer
 
 } // namespace uv::models::heston
 
-#include "Models/Heston/Detail/Pricer.inl"
+#include "Models/Heston/Price/Detail/Pricer.inl"

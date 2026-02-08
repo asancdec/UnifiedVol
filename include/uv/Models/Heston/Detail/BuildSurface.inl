@@ -15,22 +15,26 @@
  * limitations under this License.
  */
 
-#include "Models/Heston/Calibrate.hpp"
+#include "Base/Macros/Require.hpp"
+#include "Core/Generate.hpp"
+#include "Core/Matrix.hpp"
+#include "Math/Functions/Volatility.hpp"
 
-namespace uv::models::heston::detail
-{
-std::array<double, 5> initGuess() noexcept
-{
-    return {2.5, 0.09, 0.60, -0.75, 0.09};
-}
+#include <span>
 
-std::array<double, 5> lowerBounds() noexcept
+namespace uv::models::heston
 {
-    return {0.001, 0.001, 0.001, -0.999, 0.001};
-}
 
-std::array<double, 5> upperBounds() noexcept
+template <std::floating_point T, std::size_t N>
+core::VolSurface<T> buildSurface(
+    const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
+    const Pricer<T, N>& pricer
+)
 {
-    return {10.0, 0.5, 10.0, 0.999, 0.5};
+    return core::generateVolSurface<T>(
+        volSurface,
+        math::vol::impliedVol<T>(pricer.callPrice(volSurface, curve), volSurface, curve)
+    );
 }
-} // namespace uv::models::heston::detail
+} // namespace uv::models::heston

@@ -43,7 +43,7 @@ Curve<T>::Curve(T continuouslyCompoundedRate, std::span<const T> maturities)
 }
 
 template <std::floating_point T>
-T Curve<T>::discountFactor(T maturity, bool doValidate) const
+T Curve<T>::interpolateDF(T maturity, bool doValidate) const
 {
     if (doValidate)
     {
@@ -63,7 +63,7 @@ T Curve<T>::discountFactor(T maturity, bool doValidate) const
 }
 
 template <std::floating_point T>
-Vector<T> Curve<T>::discountFactor(std::span<const T> maturities, bool doValidate) const
+Vector<T> Curve<T>::interpolateDF(std::span<const T> maturities, bool doValidate) const
 {
     if (doValidate)
     {
@@ -78,7 +78,7 @@ Vector<T> Curve<T>::discountFactor(std::span<const T> maturities, bool doValidat
 
     for (std::size_t i{0}; i < n; ++i)
     {
-        out[i] = discountFactor(maturities[i], false);
+        out[i] = interpolateDF(maturities[i], false);
     }
 
     return out;

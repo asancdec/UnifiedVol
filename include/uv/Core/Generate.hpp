@@ -39,6 +39,10 @@ MarketState<T> generateMarketState(
     const Matrix<T>& vol
 );
 
+template <std::floating_point T>
+VolSurface<T>
+generateVolSurface(const VolSurface<T>& volSurface, const core::Matrix<T>& vol);
+
 namespace detail
 {
 

@@ -15,27 +15,21 @@
  * limitations under this License.
  */
 
-#include "Models/Heston/Calibrator.hpp"
-#include "Utils/Aux/Errors.hpp"
+// #pragma once
 
-#include <array>
-#include <cmath>
-#include <cstddef>
+// #include "cstddef"
 
-namespace uv::models::heston::calibrator::detail
-{
-std::array<double, 5> initGuess() noexcept
-{
-    return {2.5, 0.09, 0.60, -0.75, 0.09};
-}
+// namespace uv::models::heston {
 
-std::array<double, 5> lowerBounds() noexcept
-{
-    return {0.001, 0.001, 0.001, -0.999, 0.001};
-}
+//     template<std::size_t Nodes = 300>
+//     struct Config
+//     {
+//     unsigned int maxEval{10000};
+//     double functionTol{1e-12};
 
-std::array<double, 5> upperBounds() noexcept
-{
-    return {10.0, 0.5, 10.0, 0.999, 0.5};
-}
-} // namespace uv::models::heston::calibrator::detail
+//     double functionTol{1e-12};
+//     bool verbose{true};
+
+//     };
+
+// }

@@ -42,10 +42,11 @@
 
 #include "Models/SVI/BuildSurface.hpp"
 #include "Models/SVI/Calibrate/Calibrate.hpp"
-#include "Models/SVI/Config.hpp"
+#include "Models/SVI/Calibrate/Config.hpp"
 #include "Models/SVI/Math.hpp"
 #include "Models/SVI/Params.hpp"
 
-#include "Models/Heston/Calibrate.hpp"
+#include "Models/Heston/BuildSurface.hpp"
+#include "Models/Heston/Calibrate/Calibrate.hpp"
 #include "Models/Heston/Params.hpp"
-#include "Models/Heston/Pricer.hpp"
+#include "Models/Heston/Price/Pricer.hpp"

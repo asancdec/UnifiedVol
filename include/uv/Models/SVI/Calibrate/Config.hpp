@@ -9,36 +9,27 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under this License is distributed on an "AS IS" BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the LICENSE for the specific language governing permissions and
- * limitations under this License.
+ * limitations under the License.
  */
 
 #pragma once
 
-#include <concepts>
-#include <span>
+#include <array>
+#include <string_view>
 
 namespace uv::models::svi
 {
 
-template <std::floating_point T> struct Params
+struct Config
 {
-    T t;
-
-    T a;
-    T b;
-    T rho;
-    T m;
-    T sigma;
-
-    Params(T t_, T a_, T b_, T rho_, T m_, T sigma_) noexcept;
-
-    Params(T t_, std::span<const double> params, double atmTotalVariance) noexcept;
-
-    template <std::floating_point U> Params<U> as() const noexcept;
+    double objectiveTol{1e-12};
+    unsigned int maxEval{10000};
+    bool verbose{true};
 };
-} // namespace uv::models::svi
 
-#include "Models/SVI/Detail/Params.inl"
+inline constexpr std::array<std::string_view, 4> paramNames{"b", "rho", "m", "sigma"};
+
+} // namespace uv::models::svi

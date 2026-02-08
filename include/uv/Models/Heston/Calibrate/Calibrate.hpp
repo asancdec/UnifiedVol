@@ -21,7 +21,7 @@
 #include "Core/Matrix.hpp"
 #include "Core/VolSurface.hpp"
 #include "Models/Heston/Params.hpp"
-#include "Models/Heston/Pricer.hpp"
+#include "Models/Heston/Price/Pricer.hpp"
 #include "Optimization/Ceres/Optimizer.hpp"
 #include "Optimization/Cost.hpp"
 
@@ -54,13 +54,6 @@ Params<T> calibrate(
     const opt::cost::WeightATM<double>& weightATM
 );
 
-template <std::floating_point T, std::size_t N>
-core::VolSurface<T> buildSurface(
-    const core::VolSurface<T>& volSurface,
-    const core::Curve<T>& curve,
-    const Pricer<T, N>& pricer
-);
-
 namespace detail
 {
 
@@ -84,4 +77,4 @@ std::array<double, 5> upperBounds() noexcept;
 } // namespace detail
 } // namespace uv::models::heston
 
-#include "Models/Heston/Detail/Calibrate.inl"
+#include "Models/Heston/Calibrate/Detail/Calibrate.inl"

@@ -38,9 +38,9 @@ template <std::floating_point T> class Curve
 
     explicit Curve(T continuouslyCompoundedRate, std::span<const T> maturities);
 
-    T discountFactor(T maturity, bool doValidate = true) const;
+    T interpolateDF(T maturity, bool doValidate = true) const;
 
-    Vector<T> discountFactor(std::span<const T> maturities, bool doValidate = true) const;
+    Vector<T> interpolateDF(std::span<const T> maturities, bool doValidate = true) const;
 };
 } // namespace uv::core
 

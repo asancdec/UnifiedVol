@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "Core/Curve.hpp"
 #include "Core/Matrix.hpp"
 #include "Core/VolSurface.hpp"
 
@@ -89,11 +90,19 @@ void impliedVol(
 
 template <std::floating_point T>
 core::Matrix<T> impliedVol(
-    const core::Matrix<T> callPrices,
+    const core::Matrix<T>& callPrices,
     std::span<const T> maturities,
     std::span<const T> discountFactors,
     std::span<const T> forwards,
     std::span<const T> strikes,
+    bool doValidate = true
+);
+
+template <std::floating_point T>
+core::Matrix<T> impliedVol(
+    const core::Matrix<T>& callPrices,
+    const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
     bool doValidate = true
 );
 

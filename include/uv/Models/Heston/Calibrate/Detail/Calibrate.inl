@@ -43,7 +43,7 @@ Params<T> calibrate(
 
     return calibrate<T, N, Policy>(
         volSurface.maturities(),
-        curve.discountFactor(maturities),
+        curve.interpolateDF(maturities),
         volSurface.forwards(),
         volSurface.strikes(),
         math::black::priceB76(volSurface, curve),
@@ -118,36 +118,6 @@ Params<T> calibrate(
         T(params[2]),
         T(params[3]),
         T(params[4])
-    };
-}
-
-template <std::floating_point T, std::size_t N>
-core::VolSurface<T> buildSurface(
-    const core::VolSurface<T>& volSurface,
-    const core::Curve<T>& curve,
-    const Pricer<T, N>& pricer
-)
-{
-
-    core::Matrix<T> callPrices{pricer.callPrice(volSurface, curve)};
-
-    std::span<const T> maturities{volSurface.maturities()};
-
-    auto te{curve.discountFactor(maturities)};
-    std::span<const T> discountFactors{te};
-
-    UV_REQUIRE_FINITE(discountFactors);
-
-    std::span<const T> forwards{volSurface.forwards()};
-    std::span<const T> strikes{volSurface.strikes()};
-
-    return core::VolSurface<T>{
-        maturities,
-        forwards,
-        strikes,
-        volSurface.moneyness(),
-        math::vol::impliedVol<
-            T>(callPrices, maturities, discountFactors, forwards, strikes, true)
     };
 }
 

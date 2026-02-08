@@ -15,30 +15,22 @@
  * limitations under this License.
  */
 
-#pragma once
+#include "Models/Heston/Calibrate/Calibrate.hpp"
 
-#include <concepts>
-#include <span>
-
-namespace uv::models::svi
+namespace uv::models::heston::detail
 {
-
-template <std::floating_point T> struct Params
+std::array<double, 5> initGuess() noexcept
 {
-    T t;
+    return {2.5, 0.09, 0.60, -0.75, 0.09};
+}
 
-    T a;
-    T b;
-    T rho;
-    T m;
-    T sigma;
+std::array<double, 5> lowerBounds() noexcept
+{
+    return {0.001, 0.001, 0.001, -0.999, 0.001};
+}
 
-    Params(T t_, T a_, T b_, T rho_, T m_, T sigma_) noexcept;
-
-    Params(T t_, std::span<const double> params, double atmTotalVariance) noexcept;
-
-    template <std::floating_point U> Params<U> as() const noexcept;
-};
-} // namespace uv::models::svi
-
-#include "Models/SVI/Detail/Params.inl"
+std::array<double, 5> upperBounds() noexcept
+{
+    return {10.0, 0.5, 10.0, 0.999, 0.5};
+}
+} // namespace uv::models::heston::detail

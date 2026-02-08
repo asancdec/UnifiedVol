@@ -20,7 +20,7 @@
 #include "Base/Types.hpp"
 #include "Core/MarketState.hpp"
 #include "Core/VolSurface.hpp"
-#include "Models/SVI/Config.hpp"
+#include "Models/SVI/Calibrate/Config.hpp"
 #include "Models/SVI/Params.hpp"
 
 #include <concepts>

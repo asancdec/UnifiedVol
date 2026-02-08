@@ -17,28 +17,22 @@
 
 #pragma once
 
+#include "Core/Curve.hpp"
+#include "Core/VolSurface.hpp"
+#include "Models/Heston/Price/Pricer.hpp"
+
 #include <concepts>
-#include <span>
 
-namespace uv::models::svi
+namespace uv::models::heston
 {
 
-template <std::floating_point T> struct Params
-{
-    T t;
+template <std::floating_point T, std::size_t N>
+core::VolSurface<T> buildSurface(
+    const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
+    const Pricer<T, N>& pricer
+);
 
-    T a;
-    T b;
-    T rho;
-    T m;
-    T sigma;
+}
 
-    Params(T t_, T a_, T b_, T rho_, T m_, T sigma_) noexcept;
-
-    Params(T t_, std::span<const double> params, double atmTotalVariance) noexcept;
-
-    template <std::floating_point U> Params<U> as() const noexcept;
-};
-} // namespace uv::models::svi
-
-#include "Models/SVI/Detail/Params.inl"
+#include "Models/Heston/Detail/BuildSurface.inl"

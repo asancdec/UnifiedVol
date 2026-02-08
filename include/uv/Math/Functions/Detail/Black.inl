@@ -30,7 +30,7 @@ core::Matrix<T>
 priceB76(const core::VolSurface<T>& volSurface, const core::Curve<T>& curve, bool isCall)
 {
     std::span<const T> t(volSurface.maturities());
-    Vector<T> dF(curve.discountFactor(t));
+    Vector<T> dF(curve.interpolateDF(t));
     std::span<const T> F(volSurface.forwards());
     std::span<const T> K(volSurface.strikes());
     const core::Matrix<T>& vol{volSurface.vol()};
