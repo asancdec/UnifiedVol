@@ -22,8 +22,11 @@
 #include <source_location>
 
 #define UV_UNREACHABLE(msg)                                                              \
-    ::uv::errors::raise(                                                                 \
-        ::uv::errors::ErrorCode::Unreachable,                                            \
-        (msg),                                                                           \
-        std::source_location::current()                                                  \
-    )
+    do                                                                                   \
+    {                                                                                    \
+        ::uv::errors::raise(                                                             \
+            ::uv::errors::ErrorCode::Unreachable,                                        \
+            (msg),                                                                       \
+            std::source_location::current()                                              \
+        );                                                                               \
+    } while (0)

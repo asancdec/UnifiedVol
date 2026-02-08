@@ -120,21 +120,15 @@ void validateInputs(
 )
 {
     UV_REQUIRE_NON_EMPTY(maturities);
-
     UV_REQUIRE_FINITE(maturities);
-
     UV_REQUIRE_NON_NEGATIVE(maturities);
-
     UV_REQUIRE_STRICTLY_INCREASING(maturities);
 
-    const std::size_t numMaturities{maturities.size()};
-
-    UV_REQUIRE_SAME_SIZE(numMaturities, logKF.rows());
-    UV_REQUIRE_SAME_SIZE(numMaturities, totalVariance.rows());
-
+    UV_REQUIRE_SAME_SIZE(maturities, logKF.rows());
+    UV_REQUIRE_SAME_SIZE(maturities, totalVariance.rows());
     UV_REQUIRE_SAME_SIZE(logKF.cols(), totalVariance.cols());
 
-    for (std::size_t i{0}; i < numMaturities; ++i)
+    for (std::size_t i{0}; i < maturities.size(); ++i)
     {
 
         std::span<const T> logKFSlice{logKF[i]};

@@ -70,6 +70,12 @@ int main(int argc, char* argv[])
 
         // --------------  Heston calibration --------------
 
+        // TODO
+        // 1. Make heston wrok
+        // 2. Clean up pricer class
+        // 3. Clean up Calibrator class
+        // 4. Optimize
+
         return 0;
 
         // sviVolSurface.printBSCall();

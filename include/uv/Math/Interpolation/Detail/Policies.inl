@@ -295,11 +295,9 @@ void validateInputsDerivatives(
     UV_REQUIRE_NON_EMPTY(ys);
     UV_REQUIRE_NON_EMPTY(dydx);
 
-    const std::size_t xsSize{xs.size()};
-
-    UV_REQUIRE_SAME_SIZE(xsSize, ys.size());
-    UV_REQUIRE_SAME_SIZE(xsSize, dydx.size());
-    UV_REQUIRE_MIN_SIZE(xsSize, 2);
+    UV_REQUIRE_SAME_SIZE(xs, ys);
+    UV_REQUIRE_SAME_SIZE(xs, dydx);
+    UV_REQUIRE_MIN_SIZE(xs, 2);
 
     UV_REQUIRE_FINITE(xs);
     UV_REQUIRE_FINITE(ys);
@@ -322,6 +320,6 @@ void validateInputsEvaluate(
 
     UV_REQUIRE_FINITE(x);
     UV_REQUIRE_NON_EMPTY(x);
-    UV_REQUIRE_SAME_SIZE(y.size(), x.size());
+    UV_REQUIRE_SAME_SIZE(y, x);
 }
 } // namespace uv::math::interp::detail

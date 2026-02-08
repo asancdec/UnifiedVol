@@ -43,6 +43,17 @@ void validateFinite(
     }
 }
 
+template <detail::ContiguousFloatRange R>
+void validateFinite(const R& xs, std::string_view what, std::source_location loc)
+{
+    using T = detail::RangeValue<R>;
+    validateFinite(
+        std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
+        what,
+        loc
+    );
+}
+
 template <std::floating_point T>
 void validateFinite(T x, std::string_view what, std::source_location loc)
 {
@@ -72,6 +83,17 @@ void validateNonNegative(
             );
         }
     }
+}
+
+template <detail::ContiguousFloatRange R>
+void validateNonNegative(const R& xs, std::string_view what, std::source_location loc)
+{
+    using T = detail::RangeValue<R>;
+    validateNonNegative(
+        std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
+        what,
+        loc
+    );
 }
 
 template <std::floating_point T>
@@ -123,9 +145,110 @@ void validatePositive(T x, std::string_view what, std::source_location loc)
 }
 
 template <std::floating_point T>
-void validateEqualOrGreater(
-    std::span<const T> threshold,
+void validateEqualOrLess(
     std::span<const T> xs,
+    std::span<const T> threshold,
+    std::string_view what,
+    std::source_location loc
+)
+{
+    for (std::size_t i = 0; i < xs.size(); ++i)
+    {
+        const T v{xs[i]};
+        const T t{threshold[i]};
+
+        if (v > t) [[unlikely]]
+        {
+            raise(
+                ErrorCode::InvalidArgument,
+                std::format("{}[{}] must be <= {} (value = {})", what, i, t, v),
+                loc
+            );
+        }
+    }
+}
+
+template <std::floating_point T>
+void validateEqualOrLess(
+    std::span<const T> xs,
+    T threshold,
+    std::string_view what,
+    std::source_location loc
+)
+{
+    for (std::size_t i = 0; i < xs.size(); ++i)
+    {
+        const T v{xs[i]};
+
+        if (v > threshold) [[unlikely]]
+        {
+            raise(
+                ErrorCode::InvalidArgument,
+                std::format("{}[{}] must be <= {} (value = {})", what, i, threshold, v),
+                loc
+            );
+        }
+    }
+}
+
+template <std::floating_point T>
+void validateEqualOrLess(
+    T x,
+    T threshold,
+    std::string_view what,
+    std::source_location loc
+)
+{
+    if (x > threshold) [[unlikely]]
+    {
+        raise(
+            ErrorCode::InvalidArgument,
+            std::format("{} must be <= {} (value = {})", what, threshold, x),
+            loc
+        );
+    }
+}
+
+template <std::floating_point T>
+void validateLess(
+    std::span<const T> xs,
+    T threshold,
+    std::string_view what,
+    std::source_location loc
+)
+{
+    for (std::size_t i = 0; i < xs.size(); ++i)
+    {
+        const T v{xs[i]};
+
+        if (v >= threshold) [[unlikely]]
+        {
+            raise(
+                ErrorCode::InvalidArgument,
+                std::format("{}[{}] must be < {} (value = {})", what, i, threshold, v),
+                loc
+            );
+        }
+    }
+}
+
+template <std::floating_point T>
+void validateLess(T x, T threshold, std::string_view what, std::source_location loc)
+{
+    if (x >= threshold) [[unlikely]]
+    {
+        raise(
+            ErrorCode::InvalidArgument,
+            std::format("{} must be < {} (value = {})", what, threshold, x),
+            loc
+        );
+    }
+}
+
+template <std::floating_point T>
+void validateEqualOrGreater(
+    std::span<const T> xs,
+    std::span<const T> threshold,
     std::string_view what,
     std::source_location loc
 )
@@ -148,8 +271,8 @@ void validateEqualOrGreater(
 
 template <std::floating_point T>
 void validateEqualOrGreater(
-    T threshold,
     std::span<const T> xs,
+    T threshold,
     std::string_view what,
     std::source_location loc
 )
@@ -171,8 +294,8 @@ void validateEqualOrGreater(
 
 template <std::floating_point T>
 void validateEqualOrGreater(
-    T threshold,
     T x,
+    T threshold,
     std::string_view what,
     std::source_location loc
 )
@@ -189,8 +312,8 @@ void validateEqualOrGreater(
 
 template <std::floating_point T>
 void validateGreater(
-    T threshold,
     std::span<const T> xs,
+    T threshold,
     std::string_view what,
     std::source_location loc
 )
@@ -211,7 +334,7 @@ void validateGreater(
 }
 
 template <std::floating_point T>
-void validateGreater(T threshold, T x, std::string_view what, std::source_location loc)
+void validateGreater(T x, T threshold, std::string_view what, std::source_location loc)
 {
     if (x <= threshold) [[unlikely]]
     {
@@ -257,6 +380,21 @@ void validateStrictlyIncreasing(
     }
 }
 
+template <detail::ContiguousFloatRange R>
+void validateStrictlyIncreasing(
+    const R& xs,
+    std::string_view what,
+    std::source_location loc
+)
+{
+    using T = detail::RangeValue<R>;
+    validateStrictlyIncreasing(
+        std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
+        what,
+        loc
+    );
+}
+
 template <typename T>
 void validateNonEmpty(
     std::span<const T> xs,
@@ -266,8 +404,36 @@ void validateNonEmpty(
 {
     if (xs.empty()) [[unlikely]]
     {
-        raise(ErrorCode::InvalidArgument, std::format("{} must be non-empty", what), loc);
+        raise(ErrorCode::InvalidState, std::format("{} must be non-empty", what), loc);
     }
+}
+
+template <detail::ContiguousFloatRange R>
+void validateNonEmpty(const R& xs, std::string_view what, std::source_location loc)
+{
+    using T = detail::RangeValue<R>;
+    validateNonEmpty(
+        std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
+        what,
+        loc
+    );
+}
+
+template <typename T>
+void validateNonNull(const T* x, std::string_view what, std::source_location loc)
+{
+    if (x == nullptr) [[unlikely]]
+    {
+        raise(ErrorCode::InvalidState, std::format("{} must not be null", what), loc);
+    }
+}
+
+template <typename Ptr>
+requires requires(const Ptr& p) { p.get(); }
+void validateNonNull(const Ptr& p, std::string_view what, std::source_location loc)
+{
+
+    validateNonNull(p.get(), what, loc);
 }
 
 template <typename T>
@@ -279,7 +445,99 @@ void validateSet(
 {
     if (!x.has_value()) [[unlikely]]
     {
-        raise(ErrorCode::InvalidArgument, std::format("{} must be set", what), loc);
+        raise(ErrorCode::InvalidState, std::format("{} must be set", what), loc);
+    }
+}
+
+template <typename A>
+requires requires(const A& a) { a.size(); }
+void validateSameSize(
+    const A& a,
+    std::size_t b,
+    std::string_view what,
+    std::source_location loc
+)
+{
+    if (static_cast<std::size_t>(a.size()) != b) [[unlikely]]
+    {
+        raise(
+            ErrorCode::InvalidArgument,
+            std::format(
+                "{} size mismatch: {} != {}",
+                what,
+                static_cast<std::size_t>(a.size()),
+                b
+            ),
+            loc
+        );
+    }
+}
+
+template <typename B>
+requires requires(const B& b) { b.size(); }
+void validateSameSize(
+    std::size_t a,
+    const B& b,
+    std::string_view what,
+    std::source_location loc
+)
+{
+    if (a != static_cast<std::size_t>(b.size())) [[unlikely]]
+    {
+        raise(
+            ErrorCode::InvalidArgument,
+            std::format(
+                "{} size mismatch: {} != {}",
+                what,
+                a,
+                static_cast<std::size_t>(b.size())
+            ),
+            loc
+        );
+    }
+}
+
+template <typename A, typename B>
+requires requires(const A& a, const B& b) {
+    a.size();
+    b.size();
+}
+void validateSameSize(
+    const A& a,
+    const B& b,
+    std::string_view what,
+    std::source_location loc
+)
+{
+    if (a.size() != b.size()) [[unlikely]]
+    {
+        raise(
+            ErrorCode::InvalidArgument,
+            std::format("{} size mismatch: {} != {}", what, a.size(), b.size()),
+            loc
+        );
+    }
+}
+template <typename T>
+void validateMinSize(
+    std::span<const T> x,
+    std::size_t minSize,
+    std::string_view what,
+    std::source_location loc
+)
+{
+    if (x.size() < minSize) [[unlikely]]
+    {
+        raise(
+            ErrorCode::InvalidArgument,
+            std::format(
+                "{} has size {}, but minimum required size is {}",
+                what,
+                x.size(),
+                minSize
+            ),
+            loc
+        );
     }
 }
 

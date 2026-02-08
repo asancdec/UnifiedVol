@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "Base/Alias.hpp"
+#include "Base/Types.hpp"
 #include "Models/SVI/Calibrate/Detail/SliceData.hpp"
 #include "Models/SVI/Params.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"

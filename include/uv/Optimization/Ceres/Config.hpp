@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: Apache-2.0
+ï»¿// SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright (c) 2025 Álvaro Sánchez de Carlos
+ * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,25 @@
 
 #pragma once
 
-#include <complex>
-#include <concepts>
-#include <type_traits>
+#include <string_view>
 #include <vector>
 
-namespace uv
+namespace uv::opt::ceres
 {
-template <typename T> using Vector = std::vector<T>;
 
-template <std::floating_point T> using Complex = std::complex<T>;
-} // namespace uv
+struct Config
+{
+
+    unsigned maxEval;
+    double functionTol;
+    double paramTol;
+    double gradientTol;
+
+    double lossScale;
+
+    std::vector<std::string_view> paramNames;
+
+    bool verbose{false};
+};
+
+} // namespace uv::opt::ceres

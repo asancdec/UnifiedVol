@@ -242,7 +242,7 @@ void logResults(
 
     const std::size_t n{x.size()};
 
-    UV_REQUIRE_SAME_SIZE(paramNames.size(), n);
+    UV_REQUIRE_SAME_SIZE(paramNames, n);
 
     std::string paramsLine;
     paramsLine.reserve(n * 24);
@@ -285,8 +285,8 @@ void validateBoundsSpec(
     std::span<const double> upperBounds
 )
 {
-    UV_REQUIRE_SAME_SIZE(n, lowerBounds.size());
-    UV_REQUIRE_SAME_SIZE(n, upperBounds.size());
+    UV_REQUIRE_SAME_SIZE(lowerBounds, n);
+    UV_REQUIRE_SAME_SIZE(upperBounds, n);
 
     UV_REQUIRE_FINITE(lowerBounds);
     UV_REQUIRE_FINITE(upperBounds);
@@ -305,7 +305,7 @@ void validateLowerBoundsSpec(std::size_t n, std::span<const double> lowerBounds)
 {
     UV_REQUIRE_NON_EMPTY(lowerBounds);
     UV_REQUIRE_FINITE(lowerBounds);
-    UV_REQUIRE_SAME_SIZE(n, lowerBounds.size());
+    UV_REQUIRE_SAME_SIZE(lowerBounds, n);
 }
 
 void validateUpperBounds(std::span<const double> x, std::span<const double> upperBounds)
@@ -319,7 +319,7 @@ void validateUpperBoundsSpec(std::size_t n, std::span<const double> upperBounds)
 {
     UV_REQUIRE_NON_EMPTY(upperBounds);
     UV_REQUIRE_FINITE(upperBounds);
-    UV_REQUIRE_SAME_SIZE(n, upperBounds.size());
+    UV_REQUIRE_SAME_SIZE(upperBounds, n);
 }
 
 } // namespace uv::opt

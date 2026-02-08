@@ -1,6 +1,6 @@
-﻿// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright (c) 2025 Alvaro Sanchez de Carlos
+ * Copyright (c) 2025 �lvaro S�nchez de Carlos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,29 +15,27 @@
  * limitations under this License.
  */
 
-#pragma once
-
-#include <array>
-#include <cstddef>
-#include <string_view>
-#include <vector>
-
-namespace uv::math::opt::ceres
+namespace uv
 {
-
-struct Config
+template <typename To, typename From> Vector<To> convertVector(const Vector<From>& x)
 {
+    Vector<To> out;
+    out.reserve(x.size());
 
-    unsigned maxEval;
-    double functionTol;
-    double paramTol;
-    double gradientTol;
+    for (const From& v : x)
+        out.push_back(static_cast<To>(v));
 
-    double lossScale;
+    return out;
+}
 
-    std::vector<std::string_view> paramNames;
+template <typename To, typename From> Vector<To> convertVector(std::span<const From> x)
+{
+    Vector<To> out;
+    out.reserve(x.size());
 
-    bool verbose{false};
-};
+    for (const From& v : x)
+        out.push_back(static_cast<To>(v));
 
-} // namespace uv::math::opt::ceres
+    return out;
+}
+} // namespace uv

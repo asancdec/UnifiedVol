@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "Base/Alias.hpp"
+#include "Base/Types.hpp"
 #include "Math/Interpolation/Policies.hpp"
 
 #include <concepts>

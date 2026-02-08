@@ -38,10 +38,9 @@ template <std::floating_point T> T logKF(T F, T K, bool doValidate)
 template <std::floating_point T>
 void logKF(std::span<T> out, T F, std::span<const T> K, bool doValidate)
 {
-    std::size_t n{K.size()};
     if (doValidate)
     {
-        UV_REQUIRE_SAME_SIZE(n, out.size());
+        UV_REQUIRE_SAME_SIZE(K, out);
 
         UV_REQUIRE_FINITE(K);
         UV_REQUIRE_FINITE(F);
@@ -50,7 +49,7 @@ void logKF(std::span<T> out, T F, std::span<const T> K, bool doValidate)
         UV_REQUIRE_NON_NEGATIVE(F);
     }
 
-    for (std::size_t i{0}; i < n; ++i)
+    for (std::size_t i{0}; i < K.size(); ++i)
     {
         out[i] = logKF(F, K[i], false);
     }
@@ -91,10 +90,9 @@ template <std::floating_point T> T totalVariance(T t, T vol, bool doValidate)
 template <std::floating_point T>
 void totalVariance(std::span<T> out, T t, std::span<const T> vol, bool doValidate)
 {
-    std::size_t n{vol.size()};
     if (doValidate)
     {
-        UV_REQUIRE_SAME_SIZE(n, out.size());
+        UV_REQUIRE_SAME_SIZE(vol, out);
 
         UV_REQUIRE_FINITE(t);
         UV_REQUIRE_FINITE(vol);
@@ -103,7 +101,7 @@ void totalVariance(std::span<T> out, T t, std::span<const T> vol, bool doValidat
         UV_REQUIRE_NON_NEGATIVE(vol);
     }
 
-    for (std::size_t i{0}; i < n; ++i)
+    for (std::size_t i{0}; i < vol.size(); ++i)
     {
         out[i] = totalVariance(t, vol[i], false);
     }
@@ -135,10 +133,9 @@ void volFromTotalVariance(
     bool doValidate
 )
 {
-    std::size_t n{totalVariance.size()};
     if (doValidate)
     {
-        UV_REQUIRE_SAME_SIZE(n, out.size());
+        UV_REQUIRE_SAME_SIZE(totalVariance, out);
 
         UV_REQUIRE_FINITE(t);
         UV_REQUIRE_FINITE(totalVariance);
@@ -149,7 +146,7 @@ void volFromTotalVariance(
 
     T invT{1.0 / t};
 
-    for (std::size_t i{0}; i < n; ++i)
+    for (std::size_t i{0}; i < totalVariance.size(); ++i)
     {
         out[i] = std::sqrt(totalVariance[i] * invT);
     }
@@ -162,13 +159,13 @@ core::Matrix<T> volFromTotalVariance(
     bool doValidate
 )
 {
-    std::size_t numMaturities{t.size()};
+    UV_REQUIRE_SAME_SIZE(t, totalVariance.rows());
 
-    UV_REQUIRE_SAME_SIZE(numMaturities, totalVariance.rows());
+    const std::size_t n{t.size()};
 
-    core::Matrix<T> out{numMaturities, totalVariance.cols()};
+    core::Matrix<T> out(n, totalVariance.cols());
 
-    for (std::size_t i{0}; i < numMaturities; ++i)
+    for (std::size_t i{0}; i < n; ++i)
     {
         volFromTotalVariance(out[i], t[i], totalVariance[i], doValidate);
     }
@@ -189,15 +186,14 @@ template <std::floating_point T> T variance(T vol, bool doValidate)
 template <std::floating_point T>
 void variance(std::span<T> out, std::span<const T> vol, bool doValidate)
 {
-    std::size_t n{vol.size()};
     if (doValidate)
     {
-        UV_REQUIRE_SAME_SIZE(n, out.size());
+        UV_REQUIRE_SAME_SIZE(vol, out);
         UV_REQUIRE_FINITE(vol);
         UV_REQUIRE_NON_NEGATIVE(vol);
     }
 
-    for (std::size_t i{0}; i < n; ++i)
+    for (std::size_t i{0}; i < vol.size(); ++i)
     {
         out[i] = variance(vol[i], false);
     }
@@ -232,7 +228,7 @@ T atmParameter(std::span<const T> parameters, std::span<const T> logKF, bool doV
 
         UV_REQUIRE_STRICTLY_INCREASING(logKF);
 
-        UV_REQUIRE_SAME_SIZE(logKF.size(), parameters.size());
+        UV_REQUIRE_SAME_SIZE(logKF, parameters);
     }
 
     return math::interp::PchipInterpolator<T>{}(0.0, logKF, parameters);

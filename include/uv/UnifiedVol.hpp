@@ -17,9 +17,9 @@
 
 #pragma once
 
-#include "Base/Alias.hpp"
 #include "Base/Config.hpp"
 #include "Base/Errors/Errors.hpp"
+#include "Base/Types.hpp"
 #include "Base/Utils/ScopedTimer.hpp"
 
 #include "Core/Curve.hpp"
@@ -41,4 +41,6 @@
 #include "Models/SVI/Math.hpp"
 #include "Models/SVI/Params.hpp"
 
-#include "Math/Integration/TanHSinH.hpp"
+#include "Models/Heston/Pricer.hpp"
+
+#include "Optimization/Ceres/Optimizer.hpp"

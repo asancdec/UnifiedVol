@@ -15,22 +15,15 @@
  * limitations under this License.
  */
 
-#include "Math/Optimization/Functions.hpp"
-#include "Utils/Aux/Errors.hpp"
-#include "Utils/IO/ConsoleRedirect.hpp"
-#include "Utils/IO/Log.hpp"
+#include "Base/Macros/Require.hpp"
+#include "IO/ConsoleRedirect.hpp"
 
 #include <algorithm>
-#include <format>
-#include <iomanip>
 #include <limits>
 #include <memory>
 
-namespace uv::math::opt::ceres
+namespace uv::opt::ceres
 {
-
-using ErrorCode::InvalidArgument;
-using ErrorCode::InvalidState;
 
 template <typename Policy>
 Optimizer<Policy>::Optimizer(const Config& config)
@@ -77,24 +70,17 @@ void Optimizer<Policy>::setBounds_(
     }
 }
 
-template <typename Policy>
-void Optimizer<Policy>::requireInitialized_(std::string_view where) const
+template <typename Policy> void Optimizer<Policy>::requireInitialized_() const
 {
-    UV_REQUIRE(
+    UV_REQUIRE_VALID_STATE(
         isInitialized_,
-        InvalidState,
-        std::format("{}: Optimizer not initialized. Call initialize() first.", where)
+        "Optimizer not initialized. Call initialize() first."
     );
 }
 
-template <typename Policy>
-void Optimizer<Policy>::requireRunStarted_(std::string_view where) const
+template <typename Policy> void Optimizer<Policy>::requireRunStarted_() const
 {
-    UV_REQUIRE(
-        isRunStarted_,
-        InvalidState,
-        std::format("{}: Run not started. Call beginRun() first.", where)
-    );
+    UV_REQUIRE_VALID_STATE(isRunStarted_, "Run not started. Call beginRun() first.");
 }
 
 template <typename Policy> void Optimizer<Policy>::clampStoredBounds_()
@@ -127,7 +113,7 @@ void Optimizer<Policy>::initialize(
 
 template <typename Policy> void Optimizer<Policy>::beginRun()
 {
-    requireInitialized_("beginRun");
+    requireInitialized_();
 
     clampStoredBounds_();
 
@@ -151,10 +137,10 @@ template <typename Policy> void Optimizer<Policy>::beginRun()
 template <typename Policy>
 void Optimizer<Policy>::addResidualBlock(std::unique_ptr<::ceres::CostFunction> cf)
 {
-    requireInitialized_("addResidualBlock");
-    requireRunStarted_("addResidualBlock");
+    requireInitialized_();
+    requireRunStarted_();
 
-    UV_REQUIRE(cf != nullptr, InvalidArgument, "addResidualBlock: null cost function");
+    UV_REQUIRE_NON_NULL(cf);
 
     problem_.AddResidualBlock(
         cf.release(),
@@ -165,8 +151,8 @@ void Optimizer<Policy>::addResidualBlock(std::unique_ptr<::ceres::CostFunction> 
 
 template <typename Policy> void Optimizer<Policy>::solveInPlace()
 {
-    requireInitialized_("solve");
-    requireRunStarted_("solve");
+    requireInitialized_();
+    requireRunStarted_();
 
     ::ceres::Solver::Options options;
     options.trust_region_strategy_type = Policy::trustRegionStrategy;
@@ -181,7 +167,7 @@ template <typename Policy> void Optimizer<Policy>::solveInPlace()
     ::ceres::Solver::Summary summary;
     {
 
-        utils::ConsoleRedirect capture;
+        io::ConsoleRedirect capture;
         options.minimizer_progress_to_stdout = config_.verbose;
 
         ::ceres::Solve(options, &problem_, &summary);
@@ -216,4 +202,4 @@ template <typename Policy> std::span<const double> Optimizer<Policy>::params() c
     return std::span<const double>{x_};
 }
 
-} // namespace uv::math::opt::ceres
+} // namespace uv::opt::ceres

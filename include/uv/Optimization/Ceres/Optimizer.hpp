@@ -17,16 +17,14 @@
 
 #pragma once
 
-#include "Core/Types.hpp"
-#include "Math/Optimization/Ceres/Config.hpp"
-#include "Policy.hpp"
+#include "Base/Types.hpp"
+#include "Optimization/Ceres/Config.hpp"
+#include "Optimization/Ceres/Policy.hpp"
 
 #include <ceres/ceres.h>
 #include <optional>
 
-#include <string_view>
-
-namespace uv::math::opt::ceres
+namespace uv::opt::ceres
 {
 
 template <typename Policy = Policy<>> class Optimizer
@@ -49,8 +47,8 @@ template <typename Policy = Policy<>> class Optimizer
 
     void clampStoredBounds_();
 
-    void requireInitialized_(std::string_view where) const;
-    void requireRunStarted_(std::string_view where) const;
+    void requireInitialized_() const;
+    void requireRunStarted_() const;
 
   public:
     Optimizer() = delete;
@@ -73,6 +71,6 @@ template <typename Policy = Policy<>> class Optimizer
 
     std::span<const double> params() const;
 };
-} // namespace uv::math::opt::ceres
+} // namespace uv::opt::ceres
 
-#include "Optimizer.inl"
+#include "Optimization/Ceres/Detail/Optimizer.inl"

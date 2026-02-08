@@ -17,12 +17,11 @@
 
 #pragma once
 
-#include "Base/Alias.hpp"
+#include "Base/Types.hpp"
 
 #include <array>
 #include <concepts>
 #include <cstddef>
-#include <functional>
 #include <span>
 
 namespace uv::math::linear_algebra
@@ -51,9 +50,6 @@ template <typename T> Vector<T> makeSequence(std::size_t n, T start) noexcept;
 template <typename T> T minValue(std::span<const T> x);
 
 template <typename T> T maxValue(std::span<const T> x);
-
-template <typename To, typename From>
-Vector<To> convertVector(const Vector<From>& x) noexcept;
 
 } // namespace uv::math::linear_algebra
 

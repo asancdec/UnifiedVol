@@ -57,11 +57,10 @@ core::VolSurface<T>
 buildSurface(const core::VolSurface<T>& volSurface, const Vector<Params<T>>& params)
 {
 
-    const std::size_t numMaturities{volSurface.numMaturities()};
-
-    UV_REQUIRE_SAME_SIZE(numMaturities, params.size());
-
     std::span<const T> maturities{volSurface.maturities()};
+
+    UV_REQUIRE_SAME_SIZE(maturities, params);
+
     const core::Matrix<T> logKF{math::vol::logKF(volSurface)};
 
     return core::VolSurface{
@@ -72,7 +71,7 @@ buildSurface(const core::VolSurface<T>& volSurface, const Vector<Params<T>>& par
         math::vol::volFromTotalVariance<T>(
             maturities,
             math::linear_algebra::generateIndexed<T>(
-                numMaturities,
+                volSurface.numMaturities(),
                 volSurface.numStrikes(),
                 [&](std::size_t i, std::size_t j)
                 {

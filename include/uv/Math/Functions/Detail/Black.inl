@@ -15,8 +15,8 @@
  * limitations under this License.
  */
 
-#include "Base/Alias.hpp"
 #include "Base/Macros/Require.hpp"
+#include "Base/Types.hpp"
 #include "Math/Functions/Primitive.hpp"
 
 #include <cmath>
@@ -58,13 +58,11 @@ void priceB76(
     bool isCall
 )
 {
-    std::size_t n{vol.size()};
-
     if (doValidate)
     {
 
-        UV_REQUIRE_SAME_SIZE(n, K.size());
-        UV_REQUIRE_SAME_SIZE(n, out.size());
+        UV_REQUIRE_SAME_SIZE(vol, K);
+        UV_REQUIRE_SAME_SIZE(vol, out);
 
         UV_REQUIRE_FINITE(vol);
         UV_REQUIRE_FINITE(t);
@@ -79,7 +77,7 @@ void priceB76(
         UV_REQUIRE_POSITIVE(K);
     }
 
-    for (std::size_t i{0}; i < n; ++i)
+    for (std::size_t i{0}; i < vol.size(); ++i)
     {
         out[i] = priceB76(t, dF, F, vol[i], K[i], false, isCall);
     }

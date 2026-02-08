@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include <array>
 #include <concepts>
 
 namespace uv::models::svi

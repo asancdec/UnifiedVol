@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright (c) 2025 Alvaro Sanchez de Carlos
+ * Copyright (c) 2025 �lvaro S�nchez de Carlos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,31 +17,21 @@
 
 #pragma once
 
-#include "Utils/IO/Log.hpp"
+#include <complex>
+#include <concepts>
+#include <span>
+#include <vector>
 
-#include <iostream>
-#include <sstream>
-#include <string>
-
-namespace uv::utils
+namespace uv
 {
+template <typename T> using Vector = std::vector<T>;
 
-struct ConsoleRedirect
-{
+template <std::floating_point T> using Complex = std::complex<T>;
 
-    explicit ConsoleRedirect()
-    {
-        oldBuf_ = std::cout.rdbuf(buffer_.rdbuf());
-    }
+template <typename To, typename From> Vector<To> convertVector(const Vector<From>& x);
 
-    ~ConsoleRedirect()
-    {
-        std::cout.rdbuf(oldBuf_);
-        UV_INFO("\n" + buffer_.str());
-    }
+template <typename To, typename From>
+Vector<To> convertVector(const std::span<const From> x);
+} // namespace uv
 
-  private:
-    std::stringstream buffer_;
-    std::streambuf* oldBuf_{};
-};
-} // namespace uv::utils
+#include "Base/Detail/Types.inl"

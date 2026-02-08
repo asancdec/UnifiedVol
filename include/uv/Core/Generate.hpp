@@ -22,7 +22,7 @@
 #include <string>
 #include <utility>
 
-#include "Base/Alias.hpp"
+#include "Base/Types.hpp"
 #include "Core/Curve.hpp"
 #include "Core/MarketData.hpp"
 #include "Core/MarketState.hpp"

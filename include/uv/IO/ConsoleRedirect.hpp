@@ -9,15 +9,38 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
+ * distributed under this License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the LICENSE for the specific language governing permissions and
- * limitations under the License.
+ * limitations under this License.
  */
 
-#include "Models/SVI/Math.hpp"
-#include <cmath>
+#pragma once
 
-namespace uv::models::svi::detail
+#include "Base/Macros/Inform.hpp"
+
+#include <iostream>
+#include <sstream>
+
+namespace uv::io
 {
-} // namespace uv::models::svi::detail
+
+struct ConsoleRedirect
+{
+
+    explicit ConsoleRedirect()
+    {
+        oldBuf_ = std::cout.rdbuf(buffer_.rdbuf());
+    }
+
+    ~ConsoleRedirect()
+    {
+        std::cout.rdbuf(oldBuf_);
+        UV_INFO("\n" + buffer_.str());
+    }
+
+  private:
+    std::stringstream buffer_;
+    std::streambuf* oldBuf_{};
+};
+} // namespace uv::io

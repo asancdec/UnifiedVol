@@ -25,7 +25,7 @@ struct Config
     double tol{1e-12};
     double ftolRel{1e-12};
     unsigned int maxEval{10000};
-    bool verbose{false};
+    bool verbose{true};
 };
 
 } // namespace uv::models::svi

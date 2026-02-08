@@ -36,26 +36,26 @@ VolSurface<T>::VolSurface(
       moneyness_(moneyness.begin(), moneyness.end()),
       vol_(vol)
 {
-    UV_REQUIRE_NON_EMPTY(maturities);
-    UV_REQUIRE_NON_EMPTY(strikes);
-    UV_REQUIRE_NON_EMPTY(forwards);
-    UV_REQUIRE_NON_EMPTY(moneyness);
+    UV_REQUIRE_NON_EMPTY(maturities_);
+    UV_REQUIRE_NON_EMPTY(strikes_);
+    UV_REQUIRE_NON_EMPTY(forwards_);
+    UV_REQUIRE_NON_EMPTY(moneyness_);
 
-    UV_REQUIRE_FINITE(maturities);
-    UV_REQUIRE_FINITE(strikes);
-    UV_REQUIRE_FINITE(forwards);
+    UV_REQUIRE_FINITE(maturities_);
+    UV_REQUIRE_FINITE(strikes_);
+    UV_REQUIRE_FINITE(forwards_);
 
-    UV_REQUIRE_NON_NEGATIVE(maturities);
-    UV_REQUIRE_NON_NEGATIVE(moneyness);
+    UV_REQUIRE_NON_NEGATIVE(maturities_);
+    UV_REQUIRE_NON_NEGATIVE(moneyness_);
 
-    UV_REQUIRE_STRICTLY_INCREASING(maturities);
-    UV_REQUIRE_STRICTLY_INCREASING(strikes);
-    UV_REQUIRE_STRICTLY_INCREASING(moneyness);
+    UV_REQUIRE_STRICTLY_INCREASING(maturities_);
+    UV_REQUIRE_STRICTLY_INCREASING(strikes_);
+    UV_REQUIRE_STRICTLY_INCREASING(moneyness_);
 
-    UV_REQUIRE_SAME_SIZE(numMaturities_, forwards_.size());
-    UV_REQUIRE_SAME_SIZE(numMaturities_, vol_.rows());
-    UV_REQUIRE_SAME_SIZE(numStrikes_, moneyness_.size());
-    UV_REQUIRE_SAME_SIZE(numStrikes_, vol_.cols());
+    UV_REQUIRE_SAME_SIZE(maturities_, forwards_);
+    UV_REQUIRE_SAME_SIZE(maturities_, vol_.rows());
+    UV_REQUIRE_SAME_SIZE(strikes_, moneyness_);
+    UV_REQUIRE_SAME_SIZE(strikes_, vol_.cols());
 
     for (std::size_t i{0}; i < numMaturities_; ++i)
     {

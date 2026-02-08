@@ -53,27 +53,11 @@ UnifiedVol/
 ├── include/
 │   ├── excluded/
 │   │   ├── Math/
-│   │   │   ├── Integration/
-│   │   │   │   ├── TanHSinH.hpp
-│   │   │   │   ├── TanHSinH.inl
-│   │   │   ├── Optimization/
-│   │   │   │   ├── Ceres/
-│   │   │   │   │   ├── Config.hpp
-│   │   │   │   │   ├── Optimizer.hpp
-│   │   │   │   │   ├── Optimizer.inl
-│   │   │   │   │   ├── Policy.hpp
 │   │   │   ├── PDE/
 │   │   │   │   ├── AHCache.hpp
 │   │   │   │   ├── Functions.hpp
 │   │   │   │   ├── Functions.inl
 │   │   ├── Models/
-│   │   │   ├── Heston/
-│   │   │   │   ├── Calibrator.hpp
-│   │   │   │   ├── Calibrator.inl
-│   │   │   │   ├── Config.hpp
-│   │   │   │   ├── Params.hpp
-│   │   │   │   ├── Pricer.hpp
-│   │   │   │   ├── Pricer.inl
 │   │   │   ├── LocalVol/
 │   │   │   │   ├── Calibrator.hpp
 │   │   │   │   ├── Calibrator.inl
@@ -82,17 +66,15 @@ UnifiedVol/
 │   │   │   │   ├── Surface.hpp
 │   │   │   │   ├── Surface.inl
 │   │   │   │   ├── VarianceView.hpp
-│   │   ├── Utils/
-│   │   │   ├── IO/
-│   │   │   │   ├── ConsoleRedirect.hpp
 │   │   ├── src/
 │   │   │   ├── Models/
 │   │   │   │   ├── Heston/
 │   │   │   │   │   ├── Calibrator.cpp
 │   ├── uv/
 │   │   ├── Base/
-│   │   │   ├── Alias.hpp
 │   │   │   ├── Config.hpp
+│   │   │   ├── Detail/
+│   │   │   │   ├── Types.inl
 │   │   │   ├── Errors/
 │   │   │   │   ├── Detail/
 │   │   │   │   │   ├── Validate.inl
@@ -104,6 +86,7 @@ UnifiedVol/
 │   │   │   │   ├── Require.hpp
 │   │   │   │   ├── Unreachable.hpp
 │   │   │   │   ├── Warn.hpp
+│   │   │   ├── Types.hpp
 │   │   │   ├── Utils/
 │   │   │   │   ├── Detail/
 │   │   │   │   │   ├── Log.hpp
@@ -127,6 +110,7 @@ UnifiedVol/
 │   │   │   │   ├── Detail/
 │   │   │   │   │   ├── Read.inl
 │   │   │   │   ├── Read.hpp
+│   │   │   ├── ConsoleRedirect.hpp
 │   │   │   ├── Detail/
 │   │   │   │   ├── Load.inl
 │   │   │   │   ├── Print.hpp
@@ -161,6 +145,16 @@ UnifiedVol/
 │   │   │   │   ├── MatrixOps.hpp
 │   │   │   │   ├── VectorOps.hpp
 │   │   ├── Models/
+│   │   │   ├── Heston/
+│   │   │   │   ├── Calibrate.hpp
+│   │   │   │   ├── Config.hpp
+│   │   │   │   ├── Detail/
+│   │   │   │   │   ├── Calibrate.inl
+│   │   │   │   │   ├── CharFunCache.hpp
+│   │   │   │   │   ├── Pricer.inl
+│   │   │   │   ├── Params.hpp
+│   │   │   │   ├── Pricer.hpp
+│   │   │   │   ├── Pricer.inl
 │   │   │   ├── SVI/
 │   │   │   │   ├── BuildSurface.hpp
 │   │   │   │   ├── Calibrate/
@@ -184,6 +178,12 @@ UnifiedVol/
 │   │   │   │   ├── Math.hpp
 │   │   │   │   ├── Params.hpp
 │   │   ├── Optimization/
+│   │   │   ├── Ceres/
+│   │   │   │   ├── Config.hpp
+│   │   │   │   ├── Detail/
+│   │   │   │   │   ├── Optimizer.inl
+│   │   │   │   ├── Optimizer.hpp
+│   │   │   │   ├── Policy.hpp
 │   │   │   ├── Cost.hpp
 │   │   │   ├── Detail/
 │   │   │   │   ├── Cost.inl
@@ -221,7 +221,6 @@ UnifiedVol/
 │   │   │   │   │   ├── Initialize.cpp
 │   │   │   │   │   ├── Objective.cpp
 │   │   │   │   │   ├── SliceData.cpp
-│   │   │   ├── Math.cpp
 │   ├── Optimization/
 │   │   ├── Helpers.cpp
 ├── vcpkg.json

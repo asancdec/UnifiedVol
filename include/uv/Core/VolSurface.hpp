@@ -17,7 +17,6 @@
 
 #pragma once
 
-#include "Core/Curve.hpp"
 #include "Core/Matrix.hpp"
 
 #include "concepts"

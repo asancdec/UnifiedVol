@@ -70,7 +70,7 @@ void validateWeightsATM(
     UV_REQUIRE_FINITE(wATM);
     UV_REQUIRE_FINITE(k0);
 
-    UV_REQUIRE_SAME_SIZE(out.size(), logKF.size());
+    UV_REQUIRE_SAME_SIZE(out, logKF);
 
     UV_REQUIRE_EQUAL_OR_GREATER(1.0, Watm);
     UV_REQUIRE_NON_NEGATIVE(k0);

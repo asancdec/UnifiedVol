@@ -22,51 +22,39 @@
 
 namespace uv::errors
 {
+
 void validateSameSize(
-    std::size_t first,
-    std::size_t second,
+    std::size_t a,
+    std::size_t b,
     std::string_view what,
     std::source_location loc
 )
 {
-    if (first != second)
+    if (a != b) [[unlikely]]
     {
         raise(
             ErrorCode::InvalidArgument,
-            std::format("{} size mismatch: {} != {}", what, first, second),
+            std::format("{} size mismatch: {} != {}", what, a, b),
             loc
         );
     }
 }
 
-void validateMinSize(
-    std::size_t xSize,
-    std::size_t minSize,
-    std::string_view what,
-    std::source_location loc
-)
+void validateState(bool ok, std::string_view message, std::source_location loc)
 {
-    if (xSize < minSize)
+    if (!ok) [[unlikely]]
     {
-        raise(
-            ErrorCode::InvalidArgument,
-            std::format(
-                "{} has size {}, but minimum required size is {}",
-                what,
-                xSize,
-                minSize
-            ),
-            loc
-        );
+        raise(ErrorCode::InvalidState, message, loc);
     }
 }
+
 void validateDirCreated(
     bool ok,
     const std::filesystem::path& dir,
     std::source_location loc
 )
 {
-    if (!ok)
+    if (!ok) [[unlikely]]
     {
         raise(
             ErrorCode::FileIO,
@@ -82,7 +70,7 @@ void validateFileOpened(
     std::source_location loc
 )
 {
-    if (!ok)
+    if (!ok) [[unlikely]]
     {
         raise(
             ErrorCode::FileIO,

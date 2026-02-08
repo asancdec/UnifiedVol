@@ -21,17 +21,35 @@
 
 #include <concepts>
 
-namespace uv::math
+namespace uv::models::heston::detail
 {
-template <std::floating_point T> Complex<T> log1pComplex(const Complex<T>& z) noexcept;
 
-template <std::floating_point T> T cosm1(T b) noexcept;
+template <std::floating_point T> struct CharFunCache
+{
+    Complex<T> psi;
+    Complex<T> A;
+    Complex<T> B;
+    Complex<T> beta;
+    Complex<T> D;
+    Complex<T> DT;
+    Complex<T> betaPlusD;
+    Complex<T> betaMinusD;
+    Complex<T> ui;
+    Complex<T> kFac;
+    T invSigma2;
+    T kappaTheta;
+    T sigma2;
 
-template <std::floating_point T> Complex<T> expm1Complex(const Complex<T>& z) noexcept;
-
-template <std::floating_point T> T normalCDF(T x) noexcept;
-
-template <std::floating_point T> T normalPDF(T x) noexcept;
-} // namespace uv::math
-
-#include "Math/Functions/Detail/Primitive.inl"
+    Complex<T> uu;
+    Complex<T> eDT;
+    Complex<T> g;
+    Complex<T> Q;
+    Complex<T> invQ;
+    Complex<T> invQ2;
+    Complex<T> R;
+    Complex<T> S;
+    Complex<T> fracB;
+    Complex<T> denomG;
+    Complex<T> betaMinusDinvSigma2;
+};
+} // namespace uv::models::heston::detail

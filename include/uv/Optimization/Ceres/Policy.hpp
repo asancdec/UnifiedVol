@@ -21,7 +21,7 @@
 #include <memory>
 #include <type_traits>
 
-namespace uv::math::opt::ceres
+namespace uv::opt::ceres
 {
 
 template <
@@ -30,13 +30,15 @@ template <
     ::ceres::LinearSolverType LinearSolver = ::ceres::DENSE_QR>
 struct Policy
 {
+    using loss_type = LossType;
+
     static constexpr ::ceres::TrustRegionStrategyType trustRegionStrategy =
         TrustRegionStrategy;
     static constexpr ::ceres::LinearSolverType linearSolver = LinearSolver;
 
     static std::unique_ptr<::ceres::LossFunction> makeLoss(double lossParam)
     {
-        if constexpr (std::is_same_v<LossType, void>)
+        if constexpr (std::is_void_v<LossType>)
         {
 
             return nullptr;
@@ -48,4 +50,4 @@ struct Policy
         }
     }
 };
-} // namespace uv::math::opt::ceres
+} // namespace uv::opt::ceres

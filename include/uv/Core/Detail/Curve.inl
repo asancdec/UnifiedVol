@@ -30,10 +30,11 @@ Curve<T>::Curve(T continuouslyCompoundedRate, std::span<const T> maturities)
       discountFactors_(numMaturities_)
 
 {
+    UV_REQUIRE_NON_EMPTY(maturities_);
     UV_REQUIRE_FINITE(continuouslyCompoundedRate);
-    UV_REQUIRE_FINITE(maturities);
-    UV_REQUIRE_NON_NEGATIVE(maturities);
-    UV_REQUIRE_STRICTLY_INCREASING(maturities);
+    UV_REQUIRE_FINITE(maturities_);
+    UV_REQUIRE_NON_NEGATIVE(maturities_);
+    UV_REQUIRE_STRICTLY_INCREASING(maturities_);
 
     for (std::size_t i{0}; i < numMaturities_; ++i)
     {

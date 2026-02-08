@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "Base/Alias.hpp"
+#include "Base/Types.hpp"
 #include "Base/Utils/StopWatch.hpp"
 #include "Optimization/NLopt/Algorithm.hpp"
 #include "Optimization/NLopt/Config.hpp"

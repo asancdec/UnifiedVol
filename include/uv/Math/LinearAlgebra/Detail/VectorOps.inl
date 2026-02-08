@@ -27,8 +27,6 @@
 namespace uv::math::linear_algebra
 {
 
-using errors::ErrorCode::InvalidArgument;
-
 template <std::floating_point T, std::size_t N>
 constexpr std::array<T, N> generateGrid(T bound1, T bound2) noexcept
 {
@@ -100,10 +98,9 @@ template <std::floating_point T>
 Vector<T> hadamard(std::span<const T> a, std::span<const T> b)
 {
 
-    std::size_t aSize{a.size()};
-    std::size_t bSize{b.size()};
+    UV_REQUIRE_SAME_SIZE(a, b);
 
-    UV_REQUIRE_SAME_SIZE(aSize, bSize);
+    std::size_t aSize{a.size()};
 
     Vector<T> c(aSize);
 
@@ -134,18 +131,6 @@ template <typename T> T maxValue(std::span<const T> x)
     UV_REQUIRE_NON_EMPTY(x);
 
     return *std::max_element(x.begin(), x.end());
-}
-
-template <typename To, typename From>
-Vector<To> convertVector(const Vector<From>& x) noexcept
-{
-    Vector<To> out;
-    out.reserve(x.size());
-
-    for (const From& v : x)
-        out.push_back(static_cast<To>(v));
-
-    return out;
 }
 
 } // namespace uv::math::linear_algebra

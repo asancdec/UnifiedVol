@@ -17,9 +17,10 @@
 
 #pragma once
 
-#include "Core/VolSurface.hpp"
+#include "Base/Types.hpp"
 #include "Math/Integration/TanHSinH.hpp"
 #include "Models/Heston/Config.hpp"
+#include "Models/Heston/Detail/CharFunCache.hpp"
 #include "Models/Heston/Params.hpp"
 
 #include <array>
@@ -27,7 +28,6 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
-#include <tuple>
 
 namespace uv::models::heston
 {
@@ -35,38 +35,11 @@ namespace uv::models::heston
 template <std::floating_point T, std::size_t N> class Pricer
 {
   private:
-    struct CharFunCache
-    {
-        Complex<T> psi;
-        Complex<T> A;
-        Complex<T> B;
-        Complex<T> beta;
-        Complex<T> D;
-        Complex<T> DT;
-        Complex<T> betaPlusD;
-        Complex<T> betaMinusD;
-        Complex<T> ui;
-        Complex<T> kFac;
-        T invSigma2;
-        T kappaTheta;
-        T sigma2;
-
-        Complex<T> uu;
-        Complex<T> eDT;
-        Complex<T> g;
-        Complex<T> Q;
-        Complex<T> invQ;
-        Complex<T> invQ2;
-        Complex<T> R;
-        Complex<T> S;
-        Complex<T> fracB;
-        Complex<T> denomG;
-        Complex<T> betaMinusDinvSigma2;
-    };
-
     std::optional<Params<T>> params_;
     std::shared_ptr<const math::integration::TanHSinH<T, N>> quad_;
     const Config<T> config_;
+
+    void validateAlphaDomain_() const;
 
     static T getResidues(T alpha, T F, T K) noexcept;
 
@@ -84,7 +57,7 @@ template <std::floating_point T, std::size_t N> class Pricer
         const Complex<T>& u
     ) noexcept;
 
-    static CharFunCache charFunctionCal(
+    static detail::CharFunCache<T> charFunctionCached(
         T kappa,
         T theta,
         T sigma,
@@ -102,13 +75,13 @@ template <std::floating_point T, std::size_t N> class Pricer
         const Config<T>& config
     );
 
-    T callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T F, T r, T K)
+    T callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F, T K)
         const noexcept;
 
-    T callPrice(T t, T F, T r, T K) const;
+    T callPrice(T t, T dF, T F, T K) const;
 
     std::array<T, 6>
-    callPriceWithGradient(T kappa, T theta, T sigma, T rho, T v0, T t, T F, T r, T K)
+    callPriceWithGradient(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F, T K)
         const noexcept;
 
     void setParams(const Params<T>& params) noexcept;
@@ -116,4 +89,4 @@ template <std::floating_point T, std::size_t N> class Pricer
 
 } // namespace uv::models::heston
 
-#include "Pricer.inl"
+#include "Models/Heston/Detail/Pricer.inl"

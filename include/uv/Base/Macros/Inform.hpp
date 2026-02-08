@@ -19,4 +19,8 @@
 
 #include "Base/Utils/Detail/Log.hpp"
 
-#define UV_INFO(msg) ::uv::utils::Log::instance().log(::uv::utils::Level::Info, (msg))
+#define UV_INFO(msg)                                                                     \
+    do                                                                                   \
+    {                                                                                    \
+        ::uv::utils::Log::instance().log(::uv::utils::Level::Info, (msg));               \
+    } while (0)

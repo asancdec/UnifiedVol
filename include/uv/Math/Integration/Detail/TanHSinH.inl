@@ -15,8 +15,9 @@
  * limitations under this License.
  */
 
-#include <bitset>
 #include <boost/math/special_functions/lambert_w.hpp>
+
+#include <bitset>
 #include <cmath>
 #include <limits>
 #include <numbers>

@@ -17,54 +17,56 @@
 
 #pragma once
 
-#include "Core/Matrix/Matrix.hpp"
+#include "Core/Curve.hpp"
+#include "Core/Matrix.hpp"
 #include "Core/VolSurface.hpp"
-#include "Math/Optimization/Ceres/Optimizer.hpp"
-#include "Math/Optimization/Functions.hpp"
 #include "Models/Heston/Params.hpp"
 #include "Models/Heston/Pricer.hpp"
+#include "Optimization/Ceres/Optimizer.hpp"
+#include "Optimization/Cost.hpp"
 
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <span>
 
-namespace uv::models::heston::calibrator
+namespace uv::models::heston
 {
-namespace opt = uv::math::opt;
 
 template <std::floating_point T, std::size_t N, typename Policy>
 Params<T> calibrate(
     const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
     Pricer<T, N>& pricer,
     opt::ceres::Optimizer<Policy>& optimizer,
-    const opt::WeightATM<double>& weightATM
+    const opt::cost::WeightATM<double>& weightATM
 );
 
 template <std::floating_point T, std::size_t N, typename Policy>
 Params<T> calibrate(
-    const Vector<T>& maturities,
-    const Vector<T>& strikes,
-    const Vector<T>& forwards,
-    const Vector<T>& rates,
+    const std::span<const T> maturities,
+    const std::span<const T> discountFactors,
+    const std::span<const T> forwards,
+    const std::span<const T> strikes,
     const core::Matrix<T>& callM,
     Pricer<T, N>& pricer,
     opt::ceres::Optimizer<Policy>& optimizer,
-    const opt::WeightATM<double>& weightATM
+    const opt::cost::WeightATM<double>& weightATM
 );
 
-template <std::floating_point T, std::size_t N>
-core::VolSurface<T>
-buildSurface(const core::VolSurface<T>& volSurface, const Pricer<T, N>& pricer);
+// template <std::floating_point T, std::size_t N>
+// core::VolSurface<T>
+// buildSurface(const core::VolSurface<T>& volSurface, const Pricer<T, N>& pricer);
 
 namespace detail
 {
 
 template <std::floating_point T>
 void validateInputs(
-    const Vector<T>& maturities,
-    const Vector<T>& strikes,
-    const Vector<T>& forwards,
-    const Vector<T>& rates,
+    const std::span<const T> maturities,
+    const std::span<const T> discountFactors,
+    const std::span<const T> forwards,
+    const std::span<const T> strikes,
     const core::Matrix<T>& callM
 );
 
@@ -77,6 +79,6 @@ std::array<double, 5> lowerBounds() noexcept;
 std::array<double, 5> upperBounds() noexcept;
 
 } // namespace detail
-} // namespace uv::models::heston::calibrator
+} // namespace uv::models::heston
 
-#include "Calibrator.inl"
+#include "Models/Heston/Detail/Calibrate.inl"
