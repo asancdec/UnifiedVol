@@ -234,19 +234,23 @@ T atmParameter(std::span<const T> parameters, std::span<const T> logKF, bool doV
     return math::interp::PchipInterpolator<T>{}(0.0, logKF, parameters);
 }
 
-template <std::floating_point T> T impliedVol(T callPrice, T t, T dF, T F, T K)
+template <std::floating_point T>
+T impliedVol(T callPrice, T t, T dF, T F, T K, bool doValidate)
 {
-    UV_REQUIRE_FINITE(callPrice);
-    UV_REQUIRE_FINITE(t);
-    UV_REQUIRE_FINITE(dF);
-    UV_REQUIRE_FINITE(F);
-    UV_REQUIRE_FINITE(K);
+    if (doValidate)
+    {
+        UV_REQUIRE_FINITE(callPrice);
+        UV_REQUIRE_FINITE(t);
+        UV_REQUIRE_FINITE(dF);
+        UV_REQUIRE_FINITE(F);
+        UV_REQUIRE_FINITE(K);
 
-    UV_REQUIRE_NON_NEGATIVE(callPrice);
-    UV_REQUIRE_NON_NEGATIVE(t);
-    UV_REQUIRE_NON_NEGATIVE(dF);
-    UV_REQUIRE_NON_NEGATIVE(F);
-    UV_REQUIRE_NON_NEGATIVE(K);
+        UV_REQUIRE_NON_NEGATIVE(callPrice);
+        UV_REQUIRE_NON_NEGATIVE(t);
+        UV_REQUIRE_NON_NEGATIVE(dF);
+        UV_REQUIRE_NON_NEGATIVE(F);
+        UV_REQUIRE_NON_NEGATIVE(K);
+    }
 
     return static_cast<T>(detail::impliedVolJackelCall(
         static_cast<double>(callPrice),
@@ -256,4 +260,73 @@ template <std::floating_point T> T impliedVol(T callPrice, T t, T dF, T F, T K)
         static_cast<double>(K)
     ));
 }
+
+template <std::floating_point T>
+void impliedVol(
+    std::span<T> out,
+    std::span<const T> callPrices,
+    T t,
+    T dF,
+    T F,
+    std::span<const T> strikes,
+    bool doValidate
+)
+{
+
+    if (doValidate)
+    {
+        UV_REQUIRE_NON_EMPTY(callPrices);
+        UV_REQUIRE_NON_EMPTY(strikes);
+
+        UV_REQUIRE_SAME_SIZE(callPrices, strikes);
+        UV_REQUIRE_SAME_SIZE(callPrices, out);
+    }
+
+    for (std::size_t i{0}; i < callPrices.size(); ++i)
+    {
+        out[i] = impliedVol(callPrices[i], t, dF, F, strikes[i], doValidate);
+    }
+}
+
+template <std::floating_point T>
+core::Matrix<T> impliedVol(
+    const core::Matrix<T> callPrices,
+    std::span<const T> maturities,
+    std::span<const T> discountFactors,
+    std::span<const T> forwards,
+    std::span<const T> strikes,
+    bool doValidate
+)
+{
+
+    if (doValidate)
+    {
+        UV_REQUIRE_NON_EMPTY(maturities);
+        UV_REQUIRE_NON_EMPTY(discountFactors);
+        UV_REQUIRE_NON_EMPTY(forwards);
+
+        UV_REQUIRE_SAME_SIZE(maturities, discountFactors);
+        UV_REQUIRE_SAME_SIZE(maturities, callPrices.rows());
+    }
+
+    std::size_t numMaturities{maturities.size()};
+
+    core::Matrix<T> out{numMaturities, strikes.size()};
+
+    for (std::size_t i{0}; i < numMaturities; ++i)
+    {
+        impliedVol(
+            out[i],
+            callPrices[i],
+            maturities[i],
+            discountFactors[i],
+            forwards[i],
+            strikes,
+            doValidate
+        );
+    }
+
+    return out;
+}
+
 } // namespace uv::math::vol

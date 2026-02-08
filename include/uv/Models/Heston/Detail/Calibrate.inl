@@ -16,6 +16,8 @@
  */
 
 #include "Base/Macros/Require.hpp"
+#include "Core/Matrix.hpp"
+#include "Math/Functions/Black.hpp"
 #include "Math/Functions/Volatility.hpp"
 #include "Math/LinearAlgebra/MatrixOps.hpp"
 
@@ -25,7 +27,7 @@
 #include <memory>
 #include <span>
 
-namespace uv::models::heston::calibrator
+namespace uv::models::heston
 {
 
 template <std::floating_point T, std::size_t N, typename Policy>
@@ -37,12 +39,14 @@ Params<T> calibrate(
     const opt::cost::WeightATM<double>& weightATM
 )
 {
+    std::span<const T> maturities{volSurface.maturities()};
+
     return calibrate<T, N, Policy>(
         volSurface.maturities(),
-        curve.discountFactors(),
+        curve.discountFactor(maturities),
         volSurface.forwards(),
         volSurface.strikes(),
-        volSurface.callPrices(),
+        math::black::priceB76(volSurface, curve),
         pricer,
         optimizer,
         weightATM
@@ -58,17 +62,17 @@ Params<T> calibrate(
     const core::Matrix<T>& callM,
     Pricer<T, N>& pricer,
     opt::ceres::Optimizer<Policy>& optimizer,
-    const opt::WeightATM<double>& weightATM
+    const opt::cost::WeightATM<double>& weightATM
 )
 {
     detail::validateInputs<T>(maturities, discountFactors, forwards, strikes, callM);
 
-    const Vector<double> maturitiesD{core::convertVector<double>(maturities)};
-    const Vector<double> discountFactorsD{core::convertVector<double>(discountFactors)};
-    const Vector<double> forwardsD{core::convertVector<double>(forwards)};
-    const Vector<double> strikesD{core::convertVector<double>(strikes)};
+    const Vector<double> maturitiesD{convertVector<double>(maturities)};
+    const Vector<double> discountFactorsD{convertVector<double>(discountFactors)};
+    const Vector<double> forwardsD{convertVector<double>(forwards)};
+    const Vector<double> strikesD{convertVector<double>(strikes)};
 
-    const auto callMD{callMD.template as<double>()};
+    const auto callMD{callM.template as<double>()};
 
     const std::size_t numStrikes{strikesD.size()};
 
@@ -85,12 +89,12 @@ Params<T> calibrate(
 
         std::span<const double> callMDRow{callMD[i]};
         const double t{maturitiesD[i]};
-        const double dF{discountFactors[i]};
+        const double dF{discountFactorsD[i]};
         const double F{forwardsD[i]};
 
-        math::vol::logKF(logKF, F, K);
+        math::vol::logKF<double>(logKF, F, strikesD, true);
 
-        opt::weightsATM<double>(logKF, weightATM, bufferWeights);
+        opt::cost::weightsATM<double>(logKF, weightATM, bufferWeights);
 
         for (std::size_t j = 0; j < numStrikes; ++j)
         {
@@ -117,35 +121,39 @@ Params<T> calibrate(
     };
 }
 
-// template <std::floating_point T, std::size_t N>
-// core::VolSurface<T>
-// buildSurface(const core::VolSurface<T>& volSurface, const Pricer<T, N>& pricer)
-// {
+template <std::floating_point T, std::size_t N>
+core::VolSurface<T> buildSurface(
+    const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
+    const Pricer<T, N>& pricer
+)
+{
 
-//     const std::size_t numMaturities{volSurface.numMaturities()};
-//     const std::size_t numStrikes{volSurface.numStrikes()};
+    core::Matrix<T> callPrices{pricer.callPrice(volSurface, curve)};
 
-//     const Vector<T>& maturities{volSurface.maturities()};
-//     const Vector<T>& strikes{volSurface.strikes()};
-//     const Vector<T>& forwards{volSurface.forwards()};
-//     const Vector<T>& rates{volSurface.rates()};
+    std::span<const T> maturities{volSurface.maturities()};
 
-//     core::VolSurface<T> hestonVolSurface{volSurface};
-//     hestonVolSurface.setCallPrices(core::generateIndexed<T>(
-//         numMaturities,
-//         numStrikes,
-//         [&](std::size_t i, std::size_t j)
-//         {
-//             return pricer.callPrice(maturities[i], forwards[i], rates[i], strikes[j]);
-//         }
-//     ));
+    auto te{curve.discountFactor(maturities)};
+    std::span<const T> discountFactors{te};
 
-//     return hestonVolSurface;
-// }
+    UV_REQUIRE_FINITE(discountFactors);
 
-} // namespace uv::models::heston::calibrator
+    std::span<const T> forwards{volSurface.forwards()};
+    std::span<const T> strikes{volSurface.strikes()};
 
-namespace uv::models::heston::calibrator::detail
+    return core::VolSurface<T>{
+        maturities,
+        forwards,
+        strikes,
+        volSurface.moneyness(),
+        math::vol::impliedVol<
+            T>(callPrices, maturities, discountFactors, forwards, strikes, true)
+    };
+}
+
+} // namespace uv::models::heston
+
+namespace uv::models::heston::detail
 {
 template <std::floating_point T>
 void validateInputs(
@@ -192,7 +200,7 @@ struct PriceResidualJac final : public ceres::SizedCostFunction<1, 5>
 
     PriceResidualJac(
         double t,
-        double dF_,
+        double dF,
         double F,
         double K,
         double callPriceMkt,
@@ -230,4 +238,4 @@ struct PriceResidualJac final : public ceres::SizedCostFunction<1, 5>
         return true;
     }
 };
-} // namespace uv::models::heston::calibrator::detail
+} // namespace uv::models::heston::detail

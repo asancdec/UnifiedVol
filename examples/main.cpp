@@ -48,11 +48,11 @@ int main(int argc, char* argv[])
 
         utils::ScopedTimer timer{};
 
-        using Real = long double;
+        using Real = double;
 
         core::MarketData<Real> marketData{
-            .interestRate = 0.01,
-            .dividendYield = 0.02,
+            .interestRate = 0.0,
+            .dividendYield = 0.0,
             .spot = 485.77548
         };
 
@@ -71,10 +71,47 @@ int main(int argc, char* argv[])
         // --------------  Heston calibration --------------
 
         // TODO
-        // 1. Make heston wrok
+        // 1. MDisocutn facr method change neame
         // 2. Clean up pricer class
         // 3. Clean up Calibrator class
+        // Can the clibartro be numerical differnces too? good validation
         // 4. Optimize
+
+        constexpr std::size_t HestonNodes{300};
+        const math::integration::TanHSinH<Real, HestonNodes> quad{};
+
+        models::heston::Pricer<Real, HestonNodes> hestonPricer{
+            std::make_shared<const math::integration::TanHSinH<Real, HestonNodes>>(quad),
+            {-2.0, 2.0}
+        };
+
+        opt::ceres::Optimizer<
+            opt::ceres::
+                Policy<void, ceres::LEVENBERG_MARQUARDT, ceres::DENSE_NORMAL_CHOLESKY>>
+            hestonOptimizer{opt::ceres::Config{
+                .maxEval = 1000,
+                .functionTol = 1e-12,
+                .paramTol = 1e-12,
+                .gradientTol = 1e-12,
+                .paramNames = {"kappa", "theta", "sigma", "rho", "v0"},
+                .verbose = false
+            }};
+
+        hestonPricer.setParams(models::heston::calibrate(
+            sviVolSurface,
+            marketState.interestCurve,
+            hestonPricer,
+            hestonOptimizer,
+            opt::cost::WeightATM{.wATM = 8.0, .k0 = 0.3}
+        ));
+
+        const core::VolSurface<Real> hestonVolSurface{models::heston::buildSurface<Real>(
+            sviVolSurface,
+            marketState.interestCurve,
+            hestonPricer
+        )};
+
+        io::report::volatility(hestonVolSurface);
 
         return 0;
 

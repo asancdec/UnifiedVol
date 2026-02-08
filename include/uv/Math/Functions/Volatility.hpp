@@ -73,7 +73,29 @@ T atmParameter(
     bool doValidate = true
 );
 
-template <std::floating_point T> T impliedVol(T callPrice, T t, T r, T q, T S, T K);
+template <std::floating_point T>
+T impliedVol(T callPrice, T t, T dF, T F, T K, bool doValidate = true);
+
+template <std::floating_point T>
+void impliedVol(
+    std::span<T> out,
+    std::span<const T> callPrices,
+    T t,
+    T dF,
+    T F,
+    std::span<const T> strikes,
+    bool doValidate = true
+);
+
+template <std::floating_point T>
+core::Matrix<T> impliedVol(
+    const core::Matrix<T> callPrices,
+    std::span<const T> maturities,
+    std::span<const T> discountFactors,
+    std::span<const T> forwards,
+    std::span<const T> strikes,
+    bool doValidate = true
+);
 
 namespace detail
 {

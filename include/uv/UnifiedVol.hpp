@@ -30,10 +30,15 @@
 #include "IO/Load.hpp"
 #include "IO/Report.hpp"
 
+#include "Optimization/Ceres/Config.hpp"
+#include "Optimization/Ceres/Optimizer.hpp"
+#include "Optimization/Ceres/Policy.hpp"
+#include "Optimization/Cost.hpp"
 #include "Optimization/NLopt/Config.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"
 
 #include "Math/Functions/Black.hpp"
+#include "Math/Integration/TanHSinH.hpp"
 
 #include "Models/SVI/BuildSurface.hpp"
 #include "Models/SVI/Calibrate/Calibrate.hpp"
@@ -41,6 +46,6 @@
 #include "Models/SVI/Math.hpp"
 #include "Models/SVI/Params.hpp"
 
+#include "Models/Heston/Calibrate.hpp"
+#include "Models/Heston/Params.hpp"
 #include "Models/Heston/Pricer.hpp"
-
-#include "Optimization/Ceres/Optimizer.hpp"

@@ -18,6 +18,7 @@
 #include "Base/Macros/Require.hpp"
 #include "Math/Functions/Primitive.hpp"
 
+#include <ceres/types.h>
 #include <cmath>
 #include <limits>
 #include <numbers>
@@ -58,10 +59,10 @@ T Pricer<T, N>::callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F
 
     const T phi{Pricer<T, N>::getPhi(kappa, theta, sigma, rho, v0, t, w)};
 
-    constexpr Complex<T> i(0.0, 1.0);
+    constexpr Complex<T> i(T{0}, T{1});
 
     const T tanPhi{std::tan(phi)};
-    const Complex<T> onePlusITanPhi{1 + i * tanPhi};
+    const Complex<T> onePlusITanPhi{T{1} + i * tanPhi};
     const Complex<T> c{(i - tanPhi) * w};
     const Complex<T> iAlpha{-i * alpha};
 
@@ -85,10 +86,20 @@ T Pricer<T, N>::callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F
 }
 
 template <std::floating_point T, std::size_t N>
-T Pricer<T, N>::callPrice(T t, T dF, T F, T K) const
+T Pricer<T, N>::callPrice(T t, T dF, T F, T K, bool doValidate) const
 {
+    if (doValidate)
+    {
+        UV_REQUIRE_SET(params_);
 
-    UV_REQUIRE_SET(params_);
+        UV_REQUIRE_FINITE(t);
+        UV_REQUIRE_FINITE(dF);
+        UV_REQUIRE_FINITE(F);
+        UV_REQUIRE_FINITE(K);
+
+        UV_REQUIRE_POSITIVE(t);
+        UV_REQUIRE_POSITIVE(dF);
+    }
 
     const Params<T>& params{*params_};
 
@@ -103,6 +114,61 @@ T Pricer<T, N>::callPrice(T t, T dF, T F, T K) const
         F,
         K
     );
+}
+
+template <std::floating_point T, std::size_t N>
+void Pricer<T, N>::callPrice(
+    std::span<T> out,
+    T t,
+    T dF,
+    T F,
+    std::span<const T> strikes,
+    bool doValidate
+) const
+{
+    if (doValidate)
+    {
+        UV_REQUIRE_NON_EMPTY(strikes);
+        UV_REQUIRE_SAME_SIZE(out, strikes);
+    }
+
+    for (std::size_t i{0}; i < strikes.size(); ++i)
+    {
+        out[i] = callPrice(t, dF, F, strikes[i], doValidate);
+    }
+}
+
+template <std::floating_point T, std::size_t N>
+core::Matrix<T> Pricer<T, N>::callPrice(
+    const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
+    bool doValidate
+) const
+{
+    std::size_t numMaturities{volSurface.numMaturities()};
+
+    std::span<const T> maturities{volSurface.maturities()};
+
+    Vector<T> discountFactors{curve.discountFactor(maturities)};
+
+    std::span<const T> forwards(volSurface.forwards());
+    std::span<const T> strikes{volSurface.strikes()};
+
+    core::Matrix<T> out{numMaturities, volSurface.numStrikes()};
+
+    for (std::size_t i{0}; i < numMaturities; ++i)
+    {
+        callPrice(
+            out[i],
+            maturities[i],
+            discountFactors[i],
+            forwards[i],
+            strikes,
+            doValidate
+        );
+    }
+
+    return out;
 }
 
 template <std::floating_point T, std::size_t N>
@@ -127,9 +193,9 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
 
     const T phi{Pricer<T, N>::getPhi(kappa, theta, sigma, rho, v0, t, w)};
 
-    constexpr Complex<T> i(0, 1);
+    constexpr Complex<T> i(T{0}, T{1});
     const T tanPhi{std::tan(phi)};
-    const Complex<T> onePlusITanPhi{1 + i * tanPhi};
+    const Complex<T> onePlusITanPhi{T{1} + i * tanPhi};
     const Complex<T> c{(i - tanPhi) * w};
     const Complex<T> iAlpha{-i * alpha};
 
@@ -168,11 +234,11 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
         const T kappaTheta{cfData.kappaTheta};
 
         const T sigma3{sigma2 * sigma};
-        const T invTheta{1 / theta};
+        const T invTheta{T{1} / theta};
         const Complex<T> u2{uu - ui};
         const Complex<T> deDT_dD{-t * eDT};
 
-        constexpr Complex<T> dbeta_dk{1, 0.0};
+        constexpr Complex<T> dbeta_dk{T{1}, T{0}};
         const Complex<T> dbeta_ds{-rho * ui};
         const Complex<T> dbeta_dr{-sigma * ui};
 
@@ -185,7 +251,7 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
                                  const Complex<T>& dD
                              ) noexcept -> Complex<T>
         {
-            return 2 * (D * dbeta - beta * dD) / denomG;
+            return T{2} * (D * dbeta - beta * dD) / denomG;
         };
 
         const Complex<T> dg_dk{dg_from(dbeta_dk, dD_dk)};
@@ -195,34 +261,34 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
         const auto dB_from = [&](const Complex<T>& dbeta, const Complex<T>& dD, T dC
                              ) noexcept -> Complex<T>
         {
-            const Complex<T> d_one_over_C2{(-2 * dC) / sigma3};
+            const Complex<T> d_one_over_C2{(T{-2} * dC) / sigma3};
             const Complex<T> dpref{(dbeta - dD) * invSigma2 + betaMinusD * d_one_over_C2};
 
             const Complex<T> dN1{deDT_dD * -dD};
             const Complex<T> dQ{-(dg_from(dbeta, dD) * eDT) - g * (deDT_dD * dD)};
-            const Complex<T> dfrac{(dN1 * Q - (1 - eDT) * dQ) * invQ2};
+            const Complex<T> dfrac{(dN1 * Q - (T{1} - eDT) * dQ) * invQ2};
 
             return dpref * fracB + betaMinusDinvSigma2 * dfrac;
         };
 
-        constexpr T dC_dk{0.0};
-        constexpr T dC_ds{1};
-        constexpr T dC_dr{0.0};
+        constexpr T dC_dk{T{0}};
+        constexpr T dC_ds{T{1}};
+        constexpr T dC_dr{T{0}};
 
         const Complex<T> dB_dk{dB_from(dbeta_dk, dD_dk, dC_dk)};
         const Complex<T> dB_ds{dB_from(dbeta_ds, dD_ds, dC_ds)};
         const Complex<T> dB_dr{dB_from(dbeta_dr, dD_dr, dC_dr)};
 
         const Complex<T> dK_dk{theta * invSigma2};
-        const Complex<T> dK_ds{(T(-2.0) * kappaTheta) / sigma3};
-        constexpr Complex<T> dK_dr{0.0, 0.0};
+        const Complex<T> dK_ds{(T{-2} * kappaTheta) / sigma3};
+        constexpr Complex<T> dK_dr{T{0}, T{0}};
 
         const auto dS_from = [&](const Complex<T>& dbeta,
                                  const Complex<T>& dD,
                                  const Complex<T>& dg) noexcept -> Complex<T>
         {
             const Complex<T> dQ{-(dg * eDT + g * (deDT_dD * dD))};
-            return (dbeta - dD) * t - 2 * (dQ * invQ + dg / R);
+            return (dbeta - dD) * t - T{2} * (dQ * invQ + dg / R);
         };
 
         const Complex<T> dS_dk{dS_from(dbeta_dk, dD_dk, dg_dk)};
@@ -304,7 +370,7 @@ Complex<T> Pricer<T, N>::charFunction(
 ) noexcept
 {
 
-    constexpr Complex<T> i{0.0, 1.0};
+    constexpr Complex<T> i{T{0}, T{1}};
 
     Complex<T> uu{u * (u + i)};
 
@@ -317,23 +383,23 @@ Complex<T> Pricer<T, N>::charFunction(
     const Complex<T> betaPlusD{beta + D};
 
     const Complex<T> r{
-        (std::real(beta * std::conj(D)) > 0.0) ? -sigma2 * uu / betaPlusD : beta - D
+        (std::real(beta * std::conj(D)) > T{0}) ? -sigma2 * uu / betaPlusD : beta - D
     };
 
     const Complex<T> DT{D * t};
     Complex<T> y{
-        (std::norm(D) > std::numeric_limits<T>::epsilon() * (1.0 + std::abs(DT)))
-            ? math::expm1Complex(-DT) / (2.0 * D)
-            : Complex<T>(-t / 2.0)
+        (std::norm(D) > std::numeric_limits<T>::epsilon() * (T{1} + std::abs(DT)))
+            ? math::expm1Complex(-DT) / (T{2} * D)
+            : Complex<T>(-t / T{2})
     };
 
     const Complex<T> ry{r * y};
 
     const Complex<T> A{
-        (kappa * theta / sigma2) * (r * t - 2.0 * math::log1pComplex<T>(-ry))
+        (kappa * theta / sigma2) * (r * t - T{2} * math::log1pComplex<T>(-ry))
     };
 
-    const Complex<T> B{uu * y / (1.0 - ry)};
+    const Complex<T> B{uu * y / (T{1} - ry)};
 
     return std::exp(A + v0 * B);
 }
@@ -350,13 +416,13 @@ detail::CharFunCache<T> Pricer<T, N>::charFunctionCached(
 ) noexcept
 {
 
-    constexpr Complex<T> i{0.0, 1.0};
+    constexpr Complex<T> i{T{0}, T{1}};
 
     const Complex<T> uu{u * (u + i)};
 
     const T sigma2{sigma * sigma};
 
-    const T invSigma2{1 / sigma2};
+    const T invSigma2{T{1} / sigma2};
 
     const Complex<T> ui{u * i};
 
@@ -367,15 +433,15 @@ detail::CharFunCache<T> Pricer<T, N>::charFunctionCached(
     const Complex<T> betaPlusD{beta + D};
 
     const Complex<T> betaMinusD{
-        (std::real(beta * std::conj(D)) > 0.0) ? -sigma2 * uu / betaPlusD : beta - D
+        (std::real(beta * std::conj(D)) > T{0}) ? -sigma2 * uu / betaPlusD : beta - D
     };
 
     const Complex<T> DT{D * t};
 
     const Complex<T> y{
-        (std::norm(D) > std::numeric_limits<T>::epsilon() * (1.0 + std::abs(DT)))
-            ? math::expm1Complex(-DT) / (2.0 * D)
-            : Complex<T>(-t / 2.0)
+        (std::norm(D) > std::numeric_limits<T>::epsilon() * (T{1} + std::abs(DT)))
+            ? math::expm1Complex(-DT) / (T{2} * D)
+            : Complex<T>(-t / T{2})
     };
 
     const Complex<T> ry{betaMinusD * y};
@@ -384,19 +450,19 @@ detail::CharFunCache<T> Pricer<T, N>::charFunctionCached(
 
     const Complex<T> kFac{kappaTheta * invSigma2};
 
-    const Complex<T> A{kFac * (betaMinusD * t - 2.0 * math::log1pComplex<T>(-ry))};
+    const Complex<T> A{kFac * (betaMinusD * t - T{2} * math::log1pComplex<T>(-ry))};
 
-    const Complex<T> B{uu * y / (1.0 - ry)};
+    const Complex<T> B{uu * y / (T{1} - ry)};
 
     const Complex<T> eDT{std::exp(-DT)};
 
     const Complex<T> g{betaMinusD / betaPlusD};
 
-    const Complex<T> Q{1.0 - g * eDT};
+    const Complex<T> Q{T{1} - g * eDT};
 
-    const Complex<T> invQ{1.0 / Q};
+    const Complex<T> invQ{T{1} / Q};
 
-    const Complex<T> R{1.0 - g};
+    const Complex<T> R{T{1} - g};
 
     return detail::CharFunCache{
         std::exp(A + v0 * B),
@@ -419,8 +485,8 @@ detail::CharFunCache<T> Pricer<T, N>::charFunctionCached(
         invQ,
         invQ * invQ,
         R,
-        betaMinusD * t - 2.0 * std::log(Q / R),
-        (1.0 - eDT) * invQ,
+        betaMinusD * t - T{2} * std::log(Q / R),
+        (T{1} - eDT) * invQ,
         betaPlusD * betaPlusD,
         betaMinusD * invSigma2
     };

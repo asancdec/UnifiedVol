@@ -72,7 +72,7 @@ void validateWeightsATM(
 
     UV_REQUIRE_SAME_SIZE(out, logKF);
 
-    UV_REQUIRE_EQUAL_OR_GREATER(1.0, Watm);
+    UV_REQUIRE_EQUAL_OR_GREATER(wATM, 1.0);
     UV_REQUIRE_NON_NEGATIVE(k0);
 }
 } // namespace uv::opt::cost::detail

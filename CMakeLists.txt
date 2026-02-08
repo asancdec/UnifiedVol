@@ -33,7 +33,7 @@ endif()
 
 file(GLOB_RECURSE LBR_SOURCES CONFIGURE_DEPENDS
   ${LBR_DIR}/*.cpp
-)
+) 
 
 if(NOT LBR_SOURCES)
   message(FATAL_ERROR "No .cpp sources found under: ${LBR_DIR}")

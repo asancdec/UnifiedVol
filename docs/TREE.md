@@ -154,7 +154,6 @@ UnifiedVol/
 │   │   │   │   │   ├── Pricer.inl
 │   │   │   │   ├── Params.hpp
 │   │   │   │   ├── Pricer.hpp
-│   │   │   │   ├── Pricer.inl
 │   │   │   ├── SVI/
 │   │   │   │   ├── BuildSurface.hpp
 │   │   │   │   ├── Calibrate/
@@ -213,6 +212,8 @@ UnifiedVol/
 │   │   ├── Functions/
 │   │   │   ├── Volatility.cpp
 │   ├── Models/
+│   │   ├── Heston/
+│   │   │   ├── Calibrator.cpp
 │   │   ├── SVI/
 │   │   │   ├── Calibrate/
 │   │   │   │   ├── Detail/

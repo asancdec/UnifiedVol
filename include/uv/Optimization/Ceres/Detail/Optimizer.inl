@@ -17,6 +17,7 @@
 
 #include "Base/Macros/Require.hpp"
 #include "IO/ConsoleRedirect.hpp"
+#include "Optimization/Helpers.hpp"
 
 #include <algorithm>
 #include <limits>
@@ -197,8 +198,8 @@ template <typename Policy> std::span<const double> Optimizer<Policy>::solve()
 
 template <typename Policy> std::span<const double> Optimizer<Policy>::params() const
 {
-    requireInitialized_("params");
-    requireRunStarted_("params");
+    requireInitialized_();
+    requireRunStarted_();
     return std::span<const double>{x_};
 }
 

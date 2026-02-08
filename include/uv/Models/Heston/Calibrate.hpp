@@ -54,9 +54,12 @@ Params<T> calibrate(
     const opt::cost::WeightATM<double>& weightATM
 );
 
-// template <std::floating_point T, std::size_t N>
-// core::VolSurface<T>
-// buildSurface(const core::VolSurface<T>& volSurface, const Pricer<T, N>& pricer);
+template <std::floating_point T, std::size_t N>
+core::VolSurface<T> buildSurface(
+    const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
+    const Pricer<T, N>& pricer
+);
 
 namespace detail
 {

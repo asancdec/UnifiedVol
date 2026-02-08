@@ -97,7 +97,7 @@ Thumbs.db
 ehthumbs.db
 desktop.ini
 .cache/
-.clangd/
+.clangd
 .ipynb_checkpoints/
 
 # ───────────────────────────────

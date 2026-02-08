@@ -18,6 +18,9 @@
 #pragma once
 
 #include "Base/Types.hpp"
+#include "Core/Curve.hpp"
+#include "Core/Matrix.hpp"
+#include "Core/VolSurface.hpp"
 #include "Math/Integration/TanHSinH.hpp"
 #include "Models/Heston/Config.hpp"
 #include "Models/Heston/Detail/CharFunCache.hpp"
@@ -28,6 +31,7 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <span>
 
 namespace uv::models::heston
 {
@@ -78,7 +82,22 @@ template <std::floating_point T, std::size_t N> class Pricer
     T callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F, T K)
         const noexcept;
 
-    T callPrice(T t, T dF, T F, T K) const;
+    T callPrice(T t, T dF, T F, T K, bool doValidate = true) const;
+
+    void callPrice(
+        std::span<T> out,
+        T t,
+        T dF,
+        T F,
+        std::span<const T> strikes,
+        bool doValidate = true
+    ) const;
+
+    core::Matrix<T> callPrice(
+        const core::VolSurface<T>& volSurface,
+        const core::Curve<T>& curve,
+        bool doValidate = true
+    ) const;
 
     std::array<T, 6>
     callPriceWithGradient(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F, T K)
