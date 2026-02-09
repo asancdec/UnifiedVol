@@ -16,7 +16,6 @@
  */
 
 #include <UnifiedVol.hpp>
-
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
@@ -29,8 +28,8 @@ int main(int argc, char* argv[])
     try
     {
         const std::filesystem::path path =
-            (argc > 1) ? std::filesystem::path{argv[1]}
-                       : std::filesystem::path{"data/VolSurface_SPY_04072011.csv"};
+            (argc > 1) ? std::filesystem::path{argv[1]} :
+                         std::filesystem::path{"data/VolSurface_SPY_04072011.csv"};
 
         initialize();
 
@@ -44,15 +43,13 @@ int main(int argc, char* argv[])
             .spot = 485.77548
         };
 
-        const core::MarketState<Real> marketState{io::load::marketState(path, marketData)
-        };
+        const core::MarketState<Real> marketState{io::load::marketState(path, marketData)};
 
         io::report::volatility(marketState);
 
         // --------------  SVI calibration -------------
 
-        const core::VolSurface<Real> sviVolSurface{models::svi::buildSurface(marketState)
-        };
+        const core::VolSurface<Real> sviVolSurface{models::svi::buildSurface(marketState)};
 
         io::report::volatility(sviVolSurface);
 
@@ -61,7 +58,7 @@ int main(int argc, char* argv[])
         // TODO
         // 3. Clean up Calibrator class
         // 2. Clean up pricer class
-        // Can the clibartro be numerical differnces too? good validation
+        // Testing convergence on balck scholes would be cool
         // 4. Optimize
 
         const core::VolSurface<Real> hestonVolSurface{
