@@ -20,34 +20,22 @@
 #include "Core/Matrix.hpp"
 #include "Math/Functions/Volatility.hpp"
 #include "Models/Heston/Calibrate/Calibrate.hpp"
-#include "Models/Heston/Calibrate/CeresAdapter.hpp"
 #include "Models/Heston/Calibrate/Config.hpp"
 
 namespace uv::models::heston
 {
 
-template <std::floating_point T, std::size_t N>
+template <std::floating_point T>
 core::VolSurface<T> buildSurface(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
     const calibrate::Config& config
 )
 {
-    models::heston::price::Pricer<T> hestonPricer{};
+    price::Pricer<T> pricer{};
 
-    auto hestonOptimizer{calibrate::detail::makeOptimizer(config)};
-
-    Params<T> hestonParams{calibrate::calibrate<calibrate::HestonGradient>(
-        volSurface,
-        curve,
-        hestonOptimizer,
-        opt::cost::WeightATM{.wATM = 8.0, .k0 = 0.3},
-        hestonPricer
-    )};
-
-    hestonPricer.setParams(hestonParams);
-
-    return buildSurface<T>(volSurface, curve, hestonPricer);
+    pricer.setParams(calibrate::calibrate(volSurface, curve, config, pricer));
+    return buildSurface(volSurface, curve, pricer);
 }
 
 template <std::floating_point T, std::size_t N>
@@ -57,9 +45,9 @@ core::VolSurface<T> buildSurface(
     const price::Pricer<T, N>& pricer
 )
 {
-    return core::generateVolSurface<T>(
+    return core::generateVolSurface(
         volSurface,
-        math::vol::impliedVol<T>(pricer.callPrice(volSurface, curve), volSurface, curve)
+        math::vol::impliedVol(pricer.callPrice(volSurface, curve), volSurface, curve)
     );
 }
 } // namespace uv::models::heston

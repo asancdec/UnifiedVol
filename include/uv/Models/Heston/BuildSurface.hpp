@@ -28,7 +28,7 @@
 namespace uv::models::heston
 {
 
-template <std::floating_point T, std::size_t N = price::detail::defaultNodes>
+template <std::floating_point T>
 core::VolSurface<T> buildSurface(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,

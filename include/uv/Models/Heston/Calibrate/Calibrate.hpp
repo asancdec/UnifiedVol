@@ -20,6 +20,7 @@
 #include "Core/Curve.hpp"
 #include "Core/Matrix.hpp"
 #include "Core/VolSurface.hpp"
+#include "Models/Heston/Calibrate/Config.hpp"
 #include "Models/Heston/Params.hpp"
 #include "Models/Heston/Price/Pricer.hpp"
 #include "Optimization/Ceres/Config.hpp"
@@ -33,24 +34,48 @@
 
 namespace uv::models::heston::calibrate
 {
-
 template <
-    opt::ceres::GradientMode Mode,
     std::floating_point T,
     std::size_t N,
+    opt::ceres::GradientMode Mode = HestonGradient,
+    typename Policy = HestonPolicy>
+Params<T> calibrate(
+    const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
+    const Config& config = {}
+);
+
+template <
+    std::floating_point T,
+    std::size_t N,
+    opt::ceres::GradientMode Mode = HestonGradient,
+    typename Policy = HestonPolicy>
+Params<T> calibrate(
+    const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
+    const Config& config,
+    price::Pricer<T, N>& pricer
+);
+
+namespace detail
+{
+template <
+    std::floating_point T,
+    std::size_t N,
+    opt::ceres::GradientMode Mode,
     typename Policy>
 Params<T> calibrate(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
-    price::Pricer<T, N>& pricer = {}
+    price::Pricer<T, N>& pricer
 );
 
 template <
-    opt::ceres::GradientMode Mode,
     std::floating_point T,
     std::size_t N,
+    opt::ceres::GradientMode Mode,
     typename Policy>
 Params<T> calibrate(
     const std::span<const T> maturities,
@@ -60,11 +85,8 @@ Params<T> calibrate(
     const core::Matrix<T>& callM,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
-    price::Pricer<T, N>& pricer = {}
+    price::Pricer<T, N>& pricer
 );
-
-namespace detail
-{
 
 template <std::floating_point T>
 void validateInputs(

@@ -35,7 +35,7 @@
 namespace uv::models::heston::price
 {
 
-template <std::floating_point T, std::size_t N = detail::defaultNodes> class Pricer
+template <std::floating_point T, std::size_t N = defaultNodes> class Pricer
 {
   private:
     std::optional<Params<T>> params_;

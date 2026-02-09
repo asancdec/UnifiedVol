@@ -19,7 +19,8 @@
 
 #include "Base/Types.hpp"
 #include "Optimization/Ceres/Config.hpp"
-#include "Optimization/Ceres/Optimizer.hpp"
+#include "Optimization/Ceres/Policy.hpp"
+#include "Optimization/Cost.hpp"
 
 #include <string_view>
 
@@ -30,8 +31,8 @@ struct Config
 {
     double tolerance{1e-12};
     unsigned int maxEval{10000};
-    bool weightAtm{true};
     bool verbose{false};
+    opt::cost::WeightATM<double> weightATM{.wATM = 8.0, .k0 = 0.3};
 };
 
 constexpr opt::ceres::GradientMode HestonGradient = opt::ceres::GradientMode::Analytic;

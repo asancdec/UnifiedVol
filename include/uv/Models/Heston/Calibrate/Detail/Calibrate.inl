@@ -20,6 +20,8 @@
 #include "Math/Functions/Black.hpp"
 #include "Math/Functions/Volatility.hpp"
 #include "Math/LinearAlgebra/MatrixOps.hpp"
+#include "Models/Heston/Calibrate/CeresAdapter.hpp"
+#include "Models/Heston/Calibrate/Config.hpp"
 #include "Models/Heston/Calibrate/Detail/ResidualCost.hpp"
 
 #include <algorithm>
@@ -29,9 +31,60 @@ namespace uv::models::heston::calibrate
 {
 
 template <
-    opt::ceres::GradientMode Mode,
     std::floating_point T,
     std::size_t N,
+    opt::ceres::GradientMode Mode,
+    typename Policy>
+Params<T> calibrate(
+    const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
+    const Config& config
+)
+{
+    price::Pricer<T, N> pricer{};
+    opt::ceres::Optimizer<Policy> optimizer{detail::makeOptimizer(config)};
+
+    return detail::calibrate<T, N, Mode, Policy>(
+        volSurface,
+        curve,
+        optimizer,
+        config.weightATM,
+        pricer
+    );
+}
+
+template <
+    std::floating_point T,
+    std::size_t N,
+    opt::ceres::GradientMode Mode,
+    typename Policy>
+Params<T> calibrate(
+    const core::VolSurface<T>& volSurface,
+    const core::Curve<T>& curve,
+    const Config& config,
+    price::Pricer<T, N>& pricer
+)
+{
+    opt::ceres::Optimizer<Policy> optimizer{detail::makeOptimizer(config)};
+
+    return detail::calibrate<T, N, Mode, Policy>(
+        volSurface,
+        curve,
+        optimizer,
+        config.weightATM,
+        pricer
+    );
+}
+
+} // namespace uv::models::heston::calibrate
+
+namespace uv::models::heston::calibrate::detail
+{
+
+template <
+    std::floating_point T,
+    std::size_t N,
+    opt::ceres::GradientMode Mode,
     typename Policy>
 Params<T> calibrate(
     const core::VolSurface<T>& volSurface,
@@ -43,7 +96,7 @@ Params<T> calibrate(
 {
     std::span<const T> maturities{volSurface.maturities()};
 
-    return calibrate<Mode, T, N, Policy>(
+    return calibrate<T, N, Mode, Policy>(
         volSurface.maturities(),
         curve.interpolateDF(maturities),
         volSurface.forwards(),
@@ -56,9 +109,9 @@ Params<T> calibrate(
 }
 
 template <
-    opt::ceres::GradientMode Mode,
     std::floating_point T,
     std::size_t N,
+    opt::ceres::GradientMode Mode,
     typename Policy>
 Params<T> calibrate(
     const std::span<const T> maturities,
@@ -71,7 +124,7 @@ Params<T> calibrate(
     price::Pricer<T, N>& pricer
 )
 {
-    detail::validateInputs<T>(maturities, discountFactors, forwards, strikes, callM);
+    validateInputs<T>(maturities, discountFactors, forwards, strikes, callM);
 
     const Vector<double> maturitiesD{convertVector<double>(maturities)};
     const Vector<double> discountFactorsD{convertVector<double>(discountFactors)};
@@ -104,7 +157,7 @@ Params<T> calibrate(
 
         for (std::size_t j = 0; j < numStrikes; ++j)
         {
-            optimizer.addResidualBlock(detail::makeCost<Mode, T, N>(
+            optimizer.addResidualBlock(makeCost<Mode, T, N>(
                 t,
                 dF,
                 F,
@@ -127,10 +180,6 @@ Params<T> calibrate(
     };
 }
 
-} // namespace uv::models::heston::calibrate
-
-namespace uv::models::heston::calibrate::detail
-{
 template <std::floating_point T>
 void validateInputs(
     const std::span<const T> maturities,
