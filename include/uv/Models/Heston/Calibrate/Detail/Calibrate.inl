@@ -20,16 +20,19 @@
 #include "Math/Functions/Black.hpp"
 #include "Math/Functions/Volatility.hpp"
 #include "Math/LinearAlgebra/MatrixOps.hpp"
-#include "Models/Heston/Calibrate/Detail/ResidualJacobian.hpp"
+#include "Models/Heston/Calibrate/Detail/ResidualCost.hpp"
 
 #include <algorithm>
-#include <memory>
 #include <span>
 
 namespace uv::models::heston::calibrate
 {
 
-template <std::floating_point T, std::size_t N, typename Policy>
+template <
+    opt::ceres::GradientMode Mode,
+    std::floating_point T,
+    std::size_t N,
+    typename Policy>
 Params<T> calibrate(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
@@ -40,7 +43,7 @@ Params<T> calibrate(
 {
     std::span<const T> maturities{volSurface.maturities()};
 
-    return calibrate<T, N, Policy>(
+    return calibrate<Mode, T, N, Policy>(
         volSurface.maturities(),
         curve.interpolateDF(maturities),
         volSurface.forwards(),
@@ -52,7 +55,11 @@ Params<T> calibrate(
     );
 }
 
-template <std::floating_point T, std::size_t N, typename Policy>
+template <
+    opt::ceres::GradientMode Mode,
+    std::floating_point T,
+    std::size_t N,
+    typename Policy>
 Params<T> calibrate(
     const std::span<const T> maturities,
     const std::span<const T> discountFactors,
@@ -97,7 +104,7 @@ Params<T> calibrate(
 
         for (std::size_t j = 0; j < numStrikes; ++j)
         {
-            optimizer.addResidualBlock(std::make_unique<detail::ResidualJacobian<T, N>>(
+            optimizer.addResidualBlock(detail::makeCost<Mode, T, N>(
                 t,
                 dF,
                 F,

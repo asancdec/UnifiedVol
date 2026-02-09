@@ -22,6 +22,7 @@
 #include "Core/VolSurface.hpp"
 #include "Models/Heston/Params.hpp"
 #include "Models/Heston/Price/Pricer.hpp"
+#include "Optimization/Ceres/Config.hpp"
 #include "Optimization/Ceres/Optimizer.hpp"
 #include "Optimization/Cost.hpp"
 
@@ -33,7 +34,11 @@
 namespace uv::models::heston::calibrate
 {
 
-template <std::floating_point T, std::size_t N, typename Policy>
+template <
+    opt::ceres::GradientMode Mode,
+    std::floating_point T,
+    std::size_t N,
+    typename Policy>
 Params<T> calibrate(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
@@ -42,7 +47,11 @@ Params<T> calibrate(
     price::Pricer<T, N>& pricer = {}
 );
 
-template <std::floating_point T, std::size_t N, typename Policy>
+template <
+    opt::ceres::GradientMode Mode,
+    std::floating_point T,
+    std::size_t N,
+    typename Policy>
 Params<T> calibrate(
     const std::span<const T> maturities,
     const std::span<const T> discountFactors,

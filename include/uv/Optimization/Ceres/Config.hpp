@@ -46,6 +46,13 @@ enum class Loss
     SoftL1
 };
 
+enum class GradientMode
+{
+    Analytic,
+    NumericForward,
+    NumericCentral
+};
+
 struct Config
 {
 

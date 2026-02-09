@@ -17,7 +17,9 @@
 
 #pragma once
 
-#include <Base/Types.hpp>
+#include "Base/Types.hpp"
+#include "Optimization/Ceres/Config.hpp"
+#include "Optimization/Ceres/Optimizer.hpp"
 
 #include <string_view>
 
@@ -31,6 +33,12 @@ struct Config
     bool weightAtm{true};
     bool verbose{false};
 };
+
+constexpr opt::ceres::GradientMode HestonGradient = opt::ceres::GradientMode::Analytic;
+
+using HestonPolicy = opt::ceres::Policy<
+    opt::ceres::TrustRegionStrategy::LevenbergMarquardt,
+    opt::ceres::LinearSolver::DenseQR>;
 
 namespace detail
 {

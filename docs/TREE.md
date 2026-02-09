@@ -150,7 +150,8 @@ UnifiedVol/
 │   │   │   │   │   ├── Config.hpp
 │   │   │   │   │   ├── Detail/
 │   │   │   │   │   │   ├── Calibrate.inl
-│   │   │   │   │   │   ├── ResidualJacobian.hpp
+│   │   │   │   │   │   ├── ResidualCost.hpp
+│   │   │   │   │   │   ├── ResidualCost.inl
 │   │   │   │   ├── Detail/
 │   │   │   │   │   ├── BuildSurface.inl
 │   │   │   │   ├── Params.hpp

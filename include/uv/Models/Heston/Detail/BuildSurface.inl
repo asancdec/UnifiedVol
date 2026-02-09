@@ -21,6 +21,7 @@
 #include "Math/Functions/Volatility.hpp"
 #include "Models/Heston/Calibrate/Calibrate.hpp"
 #include "Models/Heston/Calibrate/CeresAdapter.hpp"
+#include "Models/Heston/Calibrate/Config.hpp"
 
 namespace uv::models::heston
 {
@@ -36,7 +37,7 @@ core::VolSurface<T> buildSurface(
 
     auto hestonOptimizer{calibrate::detail::makeOptimizer(config)};
 
-    Params<T> hestonParams{calibrate::calibrate(
+    Params<T> hestonParams{calibrate::calibrate<calibrate::HestonGradient>(
         volSurface,
         curve,
         hestonOptimizer,
