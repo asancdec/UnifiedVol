@@ -27,7 +27,7 @@
 namespace uv::opt::ceres
 {
 
-template <typename Policy = Policy<>> class Optimizer
+template <typename PolicyT = Policy<>> class Optimizer
 {
   private:
     Config config_;

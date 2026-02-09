@@ -17,37 +17,29 @@
 
 #pragma once
 
+#include "Optimization/Ceres/Config.hpp"
+#include "Optimization/Ceres/Detail/CeresAdapter.hpp"
+
 #include <ceres/ceres.h>
 #include <memory>
-#include <type_traits>
 
 namespace uv::opt::ceres
 {
-
 template <
-    ::ceres::TrustRegionStrategyType TrustRegionStrategy = ::ceres::LEVENBERG_MARQUARDT,
-    ::ceres::LinearSolverType LinearSolver = ::ceres::DENSE_QR,
-    typename LossType = void>
+    TrustRegionStrategy TR = TrustRegionStrategy::LevenbergMarquardt,
+    LinearSolver LS = LinearSolver::DenseQR,
+    Loss L = Loss::None>
 struct Policy
 {
-    using loss_type = LossType;
+    inline static ::ceres::TrustRegionStrategyType trustRegionStrategy =
+        ::uv::opt::ceres::detail::toCeres(TR);
 
-    static constexpr ::ceres::TrustRegionStrategyType trustRegionStrategy =
-        TrustRegionStrategy;
-    static constexpr ::ceres::LinearSolverType linearSolver = LinearSolver;
+    inline static ::ceres::LinearSolverType linearSolver =
+        ::uv::opt::ceres::detail::toCeres(LS);
 
     static std::unique_ptr<::ceres::LossFunction> makeLoss(double lossParam)
     {
-        if constexpr (std::is_void_v<LossType>)
-        {
-
-            return nullptr;
-        }
-        else
-        {
-
-            return std::make_unique<LossType>(lossParam);
-        }
+        return ::uv::opt::ceres::detail::makeLoss(L, lossParam);
     }
 };
 } // namespace uv::opt::ceres

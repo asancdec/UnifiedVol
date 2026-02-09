@@ -15,27 +15,21 @@
  * limitations under this License.
  */
 
-#pragma once
+#include <format>
 
-#include "Base/Macros/Unreachable.hpp"
-#include "Optimization/NLopt/Algorithm.hpp"
-
-#include <nlopt.hpp>
-
-namespace uv::opt::nlopt::detail
+namespace uv::errors
 {
-inline constexpr ::nlopt::algorithm toNlopt(Algorithm a) noexcept
+template <typename E>
+[[noreturn]] inline void
+unreachableEnum(E value, std::string_view enumName, std::source_location loc)
+requires std::is_enum_v<E>
 {
-    switch (a)
-    {
-    case Algorithm::LD_MMA:
-        return ::nlopt::LD_MMA;
-    case Algorithm::LD_SLSQP:
-        return ::nlopt::LD_SLSQP;
-    case Algorithm::LN_BOBYQA:
-        return ::nlopt::LN_BOBYQA;
-    }
+    using U = std::underlying_type_t<E>;
 
-    UV_UNREACHABLE(Algorithm, a);
+    raise(
+        ErrorCode::Unreachable,
+        std::format("Unknown {} value: {}", enumName, static_cast<U>(value)),
+        loc
+    );
 }
-} // namespace uv::opt::nlopt::detail
+} // namespace uv::errors

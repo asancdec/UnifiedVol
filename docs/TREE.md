@@ -73,6 +73,7 @@ UnifiedVol/
 │   │   │   │   ├── Types.inl
 │   │   │   ├── Errors/
 │   │   │   │   ├── Detail/
+│   │   │   │   │   ├── Errors.inl
 │   │   │   │   │   ├── Validate.inl
 │   │   │   │   ├── Errors.hpp
 │   │   │   │   ├── Validate.hpp
@@ -149,6 +150,7 @@ UnifiedVol/
 │   │   │   │   │   ├── Config.hpp
 │   │   │   │   │   ├── Detail/
 │   │   │   │   │   │   ├── Calibrate.inl
+│   │   │   │   │   │   ├── ResidualJacobian.hpp
 │   │   │   │   ├── Detail/
 │   │   │   │   │   ├── BuildSurface.inl
 │   │   │   │   ├── Params.hpp
@@ -185,6 +187,7 @@ UnifiedVol/
 │   │   │   ├── Ceres/
 │   │   │   │   ├── Config.hpp
 │   │   │   │   ├── Detail/
+│   │   │   │   │   ├── CeresAdapter.hpp
 │   │   │   │   │   ├── Optimizer.inl
 │   │   │   │   │   ├── Policy.hpp
 │   │   │   │   ├── Optimizer.hpp
@@ -230,6 +233,9 @@ UnifiedVol/
 │   │   │   │   │   ├── Objective.cpp
 │   │   │   │   │   ├── SliceData.cpp
 │   ├── Optimization/
+│   │   ├── Ceres/
+│   │   │   ├── Detail/
+│   │   │   │   ├── CeresAdapter.cpp
 │   │   ├── Helpers.cpp
 ├── vcpkg.json
 ```

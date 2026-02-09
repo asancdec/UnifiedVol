@@ -66,8 +66,6 @@ void validateInputs(
     const core::Matrix<T>& callM
 );
 
-template <std::floating_point T, std::size_t N> struct PriceResidualJac;
-
 std::array<double, 5> initGuess() noexcept;
 
 std::array<double, 5> lowerBounds() noexcept;

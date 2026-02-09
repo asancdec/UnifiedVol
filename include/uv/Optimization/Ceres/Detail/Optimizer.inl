@@ -26,14 +26,14 @@
 namespace uv::opt::ceres
 {
 
-template <typename Policy>
-Optimizer<Policy>::Optimizer(const Config& config)
+template <typename PolicyT>
+Optimizer<PolicyT>::Optimizer(const Config& config)
     : config_(config)
 {
 }
 
-template <typename Policy>
-void Optimizer<Policy>::setBounds_(
+template <typename PolicyT>
+void Optimizer<PolicyT>::setBounds_(
     std::size_t n,
     std::span<const double> lowerBounds,
     std::span<const double> upperBounds
@@ -71,7 +71,7 @@ void Optimizer<Policy>::setBounds_(
     }
 }
 
-template <typename Policy> void Optimizer<Policy>::requireInitialized_() const
+template <typename PolicyT> void Optimizer<PolicyT>::requireInitialized_() const
 {
     UV_REQUIRE_VALID_STATE(
         isInitialized_,
@@ -79,12 +79,12 @@ template <typename Policy> void Optimizer<Policy>::requireInitialized_() const
     );
 }
 
-template <typename Policy> void Optimizer<Policy>::requireRunStarted_() const
+template <typename PolicyT> void Optimizer<PolicyT>::requireRunStarted_() const
 {
     UV_REQUIRE_VALID_STATE(isRunStarted_, "Run not started. Call beginRun() first.");
 }
 
-template <typename Policy> void Optimizer<Policy>::clampStoredBounds_()
+template <typename PolicyT> void Optimizer<PolicyT>::clampStoredBounds_()
 {
     if (lowerBounds_ && upperBounds_)
     {
@@ -97,8 +97,8 @@ template <typename Policy> void Optimizer<Policy>::clampStoredBounds_()
         clampUpperBounds(x_, *upperBounds_);
 }
 
-template <typename Policy>
-void Optimizer<Policy>::initialize(
+template <typename PolicyT>
+void Optimizer<PolicyT>::initialize(
     std::span<const double> initGuess,
     std::span<const double> lowerBounds,
     std::span<const double> upperBounds
@@ -112,7 +112,7 @@ void Optimizer<Policy>::initialize(
     isRunStarted_ = false;
 }
 
-template <typename Policy> void Optimizer<Policy>::beginRun()
+template <typename PolicyT> void Optimizer<PolicyT>::beginRun()
 {
     requireInitialized_();
 
@@ -135,8 +135,8 @@ template <typename Policy> void Optimizer<Policy>::beginRun()
     isRunStarted_ = true;
 }
 
-template <typename Policy>
-void Optimizer<Policy>::addResidualBlock(std::unique_ptr<::ceres::CostFunction> cf)
+template <typename PolicyT>
+void Optimizer<PolicyT>::addResidualBlock(std::unique_ptr<::ceres::CostFunction> cf)
 {
     requireInitialized_();
     requireRunStarted_();
@@ -145,19 +145,19 @@ void Optimizer<Policy>::addResidualBlock(std::unique_ptr<::ceres::CostFunction> 
 
     problem_.AddResidualBlock(
         cf.release(),
-        Policy::makeLoss(config_.lossScale).release(),
+        PolicyT::makeLoss(config_.lossScale).release(),
         x_.data()
     );
 }
 
-template <typename Policy> void Optimizer<Policy>::solveInPlace()
+template <typename PolicyT> void Optimizer<PolicyT>::solveInPlace()
 {
     requireInitialized_();
     requireRunStarted_();
 
     ::ceres::Solver::Options options;
-    options.trust_region_strategy_type = Policy::trustRegionStrategy;
-    options.linear_solver_type = Policy::linearSolver;
+    options.trust_region_strategy_type = PolicyT::trustRegionStrategy;
+    options.linear_solver_type = PolicyT::linearSolver;
     options.max_num_iterations = config_.maxEval;
     options.function_tolerance = config_.functionTol;
     options.parameter_tolerance = config_.paramTol;

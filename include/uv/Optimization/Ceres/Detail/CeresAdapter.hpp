@@ -9,26 +9,25 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
+ * distributed under this License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the LICENSE for the specific language governing permissions and
- * limitations under the License.
+ * limitations under this License.
  */
 
 #pragma once
 
-#include "Models/Heston/Calibrate/Config.hpp"
 #include "Optimization/Ceres/Config.hpp"
-#include "Optimization/Ceres/Optimizer.hpp"
 
-namespace uv::models::heston::calibrate::detail
+#include <ceres/ceres.h>
+#include <memory>
+
+namespace uv::opt::ceres::detail
 {
-opt::ceres::Config makeCeresConfig(const Config& config) noexcept;
+::ceres::TrustRegionStrategyType toCeres(TrustRegionStrategy a);
 
-using HestonPolicy = opt::ceres::Policy<
-    opt::ceres::TrustRegionStrategy::LevenbergMarquardt,
-    opt::ceres::LinearSolver::DenseQR>;
+::ceres::LinearSolverType toCeres(LinearSolver a);
 
-opt::ceres::Optimizer<HestonPolicy> makeOptimizer(const Config& config) noexcept;
+std::unique_ptr<::ceres::LossFunction> makeLoss(Loss a, double lossParam);
 
-} // namespace uv::models::heston::calibrate::detail
+} // namespace uv::opt::ceres::detail

@@ -21,6 +21,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 namespace uv::errors
 {
@@ -74,4 +75,14 @@ class UnifiedVolError final : public std::runtime_error
     std::source_location loc = std::source_location::current()
 );
 
+template <typename E>
+[[noreturn]] void unreachableEnum(
+    E value,
+    std::string_view enumName,
+    std::source_location loc = std::source_location::current()
+)
+requires std::is_enum_v<E>;
+
 } // namespace uv::errors
+
+#include "Base/Errors/Detail/Errors.inl"

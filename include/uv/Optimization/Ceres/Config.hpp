@@ -24,6 +24,28 @@
 namespace uv::opt::ceres
 {
 
+enum class TrustRegionStrategy
+{
+    LevenbergMarquardt,
+    Dogleg
+};
+
+enum class LinearSolver
+{
+    DenseQR,
+    DenseNormalCholesky,
+    SparseNormalCholesky,
+    SparseSchur
+};
+
+enum class Loss
+{
+    None,
+    Huber,
+    Cauchy,
+    SoftL1
+};
+
 struct Config
 {
 

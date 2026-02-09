@@ -21,12 +21,12 @@
 
 #include <source_location>
 
-#define UV_UNREACHABLE(msg)                                                              \
+#define UV_UNREACHABLE(EnumType, value)                                                  \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::raise(                                                             \
-            ::uv::errors::ErrorCode::Unreachable,                                        \
-            (msg),                                                                       \
+        ::uv::errors::unreachableEnum(                                                   \
+            (value),                                                                     \
+            #EnumType,                                                                   \
             std::source_location::current()                                              \
         );                                                                               \
     } while (0)
