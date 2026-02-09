@@ -20,7 +20,6 @@
 #include "Core/Curve.hpp"
 #include "Core/VolSurface.hpp"
 #include "Models/Heston/Calibrate/Config.hpp"
-#include "Models/Heston/Price/Config.hpp"
 #include "Models/Heston/Price/Pricer.hpp"
 
 #include <concepts>

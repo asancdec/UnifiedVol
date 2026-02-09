@@ -88,6 +88,22 @@ Params<T> calibrate(
     price::Pricer<T, N>& pricer
 );
 
+template <
+    std::floating_point CalcT,
+    std::size_t N,
+    opt::ceres::GradientMode Mode,
+    typename Policy>
+Params<double> calibrateDouble(
+    std::span<const double> maturities,
+    std::span<const double> discountFactors,
+    std::span<const double> forwards,
+    std::span<const double> strikes,
+    const core::Matrix<double>& callM,
+    opt::ceres::Optimizer<Policy>& optimizer,
+    const opt::cost::WeightATM<double>& weightATM,
+    price::Pricer<CalcT, N>& pricer
+);
+
 template <std::floating_point T>
 void validateInputs(
     const std::span<const T> maturities,

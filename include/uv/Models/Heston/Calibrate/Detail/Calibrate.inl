@@ -124,16 +124,52 @@ Params<T> calibrate(
     price::Pricer<T, N>& pricer
 )
 {
-    validateInputs<T>(maturities, discountFactors, forwards, strikes, callM);
+    if constexpr (std::is_same_v<T, double>)
+    {
+        return calibrateDouble<T, N, Mode, Policy>(
+            maturities,
+            discountFactors,
+            forwards,
+            strikes,
+            callM,
+            optimizer,
+            weightATM,
+            pricer
+        );
+    }
 
-    const Vector<double> maturitiesD{convertVector<double>(maturities)};
-    const Vector<double> discountFactorsD{convertVector<double>(discountFactors)};
-    const Vector<double> forwardsD{convertVector<double>(forwards)};
-    const Vector<double> strikesD{convertVector<double>(strikes)};
+    return calibrateDouble<T, N, Mode, Policy>(
+               convertVector<double>(maturities),
+               convertVector<double>(discountFactors),
+               convertVector<double>(forwards),
+               convertVector<double>(strikes),
+               callM.template as<double>(),
+               optimizer,
+               weightATM,
+               pricer
+    )
+        .template as<T>();
+}
 
-    const auto callMD{callM.template as<double>()};
+template <
+    std::floating_point CalcT,
+    std::size_t N,
+    opt::ceres::GradientMode Mode,
+    typename Policy>
+Params<double> calibrateDouble(
+    std::span<const double> maturities,
+    std::span<const double> discountFactors,
+    std::span<const double> forwards,
+    std::span<const double> strikes,
+    const core::Matrix<double>& callM,
+    opt::ceres::Optimizer<Policy>& optimizer,
+    const opt::cost::WeightATM<double>& weightATM,
+    price::Pricer<CalcT, N>& pricer
+)
+{
+    validateInputs(maturities, discountFactors, forwards, strikes, callM);
 
-    const std::size_t numStrikes{strikesD.size()};
+    const std::size_t numStrikes{strikes.size()};
 
     optimizer
         .initialize(detail::initGuess(), detail::lowerBounds(), detail::upperBounds());
@@ -143,41 +179,33 @@ Params<T> calibrate(
     Vector<double> bufferWeights(numStrikes);
     Vector<double> logKF(numStrikes);
 
-    for (std::size_t i = 0; i < maturitiesD.size(); ++i)
+    for (std::size_t i = 0; i < maturities.size(); ++i)
     {
 
-        std::span<const double> callMDRow{callMD[i]};
-        const double t{maturitiesD[i]};
-        const double dF{discountFactorsD[i]};
-        const double F{forwardsD[i]};
+        std::span<const double> callMRow{callM[i]};
+        const double t{maturities[i]};
+        const double dF{discountFactors[i]};
+        const double F{forwards[i]};
 
-        math::vol::logKF<double>(logKF, F, strikesD, true);
+        math::vol::logKF<double>(logKF, F, strikes, true);
 
         opt::cost::weightsATM<double>(logKF, weightATM, bufferWeights);
 
         for (std::size_t j = 0; j < numStrikes; ++j)
         {
-            optimizer.addResidualBlock(makeCost<Mode, T, N>(
+            optimizer.addResidualBlock(makeCost<Mode, CalcT, N>(
                 t,
                 dF,
                 F,
-                strikesD[j],
-                callMDRow[j],
+                strikes[j],
+                callMRow[j],
                 bufferWeights[j],
                 pricer
             ));
         }
     }
 
-    std::span<const double> params{optimizer.solve()};
-
-    return Params<T>{
-        T(params[0]),
-        T(params[1]),
-        T(params[2]),
-        T(params[3]),
-        T(params[4])
-    };
+    return Params<double>{optimizer.solve()};
 }
 
 template <std::floating_point T>
