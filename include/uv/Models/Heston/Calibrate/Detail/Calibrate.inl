@@ -173,6 +173,8 @@ Params<double> calibrateDouble(
 
     optimizer
         .initialize(detail::initGuess(), detail::lowerBounds(), detail::upperBounds());
+    optimizer
+        .initialize(detail::initGuess(), detail::lowerBounds(), detail::upperBounds());
 
     optimizer.beginRun();
 
