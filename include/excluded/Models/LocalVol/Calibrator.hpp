@@ -54,7 +54,7 @@ template <
     class Interpolator,
     typename Policy>
 Surface<T> calibrate(
-    const core::Matrix<T>& callM,
+    const core::Matrix<T>& callPrice,
     const Vector<T>& maturities,
     const core::Matrix<T>& logKF,
     const core::Matrix<T>& totVar,
@@ -65,9 +65,8 @@ Surface<T> calibrate(
 
 namespace detail
 {
-template <std::floating_point T>
-void validate(
-    const core::Matrix<T>& callM,
+template <std::floating_point T> void validate(
+    const core::Matrix<T>& callPrice,
     const Vector<T>& maturities,
     const core::Matrix<T>& logKF,
     const core::Matrix<T>& totVar

@@ -26,14 +26,13 @@
 namespace uv::opt::ceres
 {
 
-template <typename PolicyT>
-Optimizer<PolicyT>::Optimizer(const Config& config)
-    : config_(config)
+template <typename PolicyT> Optimizer<PolicyT>::Optimizer(const Config& config)
+    : config_(config),
+      loss_(PolicyT::makeLoss(config_.lossScale))
 {
 }
 
-template <typename PolicyT>
-void Optimizer<PolicyT>::setBounds_(
+template <typename PolicyT> void Optimizer<PolicyT>::setBounds_(
     std::size_t n,
     std::span<const double> lowerBounds,
     std::span<const double> upperBounds
@@ -97,8 +96,7 @@ template <typename PolicyT> void Optimizer<PolicyT>::clampStoredBounds_()
         clampUpperBounds(x_, *upperBounds_);
 }
 
-template <typename PolicyT>
-void Optimizer<PolicyT>::initialize(
+template <typename PolicyT> void Optimizer<PolicyT>::initialize(
     std::span<const double> initGuess,
     std::span<const double> lowerBounds,
     std::span<const double> upperBounds
@@ -143,11 +141,7 @@ void Optimizer<PolicyT>::addResidualBlock(std::unique_ptr<::ceres::CostFunction>
 
     UV_REQUIRE_NON_NULL(cf);
 
-    problem_.AddResidualBlock(
-        cf.release(),
-        PolicyT::makeLoss(config_.lossScale).release(),
-        x_.data()
-    );
+    problem_.AddResidualBlock(cf.release(), loss_.get(), x_.data());
 }
 
 template <typename PolicyT> void Optimizer<PolicyT>::solveInPlace()

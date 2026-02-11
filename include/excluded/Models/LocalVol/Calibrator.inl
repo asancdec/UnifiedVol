@@ -63,7 +63,7 @@ template <
     class Interpolator,
     typename Policy>
 Surface<T> calibrate(
-    const Matrix<T>& callM,
+    const Matrix<T>& callPrice,
     const Vector<T>& maturities,
     const Matrix<T>& logKF,
     const Matrix<T>& totVar,
@@ -72,7 +72,7 @@ Surface<T> calibrate(
     const opt::WeightATM<double>& weightATM
 )
 {
-    detail::validate(callM, maturities, logKF, totVar);
+    detail::validate(callPrice, maturities, logKF, totVar);
 
     std::size_t numMaturities{logKF.rows()};
     std::size_t numStrikes{logKF.cols()};
@@ -92,7 +92,7 @@ Surface<T> calibrate(
     // VarianceView<T> localVarView{logKFSlice, localVar, dydx};
     // Vector<T> prices{pricer.priceNormalized(tenor, logKFSlice, localVarView)};
 
-    // for (const auto& p : callM[0])
+    // for (const auto& p : callPrice[0])
     //{
     //     std::cout << p << ' ';
     // }
@@ -105,29 +105,28 @@ Surface<T> calibrate(
 
 namespace uv::models::localvol::calibrator::detail
 {
-template <std::floating_point T>
-void validate(
-    const Matrix<T>& callM,
+template <std::floating_point T> void validate(
+    const Matrix<T>& callPrice,
     const Vector<T>& maturities,
     const Matrix<T>& logKF,
     const Matrix<T>& totVar
 )
 {
 
-    const std::size_t numRows{callM.rows()};
-    const std::size_t numCols{callM.cols()};
+    const std::size_t numRows{callPrice.rows()};
+    const std::size_t numCols{callPrice.cols()};
 
     UV_REQUIRE(
         numCols > 0 && numCols > 0,
         InvalidArgument,
-        std::format("validate: callM must be non-empty, got {}x{}", numRows, numCols)
+        std::format("validate: callPrice must be non-empty, got {}x{}", numRows, numCols)
     );
 
     UV_REQUIRE(
         numRows == logKF.rows() && numCols == logKF.cols(),
         InvalidArgument,
         std::format(
-            "validate: callM/logKF size mismatch — callM is "
+            "validate: callPrice/logKF size mismatch ï¿½callPriceM is "
             "{}x{}, logKF is {}x{}",
             numRows,
             numCols,
@@ -140,7 +139,7 @@ void validate(
         numRows == totVar.rows() && numCols == totVar.cols(),
         InvalidArgument,
         std::format(
-            "validate: callM/totVar size mismatch — callM is "
+            "validate: callPrice/totVar size mismatch ï¿½callPriceM is "
             "{}x{}, totVar is {}x{}",
             numRows,
             numCols,
@@ -153,7 +152,7 @@ void validate(
         maturities.size() == numRows,
         InvalidArgument,
         std::format(
-            "validate: row mismatch — maturities={}, rows={}",
+            "validate: row mismatch ï¿½ maturities={}, rows={}",
             maturities.size(),
             numRows
         )
@@ -189,7 +188,7 @@ void validate(
 
     for (std::size_t t = 0; t < numRows; ++t)
     {
-        const std::span<const T> callMRow{callM[t]};
+        const std::span<const T> callMRow{callPrice[t]};
         const std::span<const T> logKFRow{logKF[t]};
         const std::span<const T> totVarRow{totVar[t]};
 
@@ -205,7 +204,7 @@ void validate(
             UV_REQUIRE(
                 c >= T(0),
                 InvalidArgument,
-                std::format("validate: callM({}, {})={} must be >= 0", t, k, c)
+                std::format("validate: callPrice({}, {})={} must be >= 0", t, k, c)
             );
 
             UV_REQUIRE(

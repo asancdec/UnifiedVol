@@ -22,6 +22,7 @@
 #include "Optimization/Ceres/Policy.hpp"
 
 #include <ceres/ceres.h>
+#include <memory>
 #include <optional>
 
 namespace uv::opt::ceres
@@ -35,6 +36,8 @@ template <typename PolicyT = Policy<>> class Optimizer
     std::optional<Vector<double>> upperBounds_;
     Vector<double> x_;
     ::ceres::Problem problem_;
+
+    std::unique_ptr<::ceres::LossFunction> loss_;
 
     bool isInitialized_{false};
     bool isRunStarted_{false};

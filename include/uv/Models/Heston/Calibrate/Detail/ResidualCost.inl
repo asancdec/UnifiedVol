@@ -17,131 +17,152 @@
 
 #include "Base/Macros/Unreachable.hpp"
 
-#include <utility>
+#include <ceres/dynamic_numeric_diff_cost_function.h>
 
 namespace uv::models::heston::calibrate::detail
 {
 
-template <std::floating_point T, std::size_t N>
-ResidualCommon<T, N>::ResidualCommon(
-    double t,
-    double dF,
-    double F,
-    double K,
-    double callPriceMkt,
-    double w,
+template <std::floating_point T, std::size_t N> SliceCommon<T, N>::SliceCommon(
+    const MaturitySlice& s,
     const price::Pricer<T, N>& pricer
 ) noexcept
-    : t_(t),
-      dF_(dF),
-      F_(F),
-      K_(K),
-      mkt_(callPriceMkt),
-      w_(w),
+    : s_(&s),
       pricer_(&pricer)
 {
 }
 
 template <std::floating_point T, std::size_t N>
-double ResidualCommon<T, N>::residualOnly(const double* p) const
+void SliceCommon<T, N>::residualOnly(const double* p, double* residuals) const
 {
-    const double model =
-        pricer_->callPrice(p[0], p[1], p[2], p[3], p[4], t_, dF_, F_, K_);
-    return (model - mkt_) * w_;
+    const std::size_t M = s_->K.size();
+
+    for (std::size_t i = 0; i < M; ++i)
+    {
+        const double model =
+            pricer_
+                ->callPrice(p[0], p[1], p[2], p[3], p[4], s_->t, s_->dF, s_->F, s_->K[i]);
+
+        residuals[i] = (model - s_->mkt[i]) * s_->w[i];
+    }
+}
+
+template <std::floating_point T, std::size_t N> void
+SliceCommon<T, N>::residualAndJac(const double* p, double* residuals, double* J) const
+{
+    const std::size_t M = s_->K.size();
+
+    for (std::size_t i = 0; i < M; ++i)
+    {
+        const auto pg = pricer_->callPriceWithGradient(
+            p[0],
+            p[1],
+            p[2],
+            p[3],
+            p[4],
+            s_->t,
+            s_->dF,
+            s_->F,
+            s_->K[i]
+        );
+
+        const double wi = s_->w[i];
+
+        residuals[i] = (pg[0] - s_->mkt[i]) * wi;
+
+        double* row = &J[i * 5];
+        row[0] = pg[1] * wi;
+        row[1] = pg[2] * wi;
+        row[2] = pg[3] * wi;
+        row[3] = pg[4] * wi;
+        row[4] = pg[5] * wi;
+    }
 }
 
 template <std::floating_point T, std::size_t N>
-void ResidualCommon<T, N>::residualAndJac(const double* p, double* r, double* J) const
+SliceJacobian<T, N>::SliceJacobian(SliceCommon<T, N> c) noexcept
+    : common_(std::move(c))
 {
-    const auto pg =
-        pricer_->callPriceWithGradient(p[0], p[1], p[2], p[3], p[4], t_, dF_, F_, K_);
-
-    r[0] = (pg[0] - mkt_) * w_;
-    J[0] = pg[1] * w_;
-    J[1] = pg[2] * w_;
-    J[2] = pg[3] * w_;
-    J[3] = pg[4] * w_;
-    J[4] = pg[5] * w_;
+    set_num_residuals(static_cast<int>(common_.s_->K.size()));
+    mutable_parameter_block_sizes()->push_back(5);
 }
 
-template <std::floating_point T, std::size_t N>
-struct ResidualJacobian final : public ::ceres::SizedCostFunction<1, 5>
+template <std::floating_point T, std::size_t N> bool SliceJacobian<T, N>::Evaluate(
+    double const* const* parameters,
+    double* residuals,
+    double** jacobians
+) const
 {
-    ResidualCommon<T, N> c_;
+    const double* p = parameters[0];
 
-    explicit ResidualJacobian(ResidualCommon<T, N> c) noexcept
-        : c_(std::move(c))
+    if (jacobians && jacobians[0])
     {
+        common_.residualAndJac(p, residuals, jacobians[0]);
+    }
+    else
+    {
+        common_.residualOnly(p, residuals);
     }
 
-    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians)
-        const override
-    {
-        const double* p = parameters[0];
+    return true;
+}
 
-        if (jacobians && jacobians[0])
-        {
-            c_.residualAndJac(p, residuals, jacobians[0]);
-        }
-        else
-        {
-            residuals[0] = c_.residualOnly(p);
-        }
-        return true;
-    }
-};
-
-template <std::floating_point T, std::size_t N> struct ResidualFunctor
+template <std::floating_point T, std::size_t N> bool
+SliceFunctor<T, N>::operator()(double const* const* parameters, double* residuals) const
 {
-    ResidualCommon<T, N> c_;
+    common_.residualOnly(parameters[0], residuals);
+    return true;
+}
 
-    bool operator()(double const* const p, double* residual) const
-    {
-        residual[0] = c_.residualOnly(p);
-        return true;
-    }
-};
+template <std::floating_point T, std::size_t N> std::unique_ptr<::ceres::CostFunction>
+makeSliceCostAnalytic(const MaturitySlice& slice, const price::Pricer<T, N>& pricer)
+{
+    return std::make_unique<SliceJacobian<T, N>>(SliceCommon<T, N>{slice, pricer});
+}
+
+template <std::floating_point T, std::size_t N> std::unique_ptr<::ceres::CostFunction>
+makeSliceCostNumericForward(const MaturitySlice& slice, const price::Pricer<T, N>& pricer)
+{
+    using Functor = SliceFunctor<T, N>;
+    using Cost = ::ceres::DynamicNumericDiffCostFunction<Functor, ::ceres::FORWARD>;
+
+    auto* cost = new Cost(new Functor{SliceCommon<T, N>{slice, pricer}});
+    cost->AddParameterBlock(5);
+    cost->SetNumResiduals(static_cast<int>(slice.K.size()));
+    return std::unique_ptr<::ceres::CostFunction>(cost);
+}
+
+template <std::floating_point T, std::size_t N> std::unique_ptr<::ceres::CostFunction>
+makeSliceCostNumericCentral(const MaturitySlice& slice, const price::Pricer<T, N>& pricer)
+{
+    using Functor = SliceFunctor<T, N>;
+    using Cost = ::ceres::DynamicNumericDiffCostFunction<Functor, ::ceres::CENTRAL>;
+
+    auto* cost = new Cost(new Functor{SliceCommon<T, N>{slice, pricer}});
+    cost->AddParameterBlock(5);
+    cost->SetNumResiduals(static_cast<int>(slice.K.size()));
+    return std::unique_ptr<::ceres::CostFunction>(cost);
+}
 
 template <opt::ceres::GradientMode Mode, std::floating_point T, std::size_t N>
-std::unique_ptr<::ceres::CostFunction> makeCost(ResidualCommon<T, N> c)
+std::unique_ptr<::ceres::CostFunction>
+makeSliceCost(const MaturitySlice& slice, const price::Pricer<T, N>& pricer)
 {
     if constexpr (Mode == opt::ceres::GradientMode::Analytic)
     {
-        return std::make_unique<ResidualJacobian<T, N>>(std::move(c));
+        return makeSliceCostAnalytic<T, N>(slice, pricer);
     }
     else if constexpr (Mode == opt::ceres::GradientMode::NumericForward)
     {
-        using Functor = ResidualFunctor<T, N>;
-        using Cost = ::ceres::NumericDiffCostFunction<Functor, ::ceres::FORWARD, 1, 5>;
-        return std::unique_ptr<::ceres::CostFunction>(new Cost(new Functor{std::move(c)})
-        );
+        return makeSliceCostNumericForward<T, N>(slice, pricer);
     }
     else if constexpr (Mode == opt::ceres::GradientMode::NumericCentral)
     {
-        using Functor = ResidualFunctor<T, N>;
-        using Cost = ::ceres::NumericDiffCostFunction<Functor, ::ceres::CENTRAL, 1, 5>;
-        return std::unique_ptr<::ceres::CostFunction>(new Cost(new Functor{std::move(c)})
-        );
+        return makeSliceCostNumericCentral<T, N>(slice, pricer);
     }
     else [[unlikely]]
     {
         UV_UNREACHABLE(opt::ceres::GradientMode, Mode);
     }
-}
-
-template <opt::ceres::GradientMode Mode, std::floating_point T, std::size_t N>
-std::unique_ptr<::ceres::CostFunction> makeCost(
-    double t,
-    double dF,
-    double F,
-    double K,
-    double callPriceMkt,
-    double w,
-    const price::Pricer<T, N>& pricer
-)
-{
-    return makeCost<Mode, T, N>(ResidualCommon<T, N>{t, dF, F, K, callPriceMkt, w, pricer}
-    );
 }
 
 } // namespace uv::models::heston::calibrate::detail

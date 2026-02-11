@@ -15,13 +15,13 @@
  * limitations under this License.
  */
 
-#include "Base/Macros/Require.hpp"
 #include "Core/Matrix.hpp"
 #include "Math/Functions/Black.hpp"
-#include "Math/Functions/Volatility.hpp"
 #include "Math/LinearAlgebra/MatrixOps.hpp"
 #include "Models/Heston/Calibrate/CeresAdapter.hpp"
 #include "Models/Heston/Calibrate/Config.hpp"
+#include "Models/Heston/Calibrate/Detail/Initialize.hpp"
+#include "Models/Heston/Calibrate/Detail/MaturitySlice.hpp"
 #include "Models/Heston/Calibrate/Detail/ResidualCost.hpp"
 
 #include <algorithm>
@@ -118,7 +118,7 @@ Params<T> calibrate(
     const std::span<const T> discountFactors,
     const std::span<const T> forwards,
     const std::span<const T> strikes,
-    const core::Matrix<T>& callM,
+    const core::Matrix<T>& callPrice,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
     price::Pricer<T, N>& pricer
@@ -131,7 +131,7 @@ Params<T> calibrate(
             discountFactors,
             forwards,
             strikes,
-            callM,
+            callPrice,
             optimizer,
             weightATM,
             pricer
@@ -143,7 +143,7 @@ Params<T> calibrate(
                convertVector<double>(discountFactors),
                convertVector<double>(forwards),
                convertVector<double>(strikes),
-               callM.template as<double>(),
+               callPrice.template as<double>(),
                optimizer,
                weightATM,
                pricer
@@ -161,89 +161,25 @@ Params<double> calibrateDouble(
     std::span<const double> discountFactors,
     std::span<const double> forwards,
     std::span<const double> strikes,
-    const core::Matrix<double>& callM,
+    const core::Matrix<double>& callPrice,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
     price::Pricer<CalcT, N>& pricer
 )
 {
-    validateInputs(maturities, discountFactors, forwards, strikes, callM);
-
-    const std::size_t numStrikes{strikes.size()};
-
-    optimizer
-        .initialize(detail::initGuess(), detail::lowerBounds(), detail::upperBounds());
-    optimizer
-        .initialize(detail::initGuess(), detail::lowerBounds(), detail::upperBounds());
+    setGuessBounds(optimizer);
 
     optimizer.beginRun();
 
-    Vector<double> bufferWeights(numStrikes);
-    Vector<double> logKF(numStrikes);
+    Vector<MaturitySlice> slices{
+        makeSlices(maturities, discountFactors, forwards, strikes, callPrice, weightATM)
+    };
 
-    for (std::size_t i = 0; i < maturities.size(); ++i)
+    for (const auto& s : slices)
     {
-
-        std::span<const double> callMRow{callM[i]};
-        const double t{maturities[i]};
-        const double dF{discountFactors[i]};
-        const double F{forwards[i]};
-
-        math::vol::logKF<double>(logKF, F, strikes, true);
-
-        opt::cost::weightsATM<double>(logKF, weightATM, bufferWeights);
-
-        for (std::size_t j = 0; j < numStrikes; ++j)
-        {
-            optimizer.addResidualBlock(makeCost<Mode, CalcT, N>(
-                t,
-                dF,
-                F,
-                strikes[j],
-                callMRow[j],
-                bufferWeights[j],
-                pricer
-            ));
-        }
+        optimizer.addResidualBlock(makeSliceCost<Mode, CalcT, N>(s, pricer));
     }
 
     return Params<double>{optimizer.solve()};
-}
-
-template <std::floating_point T>
-void validateInputs(
-    const std::span<const T> maturities,
-    const std::span<const T> discountFactors,
-    const std::span<const T> forwards,
-    const std::span<const T> strikes,
-    const core::Matrix<T>& callM
-)
-{
-    UV_REQUIRE_NON_EMPTY(maturities);
-    UV_REQUIRE_NON_EMPTY(discountFactors);
-    UV_REQUIRE_NON_EMPTY(forwards);
-    UV_REQUIRE_NON_EMPTY(strikes);
-
-    UV_REQUIRE_FINITE(maturities);
-    UV_REQUIRE_FINITE(discountFactors);
-    UV_REQUIRE_FINITE(forwards);
-    UV_REQUIRE_FINITE(strikes);
-
-    UV_REQUIRE_POSITIVE(maturities);
-    UV_REQUIRE_POSITIVE(discountFactors);
-
-    UV_REQUIRE_SAME_SIZE(maturities, forwards);
-    UV_REQUIRE_SAME_SIZE(maturities, discountFactors);
-    UV_REQUIRE_SAME_SIZE(maturities, callM.rows());
-    UV_REQUIRE_SAME_SIZE(strikes, callM.cols());
-
-    for (std::size_t i{0}; i < maturities.size(); ++i)
-    {
-        std::span<const T> callMRow{callM[i]};
-
-        UV_REQUIRE_NON_EMPTY(callMRow);
-        UV_REQUIRE_FINITE(callMRow);
-        UV_REQUIRE_POSITIVE(callMRow);
-    }
 }
 } // namespace uv::models::heston::calibrate::detail

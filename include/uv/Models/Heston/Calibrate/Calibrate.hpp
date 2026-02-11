@@ -27,7 +27,6 @@
 #include "Optimization/Ceres/Optimizer.hpp"
 #include "Optimization/Cost.hpp"
 
-#include <array>
 #include <concepts>
 #include <cstddef>
 #include <span>
@@ -82,7 +81,7 @@ Params<T> calibrate(
     const std::span<const T> discountFactors,
     const std::span<const T> forwards,
     const std::span<const T> strikes,
-    const core::Matrix<T>& callM,
+    const core::Matrix<T>& callPrice,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
     price::Pricer<T, N>& pricer
@@ -98,26 +97,11 @@ Params<double> calibrateDouble(
     std::span<const double> discountFactors,
     std::span<const double> forwards,
     std::span<const double> strikes,
-    const core::Matrix<double>& callM,
+    const core::Matrix<double>& callPrice,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
     price::Pricer<CalcT, N>& pricer
 );
-
-template <std::floating_point T>
-void validateInputs(
-    const std::span<const T> maturities,
-    const std::span<const T> discountFactors,
-    const std::span<const T> forwards,
-    const std::span<const T> strikes,
-    const core::Matrix<T>& callM
-);
-
-std::array<double, 5> initGuess() noexcept;
-
-std::array<double, 5> lowerBounds() noexcept;
-
-std::array<double, 5> upperBounds() noexcept;
 
 } // namespace detail
 } // namespace uv::models::heston::calibrate
