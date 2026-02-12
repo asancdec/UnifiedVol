@@ -23,12 +23,8 @@
 
 namespace uv::errors
 {
-template <std::floating_point T>
-void validateFinite(
-    std::span<const T> xs,
-    std::string_view what,
-    std::source_location loc
-)
+template <std::floating_point T> void
+validateFinite(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
     for (std::size_t i = 0; i < xs.size(); ++i)
     {
@@ -63,8 +59,7 @@ void validateFinite(T x, std::string_view what, std::source_location loc)
     }
 }
 
-template <std::floating_point T>
-void validateNonNegative(
+template <std::floating_point T> void validateNonNegative(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc
@@ -109,12 +104,8 @@ void validateNonNegative(T x, std::string_view what, std::source_location loc)
     }
 }
 
-template <std::floating_point T>
-void validatePositive(
-    std::span<const T> xs,
-    std::string_view what,
-    std::source_location loc
-)
+template <std::floating_point T> void
+validatePositive(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
     for (std::size_t i = 0; i < xs.size(); ++i)
     {
@@ -144,7 +135,8 @@ void validatePositive(T x, std::string_view what, std::source_location loc)
     }
 }
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateEqualOrLess(
     std::span<const T> xs,
     std::span<const T> threshold,
@@ -168,7 +160,8 @@ void validateEqualOrLess(
     }
 }
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateEqualOrLess(
     std::span<const T> xs,
     T threshold,
@@ -191,7 +184,8 @@ void validateEqualOrLess(
     }
 }
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateEqualOrLess(
     T x,
     T threshold,
@@ -209,7 +203,8 @@ void validateEqualOrLess(
     }
 }
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateLess(
     std::span<const T> xs,
     T threshold,
@@ -232,7 +227,8 @@ void validateLess(
     }
 }
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateLess(T x, T threshold, std::string_view what, std::source_location loc)
 {
     if (x >= threshold) [[unlikely]]
@@ -245,7 +241,8 @@ void validateLess(T x, T threshold, std::string_view what, std::source_location 
     }
 }
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateEqualOrGreater(
     std::span<const T> xs,
     std::span<const T> threshold,
@@ -269,7 +266,8 @@ void validateEqualOrGreater(
     }
 }
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateEqualOrGreater(
     std::span<const T> xs,
     T threshold,
@@ -292,7 +290,8 @@ void validateEqualOrGreater(
     }
 }
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateEqualOrGreater(
     T x,
     T threshold,
@@ -310,7 +309,8 @@ void validateEqualOrGreater(
     }
 }
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateGreater(
     std::span<const T> xs,
     T threshold,
@@ -333,7 +333,8 @@ void validateGreater(
     }
 }
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateGreater(T x, T threshold, std::string_view what, std::source_location loc)
 {
     if (x <= threshold) [[unlikely]]
@@ -346,8 +347,7 @@ void validateGreater(T x, T threshold, std::string_view what, std::source_locati
     }
 }
 
-template <std::floating_point T>
-void validateStrictlyIncreasing(
+template <std::floating_point T> void validateStrictlyIncreasing(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc
@@ -380,12 +380,8 @@ void validateStrictlyIncreasing(
     }
 }
 
-template <detail::ContiguousFloatRange R>
-void validateStrictlyIncreasing(
-    const R& xs,
-    std::string_view what,
-    std::source_location loc
-)
+template <detail::ContiguousFloatRange R> void
+validateStrictlyIncreasing(const R& xs, std::string_view what, std::source_location loc)
 {
     using T = detail::RangeValue<R>;
     validateStrictlyIncreasing(
@@ -395,12 +391,8 @@ void validateStrictlyIncreasing(
     );
 }
 
-template <typename T>
-void validateNonEmpty(
-    std::span<const T> xs,
-    std::string_view what,
-    std::source_location loc
-)
+template <typename T> void
+validateNonEmpty(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
     if (xs.empty()) [[unlikely]]
     {
@@ -436,12 +428,8 @@ void validateNonNull(const Ptr& p, std::string_view what, std::source_location l
     validateNonNull(p.get(), what, loc);
 }
 
-template <typename T>
-void validateSet(
-    const std::optional<T>& x,
-    std::string_view what,
-    std::source_location loc
-)
+template <typename T> void
+validateSet(const std::optional<T>& x, std::string_view what, std::source_location loc)
 {
     if (!x.has_value()) [[unlikely]]
     {
@@ -518,8 +506,7 @@ void validateSameSize(
         );
     }
 }
-template <typename T>
-void validateMinSize(
+template <typename T> void validateMinSize(
     std::span<const T> x,
     std::size_t minSize,
     std::string_view what,

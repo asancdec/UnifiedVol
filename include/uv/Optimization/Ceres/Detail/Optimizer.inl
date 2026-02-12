@@ -15,13 +15,11 @@
  * limitations under this License.
  */
 
+#include "Base/Execution/ThreadPolicy.hpp"
 #include "Base/Macros/Require.hpp"
 #include "IO/ConsoleRedirect.hpp"
+#include "Optimization/Ceres/Config.hpp"
 #include "Optimization/Helpers.hpp"
-
-#include <algorithm>
-#include <limits>
-#include <memory>
 
 namespace uv::opt::ceres
 {
@@ -30,6 +28,18 @@ template <typename PolicyT> Optimizer<PolicyT>::Optimizer(const Config& config)
     : config_(config),
       loss_(PolicyT::makeLoss(config_.lossScale))
 {
+    setOptions_();
+}
+
+template <typename PolicyT> void Optimizer<PolicyT>::setOptions_()
+{
+    options_.trust_region_strategy_type = PolicyT::trustRegionStrategy;
+    options_.linear_solver_type = PolicyT::linearSolver;
+    options_.max_num_iterations = config_.maxEval;
+    options_.function_tolerance = config_.functionTol;
+    options_.parameter_tolerance = config_.paramTol;
+    options_.gradient_tolerance = config_.gradientTol;
+    options_.num_threads = execution::requestThreads(config_.numThreads);
 }
 
 template <typename PolicyT> void Optimizer<PolicyT>::setBounds_(
@@ -149,27 +159,24 @@ template <typename PolicyT> void Optimizer<PolicyT>::solveInPlace()
     requireInitialized_();
     requireRunStarted_();
 
-    ::ceres::Solver::Options options;
-    options.trust_region_strategy_type = PolicyT::trustRegionStrategy;
-    options.linear_solver_type = PolicyT::linearSolver;
-    options.max_num_iterations = config_.maxEval;
-    options.function_tolerance = config_.functionTol;
-    options.parameter_tolerance = config_.paramTol;
-    options.gradient_tolerance = config_.gradientTol;
-    options.num_threads =
-        std::max(1, static_cast<int>(std::thread::hardware_concurrency()));
+    const Verbosity v{config_.verbosity};
 
     ::ceres::Solver::Summary summary;
+
+    if (v == Verbosity::FullReport)
     {
-
         io::ConsoleRedirect capture;
-        options.minimizer_progress_to_stdout = config_.verbose;
-
-        ::ceres::Solve(options, &problem_, &summary);
-
-        if (config_.verbose)
-            UV_INFO(summary.FullReport());
+        options_.minimizer_progress_to_stdout = true;
+        ::ceres::Solve(options_, &problem_, &summary);
+        UV_INFO(summary.FullReport());
     }
+    else
+    {
+        ::ceres::Solve(options_, &problem_, &summary);
+    }
+
+    if (v == Verbosity::None)
+        return;
 
     warnBoundsHit(x_, lowerBounds_, upperBounds_);
 

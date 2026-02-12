@@ -37,67 +37,60 @@ concept ContiguousFloatRange =
     std::ranges::contiguous_range<R> && std::ranges::sized_range<R> &&
     std::floating_point<std::remove_cvref_t<std::ranges::range_value_t<R>>>;
 
-template <typename R>
-using RangeValue = std::remove_cvref_t<std::ranges::range_value_t<R>>;
+template <typename R> using RangeValue =
+    std::remove_cvref_t<std::ranges::range_value_t<R>>;
 } // namespace detail
 
-template <std::floating_point T>
-void validateFinite(
+template <std::floating_point T> void validateFinite(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <detail::ContiguousFloatRange R>
-void validateFinite(
+template <detail::ContiguousFloatRange R> void validateFinite(
     const R& xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
-void validateFinite(
+template <std::floating_point T> void validateFinite(
     T x,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
-void validateNonNegative(
+template <std::floating_point T> void validateNonNegative(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <detail::ContiguousFloatRange R>
-void validateNonNegative(
+template <detail::ContiguousFloatRange R> void validateNonNegative(
     const R& xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
-void validateNonNegative(
+template <std::floating_point T> void validateNonNegative(
     T x,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
-void validatePositive(
+template <std::floating_point T> void validatePositive(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
-void validatePositive(
+template <std::floating_point T> void validatePositive(
     T x,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateEqualOrLess(
     std::span<const T> xs,
     std::span<const T> threshold,
@@ -105,7 +98,8 @@ void validateEqualOrLess(
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateEqualOrLess(
     std::span<const T> xs,
     T threshold,
@@ -113,7 +107,8 @@ void validateEqualOrLess(
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateEqualOrLess(
     T x,
     T threshold,
@@ -121,7 +116,8 @@ void validateEqualOrLess(
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateLess(
     std::span<const T> xs,
     T threshold,
@@ -129,7 +125,8 @@ void validateLess(
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateLess(
     T x,
     T threshold,
@@ -137,7 +134,8 @@ void validateLess(
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateEqualOrGreater(
     std::span<const T> xs,
     std::span<const T> threshold,
@@ -145,7 +143,8 @@ void validateEqualOrGreater(
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateEqualOrGreater(
     std::span<const T> xs,
     T threshold,
@@ -153,7 +152,8 @@ void validateEqualOrGreater(
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateEqualOrGreater(
     T x,
     T threshold,
@@ -161,7 +161,8 @@ void validateEqualOrGreater(
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateGreater(
     std::span<const T> xs,
     T threshold,
@@ -169,7 +170,8 @@ void validateGreater(
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
+template <class T>
+requires std::totally_ordered<T>
 void validateGreater(
     T x,
     T threshold,
@@ -177,36 +179,31 @@ void validateGreater(
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T>
-void validateStrictlyIncreasing(
+template <std::floating_point T> void validateStrictlyIncreasing(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <detail::ContiguousFloatRange R>
-void validateStrictlyIncreasing(
+template <detail::ContiguousFloatRange R> void validateStrictlyIncreasing(
     const R& xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <typename T>
-void validateNonEmpty(
+template <typename T> void validateNonEmpty(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <detail::ContiguousFloatRange R>
-void validateNonEmpty(
+template <detail::ContiguousFloatRange R> void validateNonEmpty(
     const R& xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <typename T>
-void validateNonNull(
+template <typename T> void validateNonNull(
     const T* x,
     std::string_view what,
     std::source_location loc = std::source_location::current()
@@ -220,8 +217,7 @@ void validateNonNull(
     std::source_location loc = std::source_location::current()
 );
 
-template <typename T>
-void validateSet(
+template <typename T> void validateSet(
     const std::optional<T>& x,
     std::string_view what,
     std::source_location loc = std::source_location::current()
@@ -264,8 +260,7 @@ void validateSameSize(
     std::source_location loc = std::source_location::current()
 );
 
-template <typename T>
-void validateMinSize(
+template <typename T> void validateMinSize(
     std::span<const T> x,
     std::size_t minSize,
     std::string_view what,

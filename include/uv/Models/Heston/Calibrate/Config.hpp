@@ -22,6 +22,7 @@
 #include "Optimization/Ceres/Policy.hpp"
 #include "Optimization/Cost.hpp"
 
+#include <cstddef>
 #include <string_view>
 
 namespace uv::models::heston::calibrate
@@ -29,13 +30,17 @@ namespace uv::models::heston::calibrate
 
 struct Config
 {
-    double tolerance{1e-12};
+    double tolerance{1e-10};
     unsigned int maxEval{10000};
-    bool verbose{false};
+    opt::ceres::Verbosity verbosity{opt::ceres::Verbosity::Summary};
     opt::cost::WeightATM<double> weightATM{.wATM = 8.0, .k0 = 0.3};
+    int numThreads{-1};
 };
 
-constexpr opt::ceres::GradientMode HestonGradient = opt::ceres::GradientMode::Analytic;
+inline constexpr opt::ceres::GradientMode HestonGradient =
+    opt::ceres::GradientMode::Analytic;
+
+inline constexpr std::size_t defaultNodes{200};
 
 using HestonPolicy = opt::ceres::Policy<
     opt::ceres::TrustRegionStrategy::LevenbergMarquardt,

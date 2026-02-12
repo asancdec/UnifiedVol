@@ -53,6 +53,13 @@ enum class GradientMode
     NumericCentral
 };
 
+enum class Verbosity
+{
+    None,
+    Summary,
+    FullReport
+};
+
 struct Config
 {
 
@@ -65,7 +72,9 @@ struct Config
 
     Vector<std::string_view> paramNames;
 
-    bool verbose{false};
+    Verbosity verbosity;
+
+    int numThreads{1};
 };
 
 } // namespace uv::opt::ceres

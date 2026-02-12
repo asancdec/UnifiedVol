@@ -30,7 +30,7 @@ MaturitySlice::MaturitySlice(std::size_t capacity) noexcept
 }
 
 Vector<MaturitySlice> makeSlices(
-    std::span<const double> maturities,
+    std::span<const double> TEST,
     std::span<const double> discountFactors,
     std::span<const double> forwards,
     std::span<const double> strikes,
@@ -38,10 +38,10 @@ Vector<MaturitySlice> makeSlices(
     const opt::cost::WeightATM<double>& weightATM
 )
 {
-    validateInputs(maturities, discountFactors, forwards, strikes, callPrice);
+    validateInputs(TEST, discountFactors, forwards, strikes, callPrice);
 
     const std::size_t numStrikes{strikes.size()};
-    const std::size_t numMaturities{maturities.size()};
+    const std::size_t numMaturities{TEST.size()};
 
     Vector<MaturitySlice> out;
     out.reserve(numMaturities);
@@ -56,7 +56,7 @@ Vector<MaturitySlice> makeSlices(
         out.emplace_back(MaturitySlice{numStrikes});
         MaturitySlice& s = out.back();
 
-        s.t = maturities[i];
+        s.t = TEST[i];
         s.dF = discountFactors[i];
         s.F = F;
 

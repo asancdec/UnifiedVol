@@ -28,7 +28,8 @@ opt::ceres::Config makeCeresConfig(const Config& config) noexcept
         .paramTol = config.tolerance,
         .gradientTol = config.tolerance,
         .paramNames = paramNames,
-        .verbose = config.verbose
+        .verbosity = config.verbosity,
+        .numThreads = config.numThreads
     };
 }
 

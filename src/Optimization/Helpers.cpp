@@ -231,7 +231,7 @@ void logResults(
     {
 
         UV_INFO(std::format(
-            "[Calib] SSE={:.7e} ({:.2f} ms, {} it, {})",
+            "[Calib] SSE={:.8e} ({:.2f} ms, {} it, {})",
             sse,
             elapsedMs,
             iterCount,
@@ -249,7 +249,7 @@ void logResults(
 
     for (std::size_t i = 0; i < n; ++i)
     {
-        paramsLine += std::format("{}={:.5f}", paramNames[i], x[i]);
+        paramsLine += std::format("{}={:.6f}", paramNames[i], x[i]);
 
         if (i + 1 < n)
         {
@@ -258,7 +258,7 @@ void logResults(
     }
 
     UV_INFO(std::format(
-        "[Calib] {}  SSE={:.7e} ({:.2f} ms, {} it, {})",
+        "[Calib] {}  SSE={:.10e} ({:.2f} ms, {} it, {})",
         paramsLine,
         sse,
         elapsedMs,

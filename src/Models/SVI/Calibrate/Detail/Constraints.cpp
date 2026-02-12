@@ -130,8 +130,6 @@ void convexityMConstraint(
 
     const auto& ctx{*static_cast<const ConvexityMContext*>(data)};
 
-    constexpr double half{0.5};
-    constexpr double quarter{0.25};
     constexpr unsigned nParams{4};
 
     const double atm{ctx.atmTotalVariance};
@@ -179,10 +177,10 @@ void convexityMConstraint(
             const double w1{b * t};
             const double w1Sq{w1 * w1};
 
-            const double A{1.0 - half * k * (w1 * wInv)};
-            const double B{wInv + quarter};
+            const double A{1.0 - 0.5 * k * (w1 * wInv)};
+            const double B{wInv + 0.25};
 
-            const double gval{(A * A) - quarter * w1Sq * B + half * (b * s2InvR3)};
+            const double gval{(A * A) - 0.25 * w1Sq * B + 0.5 * (b * s2InvR3)};
 
             res[i] = -gval;
         }
@@ -215,20 +213,20 @@ void convexityMConstraint(
         const double w1{b * t};
         const double w1Sq{w1 * w1};
 
-        const double A{1.0 - half * k * (w1 * wInv)};
-        const double B{wInv + quarter};
+        const double A{1.0 - 0.5 * k * (w1 * wInv)};
+        const double B{wInv + 0.25};
 
-        const double gval{(A * A) - quarter * w1Sq * B + half * (b * s2InvR3)};
+        const double gval{(A * A) - 0.25 * w1Sq * B + 0.5 * (b * s2InvR3)};
 
         res[i] = -gval;
 
         const double Ak{A * k};
 
-        const double dgdw{wInv2 * w1 * (Ak + quarter * w1)};
+        const double dgdw{wInv2 * w1 * (Ak + 0.25 * w1)};
 
-        const double dgdw1{(-Ak) * wInv - half * w1 * B};
+        const double dgdw1{(-Ak) * wInv - 0.5 * w1 * B};
 
-        const double dg0{dgdw * (rhoXkmR + rhoMmMinusR0) + dgdw1 * t + half * s2InvR3};
+        const double dg0{dgdw * (rhoXkmR + rhoMmMinusR0) + dgdw1 * t + 0.5 * s2InvR3};
 
         const double dg1{b * (dgdw * k + dgdw1)};
 

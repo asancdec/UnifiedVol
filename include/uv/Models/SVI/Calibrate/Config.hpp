@@ -27,7 +27,7 @@ struct Config
 {
     double objectiveTol{1e-12};
     unsigned int maxEval{10000};
-    bool verbose{true};
+    bool verbose{false};
 };
 
 namespace detail

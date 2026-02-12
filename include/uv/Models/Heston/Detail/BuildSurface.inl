@@ -25,21 +25,19 @@
 namespace uv::models::heston
 {
 
-template <std::floating_point T>
-core::VolSurface<T> buildSurface(
+template <std::floating_point T, std::size_t N> core::VolSurface<T> buildSurface(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
     const calibrate::Config& config
 )
 {
-    price::Pricer<T> pricer{};
+    price::Pricer<T, N> pricer{};
 
     pricer.setParams(calibrate::calibrate(volSurface, curve, config, pricer));
     return buildSurface(volSurface, curve, pricer);
 }
 
-template <std::floating_point T, std::size_t N>
-core::VolSurface<T> buildSurface(
+template <std::floating_point T, std::size_t N> core::VolSurface<T> buildSurface(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
     const price::Pricer<T, N>& pricer

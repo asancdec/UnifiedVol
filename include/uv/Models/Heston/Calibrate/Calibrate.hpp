@@ -35,7 +35,7 @@ namespace uv::models::heston::calibrate
 {
 template <
     std::floating_point T,
-    std::size_t N,
+    std::size_t N = defaultNodes,
     opt::ceres::GradientMode Mode = HestonGradient,
     typename Policy = HestonPolicy>
 Params<T> calibrate(

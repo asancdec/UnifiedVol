@@ -32,15 +32,18 @@ template <typename PolicyT = Policy<>> class Optimizer
 {
   private:
     Config config_;
+    std::unique_ptr<::ceres::LossFunction> loss_;
+    ::ceres::Solver::Options options_;
+
+    bool isInitialized_{false};
+    bool isRunStarted_{false};
+
     std::optional<Vector<double>> lowerBounds_;
     std::optional<Vector<double>> upperBounds_;
     Vector<double> x_;
     ::ceres::Problem problem_;
 
-    std::unique_ptr<::ceres::LossFunction> loss_;
-
-    bool isInitialized_{false};
-    bool isRunStarted_{false};
+    void setOptions_();
 
     void setBounds_(
         std::size_t n,

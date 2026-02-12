@@ -94,15 +94,13 @@ template <std::floating_point T, std::size_t N> bool SliceJacobian<T, N>::Evalua
 {
     const double* p = parameters[0];
 
-    if (jacobians && jacobians[0])
-    {
-        common_.residualAndJac(p, residuals, jacobians[0]);
-    }
-    else
+    if (!jacobians || !jacobians[0])
     {
         common_.residualOnly(p, residuals);
+        return true;
     }
 
+    common_.residualAndJac(p, residuals, jacobians[0]);
     return true;
 }
 

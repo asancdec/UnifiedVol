@@ -28,12 +28,12 @@ int main(int argc, char* argv[])
     try
     {
         const std::filesystem::path path =
-            (argc > 1) ? std::filesystem::path{argv[1]} :
-                         std::filesystem::path{"data/VolSurface_SPY_04072011.csv"};
+            (argc > 1) ? std::filesystem::path{argv[1]}
+                       : std::filesystem::path{"data/VolSurface_SPY_04072011.csv"};
 
         initialize();
 
-        utils::ScopedTimer timer{};
+        // utils::ScopedTimer timer{};
 
         using Real = double;
 
@@ -43,29 +43,34 @@ int main(int argc, char* argv[])
             .spot = 485.77548
         };
 
-        const core::MarketState<Real> marketState{io::load::marketState(path, marketData)};
+        const core::MarketState<Real> marketState{io::load::marketState(path, marketData)
+        };
 
-        io::report::volatility(marketState);
+        // io::report::volatility(marketState);
 
         // --------------  SVI calibration -------------
 
-        const core::VolSurface<Real> sviVolSurface{models::svi::buildSurface(marketState)};
+        const core::VolSurface<Real> sviVolSurface{models::svi::buildSurface(marketState)
+        };
 
-        io::report::volatility(sviVolSurface);
+        // io::report::volatility(sviVolSurface);
 
         // --------------  Heston calibration --------------
 
         // TODO
-        // 3. Clean up Calibrator class
-        // 2. Clean up pricer class
+
+        // Paramterize multithreading
         // Testing convergence on balck scholes would be cool
-        // 4. Optimize
+        // 2. Clean up pricer class
+        // 4. Optimize pricer
+        // Tanhsinh static_assert(N % 2 == 0, "TanHSinH<N>: N must be even for unroll-by-2
+        // integration.");
 
         const core::VolSurface<Real> hestonVolSurface{
             models::heston::buildSurface<Real>(sviVolSurface, marketState.interestCurve)
         };
 
-        io::report::volatility(hestonVolSurface);
+        // io::report::volatility(hestonVolSurface);
 
         return 0;
 
