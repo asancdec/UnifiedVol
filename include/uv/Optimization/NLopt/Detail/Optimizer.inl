@@ -43,8 +43,7 @@ Optimizer<N, Algo> Optimizer<N, Algo>::fresh() const noexcept
     return Optimizer<N, Algo>{config_};
 }
 
-template <std::size_t N, Algorithm Algo>
-void Optimizer<N, Algo>::setGuessBounds(
+template <std::size_t N, Algorithm Algo> void Optimizer<N, Algo>::setGuessBounds(
     std::array<double, N> initGuess,
     std::array<double, N> lowerBounds,
     std::array<double, N> upperBounds
@@ -61,8 +60,7 @@ void Optimizer<N, Algo>::setGuessBounds(
     opt_.set_upper_bounds(Vector<double>(upperBounds_.begin(), upperBounds_.end()));
 }
 
-template <std::size_t N, Algorithm Algo>
-[[gnu::hot]] double Optimizer<N, Algo>::ObjectiveThunk(
+template <std::size_t N, Algorithm Algo> double Optimizer<N, Algo>::objectiveThunk(
     unsigned n,
     const double* x,
     double* grad,
@@ -100,7 +98,7 @@ void Optimizer<N, Algo>::setMinObjective(NloptFunction f, void* data) noexcept
 
     if (config_.verbose)
     {
-        opt_.set_min_objective(&Optimizer<N, Algo>::ObjectiveThunk, this);
+        opt_.set_min_objective(&Optimizer<N, Algo>::objectiveThunk, this);
     }
     else
     {

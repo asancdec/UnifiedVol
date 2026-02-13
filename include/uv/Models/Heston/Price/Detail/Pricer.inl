@@ -18,6 +18,7 @@
 #include "Base/Macros/Require.hpp"
 #include "Math/Functions/Primitive.hpp"
 
+#include <ceres/context.h>
 #include <cmath>
 #include <limits>
 #include <numbers>
@@ -26,21 +27,20 @@
 namespace uv::models::heston::price
 {
 
-template <std::floating_point T, std::size_t N>
-Pricer<T, N>::Pricer()
+template <std::floating_point T, std::size_t N> Pricer<T, N>::Pricer()
     : Pricer(std::make_shared<const math::integration::TanHSinH<T, N>>())
 {
+    setAlphas_(Config<T>{});
+    validateAlphaDomain_();
 }
 
-template <std::floating_point T, std::size_t N>
-Pricer<T, N>::Pricer(
+template <std::floating_point T, std::size_t N> Pricer<T, N>::Pricer(
     std::shared_ptr<const math::integration::TanHSinH<T, N>> quad,
     const Config<T>& config
 )
-    : quad_(std::move(quad)),
-      config_(config)
+    : quad_(std::move(quad))
 {
-
+    setAlphas_(config);
     UV_REQUIRE_NON_NULL(quad_);
     validateAlphaDomain_();
 }
@@ -48,65 +48,236 @@ Pricer<T, N>::Pricer(
 template <std::floating_point T, std::size_t N>
 void Pricer<T, N>::Pricer::validateAlphaDomain_() const
 {
+    constexpr T EPS{std::numeric_limits<T>::epsilon() * 10};
+    UV_REQUIRE_EQUAL_OR_LESS(alphaItm_, 1.0 - EPS);
+    UV_REQUIRE_EQUAL_OR_GREATER(alphaOtm_, EPS);
+}
 
-    UV_REQUIRE_EQUAL_OR_LESS(config_.alphaItm, 1.0 - config_.eps);
-    UV_REQUIRE_EQUAL_OR_GREATER(config_.alphaOtm, config_.eps);
+template <std::floating_point T, std::size_t N>
+void Pricer<T, N>::Pricer::validateCallPrice_(T t, T dF, T F, T K) const
+{
+    UV_REQUIRE_SET(params_);
+
+    UV_REQUIRE_FINITE(t);
+    UV_REQUIRE_FINITE(dF);
+    UV_REQUIRE_FINITE(F);
+    UV_REQUIRE_FINITE(K);
+
+    UV_REQUIRE_POSITIVE(t);
+    UV_REQUIRE_POSITIVE(dF);
+}
+
+template <std::floating_point T, std::size_t N>
+void Pricer<T, N>::Pricer::setAlphas_(const Config<T>& config)
+{
+    alphaItm_ = config.alphaItm;
+    alphaOtm_ = config.alphaOtm;
+}
+
+template <std::floating_point T, std::size_t N>
+T Pricer<T, N>::getAlpha_(T w) const noexcept
+{
+    if (w >= T{0})
+        return alphaItm_;
+
+    return alphaOtm_;
+}
+
+template <std::floating_point T, std::size_t N>
+T Pricer<T, N>::getResidues_(T alpha, const T F, const T K) noexcept
+{
+    if (alpha < -T{1})
+        return F - K;
+
+    return T{0};
+}
+
+template <std::floating_point T, std::size_t N>
+T Pricer<T, N>::getPhi_(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcept
+{
+    if (w * (rho - sigma * w / (v0 + kappa * theta * t)) >= T{0})
+        return T{0};
+
+    constexpr T piDivTwelve{std::numbers::pi_v<T> / T{12}};
+    return std::copysign(piDivTwelve, w);
+}
+
+template <std::floating_point T, std::size_t N> Complex<T> Pricer<T, N>::charFunction_(
+    T kappa,
+    T theta,
+    T sigma,
+    T rho,
+    T v0,
+    T t,
+    const Complex<T>& u
+) noexcept
+{
+
+    constexpr Complex<T> i{T{0}, T{1}};
+
+    Complex<T> uu{u * (u + i)};
+
+    const T sigma2{sigma * sigma};
+
+    const Complex<T> beta{kappa - i * sigma * rho * u};
+
+    const Complex<T> D{std::sqrt(beta * beta + sigma2 * uu)};
+
+    const Complex<T> betaPlusD{beta + D};
+
+    const Complex<T> r{
+        (std::real(beta * std::conj(D)) > T{0}) ? -sigma2 * uu / betaPlusD : beta - D
+    };
+
+    const Complex<T> DT{D * t};
+    Complex<T> y{
+        (std::norm(D) > std::numeric_limits<T>::epsilon() * (T{1} + std::abs(DT)))
+            ? math::expm1Complex(-DT) / (T{2} * D)
+            : Complex<T>(-t / T{2})
+    };
+
+    const Complex<T> ry{r * y};
+
+    const Complex<T> A{
+        (kappa * theta / sigma2) * (r * t - T{2} * math::log1pComplex<T>(-ry))
+    };
+
+    const Complex<T> B{uu * y / (T{1} - ry)};
+
+    return std::exp(A + v0 * B);
+}
+
+template <std::floating_point T, std::size_t N>
+detail::CharFunCache<T> Pricer<T, N>::charFunctionCached_(
+    T kappa,
+    T theta,
+    T sigma,
+    T rho,
+    T v0,
+    T t,
+    const Complex<T>& u
+) noexcept
+{
+
+    constexpr Complex<T> i{T{0}, T{1}};
+
+    const Complex<T> uu{u * (u + i)};
+
+    const T sigma2{sigma * sigma};
+
+    const T invSigma2{T{1} / sigma2};
+
+    const Complex<T> ui{u * i};
+
+    const Complex<T> beta{kappa - sigma * rho * ui};
+
+    const Complex<T> D{std::sqrt(beta * beta + sigma2 * uu)};
+
+    const Complex<T> betaPlusD{beta + D};
+
+    const Complex<T> betaMinusD{
+        (std::real(beta * std::conj(D)) > T{0}) ? -sigma2 * uu / betaPlusD : beta - D
+    };
+
+    const Complex<T> DT{D * t};
+
+    const Complex<T> y{
+        (std::norm(D) > std::numeric_limits<T>::epsilon() * (T{1} + std::abs(DT)))
+            ? math::expm1Complex(-DT) / (T{2} * D)
+            : Complex<T>(-t / T{2})
+    };
+
+    const Complex<T> ry{betaMinusD * y};
+
+    const T kappaTheta{kappa * theta};
+
+    const Complex<T> kFac{kappaTheta * invSigma2};
+
+    const Complex<T> A{kFac * (betaMinusD * t - T{2} * math::log1pComplex<T>(-ry))};
+
+    const Complex<T> B{uu * y / (T{1} - ry)};
+
+    const Complex<T> eDT{std::exp(-DT)};
+
+    const Complex<T> g{betaMinusD / betaPlusD};
+
+    const Complex<T> Q{T{1} - g * eDT};
+
+    const Complex<T> invQ{T{1} / Q};
+
+    const Complex<T> R{T{1} - g};
+
+    return detail::CharFunCache{
+        std::exp(A + v0 * B),
+        A,
+        B,
+        beta,
+        D,
+        DT,
+        betaPlusD,
+        betaMinusD,
+        ui,
+        kFac,
+        invSigma2,
+        kappaTheta,
+        sigma2,
+        uu,
+        eDT,
+        betaMinusD / betaPlusD,
+        Q,
+        invQ,
+        invQ * invQ,
+        R,
+        betaMinusD * t - T{2} * std::log(Q / R),
+        (T{1} - eDT) * invQ,
+        betaPlusD * betaPlusD,
+        betaMinusD * invSigma2
+    };
 }
 
 template <std::floating_point T, std::size_t N>
 T Pricer<T, N>::callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F, T K)
     const noexcept
 {
+    constexpr Complex<T> i{T{0}, T{1}};
 
     const T w{std::log(F / K)};
 
-    const T alpha(getAlpha(w));
-
-    const T R{Pricer<T, N>::getResidues(alpha, F, K)};
-
-    const T phi{Pricer<T, N>::getPhi(kappa, theta, sigma, rho, v0, t, w)};
-
-    constexpr Complex<T> i(T{0}, T{1});
-
+    const T alpha(getAlpha_(w));
+    const T phi{Pricer<T, N>::getPhi_(kappa, theta, sigma, rho, v0, t, w)};
     const T tanPhi{std::tan(phi)};
-    const Complex<T> onePlusITanPhi{T{1} + i * tanPhi};
-    const Complex<T> c{(i - tanPhi) * w};
-    const Complex<T> iAlpha{-i * alpha};
 
-    auto integrand = [=](T x) noexcept -> T
+    const Complex<T> onePlusITanPhi{T{1}, tanPhi};
+    const Complex<T> c{-tanPhi * w, w};
+    const Complex<T> iAlpha{T{0}, -alpha};
+
+    auto integrand = [i, iAlpha, onePlusITanPhi, c, kappa, theta, sigma, rho, v0, t](T x
+                     ) noexcept -> T
     {
         const Complex<T> h{iAlpha + x * onePlusITanPhi};
 
         const Complex<T> hMinusI{h - i};
 
         const Complex<T> psi{
-            Pricer<T, N>::charFunction(kappa, theta, sigma, rho, v0, t, hMinusI)
+            Pricer<T, N>::charFunction_(kappa, theta, sigma, rho, v0, t, hMinusI)
         };
 
         return std::real(std::exp(x * c) * psi / (hMinusI * h) * onePlusITanPhi);
     };
 
-    constexpr T pi{std::numbers::pi_v<T>};
+    const T R{Pricer<T, N>::getResidues_(alpha, F, K)};
+
+    constexpr T invPi{T{1} / std::numbers::pi_v<T>};
 
     return dF *
-           (R - (F / pi) * std::exp(alpha * w) * quad_->integrateZeroToInf(integrand));
+           (R - (F * invPi) * std::exp(alpha * w) * quad_->integrateZeroToInf(integrand));
 }
 
 template <std::floating_point T, std::size_t N>
 T Pricer<T, N>::callPrice(T t, T dF, T F, T K, bool doValidate) const
 {
     if (doValidate)
-    {
-        UV_REQUIRE_SET(params_);
-
-        UV_REQUIRE_FINITE(t);
-        UV_REQUIRE_FINITE(dF);
-        UV_REQUIRE_FINITE(F);
-        UV_REQUIRE_FINITE(K);
-
-        UV_REQUIRE_POSITIVE(t);
-        UV_REQUIRE_POSITIVE(dF);
-    }
+        validateCallPrice_(t, dF, F, K);
 
     const Params<T>& params{*params_};
 
@@ -123,8 +294,7 @@ T Pricer<T, N>::callPrice(T t, T dF, T F, T K, bool doValidate) const
     );
 }
 
-template <std::floating_point T, std::size_t N>
-void Pricer<T, N>::callPrice(
+template <std::floating_point T, std::size_t N> void Pricer<T, N>::callPrice(
     std::span<T> out,
     T t,
     T dF,
@@ -145,8 +315,7 @@ void Pricer<T, N>::callPrice(
     }
 }
 
-template <std::floating_point T, std::size_t N>
-core::Matrix<T> Pricer<T, N>::callPrice(
+template <std::floating_point T, std::size_t N> core::Matrix<T> Pricer<T, N>::callPrice(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
     bool doValidate
@@ -194,11 +363,11 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
 
     const T w{std::log(F / K)};
 
-    const T alpha(getAlpha(w));
+    const T alpha(getAlpha_(w));
 
-    const T R{Pricer<T, N>::getResidues(alpha, F, K)};
+    const T R{Pricer<T, N>::getResidues_(alpha, F, K)};
 
-    const T phi{Pricer<T, N>::getPhi(kappa, theta, sigma, rho, v0, t, w)};
+    const T phi{Pricer<T, N>::getPhi_(kappa, theta, sigma, rho, v0, t, w)};
 
     constexpr Complex<T> i(T{0}, T{1});
     const T tanPhi{std::tan(phi)};
@@ -213,7 +382,7 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
         const Complex<T> kernel{std::exp(x * c) * onePlusITanPhi / (hMinusI * h)};
 
         const detail::CharFunCache<T> cfData{
-            charFunctionCached(kappa, theta, sigma, rho, v0, t, hMinusI)
+            charFunctionCached_(kappa, theta, sigma, rho, v0, t, hMinusI)
         };
 
         const Complex<T> psi{cfData.psi};
@@ -336,166 +505,5 @@ template <std::floating_point T, std::size_t N>
 void Pricer<T, N>::setParams(const Params<T>& params) noexcept
 {
     params_ = params;
-}
-
-template <std::floating_point T, std::size_t N>
-T Pricer<T, N>::getResidues(T alpha, const T F, const T K) noexcept
-{
-    if (alpha < -1.0)
-        return F - K;
-    else
-        return 0.0;
-}
-
-template <std::floating_point T, std::size_t N>
-T Pricer<T, N>::getAlpha(T w) const noexcept
-{
-    if (w >= 0.0)
-        return config_.alphaItm;
-    else
-        return config_.alphaOtm;
-}
-
-template <std::floating_point T, std::size_t N>
-T Pricer<T, N>::getPhi(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcept
-{
-    if ((w * (rho - sigma * w / (v0 + kappa * theta * t))) >= 0.0)
-        return 0.0;
-    else
-        return std::copysign(std::numbers::pi_v<T> / 12.0, w);
-}
-
-template <std::floating_point T, std::size_t N>
-Complex<T> Pricer<T, N>::charFunction(
-    T kappa,
-    T theta,
-    T sigma,
-    T rho,
-    T v0,
-    T t,
-    const Complex<T>& u
-) noexcept
-{
-
-    constexpr Complex<T> i{T{0}, T{1}};
-
-    Complex<T> uu{u * (u + i)};
-
-    const T sigma2{sigma * sigma};
-
-    const Complex<T> beta{kappa - i * sigma * rho * u};
-
-    const Complex<T> D{std::sqrt(beta * beta + sigma2 * uu)};
-
-    const Complex<T> betaPlusD{beta + D};
-
-    const Complex<T> r{
-        (std::real(beta * std::conj(D)) > T{0}) ? -sigma2 * uu / betaPlusD : beta - D
-    };
-
-    const Complex<T> DT{D * t};
-    Complex<T> y{
-        (std::norm(D) > std::numeric_limits<T>::epsilon() * (T{1} + std::abs(DT)))
-            ? math::expm1Complex(-DT) / (T{2} * D)
-            : Complex<T>(-t / T{2})
-    };
-
-    const Complex<T> ry{r * y};
-
-    const Complex<T> A{
-        (kappa * theta / sigma2) * (r * t - T{2} * math::log1pComplex<T>(-ry))
-    };
-
-    const Complex<T> B{uu * y / (T{1} - ry)};
-
-    return std::exp(A + v0 * B);
-}
-
-template <std::floating_point T, std::size_t N>
-detail::CharFunCache<T> Pricer<T, N>::charFunctionCached(
-    T kappa,
-    T theta,
-    T sigma,
-    T rho,
-    T v0,
-    T t,
-    const Complex<T>& u
-) noexcept
-{
-
-    constexpr Complex<T> i{T{0}, T{1}};
-
-    const Complex<T> uu{u * (u + i)};
-
-    const T sigma2{sigma * sigma};
-
-    const T invSigma2{T{1} / sigma2};
-
-    const Complex<T> ui{u * i};
-
-    const Complex<T> beta{kappa - sigma * rho * ui};
-
-    const Complex<T> D{std::sqrt(beta * beta + sigma2 * uu)};
-
-    const Complex<T> betaPlusD{beta + D};
-
-    const Complex<T> betaMinusD{
-        (std::real(beta * std::conj(D)) > T{0}) ? -sigma2 * uu / betaPlusD : beta - D
-    };
-
-    const Complex<T> DT{D * t};
-
-    const Complex<T> y{
-        (std::norm(D) > std::numeric_limits<T>::epsilon() * (T{1} + std::abs(DT)))
-            ? math::expm1Complex(-DT) / (T{2} * D)
-            : Complex<T>(-t / T{2})
-    };
-
-    const Complex<T> ry{betaMinusD * y};
-
-    const T kappaTheta{kappa * theta};
-
-    const Complex<T> kFac{kappaTheta * invSigma2};
-
-    const Complex<T> A{kFac * (betaMinusD * t - T{2} * math::log1pComplex<T>(-ry))};
-
-    const Complex<T> B{uu * y / (T{1} - ry)};
-
-    const Complex<T> eDT{std::exp(-DT)};
-
-    const Complex<T> g{betaMinusD / betaPlusD};
-
-    const Complex<T> Q{T{1} - g * eDT};
-
-    const Complex<T> invQ{T{1} / Q};
-
-    const Complex<T> R{T{1} - g};
-
-    return detail::CharFunCache{
-        std::exp(A + v0 * B),
-        A,
-        B,
-        beta,
-        D,
-        DT,
-        betaPlusD,
-        betaMinusD,
-        ui,
-        kFac,
-        invSigma2,
-        kappaTheta,
-        sigma2,
-        uu,
-        eDT,
-        betaMinusD / betaPlusD,
-        Q,
-        invQ,
-        invQ * invQ,
-        R,
-        betaMinusD * t - T{2} * std::log(Q / R),
-        (T{1} - eDT) * invQ,
-        betaPlusD * betaPlusD,
-        betaMinusD * invSigma2
-    };
 }
 } // namespace uv::models::heston::price

@@ -22,7 +22,6 @@
 namespace uv::models::svi::detail
 {
 
-[[gnu::hot]]
 void calendarMConstraint(
     unsigned m,
     double* result,
@@ -108,7 +107,6 @@ void calendarMConstraint(
     }
 }
 
-[[gnu::hot]]
 void convexityMConstraint(
     unsigned m,
     double* result,

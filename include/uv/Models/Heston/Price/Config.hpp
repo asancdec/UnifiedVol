@@ -19,7 +19,6 @@
 
 #include <concepts>
 #include <cstddef>
-#include <limits>
 
 namespace uv::models::heston::price
 {
@@ -27,7 +26,6 @@ template <std::floating_point T> struct Config
 {
     T alphaItm{T{-2}};
     T alphaOtm{T{2}};
-    T eps{std::numeric_limits<T>::epsilon()};
 };
 
 inline constexpr std::size_t defaultNodes{500};

@@ -17,23 +17,19 @@
 
 #pragma once
 
-#include "Base/Types.hpp"
 #include "Models/SVI/Calibrate/Detail/Contexts.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"
-
-#include <concepts>
-#include <cstddef>
 
 namespace uv::models::svi::detail
 {
 
-template <opt::nlopt::Algorithm Algo>
-void setMinObjective(
+template <opt::nlopt::Algorithm Algo> void setMinObjective(
     opt::nlopt::Optimizer<4, Algo>& optimizer,
     const ObjectiveContexts& ctx
 ) noexcept;
 
-double objectiveThunk(unsigned /*n*/, const double* x, double* grad, void* data) noexcept;
+[[gnu::hot]] double
+objectiveThunk(unsigned /*n*/, const double* x, double* grad, void* data) noexcept;
 
 } // namespace uv::models::svi::detail
 

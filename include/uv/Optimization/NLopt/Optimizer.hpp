@@ -57,8 +57,8 @@ template <std::size_t N, Algorithm Algo> class Optimizer
 
     std::optional<double> userValue_;
 
-    static double
-    ObjectiveThunk(unsigned n, const double* x, double* grad, void* p) noexcept;
+    [[gnu::hot]] static double
+    objectiveThunk(unsigned n, const double* x, double* grad, void* p) noexcept;
 
   public:
     Optimizer() = delete;

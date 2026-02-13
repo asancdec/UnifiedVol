@@ -42,7 +42,7 @@ template <std::floating_point T> Complex<T> log1pComplex(const Complex<T>& z) no
 template <std::floating_point T> T cosm1(T b) noexcept
 {
 
-    const T s{std::sin(b * 0.5)};
+    const T s{std::sin(b * T{0.5})};
     return -2.0 * s * s;
 }
 

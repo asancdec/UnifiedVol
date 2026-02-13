@@ -40,17 +40,23 @@ template <std::floating_point T, std::size_t N = defaultNodes> class Pricer
   private:
     std::optional<Params<T>> params_;
     std::shared_ptr<const math::integration::TanHSinH<T, N>> quad_;
-    const Config<T> config_;
+
+    T alphaItm_;
+    T alphaOtm_;
 
     void validateAlphaDomain_() const;
+    void validateCallPrice_(T t, T dF, T F, T K) const;
 
-    static T getResidues(T alpha, T F, T K) noexcept;
+    void setAlphas_(const Config<T>& config);
 
-    T getAlpha(T w) const noexcept;
+    [[gnu::hot]] T getAlpha_(T w) const noexcept;
 
-    static T getPhi(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcept;
+    [[gnu::hot]] static T getResidues_(T alpha, T F, T K) noexcept;
 
-    static Complex<T> charFunction(
+    [[gnu::hot]] static T
+    getPhi_(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcept;
+
+    [[gnu::hot]] static Complex<T> charFunction_(
         T kappa,
         T theta,
         T sigma,
@@ -60,7 +66,7 @@ template <std::floating_point T, std::size_t N = defaultNodes> class Pricer
         const Complex<T>& u
     ) noexcept;
 
-    static detail::CharFunCache<T> charFunctionCached(
+    [[gnu::hot]] static detail::CharFunCache<T> charFunctionCached_(
         T kappa,
         T theta,
         T sigma,
@@ -78,12 +84,12 @@ template <std::floating_point T, std::size_t N = defaultNodes> class Pricer
         const Config<T>& config = {}
     );
 
-    T callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F, T K)
-        const noexcept;
+    [[gnu::hot]] T
+    callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F, T K) const noexcept;
 
-    T callPrice(T t, T dF, T F, T K, bool doValidate = true) const;
+    [[gnu::hot]] T callPrice(T t, T dF, T F, T K, bool doValidate = true) const;
 
-    void callPrice(
+    [[gnu::hot]] void callPrice(
         std::span<T> out,
         T t,
         T dF,
@@ -98,7 +104,7 @@ template <std::floating_point T, std::size_t N = defaultNodes> class Pricer
         bool doValidate = true
     ) const;
 
-    std::array<T, 6>
+    [[gnu::hot]] std::array<T, 6>
     callPriceWithGradient(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F, T K)
         const noexcept;
 

@@ -33,8 +33,6 @@ int main(int argc, char* argv[])
 
         initialize();
 
-        // utils::ScopedTimer timer{};
-
         using Real = double;
 
         core::MarketData<Real> marketData{
@@ -66,9 +64,26 @@ int main(int argc, char* argv[])
         // Tanhsinh static_assert(N % 2 == 0, "TanHSinH<N>: N must be even for unroll-by-2
         // integration.");
 
+        // Be smart, benchmark char funcito first with prof to see what is expensive!
+
         const core::VolSurface<Real> hestonVolSurface{
             models::heston::buildSurface<Real>(sviVolSurface, marketState.interestCurve)
         };
+
+        utils::ScopedTimer timer{};
+
+        // 20407.349381 ms
+
+        std::size_t N{20};
+        for (std::size_t i{0}; i < N; ++i)
+        {
+            const core::VolSurface<Real> hestonVolSurface{
+                models::heston::buildSurface<Real>(
+                    sviVolSurface,
+                    marketState.interestCurve
+                )
+            };
+        }
 
         // io::report::volatility(hestonVolSurface);
 

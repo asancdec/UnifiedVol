@@ -17,19 +17,16 @@
 
 #pragma once
 
-#include "Base/Types.hpp"
 #include "Models/SVI/Calibrate/Detail/Contexts.hpp"
 #include "Models/SVI/Params.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"
 
-#include <array>
 #include <concepts>
 
 namespace uv::models::svi::detail
 {
 
-template <std::floating_point T, opt::nlopt::Algorithm Algo>
-void addCalendarConstraints(
+template <std::floating_point T, opt::nlopt::Algorithm Algo> void addCalendarConstraints(
     opt::nlopt::Optimizer<4, Algo>& optimizer,
     SliceConstraints& c,
     const Params<T>* prevParams,
@@ -37,8 +34,7 @@ void addCalendarConstraints(
     const SliceData& sliceData
 ) noexcept;
 
-template <opt::nlopt::Algorithm Algo>
-void addConvexityConstraints(
+template <opt::nlopt::Algorithm Algo> void addConvexityConstraints(
     opt::nlopt::Optimizer<4, Algo>& optimizer,
     ConvexityMContext& convexityCtxs,
     std::span<const double> logKF,
@@ -54,7 +50,7 @@ void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept;
 template <opt::nlopt::Algorithm Algo>
 void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept;
 
-void calendarMConstraint(
+[[gnu::hot]] void calendarMConstraint(
     unsigned m,
     double* result,
     unsigned /*n*/,
@@ -63,7 +59,7 @@ void calendarMConstraint(
     void* data
 ) noexcept;
 
-void convexityMConstraint(
+[[gnu::hot]] void convexityMConstraint(
     unsigned m,
     double* result,
     unsigned /*n*/,

@@ -22,8 +22,7 @@
 namespace uv::models::svi::detail
 {
 
-[[gnu::hot]] double
-objectiveThunk(unsigned, const double* x, double* grad, void* data) noexcept
+double objectiveThunk(unsigned, const double* x, double* grad, void* data) noexcept
 {
 #if defined(__GNUC__) || defined(__clang__) || defined(_MSC_VER)
     const double* __restrict xx{x};
