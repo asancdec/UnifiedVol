@@ -56,15 +56,8 @@ template <std::floating_point T, std::size_t N = defaultNodes> class Pricer
     [[gnu::hot]] static T
     getPhi_(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcept;
 
-    [[gnu::hot]] static Complex<T> charFunction_(
-        T kappa,
-        T theta,
-        T sigma,
-        T rho,
-        T v0,
-        T t,
-        const Complex<T>& u
-    ) noexcept;
+    [[gnu::hot]] static Complex<T>
+    charFunction_(T kappa, T theta, T sigma, T rho, T v0, T t, Complex<T> u) noexcept;
 
     [[gnu::hot]] static detail::CharFunCache<T> charFunctionCached_(
         T kappa,
@@ -73,7 +66,7 @@ template <std::floating_point T, std::size_t N = defaultNodes> class Pricer
         T rho,
         T v0,
         T t,
-        const Complex<T>& u
+        Complex<T> u
     ) noexcept;
 
   public:

@@ -31,8 +31,6 @@ template <std::floating_point T> struct CharFunCache
     Complex<T> B;
     Complex<T> beta;
     Complex<T> D;
-    Complex<T> DT;
-    Complex<T> betaPlusD;
     Complex<T> betaMinusD;
     Complex<T> ui;
     Complex<T> kFac;
@@ -45,11 +43,9 @@ template <std::floating_point T> struct CharFunCache
     Complex<T> g;
     Complex<T> Q;
     Complex<T> invQ;
-    Complex<T> invQ2;
     Complex<T> R;
     Complex<T> S;
     Complex<T> fracB;
     Complex<T> denomG;
-    Complex<T> betaMinusDinvSigma2;
 };
 } // namespace uv::models::heston::price::detail

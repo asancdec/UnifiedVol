@@ -23,11 +23,13 @@
 
 namespace uv::math
 {
-template <std::floating_point T> Complex<T> log1pComplex(const Complex<T>& z) noexcept;
+template <std::floating_point T>
+[[gnu::hot]] Complex<T> log1pComplex(Complex<T> z) noexcept;
 
-template <std::floating_point T> T cosm1(T b) noexcept;
+template <std::floating_point T> [[gnu::hot]] T cosm1(T b) noexcept;
 
-template <std::floating_point T> Complex<T> expm1Complex(const Complex<T>& z) noexcept;
+template <std::floating_point T>
+[[gnu::hot]] Complex<T> expm1Complex(Complex<T> z) noexcept;
 
 template <std::floating_point T> T normalCDF(T x) noexcept;
 

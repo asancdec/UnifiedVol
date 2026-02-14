@@ -109,7 +109,7 @@ template <std::floating_point T, std::size_t N> Complex<T> Pricer<T, N>::charFun
     T rho,
     T v0,
     T t,
-    const Complex<T>& u
+    const Complex<T> u
 ) noexcept
 {
 
@@ -155,7 +155,7 @@ detail::CharFunCache<T> Pricer<T, N>::charFunctionCached_(
     T rho,
     T v0,
     T t,
-    const Complex<T>& u
+    const Complex<T> u
 ) noexcept
 {
 
@@ -213,8 +213,6 @@ detail::CharFunCache<T> Pricer<T, N>::charFunctionCached_(
         B,
         beta,
         D,
-        DT,
-        betaPlusD,
         betaMinusD,
         ui,
         kFac,
@@ -223,15 +221,13 @@ detail::CharFunCache<T> Pricer<T, N>::charFunctionCached_(
         sigma2,
         uu,
         eDT,
-        betaMinusD / betaPlusD,
+        g,
         Q,
         invQ,
-        invQ * invQ,
         R,
         betaMinusD * t - T{2} * std::log(Q / R),
         (T{1} - eDT) * invQ,
-        betaPlusD * betaPlusD,
-        betaMinusD * invSigma2
+        betaPlusD * betaPlusD
     };
 }
 
@@ -374,8 +370,11 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
     const Complex<T> onePlusITanPhi{T{1} + i * tanPhi};
     const Complex<T> c{(i - tanPhi) * w};
     const Complex<T> iAlpha{-i * alpha};
+    const T invTheta{T{1} / theta};
 
-    auto batchIntegrand = [=](T x) noexcept -> std::array<T, 6>
+    auto batchIntegrand =
+        [kappa, theta, sigma, rho, v0, t, invTheta, i, iAlpha, onePlusITanPhi, c](T x
+        ) noexcept -> std::array<T, 6>
     {
         const Complex<T> h{iAlpha + x * onePlusITanPhi};
         const Complex<T> hMinusI{h - i};
@@ -390,7 +389,6 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
         const Complex<T> B{cfData.B};
         const Complex<T> beta{cfData.beta};
         const Complex<T> D{cfData.D};
-        const Complex<T> betaPlusD{cfData.betaPlusD};
         const Complex<T> betaMinusD{cfData.betaMinusD};
         const Complex<T> kFac{cfData.kFac};
         const Complex<T> ui{cfData.ui};
@@ -399,18 +397,15 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
         const Complex<T> g{cfData.g};
         const Complex<T> Q{cfData.Q};
         const Complex<T> invQ{cfData.invQ};
-        const Complex<T> invQ2{cfData.invQ2};
         const Complex<T> R{cfData.R};
         const Complex<T> S{cfData.S};
         const Complex<T> fracB{cfData.fracB};
         const Complex<T> denomG{cfData.denomG};
-        const Complex<T> betaMinusDinvSigma2{cfData.betaMinusDinvSigma2};
         const T sigma2{cfData.sigma2};
         const T invSigma2{cfData.invSigma2};
         const T kappaTheta{cfData.kappaTheta};
 
         const T sigma3{sigma2 * sigma};
-        const T invTheta{T{1} / theta};
         const Complex<T> u2{uu - ui};
         const Complex<T> deDT_dD{-t * eDT};
 
@@ -422,10 +417,8 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
         const Complex<T> dD_ds{(beta * dbeta_ds + sigma * (ui + u2)) / D};
         const Complex<T> dD_dr{dD_dk * dbeta_dr};
 
-        const auto dg_from = [&D, &denomG, &beta](
-                                 const Complex<T>& dbeta,
-                                 const Complex<T>& dD
-                             ) noexcept -> Complex<T>
+        const auto dg_from =
+            [&D, &denomG, &beta](Complex<T> dbeta, Complex<T> dD) noexcept -> Complex<T>
         {
             return T{2} * (D * dbeta - beta * dD) / denomG;
         };
@@ -433,8 +426,10 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
         const Complex<T> dg_dk{dg_from(dbeta_dk, dD_dk)};
         const Complex<T> dg_ds{dg_from(dbeta_ds, dD_ds)};
         const Complex<T> dg_dr{dg_from(dbeta_dr, dD_dr)};
+        const Complex<T> betaMinusDinvSigma2{betaMinusD * invSigma2};
+        const Complex<T> invQ2{invQ * invQ};
 
-        const auto dB_from = [&](const Complex<T>& dbeta, const Complex<T>& dD, T dC
+        const auto dB_from = [&](Complex<T> dbeta, Complex<T> dD, T dC
                              ) noexcept -> Complex<T>
         {
             const Complex<T> d_one_over_C2{(T{-2} * dC) / sigma3};
@@ -459,9 +454,8 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
         const Complex<T> dK_ds{(T{-2} * kappaTheta) / sigma3};
         constexpr Complex<T> dK_dr{T{0}, T{0}};
 
-        const auto dS_from = [&](const Complex<T>& dbeta,
-                                 const Complex<T>& dD,
-                                 const Complex<T>& dg) noexcept -> Complex<T>
+        const auto dS_from = [&](Complex<T> dbeta, Complex<T> dD, Complex<T> dg
+                             ) noexcept -> Complex<T>
         {
             const Complex<T> dQ{-(dg * eDT + g * (deDT_dD * dD))};
             return (dbeta - dD) * t - T{2} * (dQ * invQ + dg / R);

@@ -21,7 +21,7 @@
 
 namespace uv::math
 {
-template <std::floating_point T> Complex<T> log1pComplex(const Complex<T>& z) noexcept
+template <std::floating_point T> Complex<T> log1pComplex(Complex<T> z) noexcept
 {
 
     const T a{std::real(z)};
@@ -46,7 +46,7 @@ template <std::floating_point T> T cosm1(T b) noexcept
     return -2.0 * s * s;
 }
 
-template <std::floating_point T> Complex<T> expm1Complex(const Complex<T>& z) noexcept
+template <std::floating_point T> Complex<T> expm1Complex(Complex<T> z) noexcept
 {
 
     if (std::abs(z) < 1.0)
