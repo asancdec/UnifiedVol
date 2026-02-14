@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
 
         // 20407.349381 ms
 
-        std::size_t N{20};
+        std::size_t N{40};
         for (std::size_t i{0}; i < N; ++i)
         {
             const core::VolSurface<Real> hestonVolSurface{
