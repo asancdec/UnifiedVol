@@ -43,4 +43,18 @@ template <std::floating_point T> T Integrand<T>::operator()(T x) const noexcept
     return std::real(std::exp(x * c) * psi / (hMinusI * h) * onePlusITanPhi);
 };
 
+template <std::floating_point T> Complex<T> DBFromZero<T>::operator()(
+    const Complex<T> dbeta,
+    const Complex<T> dD,
+    const Complex<T> dg
+) const noexcept
+{
+    const Complex<T> a = -deDTdD * dD;
+
+    return (
+        ((dbeta - dD) * invSigma2) * fracB +
+        betaMinusDinvSigma2 * ((a * Q - oneMinusEDT * (-(dg * eDT) + g * a)) * invQ2)
+    );
+}
+
 } // namespace uv::models::heston::price::detail

@@ -39,6 +39,23 @@ template <std::floating_point T> struct Integrand
     [[gnu::hot]] T operator()(T x) const noexcept;
 };
 
+template <std::floating_point T> struct DBFromZero
+{
+    T invSigma2;
+    const Complex<T> betaMinusDinvSigma2;
+    const Complex<T> deDTdD;
+    const Complex<T> eDT;
+    const Complex<T> oneMinusEDT;
+    const Complex<T> g;
+    const Complex<T> invQ2;
+    const Complex<T> fracB;
+    const Complex<T> Q;
+
+    [[gnu::hot]] Complex<T>
+    operator()(const Complex<T> dbeta, const Complex<T> dD, const Complex<T> dg)
+        const noexcept;
+};
+
 } // namespace uv::models::heston::price::detail
 
 #include "Models/Heston/Price/Detail/Integrand.inl"

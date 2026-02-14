@@ -225,25 +225,28 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
     const T w{std::log(F / K)};
 
     const T alpha(getAlpha_(w));
-    const T R{Pricer<T, N>::getResidues_(alpha, F, K)};
-    const T phi{Pricer<T, N>::getPhi_(kappa, theta, sigma, rho, v0, t, w)};
+    const T R{getResidues_(alpha, F, K)};
+    const T tanPhi{std::tan(getPhi_(kappa, theta, sigma, rho, v0, t, w))};
     const T sigma2{sigma * sigma};
-    const T sigma3{sigma2 * sigma};
+    const T invSigma3{T{1} / (sigma2 * sigma)};
     const T invSigma2{T{1} / sigma2};
+    const T invSigma3Two{T{-2} * invSigma3};
     const T kappaTheta{kappa * theta};
     const T invTheta{T{1} / theta};
     const T kappaThetaDivSigma2{kappaTheta / sigma2};
+    const T dK_dk = theta * invSigma2;
+    const T dK_ds = (T{-2} * kappaTheta) * invSigma3;
 
     const Complex<T> sigmaRho{-i * sigma * rho};
     const Complex<T> tDivTwo{-t * T{0.5}};
-    const T tanPhi{std::tan(phi)};
     const Complex<T> onePlusITanPhi{T{1} + i * tanPhi};
     const Complex<T> c{(i - tanPhi) * w};
     const Complex<T> iAlpha{-i * alpha};
+    constexpr Complex<T> dbeta_dk{T{1}, T{0}};
 
     auto batchIntegrand = [kappa,
                            kappaTheta,
-                           sigma3,
+                           invSigma3,
                            sigmaRho,
                            invSigma2,
                            kappaThetaDivSigma2,
@@ -257,6 +260,10 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
                            invTheta,
                            iAlpha,
                            onePlusITanPhi,
+                           dK_dk,
+                           dK_ds,
+                           dbeta_dk,
+                           invSigma3Two,
                            c](T x) noexcept -> std::array<T, 6>
     {
         constexpr Complex<T> i{T{0}, T{1}};
@@ -265,7 +272,7 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
         const Complex<T> hMinusI{h - i};
         const Complex<T> kernel{std::exp(x * c) * onePlusITanPhi / (hMinusI * h)};
 
-        const detail::CharFunCache<T> cfData{detail::charFunctionCached(
+        const detail::CharFunCache<T> cfData = detail::charFunctionCached(
             kappa,
             kappaThetaDivSigma2,
             sigma2,
@@ -274,112 +281,113 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
             tDivTwo,
             sigmaRho,
             hMinusI
-        )};
+        );
 
-        const Complex<T> psi{cfData.psi};
-        const Complex<T> A{cfData.A};
-        const Complex<T> B{cfData.B};
-        const Complex<T> beta{cfData.beta};
-        const Complex<T> D{cfData.D};
-        const Complex<T> betaMinusD{cfData.betaMinusD};
-        const Complex<T> uu{cfData.uu};
-        const Complex<T> eDT{cfData.eDT};
-        const Complex<T> g{cfData.g};
-        const Complex<T> Q{cfData.Q};
-        const Complex<T> invQ{cfData.invQ};
-        const Complex<T> R{cfData.R};
-        const Complex<T> S{cfData.S};
-        const Complex<T> fracB{cfData.fracB};
-        const Complex<T> denomG{cfData.denomG};
+        const Complex<T> beta = cfData.beta;
+        const Complex<T> D = cfData.D;
+        const Complex<T> betaMinusD = cfData.betaMinusD;
+        const Complex<T> eDT = cfData.eDT;
+        const Complex<T> g = cfData.g;
+        const Complex<T> invQ = cfData.invQ;
+        const Complex<T> S = cfData.S;
+        const Complex<T> fracB = cfData.fracB;
+        const Complex<T> Q = cfData.Q;
 
-        const Complex<T> ui{hMinusI * i};
-        const Complex<T> u2{uu - ui};
-        const Complex<T> deDT_dD{-t * eDT};
+        const Complex<T> ui = hMinusI * i;
+        const Complex<T> u2 = cfData.uu - ui;
+        const Complex<T> deDT_dD = -t * eDT;
+        const Complex<T> oneMinusEDT{T{1} - eDT};
+        const Complex<T> invD = T{1} / D;
+        const Complex<T> invDenomG = T{2} / cfData.denomG;
 
-        constexpr Complex<T> dbeta_dk{T{1}, T{0}};
-        const Complex<T> dbeta_ds{-rho * ui};
-        const Complex<T> dbeta_dr{-sigma * ui};
+        const Complex<T> dbeta_ds = -rho * ui;
+        const Complex<T> dbeta_dr = -sigma * ui;
 
-        const Complex<T> dD_dk{beta / D};
-        const Complex<T> dD_ds{(beta * dbeta_ds + sigma * (ui + u2)) / D};
-        const Complex<T> dD_dr{dD_dk * dbeta_dr};
+        const Complex<T> dD_dk = beta * invD;
+        const Complex<T> dD_ds = (beta * dbeta_ds + sigma * (ui + u2)) * invD;
+        const Complex<T> dD_dr = dD_dk * dbeta_dr;
 
-        const auto dg_from =
-            [&D, &denomG, &beta](Complex<T> dbeta, Complex<T> dD) noexcept -> Complex<T>
+        const Complex<T> dg_dk = (D * dbeta_dk - beta * dD_dk) * invDenomG;
+        const Complex<T> dg_ds = (D * dbeta_ds - beta * dD_ds) * invDenomG;
+        const Complex<T> dg_dr = (D * dbeta_dr - beta * dD_dr) * invDenomG;
+
+        const Complex<T> betaMinusDinvSigma2 = betaMinusD * invSigma2;
+        const Complex<T> invQ2 = invQ * invQ;
+
+        const auto dB_from_0 = [invSigma2,
+                                betaMinusDinvSigma2,
+                                deDT_dD,
+                                eDT,
+                                oneMinusEDT,
+                                g,
+                                invQ2,
+                                fracB,
+                                Q](Complex<T> dbeta, Complex<T> dD, Complex<T> dg
+                               ) noexcept -> Complex<T>
         {
-            return T{2} * (D * dbeta - beta * dD) / denomG;
+            const Complex<T> a = -deDT_dD * dD;
+
+            return (
+                ((dbeta - dD) * invSigma2) * fracB +
+                betaMinusDinvSigma2 *
+                    ((a * Q - oneMinusEDT * (-(dg * eDT) + g * a)) * invQ2)
+            );
         };
+        const Complex<T> dB_dr = dB_from_0(dbeta_dr, dD_dr, dg_dr);
+        const Complex<T> dB_dk = dB_from_0(dbeta_dk, dD_dk, dg_dk);
 
-        const Complex<T> dg_dk{dg_from(dbeta_dk, dD_dk)};
-        const Complex<T> dg_ds{dg_from(dbeta_ds, dD_ds)};
-        const Complex<T> dg_dr{dg_from(dbeta_dr, dD_dr)};
-        const Complex<T> betaMinusDinvSigma2{betaMinusD * invSigma2};
-        const Complex<T> invQ2{invQ * invQ};
+        // TODO: UNIFY dB and DS
 
-        const auto dB_from = [&](Complex<T> dbeta, Complex<T> dD, T dC
+        const Complex<T> a = -deDT_dD * dD_ds;
+        const Complex<T> dB_ds =
+            (((dbeta_ds - dD_ds) * invSigma2 + betaMinusD * invSigma3Two) * fracB +
+             betaMinusDinvSigma2 *
+                 ((a * Q - oneMinusEDT * (-(dg_ds * eDT) + g * a)) * invQ2));
+
+        const auto dS_from = [eDT, g, deDT_dD, invQ, t, Rcf = cfData.R](
+                                 Complex<T> dbeta,
+                                 Complex<T> dD,
+                                 Complex<T> dg
                              ) noexcept -> Complex<T>
         {
-            const Complex<T> d_one_over_C2{(T{-2} * dC) / sigma3};
-            const Complex<T> dpref{(dbeta - dD) * invSigma2 + betaMinusD * d_one_over_C2};
-
-            const Complex<T> dN1{deDT_dD * -dD};
-            const Complex<T> dQ{-(dg_from(dbeta, dD) * eDT) - g * (deDT_dD * dD)};
-            const Complex<T> dfrac{(dN1 * Q - (T{1} - eDT) * dQ) * invQ2};
-
-            return dpref * fracB + betaMinusDinvSigma2 * dfrac;
+            const Complex<T> dQ = -(dg * eDT + g * (deDT_dD * dD));
+            return (dbeta - dD) * t - T{2} * (dQ * invQ + dg / Rcf);
         };
 
-        constexpr T dC_dk{T{0}};
-        constexpr T dC_ds{T{1}};
-        constexpr T dC_dr{T{0}};
+        const Complex<T> dS_dk = dS_from(dbeta_dk, dD_dk, dg_dk);
+        const Complex<T> dS_ds = dS_from(dbeta_ds, dD_ds, dg_ds);
+        const Complex<T> dS_dr = dS_from(dbeta_dr, dD_dr, dg_dr);
 
-        const Complex<T> dB_dk{dB_from(dbeta_dk, dD_dk, dC_dk)};
-        const Complex<T> dB_ds{dB_from(dbeta_ds, dD_ds, dC_ds)};
-        const Complex<T> dB_dr{dB_from(dbeta_dr, dD_dr, dC_dr)};
+        const Complex<T> dA_dk = dK_dk * S + kappaThetaDivSigma2 * dS_dk;
+        const Complex<T> dA_ds = dK_ds * S + kappaThetaDivSigma2 * dS_ds;
+        const Complex<T> dA_dr = kappaThetaDivSigma2 * dS_dr;
 
-        const Complex<T> dK_dk{theta * invSigma2};
-        const Complex<T> dK_ds{(T{-2} * kappaTheta) / sigma3};
-        constexpr Complex<T> dK_dr{T{0}, T{0}};
+        const Complex<T> kernelPsi = kernel * cfData.psi;
 
-        const auto dS_from = [&](Complex<T> dbeta, Complex<T> dD, Complex<T> dg
-                             ) noexcept -> Complex<T>
-        {
-            const Complex<T> dQ{-(dg * eDT + g * (deDT_dD * dD))};
-            return (dbeta - dD) * t - T{2} * (dQ * invQ + dg / R);
-        };
-
-        const Complex<T> dS_dk{dS_from(dbeta_dk, dD_dk, dg_dk)};
-        const Complex<T> dS_ds{dS_from(dbeta_ds, dD_ds, dg_ds)};
-        const Complex<T> dS_dr{dS_from(dbeta_dr, dD_dr, dg_dr)};
-
-        const Complex<T> dA_dk{dK_dk * S + kappaThetaDivSigma2 * dS_dk};
-        const Complex<T> dA_ds{dK_ds * S + kappaThetaDivSigma2 * dS_ds};
-        const Complex<T> dA_dr{dK_dr * S + kappaThetaDivSigma2 * dS_dr};
-
-        const Complex<T> kernelPsi{kernel * psi};
         return {
             std::real(kernelPsi),
             std::real(kernelPsi * (dA_dk + v0 * dB_dk)),
-            std::real(kernelPsi * (A * invTheta)),
+            std::real(kernelPsi * (cfData.A * invTheta)),
             std::real(kernelPsi * (dA_ds + v0 * dB_ds)),
             std::real(kernelPsi * (dA_dr + v0 * dB_dr)),
-            std::real(kernelPsi * B)
+            std::real(kernelPsi * cfData.B)
         };
     };
 
     const auto integrals = quad_->template integrateZeroToInfMulti<6>(batchIntegrand);
 
-    const T pref{(F / std::numbers::pi_v<T>)*std::exp(alpha * w)};
+    constexpr T invPi{T{1} / std::numbers::pi_v<T>};
+    const T pref{-(F * invPi) * std::exp(alpha * w)};
     const T scale{dF * pref};
 
-    std::array<T, 6> out{};
-    out[0] = T(dF * (R - pref * integrals[0]));
-    out[1] = T(-scale * integrals[1]);
-    out[2] = T(-scale * integrals[2]);
-    out[3] = T(-scale * integrals[3]);
-    out[4] = T(-scale * integrals[4]);
-    out[5] = T(-scale * integrals[5]);
-    return out;
+    return std::array<T, 6>{
+        dF * (R + pref * integrals[0]),
+        scale * integrals[1],
+        scale * integrals[2],
+        scale * integrals[3],
+        scale * integrals[4],
+        scale * integrals[5]
+    };
 }
 
 template <std::floating_point T, std::size_t N>
