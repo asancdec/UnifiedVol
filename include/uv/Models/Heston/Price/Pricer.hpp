@@ -24,7 +24,7 @@
 #include "Math/Integration/TanHSinH.hpp"
 #include "Models/Heston/Params.hpp"
 #include "Models/Heston/Price/Config.hpp"
-#include "Models/Heston/Price/Detail/CharFunCache.hpp"
+#include "Models/Heston/Price/Detail/CharFunction.hpp"
 
 #include <array>
 #include <concepts>
@@ -55,19 +55,6 @@ template <std::floating_point T, std::size_t N = defaultNodes> class Pricer
 
     [[gnu::hot]] static T
     getPhi_(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcept;
-
-    [[gnu::hot]] static Complex<T>
-    charFunction_(T kappa, T theta, T sigma, T rho, T v0, T t, Complex<T> u) noexcept;
-
-    [[gnu::hot]] static detail::CharFunCache<T> charFunctionCached_(
-        T kappa,
-        T theta,
-        T sigma,
-        T rho,
-        T v0,
-        T t,
-        Complex<T> u
-    ) noexcept;
 
   public:
     Pricer();

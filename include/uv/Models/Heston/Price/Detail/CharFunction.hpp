@@ -32,11 +32,6 @@ template <std::floating_point T> struct CharFunCache
     Complex<T> beta;
     Complex<T> D;
     Complex<T> betaMinusD;
-    Complex<T> ui;
-    Complex<T> kFac;
-    T invSigma2;
-    T kappaTheta;
-    T sigma2;
 
     Complex<T> uu;
     Complex<T> eDT;
@@ -48,4 +43,29 @@ template <std::floating_point T> struct CharFunCache
     Complex<T> fracB;
     Complex<T> denomG;
 };
+
+template <std::floating_point T> [[gnu::hot]] Complex<T> charFunction(
+    T kappa,
+    T kappaThetaDivSigma2,
+    T sigma2,
+    T v0,
+    T t,
+    Complex<T> tDivTwo,
+    Complex<T> sigmaRho,
+    Complex<T> u
+) noexcept;
+
+template <std::floating_point T> [[gnu::hot]] CharFunCache<T> charFunctionCached(
+    T kappa,
+    T kappaThetaDivSigma2,
+    T sigma2,
+    T v0,
+    T t,
+    Complex<T> tDivTwo,
+    Complex<T> sigmaRho,
+    Complex<T> u
+) noexcept;
+
 } // namespace uv::models::heston::price::detail
+
+#include "Models/Heston/Price/Detail/CharFunction.inl"

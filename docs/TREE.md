@@ -164,7 +164,8 @@ UnifiedVol/
 │   │   │   │   ├── Price/
 │   │   │   │   │   ├── Config.hpp
 │   │   │   │   │   ├── Detail/
-│   │   │   │   │   │   ├── CharFunCache.hpp
+│   │   │   │   │   │   ├── CharFunction.hpp
+│   │   │   │   │   │   ├── CharFunction.inl
 │   │   │   │   │   │   ├── Pricer.inl
 │   │   │   │   │   ├── Pricer.hpp
 │   │   │   ├── SVI/
