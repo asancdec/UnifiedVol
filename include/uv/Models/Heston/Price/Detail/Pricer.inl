@@ -17,7 +17,7 @@
 
 #include "Base/Macros/Require.hpp"
 #include "Math/Functions/Primitive.hpp"
-
+#include "Models/Heston/Price/Detail/Integrand.hpp"
 #include <ceres/context.h>
 #include <cmath>
 #include <limits>
@@ -109,56 +109,28 @@ T Pricer<T, N>::callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F
     constexpr Complex<T> i{T{0}, T{1}};
 
     const T w{std::log(F / K)};
+    const T alpha{getAlpha_(w)};
+    const T tanPhi{std::tan(getPhi_(kappa, theta, sigma, rho, v0, t, w))};
 
-    const T alpha(getAlpha_(w));
-    const T phi{Pricer<T, N>::getPhi_(kappa, theta, sigma, rho, v0, t, w)};
-    const T tanPhi{std::tan(phi)};
     const T sigma2{sigma * sigma};
-    const T kappaThetaDivSigma2{kappa * theta / sigma2};
 
-    const Complex<T> sigmaRho{-i * sigma * rho};
-    const Complex<T> tDivTwo{-t * T{0.5}};
-    const Complex<T> onePlusITanPhi{T{1}, tanPhi};
-    const Complex<T> c{-tanPhi * w, w};
-    const Complex<T> iAlpha{T{0}, -alpha};
-
-    auto integrand = [iAlpha,
-                      onePlusITanPhi,
-                      c,
-                      kappa,
-                      kappaThetaDivSigma2,
-                      sigma2,
-                      sigmaRho,
-                      v0,
-                      t,
-                      tDivTwo](T x) noexcept -> T
-    {
-        constexpr Complex<T> i{T{0}, T{1}};
-
-        const Complex<T> h{iAlpha + x * onePlusITanPhi};
-
-        const Complex<T> hMinusI{h - i};
-
-        const Complex<T> psi{detail::charFunction(
-            kappa,
-            kappaThetaDivSigma2,
-            sigma2,
-            v0,
-            t,
-            tDivTwo,
-            sigmaRho,
-            hMinusI
-        )};
-
-        return std::real(std::exp(x * c) * psi / (hMinusI * h) * onePlusITanPhi);
+    const detail::Integrand<T> integrand{
+        .iAlpha = {T{0}, -alpha},
+        .onePlusITanPhi = {T{1}, tanPhi},
+        .c = {-tanPhi * w, w},
+        .tDivTwo = {-t * T{0.5}},
+        .sigmaRho = {-i * (sigma * rho)},
+        .kappa = kappa,
+        .kappaThetaDivSigma2 = kappa * theta / sigma2,
+        .sigma2 = sigma2,
+        .v0 = v0,
+        .t = t
     };
-
-    const T R{Pricer<T, N>::getResidues_(alpha, F, K)};
 
     constexpr T invPi{T{1} / std::numbers::pi_v<T>};
 
-    return dF *
-           (R - (F * invPi) * std::exp(alpha * w) * quad_->integrateZeroToInf(integrand));
+    return dF * (getResidues_(alpha, F, K) - (F * invPi) * std::exp(alpha * w) *
+                                                 quad_->integrateZeroToInf(integrand));
 }
 
 template <std::floating_point T, std::size_t N>

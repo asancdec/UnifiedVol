@@ -59,11 +59,11 @@ template <std::floating_point T> Complex<T> charFunction(
             : tDivTwo
     };
 
-    const Complex<T> ry{r * y};
+    const Complex<T> ry{-r * y};
 
     return std::exp(
-        kappaThetaDivSigma2 * (r * t - T{2} * math::log1pComplex<T>(-ry)) +
-        v0 * (uu * y / (T{1} - ry))
+        kappaThetaDivSigma2 * (r * t - T{2} * math::log1pComplex<T>(ry)) +
+        v0 * (uu * y / (T{1} + ry))
     );
 }
 
@@ -78,7 +78,6 @@ template <std::floating_point T> [[gnu::hot]] CharFunCache<T> charFunctionCached
     Complex<T> u
 ) noexcept
 {
-
     constexpr Complex<T> i{T{0}, T{1}};
 
     const Complex<T> beta{kappa + sigmaRho * u};
@@ -103,13 +102,13 @@ template <std::floating_point T> [[gnu::hot]] CharFunCache<T> charFunctionCached
             : tDivTwo
     };
 
-    const Complex<T> ry{betaMinusD * y};
+    const Complex<T> ry{-betaMinusD * y};
 
     const Complex<T> A{
-        kappaThetaDivSigma2 * (betaMinusD * t - T{2} * math::log1pComplex<T>(-ry))
+        kappaThetaDivSigma2 * (betaMinusD * t - T{2} * math::log1pComplex<T>(ry))
     };
 
-    const Complex<T> B{uu * y / (T{1} - ry)};
+    const Complex<T> B{uu * y / (T{1} + ry)};
 
     const Complex<T> eDT{std::exp(-DT)};
 

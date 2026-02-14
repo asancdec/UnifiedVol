@@ -166,6 +166,8 @@ UnifiedVol/
 │   │   │   │   │   ├── Detail/
 │   │   │   │   │   │   ├── CharFunction.hpp
 │   │   │   │   │   │   ├── CharFunction.inl
+│   │   │   │   │   │   ├── Integrand.hpp
+│   │   │   │   │   │   ├── Integrand.inl
 │   │   │   │   │   │   ├── Pricer.inl
 │   │   │   │   │   ├── Pricer.hpp
 │   │   │   ├── SVI/
