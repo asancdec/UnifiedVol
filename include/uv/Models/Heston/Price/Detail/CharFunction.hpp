@@ -26,7 +26,7 @@ namespace uv::models::heston::price::detail
 
 template <std::floating_point T> struct CharFunCache
 {
-    Complex<T> psi;
+    Complex<T> logPsi;
     Complex<T> A;
     Complex<T> B;
     Complex<T> beta;

@@ -29,7 +29,7 @@ template <std::floating_point T> T Integrand<T>::operator()(T x) const noexcept
 
     const Complex<T> hMinusI{h - i};
 
-    const Complex<T> psi{charFunction(
+    const Complex<T> logPsi{charFunction(
         kappa,
         kappaThetaDivSigma2,
         sigma2,
@@ -40,7 +40,7 @@ template <std::floating_point T> T Integrand<T>::operator()(T x) const noexcept
         hMinusI
     )};
 
-    return std::real(std::exp(x * c) * psi / (hMinusI * h) * onePlusITanPhi);
+    return std::real(std::exp(logPsi + (x * c)) / (hMinusI * h) * onePlusITanPhi);
 }
 
 template <std::floating_point T>
@@ -113,7 +113,7 @@ std::array<T, 6> BatchIntegrand<T>::operator()(T x) const noexcept
     const Complex<T> dAdr{kappaThetaDivSigma2 * dSdr};
 
     const Complex<T> kernel{
-        (std::exp(x * c) * onePlusITanPhi / (hMinusI * h)) * cfData.psi
+        (std::exp(cfData.logPsi + (x * c)) * onePlusITanPhi / (hMinusI * h))
     };
 
     return {

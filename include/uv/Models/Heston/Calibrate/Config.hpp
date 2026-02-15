@@ -32,9 +32,9 @@ struct Config
 {
     double tolerance{1e-10};
     unsigned int maxEval{10000};
-    opt::ceres::Verbosity verbosity{opt::ceres::Verbosity::None};
+    opt::ceres::Verbosity verbosity{opt::ceres::Verbosity::Summary};
     opt::cost::WeightATM<double> weightATM{.wATM = 8.0, .k0 = 0.3};
-    int numThreads{1};
+    int numThreads{-1};
 };
 
 inline constexpr opt::ceres::GradientMode HestonGradient =

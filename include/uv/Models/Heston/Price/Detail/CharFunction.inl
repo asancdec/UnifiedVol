@@ -61,10 +61,8 @@ template <std::floating_point T> Complex<T> charFunction(
 
     const Complex<T> ry{-r * y};
 
-    return std::exp(
-        kappaThetaDivSigma2 * (r * t - T{2} * math::log1pComplex<T>(ry)) +
-        v0 * (uu * y / (T{1} + ry))
-    );
+    return kappaThetaDivSigma2 * (r * t - T{2} * math::log1pComplex<T>(ry)) +
+           v0 * (uu * y / (T{1} + ry));
 }
 
 template <std::floating_point T> [[gnu::hot]] CharFunCache<T> charFunctionCached(
@@ -121,7 +119,7 @@ template <std::floating_point T> [[gnu::hot]] CharFunCache<T> charFunctionCached
     const Complex<T> R{T{1} - g};
 
     return CharFunCache{
-        std::exp(A + v0 * B),
+        A + v0 * B,
         A,
         B,
         beta,
