@@ -35,12 +35,11 @@ template <std::floating_point T> struct CharFunCache
 
     Complex<T> uu;
     Complex<T> eDT;
+    Complex<T> oneMinusEDT;
     Complex<T> g;
     Complex<T> Q;
-    Complex<T> invQ;
     Complex<T> R;
     Complex<T> S;
-    Complex<T> fracB;
     Complex<T> denomG;
 };
 

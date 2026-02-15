@@ -23,6 +23,10 @@
 
 namespace uv::math
 {
+
+template <std::floating_point T>
+[[gnu::hot]] Complex<T> invComplex(Complex<T> z) noexcept;
+
 template <std::floating_point T>
 [[gnu::hot]] Complex<T> log1pComplex(Complex<T> z) noexcept;
 

@@ -18,6 +18,7 @@
 #pragma once
 
 #include "Base/Types.hpp"
+#include "Math/Functions/Primitive.hpp"
 
 #include <cmath>
 #include <concepts>
@@ -48,21 +49,22 @@ template <std::floating_point T> Complex<T> charFunction(
     const Complex<T> D{std::sqrt(beta * beta + sigma2uu)};
 
     const Complex<T> r{
-        (std::real(beta * std::conj(D)) > T{0}) ? -sigma2uu / (beta + D) : beta - D
+        (std::real(beta * std::conj(D)) > T{0}) ? -sigma2uu * math::invComplex(beta + D)
+                                                : beta - D
     };
 
     const Complex<T> DT{D * t};
 
     Complex<T> y{
         (std::norm(D) > std::numeric_limits<T>::epsilon() * (T{1} + std::abs(DT)))
-            ? math::expm1Complex(-DT) * T{0.5} / D
+            ? math::expm1Complex(-DT) * T{0.5} * math::invComplex(D)
             : tDivTwo
     };
 
     const Complex<T> ry{-r * y};
 
     return kappaThetaDivSigma2 * (r * t - T{2} * math::log1pComplex<T>(ry)) +
-           v0 * (uu * y / (T{1} + ry));
+           v0 * (uu * y * math::invComplex(Complex<T>{T{1}, T{0}} + ry));
 }
 
 template <std::floating_point T> [[gnu::hot]] CharFunCache<T> charFunctionCached(
@@ -88,52 +90,61 @@ template <std::floating_point T> [[gnu::hot]] CharFunCache<T> charFunctionCached
 
     const Complex<T> betaPlusD{beta + D};
 
+    const Complex<T> invbetaPlusD{math::invComplex(betaPlusD)};
+
     const Complex<T> betaMinusD{
-        (std::real(beta * std::conj(D)) > T{0}) ? -sigma2uu / betaPlusD : beta - D
+        (std::real(beta * std::conj(D)) > T{0}) ? -sigma2uu * invbetaPlusD : beta - D
     };
 
     const Complex<T> DT{D * t};
 
-    const Complex<T> y{
-        (std::norm(D) > std::numeric_limits<T>::epsilon() * (T{1} + std::abs(DT)))
-            ? math::expm1Complex(-DT) * T{0.5} / D
-            : tDivTwo
-    };
+    Complex<T> y;
+    Complex<T> oneMinusEDT;
+
+    if (std::norm(D) > std::numeric_limits<T>::epsilon() * (T{1} + std::abs(DT)))
+    {
+        y = math::expm1Complex(-DT) * T{0.5} * math::invComplex(D);
+        oneMinusEDT = -T{2} * D * y;
+    }
+    else
+    {
+        y = tDivTwo;
+        oneMinusEDT = DT;
+    }
 
     const Complex<T> ry{-betaMinusD * y};
 
+    const Complex<T> betaMinusDTimesT{betaMinusD * t};
+
     const Complex<T> A{
-        kappaThetaDivSigma2 * (betaMinusD * t - T{2} * math::log1pComplex<T>(ry))
+        kappaThetaDivSigma2 * (betaMinusDTimesT - T{2} * math::log1pComplex<T>(ry))
     };
 
-    const Complex<T> B{uu * y / (T{1} + ry)};
+    const Complex<T> B{uu * y * math::invComplex(T{1} + ry)};
 
-    const Complex<T> eDT{std::exp(-DT)};
+    const Complex<T> g{betaMinusD * invbetaPlusD};
 
-    const Complex<T> g{betaMinusD / betaPlusD};
+    const Complex<T> eDT = Complex<T>{T{1}, T{0}} - oneMinusEDT;
 
     const Complex<T> Q{T{1} - g * eDT};
 
-    const Complex<T> invQ{T{1} / Q};
-
     const Complex<T> R{T{1} - g};
 
-    return CharFunCache{
-        A + v0 * B,
-        A,
-        B,
-        beta,
-        D,
-        betaMinusD,
-        uu,
-        eDT,
-        g,
-        Q,
-        invQ,
-        R,
-        betaMinusD * t - T{2} * std::log(Q / R),
-        (T{1} - eDT) * invQ,
-        betaPlusD * betaPlusD
+    return CharFunCache<T>{
+        .logPsi = A + v0 * B,
+        .A = A,
+        .B = B,
+        .beta = beta,
+        .D = D,
+        .betaMinusD = betaMinusD,
+        .uu = uu,
+        .eDT = eDT,
+        .oneMinusEDT = oneMinusEDT,
+        .g = g,
+        .Q = Q,
+        .R = R,
+        .S = betaMinusDTimesT - T{2} * math::log1pComplex((Q - R) * math::invComplex(R)),
+        .denomG = betaPlusD * betaPlusD
     };
 }
 

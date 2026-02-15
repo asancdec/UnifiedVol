@@ -43,6 +43,9 @@ template <std::floating_point T, std::size_t N> class TanHSinH
 
     Node generateNode(T nh) const noexcept;
 
+    template <typename F>
+    std::array<T, 6> integrateZeroToInfMulti6_(F&& f) const noexcept;
+
   public:
     TanHSinH();
 

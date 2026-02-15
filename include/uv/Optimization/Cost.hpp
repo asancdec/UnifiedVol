@@ -25,11 +25,10 @@ namespace uv::opt::cost
 template <std::floating_point T> struct WeightATM
 {
     T wATM{1.0};
-    T k0{};
+    T k0{1.0};
 };
 
-template <std::floating_point T>
-void weightsATM(
+template <std::floating_point T> void weightsATM(
     std::span<const T> logKF,
     const WeightATM<T>& params,
     std::span<T> out,
@@ -38,8 +37,7 @@ void weightsATM(
 namespace detail
 {
 
-template <std::floating_point T>
-void validateWeightsATM(
+template <std::floating_point T> void validateWeightsATM(
     std::span<const T> logKF,
     const WeightATM<T>& params,
     std::span<T> out

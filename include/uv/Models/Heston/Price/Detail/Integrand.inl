@@ -14,6 +14,7 @@
  * See the LICENSE for the specific language governing permissions and
  * limitations under this License.
  */
+#include "Math/Functions/Primitive.hpp"
 #include "Models/Heston/Price/Detail/CharFunction.hpp"
 
 #include <cmath>
@@ -40,7 +41,9 @@ template <std::floating_point T> T Integrand<T>::operator()(T x) const noexcept
         hMinusI
     )};
 
-    return std::real(std::exp(logPsi + (x * c)) / (hMinusI * h) * onePlusITanPhi);
+    const Complex<T> invDenom{math::invComplex(hMinusI * h)};
+
+    return std::real(std::exp(logPsi + (x * c)) * onePlusITanPhi * invDenom);
 }
 
 template <std::floating_point T>
@@ -62,14 +65,15 @@ std::array<T, 6> BatchIntegrand<T>::operator()(T x) const noexcept
     );
 
     const Complex<T> betaMinusD{cfData.betaMinusD};
+    const Complex<T> Q{cfData.Q};
+    const Complex<T> invQ{math::invComplex(Q)};
     const Complex<T> eDT{cfData.eDT};
-    const Complex<T> invQ{cfData.invQ};
-    const Complex<T> oneMinusEDT{T{1} - eDT};
+    const Complex<T> oneMinusEDT{cfData.oneMinusEDT};
 
     const GradientBD<T> gradientBD{
         .t = t,
         .invSigma2 = invSigma2,
-        .invR = T{1} / cfData.R,
+        .invR = math::invComplex(cfData.R),
         .betaMinusDinvSigma2 = {betaMinusD * invSigma2},
         .deDTdD = {-t * eDT},
         .eDT = eDT,
@@ -77,8 +81,8 @@ std::array<T, 6> BatchIntegrand<T>::operator()(T x) const noexcept
         .g = cfData.g,
         .invQ = invQ,
         .invQ2 = {invQ * invQ},
-        .fracB = cfData.fracB,
-        .Q = cfData.Q
+        .fracB = {oneMinusEDT * invQ},
+        .Q = Q
     };
 
     const Complex<T> ui{hMinusI * i};
@@ -87,14 +91,14 @@ std::array<T, 6> BatchIntegrand<T>::operator()(T x) const noexcept
     const Complex<T> dbetaDr{-sigma * ui};
 
     const Complex<T> d{cfData.D};
-    const Complex<T> invD{T{1} / d};
+    const Complex<T> invD{math::invComplex(d)};
     const Complex<T> beta{cfData.beta};
 
     const Complex<T> dDdk{beta * invD};
     const Complex<T> dDds{(beta * dbetaDs + sigma * cfData.uu) * invD};
     const Complex<T> dDdr{dDdk * dbetaDr};
 
-    const Complex<T> invDenomG{T{2} / cfData.denomG};
+    const Complex<T> invDenomG{T{2} * math::invComplex(cfData.denomG)};
 
     const Complex<T> dgdk{(d * dbetaDk - beta * dDdk) * invDenomG};
     const Complex<T> dgds{(d * dbetaDs - beta * dDds) * invDenomG};
@@ -112,8 +116,10 @@ std::array<T, 6> BatchIntegrand<T>::operator()(T x) const noexcept
     const Complex<T> dAds{dKds * s + kappaThetaDivSigma2 * dSds};
     const Complex<T> dAdr{kappaThetaDivSigma2 * dSdr};
 
+    const Complex<T> invDenom{math::invComplex(hMinusI * h)};
+
     const Complex<T> kernel{
-        (std::exp(cfData.logPsi + (x * c)) * onePlusITanPhi / (hMinusI * h))
+        std::exp(cfData.logPsi + (x * c)) * onePlusITanPhi * invDenom
     };
 
     return {

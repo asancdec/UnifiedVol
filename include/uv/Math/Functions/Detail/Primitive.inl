@@ -21,6 +21,14 @@
 
 namespace uv::math
 {
+
+template <std::floating_point T> Complex<T> invComplex(Complex<T> z) noexcept
+{
+
+    const T invNorm{T{1} / std::norm(z)};
+    return std::conj(z) * invNorm;
+}
+
 template <std::floating_point T> Complex<T> log1pComplex(Complex<T> z) noexcept
 {
 
@@ -28,7 +36,7 @@ template <std::floating_point T> Complex<T> log1pComplex(Complex<T> z) noexcept
     const T b{std::imag(z)};
 
     const T ap1{T{1} + a};
-    ;
+
     const T aTan2ap1{std::atan2(b, ap1)};
 
     if (std::abs(a) < T{0.5} && std::abs(b) < T{0.5})

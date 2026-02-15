@@ -51,41 +51,20 @@ int main(int argc, char* argv[])
         const core::VolSurface<Real> sviVolSurface{models::svi::buildSurface(marketState)
         };
 
-        // io::report::volatility(sviVolSurface);
+        io::report::volatility(sviVolSurface);
 
         // --------------  Heston calibration --------------
 
         // TODO
 
-        // Paramterize multithreading
         // Testing convergence on balck scholes would be cool
-        // 2. Clean up pricer class
-        // 4. Optimize pricer
-        // Tanhsinh static_assert(N % 2 == 0, "TanHSinH<N>: N must be even for unroll-by-2
-        // integration.");
-
-        // Be smart, benchmark char funcito first with prof to see what is expensive!
 
         const core::VolSurface<Real> hestonVolSurface{
             models::heston::buildSurface<Real>(sviVolSurface, marketState.interestCurve)
         };
 
+        io::report::volatility(hestonVolSurface);
         utils::ScopedTimer timer{};
-
-        // 20407.349381 ms
-
-        // std::size_t N{40};
-        // for (std::size_t i{0}; i < N; ++i)
-        // {
-        //     const core::VolSurface<Real> hestonVolSurface{
-        //         models::heston::buildSurface<Real>(
-        //             sviVolSurface,
-        //             marketState.interestCurve
-        //         )
-        //     };
-        // }
-
-        // io::report::volatility(hestonVolSurface);
 
         return 0;
 
