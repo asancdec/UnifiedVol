@@ -39,21 +39,58 @@ template <std::floating_point T> struct Integrand
     [[gnu::hot]] T operator()(T x) const noexcept;
 };
 
-template <std::floating_point T> struct DBFromZero
+template <std::floating_point T> struct BatchIntegrand
 {
+    Complex<T> sigmaRho;
+    Complex<T> tDivTwo;
+    Complex<T> iAlpha;
+    Complex<T> onePlusITanPhi;
+    Complex<T> dbetaDk;
+    Complex<T> c;
+
+    T kappa;
     T invSigma2;
+    T kappaThetaDivSigma2;
+    T sigma;
+    T sigma2;
+    T rho;
+    T v0;
+    T t;
+    T invTheta;
+    T dKdk;
+    T dKds;
+    T invSigma3Two;
+
+    [[gnu::hot]] std::array<T, 6> operator()(T x) const noexcept;
+};
+
+template <class T> struct GradResult
+{
+    Complex<T> dS;
+    Complex<T> dB;
+};
+
+template <std::floating_point T> struct GradientBD
+{
+    T t;
+    T invSigma2;
+    const Complex<T> invR;
     const Complex<T> betaMinusDinvSigma2;
     const Complex<T> deDTdD;
     const Complex<T> eDT;
     const Complex<T> oneMinusEDT;
     const Complex<T> g;
+    const Complex<T> invQ;
     const Complex<T> invQ2;
     const Complex<T> fracB;
     const Complex<T> Q;
 
-    [[gnu::hot]] Complex<T>
-    operator()(const Complex<T> dbeta, const Complex<T> dD, const Complex<T> dg)
-        const noexcept;
+    template <bool HasSigmaTerm = false> [[gnu::hot]] GradResult<T> eval(
+        const Complex<T> dbeta,
+        const Complex<T> dD,
+        const Complex<T> dg,
+        const Complex<T> = {}
+    ) const noexcept;
 };
 
 } // namespace uv::models::heston::price::detail

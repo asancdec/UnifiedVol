@@ -41,20 +41,111 @@ template <std::floating_point T> T Integrand<T>::operator()(T x) const noexcept
     )};
 
     return std::real(std::exp(x * c) * psi / (hMinusI * h) * onePlusITanPhi);
-};
-
-template <std::floating_point T> Complex<T> DBFromZero<T>::operator()(
-    const Complex<T> dbeta,
-    const Complex<T> dD,
-    const Complex<T> dg
-) const noexcept
-{
-    const Complex<T> a = -deDTdD * dD;
-
-    return (
-        ((dbeta - dD) * invSigma2) * fracB +
-        betaMinusDinvSigma2 * ((a * Q - oneMinusEDT * (-(dg * eDT) + g * a)) * invQ2)
-    );
 }
 
+template <std::floating_point T>
+std::array<T, 6> BatchIntegrand<T>::operator()(T x) const noexcept
+{
+    constexpr Complex<T> i{T{0}, T{1}};
+    const Complex<T> h{iAlpha + x * onePlusITanPhi};
+    const Complex<T> hMinusI{h - i};
+
+    const auto cfData = charFunctionCached(
+        kappa,
+        kappaThetaDivSigma2,
+        sigma2,
+        v0,
+        t,
+        tDivTwo,
+        sigmaRho,
+        hMinusI
+    );
+
+    const Complex<T> betaMinusD{cfData.betaMinusD};
+    const Complex<T> eDT{cfData.eDT};
+    const Complex<T> invQ{cfData.invQ};
+    const Complex<T> oneMinusEDT{T{1} - eDT};
+
+    const GradientBD<T> gradientBD{
+        .t = t,
+        .invSigma2 = invSigma2,
+        .invR = T{1} / cfData.R,
+        .betaMinusDinvSigma2 = {betaMinusD * invSigma2},
+        .deDTdD = {-t * eDT},
+        .eDT = eDT,
+        .oneMinusEDT = oneMinusEDT,
+        .g = cfData.g,
+        .invQ = invQ,
+        .invQ2 = {invQ * invQ},
+        .fracB = cfData.fracB,
+        .Q = cfData.Q
+    };
+
+    const Complex<T> ui{hMinusI * i};
+
+    const Complex<T> dbetaDs{-rho * ui};
+    const Complex<T> dbetaDr{-sigma * ui};
+
+    const Complex<T> d{cfData.D};
+    const Complex<T> invD{T{1} / d};
+    const Complex<T> beta{cfData.beta};
+
+    const Complex<T> dDdk{beta * invD};
+    const Complex<T> dDds{(beta * dbetaDs + sigma * cfData.uu) * invD};
+    const Complex<T> dDdr{dDdk * dbetaDr};
+
+    const Complex<T> invDenomG{T{2} / cfData.denomG};
+
+    const Complex<T> dgdk{(d * dbetaDk - beta * dDdk) * invDenomG};
+    const Complex<T> dgds{(d * dbetaDs - beta * dDds) * invDenomG};
+    const Complex<T> dgdr{(d * dbetaDr - beta * dDdr) * invDenomG};
+
+    auto [dBdk, dSdk]{gradientBD.template eval<false>(dbetaDk, dDdk, dgdk)};
+    auto [dBds, dSds]{
+        gradientBD.template eval<true>(dbetaDs, dDds, dgds, betaMinusD * invSigma3Two)
+    };
+    auto [dBdr, dSdr]{gradientBD.template eval<false>(dbetaDr, dDdr, dgdr)};
+
+    const Complex<T> s{cfData.S};
+
+    const Complex<T> dAdk{dKdk * s + kappaThetaDivSigma2 * dSdk};
+    const Complex<T> dAds{dKds * s + kappaThetaDivSigma2 * dSds};
+    const Complex<T> dAdr{kappaThetaDivSigma2 * dSdr};
+
+    const Complex<T> kernel{
+        (std::exp(x * c) * onePlusITanPhi / (hMinusI * h)) * cfData.psi
+    };
+
+    return {
+        std::real(kernel),
+        std::real(kernel * (dAdk + v0 * dBdk)),
+        std::real(kernel * (cfData.A * invTheta)),
+        std::real(kernel * (dAds + v0 * dBds)),
+        std::real(kernel * (dAdr + v0 * dBdr)),
+        std::real(kernel * cfData.B)
+    };
+}
+
+template <std::floating_point T> template <bool HasSigmaTerm>
+GradResult<T> GradientBD<T>::eval(
+    const Complex<T> dbeta,
+    const Complex<T> dD,
+    const Complex<T> dg,
+    const Complex<T> sigmaTerm
+) const noexcept
+{
+    const Complex<T> a{-deDTdD * dD};
+    const Complex<T> dbetaMinusdD{dbeta - dD};
+    const Complex<T> commonGTerm{-dg * eDT + g * a};
+
+    Complex<T> first{dbetaMinusdD * invSigma2};
+    if constexpr (HasSigmaTerm)
+        first += sigmaTerm;
+    first *= fracB;
+
+    return GradResult{
+        first + betaMinusDinvSigma2 * ((a * Q - oneMinusEDT * commonGTerm) * invQ2),
+        dbetaMinusdD * t - T{2} * (commonGTerm * invQ + dg * invR)
+    };
+}
 } // namespace uv::models::heston::price::detail
