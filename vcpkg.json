@@ -5,6 +5,7 @@
   "dependencies": [
     "nlopt",
     "ceres",
-    "boost-math"
+    "boost-math",
+    "gtest"
   ]
 }

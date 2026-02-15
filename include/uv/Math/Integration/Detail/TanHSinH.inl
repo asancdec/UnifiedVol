@@ -25,8 +25,7 @@
 
 namespace uv::math::integration
 {
-template <std::floating_point T, std::size_t N>
-TanHSinH<T, N>::TanHSinH()
+template <std::floating_point T, std::size_t N> TanHSinH<T, N>::TanHSinH()
     : h_(
 
           boost::math::lambert_w0(T(2) * std::numbers::pi_v<T> * T(N)) / T(N)
@@ -34,7 +33,7 @@ TanHSinH<T, N>::TanHSinH()
 {
 
     static_assert(N > 0, "TanHSinH<N>: N must be greater than zero.");
-    static_assert(N % 2 == 0, "TanHSinH<N>: N must be even for unroll-by-2 integration.");
+    static_assert(N % 2 == 0, "TanHSinH<N>: N must be even for unroll-by-2 integration");
 
     for (unsigned int n = 0; n < N; ++n)
     {
@@ -42,8 +41,7 @@ TanHSinH<T, N>::TanHSinH()
     }
 }
 
-template <std::floating_point T, std::size_t N>
-template <std::size_t M, typename F>
+template <std::floating_point T, std::size_t N> template <std::size_t M, typename F>
 std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti(F&& f) const noexcept
 {
 
@@ -159,8 +157,7 @@ std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti(F&& f) const noexcept
     return out;
 }
 
-template <std::floating_point T, std::size_t N>
-template <typename F>
+template <std::floating_point T, std::size_t N> template <typename F>
 T TanHSinH<T, N>::integrateZeroToInf(F&& f) const noexcept
 {
 

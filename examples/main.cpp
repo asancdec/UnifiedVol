@@ -15,6 +15,7 @@
  * limitations under this License.
  */
 
+#include "Models/Heston/Price/Pricer.hpp"
 #include <UnifiedVol.hpp>
 #include <cstdlib>
 #include <exception>
@@ -32,6 +33,7 @@ int main(int argc, char* argv[])
                        : std::filesystem::path{"data/VolSurface_SPY_04072011.csv"};
 
         initialize();
+        utils::ScopedTimer timer{};
 
         using Real = double;
 
@@ -55,16 +57,13 @@ int main(int argc, char* argv[])
 
         // --------------  Heston calibration --------------
 
-        // TODO
-
-        // Testing convergence on balck scholes would be cool
+        models::heston::price::Pricer<Real> hestonPricer{};
 
         const core::VolSurface<Real> hestonVolSurface{
             models::heston::buildSurface<Real>(sviVolSurface, marketState.interestCurve)
         };
 
         io::report::volatility(hestonVolSurface);
-        utils::ScopedTimer timer{};
 
         return 0;
 
@@ -108,43 +107,6 @@ int main(int argc, char* argv[])
         //         opt::WeightATM{.wATM = 8.0, .k0 = 0.3}
         //     )
         // };
-
-        //// --------------  Heston calibration --------------
-
-        // constexpr std::size_t HestonNodes{300};
-        // const TanHSinH<Real, HestonNodes> quad{};
-
-        // heston::Pricer<Real, HestonNodes> hestonPricer{
-        //     std::make_shared<const TanHSinH<Real, HestonNodes>>(quad),
-        //     {-2.0, 2.0}
-        // };
-
-        // Optimizer<Policy<void, ceres::LEVENBERG_MARQUARDT,
-        // ceres::DENSE_NORMAL_CHOLESKY>>
-        //     hestonOptimizer{opt::ceres::Config{
-
-        //        .maxEval = 1000,
-        //        .functionTol = 1e-12,
-        //        .paramTol = 1e-12,
-        //        .gradientTol = 1e-12,
-        //        .paramNames = {"kappa", "theta", "sigma", "rho", "v0"},
-        //        .verbose = false
-        //    }};
-
-        // hestonPricer.setParams(heston::calibrator::calibrate(
-        //     sviVolSurface,
-        //     hestonPricer,
-        //     hestonOptimizer,
-        //     opt::WeightATM{.wATM = 8.0, .k0 = 0.3}
-        //));
-
-        // const VolSurface<Real> hestonVolSurface{
-        //     heston::calibrator::buildSurface<Real>(sviVolSurface, hestonPricer)
-        // };
-
-        // hestonVolSurface.printBSCall();
-
-        // timer.LogTime<std::milli>();
 
         return EXIT_SUCCESS;
     }

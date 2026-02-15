@@ -73,3 +73,10 @@ if(UNIFIEDVOL_BUILD_EXAMPLE)
             $<TARGET_FILE_DIR:unifiedvol_example>/data
   )
 endif()
+
+option(UNIFIEDVOL_BUILD_TESTS "Build unit tests" ON)
+
+if(UNIFIEDVOL_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
+endif()
