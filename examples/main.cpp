@@ -43,10 +43,12 @@ int main(int argc, char* argv[])
             .spot = 485.77548
         };
 
+        // -------------- Market data -------------
+
         const core::MarketState<Real> marketState{io::load::marketState(path, marketData)
         };
 
-        // io::report::volatility(marketState);
+        io::report::volatility(marketState);
 
         // --------------  SVI calibration -------------
 
@@ -56,8 +58,6 @@ int main(int argc, char* argv[])
         io::report::volatility(sviVolSurface);
 
         // --------------  Heston calibration --------------
-
-        models::heston::price::Pricer<Real> hestonPricer{};
 
         const core::VolSurface<Real> hestonVolSurface{
             models::heston::buildSurface<Real>(sviVolSurface, marketState.interestCurve)

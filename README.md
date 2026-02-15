@@ -56,19 +56,33 @@ Below is a **minimal excerpt** illustrating the structure of a typical calibrati
 See the `examples/` directory for complete working programs.
 
 ```cpp
-// Read market volatility surface
-VolSurface<Real> mktVolSurface{
-    readVolSurface<Real>(path, marketData)
+// -------------- Market data -------------
+
+// Build
+const core::MarketState<Real> marketState{io::load::marketState(path, marketData)
 };
 
-// Calibrate SVI surface
-auto sviParams =
-    svi::calibrate<Real>(mktVolSurface, nloptOptimizer);
+// Inspect
+io::report::volatility(marketState);
 
-VolSurface<Real> sviVolSurface =
-    svi::buildSurface<Real>(mktVolSurface, sviParams);
+// --------------  SVI calibration -------------
 
-// Use the SVI surface to calibrate local volatility or Heston
+// Calibrate
+const core::VolSurface<Real> sviVolSurface{models::svi::buildSurface(marketState)
+};
+
+// Inspect
+io::report::volatility(sviVolSurface);
+
+// --------------  Heston calibration --------------
+
+// Calibrate
+const core::VolSurface<Real> hestonVolSurface{
+    models::heston::buildSurface<Real>(sviVolSurface, marketState.interestCurve)
+};
+
+// Inspect
+io::report::volatility(hestonVolSurface);
 ```
 
 ---
