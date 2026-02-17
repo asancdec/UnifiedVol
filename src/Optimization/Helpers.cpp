@@ -223,19 +223,26 @@ void logResults(
     double sse,
     unsigned iterCount,
     double elapsedMs,
-    bool isSuccess
+    bool isSuccess,
+    std::string_view extraInfo
 )
 {
+    const std::string_view successMessage{isSuccess ? "SUCCESS" : "FAIL"};
+
+    const std::string statusMessage{
+        extraInfo.empty() ? std::format("{}", successMessage)
+                          : std::format("{} {}", successMessage, extraInfo)
+    };
 
     if (paramNames.empty())
     {
 
         UV_INFO(std::format(
-            "[Calib] SSE={:.8e} ({:.2f} ms, {} it, {})",
+            "[Calib] SSE={:.8e} ({:.2f} ms, {} it, {}",
             sse,
             elapsedMs,
             iterCount,
-            isSuccess ? "SUCCESS" : "FAIL"
+            statusMessage
         ));
         return;
     }
@@ -263,7 +270,7 @@ void logResults(
         sse,
         elapsedMs,
         iterCount,
-        isSuccess ? "SUCCESS" : "FAIL"
+        statusMessage
     ));
 }
 

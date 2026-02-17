@@ -15,9 +15,18 @@
  * limitations under this License.
  */
 
+#include "Base/Errors/Errors.hpp"
 #include "Base/Macros/Require.hpp"
 #include "Optimization/Helpers.hpp"
 #include "Optimization/NLopt/Detail/MapAlgorithm.hpp"
+#include "Optimization/NLopt/Detail/NLoptStatus.hpp"
+#include <nlopt.hpp>
+#include <string_view>
+
+#include <exception> // std::exception
+#include <iostream>
+#include <iostream> // std::cerr
+#include <stdexcept>
 
 namespace uv::opt::nlopt
 {
@@ -35,6 +44,7 @@ Optimizer<N, Algo>::Optimizer(const Config<N>& config)
 {
     opt_.set_ftol_rel(config_.ftolRel);
     opt_.set_maxeval(config_.maxEval);
+    opt_.set_exceptions_enabled(false);
 }
 
 template <std::size_t N, Algorithm Algo>
@@ -113,7 +123,9 @@ template <std::size_t N, Algorithm Algo> Vector<double> Optimizer<N, Algo>::opti
     double sse{0.0};
 
     timer_.StartStopWatch();
+
     ::nlopt::result successCode = opt_.optimize(x, sse);
+
     timer_.StopStopWatch();
 
     if (config_.verbose)
@@ -126,7 +138,8 @@ template <std::size_t N, Algorithm Algo> Vector<double> Optimizer<N, Algo>::opti
             sse,
             iterCount_,
             timer_.GetTime<std::milli>(),
-            (successCode > ::nlopt::FAILURE)
+            (successCode > ::nlopt::FAILURE),
+            detail::toString(successCode)
         );
     }
 

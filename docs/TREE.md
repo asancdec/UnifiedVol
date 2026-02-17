@@ -13,6 +13,7 @@ UnifiedVol/
 ├── README.md
 ├── data/
 │   ├── VolSurface_SPY_04072011.csv
+│   ├── VolSurface_SPY_04072025.csv
 ├── docs/
 │   ├── BUILD.md
 │   ├── DATA.md
@@ -210,6 +211,7 @@ UnifiedVol/
 │   │   │   │   ├── Config.hpp
 │   │   │   │   ├── Detail/
 │   │   │   │   │   ├── MapAlgorithm.hpp
+│   │   │   │   │   ├── NLoptStatus.hpp
 │   │   │   │   │   ├── Optimizer.inl
 │   │   │   │   ├── Optimizer.hpp
 │   │   ├── UnifiedVol.hpp
@@ -250,6 +252,9 @@ UnifiedVol/
 │   │   │   ├── Detail/
 │   │   │   │   ├── CeresAdapter.cpp
 │   │   ├── Helpers.cpp
+│   │   ├── NLopt/
+│   │   │   ├── Detail/
+│   │   │   │   ├── NLoptStatus.cpp
 ├── tests/
 │   ├── CMakeLists.txt
 │   ├── Heston/

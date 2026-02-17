@@ -15,7 +15,7 @@
  * limitations under this License.
  */
 
-#include "Models/Heston/Price/Pricer.hpp"
+#include "IO/Report.hpp"
 #include <UnifiedVol.hpp>
 #include <cstdlib>
 #include <exception>
@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
     {
         const std::filesystem::path path =
             (argc > 1) ? std::filesystem::path{argv[1]}
-                       : std::filesystem::path{"data/VolSurface_SPY_04072011.csv"};
+                       : std::filesystem::path{"data/VolSurface_SPY_04072025.csv"};
 
         initialize();
         utils::ScopedTimer timer{};
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
         core::MarketData<Real> marketData{
             .interestRate = 0.0,
             .dividendYield = 0.0,
-            .spot = 485.77548
+            .spot = 504.79007 // 485.77548
         };
 
         // -------------- Market data -------------
@@ -59,15 +59,14 @@ int main(int argc, char* argv[])
 
         // --------------  Heston calibration --------------
 
-        const core::VolSurface<Real> hestonVolSurface{
-            models::heston::buildSurface<Real>(sviVolSurface, marketState.interestCurve)
-        };
+        // const core::VolSurface<Real> hestonVolSurface{
+        //     models::heston::buildSurface<Real>(sviVolSurface,
+        //     marketState.interestCurve)
+        // };
 
-        io::report::volatility(hestonVolSurface);
+        // io::report::volatility(hestonVolSurface);
 
         return 0;
-
-        // sviVolSurface.printBSCall();
 
         //// --------------  Local Vol calibration --------------
 
