@@ -16,6 +16,7 @@
  */
 
 #include "Base/Macros/Require.hpp"
+#include "IO/Report.hpp"
 #include "Math/Functions/Volatility.hpp"
 #include "Models/SVI/Calibrate/Detail/Constraints.hpp"
 #include "Models/SVI/Calibrate/Detail/Contexts.hpp"
@@ -26,26 +27,27 @@
 
 namespace uv::models::svi
 {
-template <std::floating_point T, opt::nlopt::Algorithm Algo>
-Vector<Params<T>> calibrate(
+template <std::floating_point T, opt::nlopt::Algorithm Algo> Vector<Params<T>> calibrate(
     const core::VolSurface<T>& volSurface,
-    const opt::nlopt::Optimizer<4, Algo>& prototype
+    const opt::nlopt::Optimizer<4, Algo>& prototype,
+    bool printParams
 )
 {
     return calibrate<T, Algo>(
         volSurface.maturities(),
         math::vol::logKF(volSurface),
         math::vol::totalVariance(volSurface),
-        prototype
+        prototype,
+        printParams
     );
 }
 
-template <std::floating_point T, opt::nlopt::Algorithm Algo>
-Vector<Params<T>> calibrate(
+template <std::floating_point T, opt::nlopt::Algorithm Algo> Vector<Params<T>> calibrate(
     std::span<const T> maturities,
     const core::Matrix<T>& logKF,
     const core::Matrix<T>& totalVariance,
-    const opt::nlopt::Optimizer<4, Algo>& prototype
+    const opt::nlopt::Optimizer<4, Algo>& prototype,
+    bool printParams
 )
 {
     detail::validateInputs<T>(maturities, logKF, totalVariance);
@@ -55,21 +57,27 @@ Vector<Params<T>> calibrate(
 
     const std::size_t numMaturities{maturities.size()};
 
-    Vector<Params<T>> params;
-    params.reserve(numMaturities);
+    Vector<Params<T>> surfaceParams;
+    surfaceParams.reserve(numMaturities);
 
     for (std::size_t i = 0; i < numMaturities; ++i)
     {
-        params.emplace_back(detail::calibrateSlice<T>(
+
+        Params<T> sliceParams{detail::calibrateSlice<T>(
             maturities[i],
             logKFD[i],
             totalVarianceD[i],
             prototype,
-            (i == 0) ? nullptr : &params.back()
-        ));
+            (i == 0) ? nullptr : &surfaceParams.back()
+        )};
+
+        if (printParams)
+            io::report::sviParams(sliceParams);
+
+        surfaceParams.emplace_back(sliceParams);
     }
 
-    return params;
+    return surfaceParams;
 }
 
 } // namespace uv::models::svi
@@ -77,8 +85,7 @@ Vector<Params<T>> calibrate(
 namespace uv::models::svi::detail
 {
 
-template <std::floating_point T, opt::nlopt::Algorithm Algo>
-Params<T> calibrateSlice(
+template <std::floating_point T, opt::nlopt::Algorithm Algo> Params<T> calibrateSlice(
     const T t,
     std::span<const double> logKF,
     std::span<const double> totalVariance,
@@ -112,8 +119,7 @@ Params<T> calibrateSlice(
     return Params<T>{t, optimizer.optimize(), atmTotalVariance};
 }
 
-template <std::floating_point T>
-void validateInputs(
+template <std::floating_point T> void validateInputs(
     std::span<const T> maturities,
     const core::Matrix<T>& logKF,
     const core::Matrix<T>& totalVariance

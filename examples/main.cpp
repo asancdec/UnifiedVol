@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
         const core::MarketState<Real> marketState{io::load::marketState(path, marketData)
         };
 
-        io::report::volatility(marketState);
+        io::report::totalVariance(marketState, 10);
 
         // --------------  SVI calibration -------------
 

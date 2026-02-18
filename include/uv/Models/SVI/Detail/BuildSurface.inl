@@ -30,26 +30,26 @@
 namespace uv::models::svi
 {
 
-template <std::floating_point T>
-core::VolSurface<T>
+template <std::floating_point T> core::VolSurface<T>
 buildSurface(const core::MarketState<T>& marketState, const Config& config)
 {
     return buildSurface(marketState.volSurface, config);
 }
 
-template <std::floating_point T>
-core::VolSurface<T>
+template <std::floating_point T> core::VolSurface<T>
 buildSurface(const core::VolSurface<T>& volSurface, const Config& config)
 {
     opt::nlopt::Optimizer<4, opt::nlopt::Algorithm::LD_SLSQP> nloptOptimizer{
         detail::makeNLoptConfig(config)
     };
 
-    return buildSurface(volSurface, calibrate(volSurface, nloptOptimizer));
+    return buildSurface(
+        volSurface,
+        calibrate(volSurface, nloptOptimizer, config.printParams)
+    );
 }
 
-template <std::floating_point T>
-core::VolSurface<T>
+template <std::floating_point T> core::VolSurface<T>
 buildSurface(const core::VolSurface<T>& volSurface, const Vector<Params<T>>& params)
 {
 

@@ -15,10 +15,13 @@
  * limitations under this License.
  */
 
+#include "Base/Macros/Inform.hpp"
 #include "Core/Matrix.hpp"
 #include "IO/Detail/Print.hpp"
 #include "Math/Functions/Black.hpp"
 #include "Math/Functions/Volatility.hpp"
+
+#include <format>
 
 namespace uv::io::report
 {
@@ -59,11 +62,8 @@ void totalVariance(const core::VolSurface<T>& volSurface, unsigned int valuePrec
     );
 }
 
-template <std::floating_point T>
-void totalVariance(
-    const core::MarketState<T>& marketState,
-    unsigned int valuePrec
-) noexcept
+template <std::floating_point T> void
+totalVariance(const core::MarketState<T>& marketState, unsigned int valuePrec) noexcept
 {
     totalVariance(marketState.volSurface, valuePrec);
 }
@@ -108,8 +108,7 @@ void logKF(const core::MarketState<T>& marketState, unsigned int valuePrec) noex
     logKF(marketState.volSurface, valuePrec);
 }
 
-template <std::floating_point T>
-void callPrices(
+template <std::floating_point T> void callPrices(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
     unsigned int valuePrec
@@ -142,8 +141,7 @@ void callPrices(const core::MarketState<T>& marketState, unsigned int valuePrec)
     );
 }
 
-template <std::floating_point T>
-void putPrices(
+template <std::floating_point T> void putPrices(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
     unsigned int valuePrec
@@ -176,4 +174,22 @@ void putPrices(const core::MarketState<T>& marketState, unsigned int valuePrec) 
     );
 }
 
+template <std::floating_point T>
+void sviParams(const models::svi::Params<T>& params, unsigned int valuePrec) noexcept
+{
+    UV_INFO(std::format(
+        "T={:.4f}, a={:.{}f}, b={:.{}f}, rho={:.{}f}, m={:.{}f}, sigma={:.{}f}",
+        params.t,
+        params.a,
+        valuePrec,
+        params.b,
+        valuePrec,
+        params.rho,
+        valuePrec,
+        params.m,
+        valuePrec,
+        params.sigma,
+        valuePrec
+    ));
+}
 } // namespace uv::io::report
