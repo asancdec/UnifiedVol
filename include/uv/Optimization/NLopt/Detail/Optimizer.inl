@@ -20,13 +20,9 @@
 #include "Optimization/Helpers.hpp"
 #include "Optimization/NLopt/Detail/MapAlgorithm.hpp"
 #include "Optimization/NLopt/Detail/NLoptStatus.hpp"
+
 #include <nlopt.hpp>
 #include <string_view>
-
-#include <exception> // std::exception
-#include <iostream>
-#include <iostream> // std::cerr
-#include <stdexcept>
 
 namespace uv::opt::nlopt
 {
@@ -138,7 +134,8 @@ template <std::size_t N, Algorithm Algo> Vector<double> Optimizer<N, Algo>::opti
             sse,
             iterCount_,
             timer_.GetTime<std::milli>(),
-            (successCode > ::nlopt::FAILURE),
+            (successCode > ::nlopt::FAILURE) ||
+                (successCode == ::nlopt::ROUNDOFF_LIMITED),
             detail::toString(successCode)
         );
     }

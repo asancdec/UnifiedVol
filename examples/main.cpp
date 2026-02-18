@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
     {
         const std::filesystem::path path =
             (argc > 1) ? std::filesystem::path{argv[1]}
-                       : std::filesystem::path{"data/VolSurface_SPY_04072025.csv"};
+                       : std::filesystem::path{"data/VolSurface_SPY_04072011.csv"};
 
         initialize();
         utils::ScopedTimer timer{};
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
         core::MarketData<Real> marketData{
             .interestRate = 0.0,
             .dividendYield = 0.0,
-            .spot = 504.79007 // 485.77548
+            .spot = 485.77548
         };
 
         // -------------- Market data -------------
@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
         const core::MarketState<Real> marketState{io::load::marketState(path, marketData)
         };
 
-        io::report::totalVariance(marketState, 10);
+        io::report::volatility(marketState);
 
         // --------------  SVI calibration -------------
 
@@ -59,12 +59,11 @@ int main(int argc, char* argv[])
 
         // --------------  Heston calibration --------------
 
-        // const core::VolSurface<Real> hestonVolSurface{
-        //     models::heston::buildSurface<Real>(sviVolSurface,
-        //     marketState.interestCurve)
-        // };
+        const core::VolSurface<Real> hestonVolSurface{
+            models::heston::buildSurface<Real>(sviVolSurface, marketState.interestCurve)
+        };
 
-        // io::report::volatility(hestonVolSurface);
+        io::report::volatility(hestonVolSurface);
 
         return 0;
 

@@ -13,7 +13,6 @@ UnifiedVol/
 ├── README.md
 ├── data/
 │   ├── VolSurface_SPY_04072011.csv
-│   ├── VolSurface_SPY_04072025.csv
 ├── docs/
 │   ├── BUILD.md
 │   ├── DATA.md
