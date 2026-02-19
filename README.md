@@ -4,7 +4,7 @@
 
 # UnifiedVol
 
-**UnifiedVol** is a modern **C++20 quantitative finance library** for volatility surface construction, model calibration, and derivatives pricing.
+**UnifiedVol** is a **C++20 quantitative finance library** for volatility surface modelling and derivatives pricing.
 
 ---
 
