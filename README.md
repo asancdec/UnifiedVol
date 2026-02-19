@@ -41,6 +41,7 @@ UnifiedVol emphasizes:
 - Warm-start calibration support
 - Calendar and butterfly arbitrage constraints
 - ATM-weighted cost functions
+- Calibration to implied volatilites as opposed to raw option prices
 
 ### Infrastructure
 - Support for extended floating-point precision 
@@ -102,8 +103,7 @@ io::report::volatility(hestonVolSurface);
 This repository is under active development. Interfaces, APIs, and model
 implementations are subject to change.
 
-This software is provided for **research and educational purposes only**.  
-It is **not investment advice** and must not be used in trading systems.
+This software is provided for **research and educational purposes only**. It is **not investment advice** and must not be used in trading systems.
 
 All model implementations and market data used in examples and tests have been
 derived from **publicly available sources** and are **explicitly cited**
