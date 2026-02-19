@@ -101,7 +101,7 @@ Params<T> calibrate(
         curve.interpolateDF(maturities),
         volSurface.forwards(),
         volSurface.strikes(),
-        math::black::priceB76(volSurface, curve),
+        volSurface.vol(),
         optimizer,
         weightATM,
         pricer
@@ -118,7 +118,7 @@ Params<T> calibrate(
     const std::span<const T> discountFactors,
     const std::span<const T> forwards,
     const std::span<const T> strikes,
-    const core::Matrix<T>& callPrice,
+    const core::Matrix<T>& vol,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
     price::Pricer<T, N>& pricer
@@ -131,7 +131,7 @@ Params<T> calibrate(
             discountFactors,
             forwards,
             strikes,
-            callPrice,
+            vol,
             optimizer,
             weightATM,
             pricer
@@ -143,7 +143,7 @@ Params<T> calibrate(
                convertVector<double>(discountFactors),
                convertVector<double>(forwards),
                convertVector<double>(strikes),
-               callPrice.template as<double>(),
+               vol.template as<double>(),
                optimizer,
                weightATM,
                pricer
@@ -161,7 +161,7 @@ Params<double> calibrateDouble(
     std::span<const double> discountFactors,
     std::span<const double> forwards,
     std::span<const double> strikes,
-    const core::Matrix<double>& callPrice,
+    const core::Matrix<double>& vol,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
     price::Pricer<CalcT, N>& pricer
@@ -172,7 +172,7 @@ Params<double> calibrateDouble(
     optimizer.beginRun();
 
     Vector<MaturitySlice> slices{
-        makeSlices(maturities, discountFactors, forwards, strikes, callPrice, weightATM)
+        makeSlices(maturities, discountFactors, forwards, strikes, vol, weightATM)
     };
 
     for (const auto& s : slices)

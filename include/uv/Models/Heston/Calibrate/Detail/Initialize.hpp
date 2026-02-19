@@ -28,7 +28,7 @@ template <typename Policy> void setGuessBounds(opt::ceres::Optimizer<Policy>& op
 
 constexpr std::array<double, 5> initGuess() noexcept
 {
-    return {2.5, 0.09, 0.60, -0.75, 0.09};
+    return {2.5, 0.09, 1.0, -0.75, 0.20};
 }
 
 constexpr std::array<double, 5> lowerBounds() noexcept
@@ -38,7 +38,7 @@ constexpr std::array<double, 5> lowerBounds() noexcept
 
 constexpr std::array<double, 5> upperBounds() noexcept
 {
-    return {10.0, 0.5, 10.0, 0.999, 0.5};
+    return {15.0, 0.5, 10.0, 0.999, 0.5};
 }
 
 } // namespace uv::models::heston::calibrate::detail

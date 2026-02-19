@@ -25,8 +25,7 @@
 
 namespace uv::math::black
 {
-template <std::floating_point T>
-core::Matrix<T>
+template <std::floating_point T> core::Matrix<T>
 priceB76(const core::VolSurface<T>& volSurface, const core::Curve<T>& curve, bool isCall)
 {
     std::span<const T> t(volSurface.maturities());
@@ -46,8 +45,7 @@ priceB76(const core::VolSurface<T>& volSurface, const core::Curve<T>& curve, boo
     return out;
 }
 
-template <std::floating_point T>
-void priceB76(
+template <std::floating_point T> void priceB76(
     std::span<T> out,
     T t,
     T dF,
@@ -145,6 +143,13 @@ T priceB76(T t, T dF, T F, T vol, T K, bool doValidate, bool isCall)
     {
         return dF * (K * normalCDF(-d2) - F * normalCDF(-d1));
     }
+}
+
+template <std::floating_point T> T vegaB76(T t, T dF, T F, T vol, T K) noexcept
+{
+    T d1{detail::d1FromForward(t, vol, F, K)};
+
+    return dF * F * normalPDF(d1) * std::sqrt(t);
 }
 
 } // namespace uv::math::black

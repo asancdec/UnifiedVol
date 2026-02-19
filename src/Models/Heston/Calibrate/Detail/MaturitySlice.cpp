@@ -25,7 +25,7 @@ namespace uv::models::heston::calibrate::detail
 MaturitySlice::MaturitySlice(std::size_t capacity) noexcept
 {
     K.reserve(capacity);
-    mkt.reserve(capacity);
+    vol.reserve(capacity);
     w.reserve(capacity);
 }
 
@@ -34,11 +34,11 @@ Vector<MaturitySlice> makeSlices(
     std::span<const double> discountFactors,
     std::span<const double> forwards,
     std::span<const double> strikes,
-    const core::Matrix<double>& callPrice,
+    const core::Matrix<double>& vol,
     const opt::cost::WeightATM<double>& weightATM
 )
 {
-    validateInputs(maturities, discountFactors, forwards, strikes, callPrice);
+    validateInputs(maturities, discountFactors, forwards, strikes, vol);
 
     const std::size_t numStrikes{strikes.size()};
     const std::size_t numMaturities{maturities.size()};
@@ -60,7 +60,7 @@ Vector<MaturitySlice> makeSlices(
         s.dF = discountFactors[i];
         s.F = F;
 
-        std::span<const double> callPriceRow{callPrice[i]};
+        std::span<const double> volRow{vol[i]};
 
         math::vol::logKF<double>(bufferLogKF, F, strikes, true);
         opt::cost::weightsATM<double>(bufferLogKF, weightATM, bufferWeights);
@@ -68,7 +68,7 @@ Vector<MaturitySlice> makeSlices(
         for (std::size_t j = 0; j < numStrikes; ++j)
         {
             s.K.push_back(strikes[j]);
-            s.mkt.push_back(callPriceRow[j]);
+            s.vol.push_back(volRow[j]);
             s.w.push_back(bufferWeights[j]);
         }
     }
@@ -81,7 +81,7 @@ void validateInputs(
     const std::span<const double> discountFactors,
     const std::span<const double> forwards,
     const std::span<const double> strikes,
-    const core::Matrix<double>& callPrice
+    const core::Matrix<double>& vol
 )
 {
     UV_REQUIRE_NON_EMPTY(maturities);
@@ -99,16 +99,16 @@ void validateInputs(
 
     UV_REQUIRE_SAME_SIZE(maturities, forwards);
     UV_REQUIRE_SAME_SIZE(maturities, discountFactors);
-    UV_REQUIRE_SAME_SIZE(maturities, callPrice.rows());
-    UV_REQUIRE_SAME_SIZE(strikes, callPrice.cols());
+    UV_REQUIRE_SAME_SIZE(maturities, vol.rows());
+    UV_REQUIRE_SAME_SIZE(strikes, vol.cols());
 
     for (std::size_t i{0}; i < maturities.size(); ++i)
     {
-        std::span<const double> callMRow{callPrice[i]};
+        std::span<const double> volRow{vol[i]};
 
-        UV_REQUIRE_NON_EMPTY(callMRow);
-        UV_REQUIRE_FINITE(callMRow);
-        UV_REQUIRE_POSITIVE(callMRow);
+        UV_REQUIRE_NON_EMPTY(volRow);
+        UV_REQUIRE_FINITE(volRow);
+        UV_REQUIRE_POSITIVE(volRow);
     }
 }
 } // namespace uv::models::heston::calibrate::detail

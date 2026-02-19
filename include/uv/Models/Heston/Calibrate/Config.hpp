@@ -30,17 +30,17 @@ namespace uv::models::heston::calibrate
 
 struct Config
 {
-    double tolerance{1e-10};
+    double tolerance{1e-11};
     unsigned int maxEval{10000};
     opt::ceres::Verbosity verbosity{opt::ceres::Verbosity::Summary};
-    opt::cost::WeightATM<double> weightATM{.wATM = 8.0, .k0 = 0.3};
+    opt::cost::WeightATM<double> weightATM{};
     int numThreads{-1};
 };
 
 inline constexpr opt::ceres::GradientMode HestonGradient =
     opt::ceres::GradientMode::Analytic;
 
-inline constexpr std::size_t defaultNodes{200};
+inline constexpr std::size_t defaultNodes{300};
 
 using HestonPolicy = opt::ceres::Policy<
     opt::ceres::TrustRegionStrategy::LevenbergMarquardt,

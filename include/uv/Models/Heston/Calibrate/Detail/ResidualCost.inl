@@ -16,6 +16,11 @@
  */
 
 #include "Base/Macros/Unreachable.hpp"
+#include "Math/Functions/Black.hpp"
+#include "Math/Functions/Volatility.hpp"
+
+#include <array>
+#include <span>
 
 #include <ceres/dynamic_numeric_diff_cost_function.h>
 
@@ -34,25 +39,38 @@ template <std::floating_point T, std::size_t N> SliceCommon<T, N>::SliceCommon(
 template <std::floating_point T, std::size_t N>
 void SliceCommon<T, N>::residualOnly(const double* p, double* residuals) const
 {
-    const std::size_t M = s_->K.size();
+    const double t{s_->t};
+    const double dF{s_->dF};
+    const double F{s_->F};
+    std::span<const double> strikes{s_->K};
 
-    for (std::size_t i = 0; i < M; ++i)
+    for (std::size_t i = 0; i < strikes.size(); ++i)
     {
-        const double model =
-            pricer_
-                ->callPrice(p[0], p[1], p[2], p[3], p[4], s_->t, s_->dF, s_->F, s_->K[i]);
 
-        residuals[i] = (model - s_->mkt[i]) * s_->w[i];
+        const double K{strikes[i]};
+
+        const double model{static_cast<double>(
+            pricer_->callPrice(p[0], p[1], p[2], p[3], p[4], t, dF, F, K)
+        )};
+
+        const double vol{math::vol::impliedVol(model, t, dF, F, K)};
+
+        residuals[i] = (vol - s_->vol[i]) * s_->w[i];
     }
 }
 
 template <std::floating_point T, std::size_t N> void
 SliceCommon<T, N>::residualAndJac(const double* p, double* residuals, double* J) const
 {
-    const std::size_t M = s_->K.size();
+    const double t{s_->t};
+    const double dF{s_->dF};
+    const double F{s_->F};
+    std::span<const double> strikes{s_->K};
 
-    for (std::size_t i = 0; i < M; ++i)
+    for (std::size_t i = 0; i < strikes.size(); ++i)
     {
+        const double K{strikes[i]};
+
         const auto pg = pricer_->callPriceWithGradient(
             p[0],
             p[1],
@@ -65,16 +83,20 @@ SliceCommon<T, N>::residualAndJac(const double* p, double* residuals, double* J)
             s_->K[i]
         );
 
-        const double wi = s_->w[i];
+        const double vol{math::vol::impliedVol<double>(pg[0], t, dF, F, K)};
 
-        residuals[i] = (pg[0] - s_->mkt[i]) * wi;
+        const double wi{s_->w[i]};
+
+        residuals[i] = (vol - s_->vol[i]) * wi;
+
+        const double vegaInv{1.0 / math::black::vegaB76(t, dF, F, vol, K)};
 
         double* row = &J[i * 5];
-        row[0] = pg[1] * wi;
-        row[1] = pg[2] * wi;
-        row[2] = pg[3] * wi;
-        row[3] = pg[4] * wi;
-        row[4] = pg[5] * wi;
+        row[0] = pg[1] * wi * vegaInv;
+        row[1] = pg[2] * wi * vegaInv;
+        row[2] = pg[3] * wi * vegaInv;
+        row[3] = pg[4] * wi * vegaInv;
+        row[4] = pg[5] * wi * vegaInv;
     }
 }
 

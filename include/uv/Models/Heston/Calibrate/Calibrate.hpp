@@ -81,7 +81,7 @@ Params<T> calibrate(
     const std::span<const T> discountFactors,
     const std::span<const T> forwards,
     const std::span<const T> strikes,
-    const core::Matrix<T>& callPrice,
+    const core::Matrix<T>& vol,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
     price::Pricer<T, N>& pricer
@@ -97,7 +97,7 @@ Params<double> calibrateDouble(
     std::span<const double> discountFactors,
     std::span<const double> forwards,
     std::span<const double> strikes,
-    const core::Matrix<double>& callPrice,
+    const core::Matrix<double>& vol,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
     price::Pricer<CalcT, N>& pricer
