@@ -4,50 +4,15 @@
 
 # UnifiedVol
 
-**UnifiedVol** is a **C++20 quantitative finance library** for volatility surface modelling and derivatives pricing.
+**UnifiedVol** is a **C++20 quantitative finance library** for volatility surface modelling.
 
 ---
 
-## Design Philosophy
+## Currently Supported Models
 
-UnifiedVol emphasizes:
-
-- Strong emphasis on accurate replication of at-the-money market quotes during calibration
-- Performance-aware design with minimal abstraction overhead
-- Efficient memory access and cache-friendly data layouts suitable for production environments
-- Numerical stability and reproducibility
-- Explicit validation and structured error handling
-
----
-
-## Currently Supported
-
-### Calibrations
-- SVI parametrization
+- Arbitrage-free SVI parametrization
 - Dupire Local Volatility (Andreasen–Huge)
-- Heston stochastic volatility (Andersen–Lake pricing)
-
-### Numerical Methods
-- Finite-difference PDE solvers
-- Cubic Hermite interpolation
-- PCHIP interpolation
-- Sinh–tanh (TanH–SinH) quadrature
-- Tridiagonal (Thomas) solvers
-
-### Optimization
-- NLopt (constrained optimization)
-- Ceres Solver (nonlinear least squares)
-- Parameter bounds and tolerance-controlled convergence
-- Warm-start calibration support
-- Calendar and butterfly arbitrage constraints
-- ATM-weighted cost functions
-- Calibration to implied volatilites as opposed to raw option prices
-
-### Infrastructure
-- Support for extended floating-point precision 
-- Structured logging, timing, and error utilities
-- Explicit input validation and invariant checks
-- Explicit data-lifetime management
+- Heston stochastic volatility (Andersen–Lake)
 
 ---
 
