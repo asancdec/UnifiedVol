@@ -8,7 +8,7 @@
 
 ---
 
-## Currently Supported Models
+## Supported Volatility Models
 
 - Arbitrage-free SVI parametrization
 - Dupire Local Volatility (Andreasen–Huge)
