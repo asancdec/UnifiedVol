@@ -17,7 +17,7 @@ add_library(UnifiedVol STATIC ${UNIFIEDVOL_SOURCES})
 set_target_properties(UnifiedVol PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(UnifiedVol PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/uv>
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/uv>
 )
 
 # --- Let's Be Rational (submodule) ---

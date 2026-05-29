@@ -67,45 +67,6 @@ int main(int argc, char* argv[])
 
         return 0;
 
-        //// --------------  Local Vol calibration --------------
-
-        // constexpr std::size_t nT{100};
-        // constexpr std::size_t nX{10};
-        // constexpr Real xBound{2.5};
-
-        //// TODO paramterize
-        // auto payoff = [](Real S, Real K) -> Real
-        //{
-        //     return (S > K) ? (S - K) : 0.0;
-        // };
-
-        // auto lvPricer =
-        //     std::make_unique<localvol::Pricer<Real, nT, nX, PchipInterpolator<Real>>>(
-        //         payoff,
-        //         xBound
-        //     );
-
-        // Optimizer<Policy<void, ceres::LEVENBERG_MARQUARDT, ceres::DENSE_QR>>
-        // lvOptimizer{
-        //     opt::ceres::Config{
-
-        //        .maxEval = 1000,
-        //        .functionTol = 1e-14,
-        //        .paramTol = 1e-14,
-        //        .gradientTol = 1e-14,
-        //        .verbose = false
-        //    }
-        //};
-
-        // Surface<Real> localVolSurface{
-        //     localvol::calibrator::calibrate<Real, nT, nX, PchipInterpolator<Real>>(
-        //         sviVolSurface,
-        //         *lvPricer,
-        //         lvOptimizer,
-        //         opt::WeightATM{.wATM = 8.0, .k0 = 0.3}
-        //     )
-        // };
-
         return EXIT_SUCCESS;
     }
     catch (const errors::UnifiedVolError& e)
