@@ -26,15 +26,15 @@ template <std::floating_point T, std::size_t N> class TanHSinH
     const T h_;
     std::array<Node, N> nodes_;
 
-    Node generateNode(T nh) const noexcept;
+    Node generateNode(T) const noexcept;
 
   public:
     TanHSinH();
 
-    template <typename F> T integrateZeroToInf(F&& f) const noexcept;
+    template <typename F> T integrateZeroToInf(F&&) const noexcept;
 
     template <std::size_t M, typename F>
-    std::array<T, M> integrateZeroToInfMulti(F&& f) const noexcept;
+    std::array<T, M> integrateZeroToInfMulti(F&&) const noexcept;
 };
 } // namespace uv::math::integration
 

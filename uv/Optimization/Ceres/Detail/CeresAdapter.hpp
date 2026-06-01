@@ -9,10 +9,10 @@
 
 namespace uv::opt::ceres::detail
 {
-::ceres::TrustRegionStrategyType toCeres(TrustRegionStrategy a);
+::ceres::TrustRegionStrategyType toCeres(TrustRegionStrategy);
 
-::ceres::LinearSolverType toCeres(LinearSolver a);
+::ceres::LinearSolverType toCeres(LinearSolver);
 
-std::unique_ptr<::ceres::LossFunction> makeLoss(Loss a, double lossParam);
+std::unique_ptr<::ceres::LossFunction> makeLoss(Loss, double lossParam);
 
 } // namespace uv::opt::ceres::detail

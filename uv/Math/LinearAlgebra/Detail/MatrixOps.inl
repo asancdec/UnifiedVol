@@ -15,6 +15,8 @@ template <std::floating_point T, typename F>
 requires std::invocable<F&, std::size_t, std::size_t>
 core::Matrix<T> generateIndexed(std::size_t rows, std::size_t cols, F&& f)
 {
+    auto&& func = std::forward<F>(f);
+
     core::Matrix<T> out(rows, cols);
 
     for (std::size_t i = 0; i < rows; ++i)
@@ -23,7 +25,7 @@ core::Matrix<T> generateIndexed(std::size_t rows, std::size_t cols, F&& f)
 
         for (std::size_t j = 0; j < cols; ++j)
         {
-            row[j] = std::invoke(f, i, j);
+            row[j] = std::invoke(func, i, j);
         }
     }
     return out;
@@ -33,12 +35,14 @@ template <std::floating_point T, typename F>
 requires std::invocable<F&, std::size_t, std::size_t, T>
 core::Matrix<T> transformIndexed(const core::Matrix<T>& m, F&& f)
 {
+    auto&& func = std::forward<F>(f);
+
     return generateIndexed<T>(
         m.rows(),
         m.cols(),
         [&](std::size_t i, std::size_t j)
         {
-            return std::invoke(f, i, j, m[i][j]);
+            return std::invoke(func, i, j, m[i][j]);
         }
     );
 }
@@ -47,13 +51,15 @@ template <std::floating_point T, typename F>
 requires std::invocable<F&, std::size_t, std::size_t, T>
 void transformIndexedInplace(core::Matrix<T>& m, F&& f)
 {
+    auto&& func = std::forward<F>(f);
+
     for (std::size_t i = 0; i < m.rows(); ++i)
     {
         std::span<T> row{m[i]};
 
         for (std::size_t j = 0; j < m.cols(); ++j)
         {
-            row[j] = std::invoke(f, i, j, row[j]);
+            row[j] = std::invoke(func, i, j, row[j]);
         }
     }
 }

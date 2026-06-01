@@ -13,7 +13,6 @@ template <std::floating_point T, std::size_t N> struct Grid
 {
     std::array<T, N> x_;
     std::array<T, N - 1> dx_;
-    std::array<T, N - 1> dx2_;
 
     Grid() = delete;
 

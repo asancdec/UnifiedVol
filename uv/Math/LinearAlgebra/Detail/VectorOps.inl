@@ -8,6 +8,7 @@
 #include <cmath>
 #include <concepts>
 #include <cstddef>
+#include <functional>
 #include <numeric>
 #include <span>
 #include <string>
@@ -26,8 +27,10 @@ std::array<T, N> eval(std::array<T, N> grid, F&& f) noexcept
 template <std::floating_point T, std::size_t N, typename F>
 void evalInplace(std::array<T, N>& grid, F&& f) noexcept
 {
+    auto&& func = std::forward<F>(f);
+
     for (std::size_t i{0}; i < N; ++i)
-        grid[i] = f(grid[i]);
+        grid[i] = std::invoke(func, grid[i]);
 }
 
 template <std::floating_point T> T sum(std::span<const T> x) noexcept

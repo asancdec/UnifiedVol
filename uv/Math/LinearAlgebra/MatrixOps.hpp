@@ -5,7 +5,6 @@
 #include "Core/Matrix.hpp"
 
 #include <concepts>
-#include <functional>
 
 namespace uv::math::linear_algebra
 {
@@ -40,18 +39,17 @@ template <std::floating_point T>
 void divideInplace(core::Matrix<T>& lhs, const core::Matrix<T>& rhs);
 
 template <std::floating_point T>
-core::Matrix<T> reciprocal(const core::Matrix<T>& m) noexcept;
+core::Matrix<T> reciprocal(const core::Matrix<T>&) noexcept;
 
-template <std::floating_point T> void reciprocalInplace(core::Matrix<T>& m) noexcept;
+template <std::floating_point T> void reciprocalInplace(core::Matrix<T>&) noexcept;
 
-template <std::floating_point T>
-core::Matrix<T> square(const core::Matrix<T>& m) noexcept;
+template <std::floating_point T> core::Matrix<T> square(const core::Matrix<T>&) noexcept;
 
-template <std::floating_point T> void squareInplace(core::Matrix<T>& m) noexcept;
+template <std::floating_point T> void squareInplace(core::Matrix<T>&) noexcept;
 
-template <std::floating_point T> core::Matrix<T> sqrt(const core::Matrix<T>& m);
+template <std::floating_point T> core::Matrix<T> sqrt(const core::Matrix<T>&);
 
-template <std::floating_point T> void sqrtInplace(core::Matrix<T>& m);
+template <std::floating_point T> void sqrtInplace(core::Matrix<T>&);
 
 } // namespace uv::math::linear_algebra
 

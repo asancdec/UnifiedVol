@@ -24,10 +24,10 @@ enum class NLoptStatus : int
     ForcedStop = -5
 };
 
-NLoptStatus toStatus(const ::nlopt::result& r) noexcept;
+NLoptStatus toStatus(const ::nlopt::result&) noexcept;
 
-std::string_view toString(NLoptStatus s) noexcept;
+std::string_view toString(NLoptStatus) noexcept;
 
-std::string_view toString(const ::nlopt::result& r) noexcept;
+std::string_view toString(const ::nlopt::result&) noexcept;
 
 } // namespace uv::opt::nlopt::detail

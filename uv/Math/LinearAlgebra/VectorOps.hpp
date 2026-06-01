@@ -18,20 +18,20 @@ std::array<T, N> eval(std::array<T, N> grid, F&& f) noexcept;
 template <std::floating_point T, std::size_t N, typename F>
 void evalInplace(std::array<T, N>& grid, F&& f) noexcept;
 
-template <std::floating_point T> T sum(std::span<const T> x) noexcept;
+template <std::floating_point T> T sum(std::span<const T>) noexcept;
 
 template <std::floating_point T> Vector<T> multiply(std::span<const T> v, T x) noexcept;
 
-template <std::floating_point T> Vector<T> reciprocal(std::span<const T> v) noexcept;
+template <std::floating_point T> Vector<T> reciprocal(std::span<const T>) noexcept;
 
 template <std::floating_point T>
 Vector<T> hadamard(std::span<const T> a, std::span<const T> b);
 
 template <typename T> Vector<T> makeSequence(std::size_t n, T start) noexcept;
 
-template <typename T> T minValue(std::span<const T> x);
+template <typename T> T minValue(std::span<const T>);
 
-template <typename T> T maxValue(std::span<const T> x);
+template <typename T> T maxValue(std::span<const T>);
 
 } // namespace uv::math::linear_algebra
 
