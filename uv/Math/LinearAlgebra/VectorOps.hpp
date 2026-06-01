@@ -27,9 +27,6 @@
 namespace uv::math::linear_algebra
 {
 
-template <std::floating_point T, std::size_t N>
-constexpr std::array<T, N> generateGrid(T bound1, T bound2) noexcept;
-
 template <std::floating_point T, std::size_t N, typename F>
 std::array<T, N> eval(std::array<T, N> grid, F&& f) noexcept;
 

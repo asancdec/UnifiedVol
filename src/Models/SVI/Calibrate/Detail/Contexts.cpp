@@ -16,7 +16,6 @@
  */
 
 #include "Models/SVI/Calibrate/Detail/Contexts.hpp"
-#include "Models/SVI/Math.hpp"
 
 namespace uv::models::svi::detail
 {

@@ -146,6 +146,8 @@ template <std::floating_point T> void validateInputs(
         UV_REQUIRE_FINITE(logKFSlice);
         UV_REQUIRE_FINITE(totalVarianceSlice);
 
+        UV_REQUIRE_STRICTLY_INCREASING(logKFSlice);
+
         UV_REQUIRE_NON_NEGATIVE(totalVarianceSlice);
     }
 }

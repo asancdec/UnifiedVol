@@ -17,10 +17,22 @@
 
 #include "Base/Macros/Require.hpp"
 #include "Base/Types.hpp"
+#include "Core/Curve.hpp"
+#include "Core/Matrix.hpp"
+#include "Core/VolSurface.hpp"
 #include "Math/Interpolation/Interpolator.hpp"
+
+#include <cmath>
+#include <cstddef>
+#include <span>
 
 namespace uv::math::vol
 {
+
+namespace detail
+{
+double impliedVolJackelCall(double callPrice, double t, double dF, double F, double K);
+}
 
 template <std::floating_point T> T logKF(T F, T K, bool doValidate)
 {
@@ -29,8 +41,8 @@ template <std::floating_point T> T logKF(T F, T K, bool doValidate)
         UV_REQUIRE_FINITE(K);
         UV_REQUIRE_FINITE(F);
 
-        UV_REQUIRE_NON_NEGATIVE(K);
-        UV_REQUIRE_NON_NEGATIVE(F);
+        UV_REQUIRE_POSITIVE(K);
+        UV_REQUIRE_POSITIVE(F);
     }
 
     return std::log(K / F);
@@ -140,7 +152,7 @@ template <std::floating_point T> void volFromTotalVariance(
         UV_REQUIRE_FINITE(t);
         UV_REQUIRE_FINITE(totalVariance);
 
-        UV_REQUIRE_NON_NEGATIVE(t);
+        UV_REQUIRE_POSITIVE(t);
         UV_REQUIRE_NON_NEGATIVE(totalVariance);
     }
 

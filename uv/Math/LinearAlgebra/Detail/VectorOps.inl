@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright (c) 2025 �lvaro S�nchez de Carlos
+ * Copyright (c) 2025 Alvaro Sanchez de Carlos
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,25 @@
  */
 
 #include "Base/Macros/Require.hpp"
+#include "Base/Types.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
-#include <format>
+#include <concepts>
+#include <cstddef>
 #include <numeric>
+#include <span>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace uv::math::linear_algebra
 {
-
-template <std::floating_point T, std::size_t N>
-constexpr std::array<T, N> generateGrid(T bound1, T bound2) noexcept
-{
-    static_assert(N >= 2, "generateGrid: grid must have at least 2 points");
-
-    std::array<T, N> grid{};
-    grid[0] = bound1;
-
-    const T dx{(bound2 - bound1) / static_cast<T>(N - 1)};
-
-    for (std::size_t i = 1; i < N; ++i)
-    {
-
-        grid[i] = bound1 + dx * static_cast<T>(i);
-    }
-
-    return grid;
-}
-
 template <std::floating_point T, std::size_t N, typename F>
 std::array<T, N> eval(std::array<T, N> grid, F&& f) noexcept
 {
-    evalInplace<T, N, F>(grid, f);
+    evalInplace<T, N, F>(grid, std::forward<F>(f));
     return grid;
 }
 
