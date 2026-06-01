@@ -8,6 +8,49 @@
 
 namespace uv::errors
 {
+namespace detail
+{
+template <std::floating_point T> void validateStrictOrder(
+    std::span<const T> xs,
+    std::string_view what,
+    std::source_location loc,
+    bool increasing
+)
+{
+    const std::size_t n{xs.size()};
+
+    if (n < 2)
+        return;
+
+    T prev{xs.front()};
+
+    for (std::size_t i = 1; i < n; ++i)
+    {
+        const T curr{xs[i]};
+        const bool ok{increasing ? curr > prev : curr < prev};
+
+        if (!ok) [[unlikely]]
+        {
+            raise(
+                ErrorCode::InvalidArgument,
+                std::format(
+                    "{} not strictly {} at {}: {} {} {}",
+                    what,
+                    increasing ? "increasing" : "decreasing",
+                    i,
+                    curr,
+                    increasing ? "<=" : ">=",
+                    prev
+                ),
+                loc
+            );
+        }
+
+        prev = curr;
+    }
+}
+} // namespace detail
+
 template <std::floating_point T> void
 validateFinite(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
@@ -115,6 +158,42 @@ void validatePositive(T x, std::string_view what, std::source_location loc)
         raise(
             ErrorCode::InvalidArgument,
             std::format("{} must be > 0 (value = {})", what, x),
+            loc
+        );
+    }
+}
+
+template <class A, class B>
+requires std::equality_comparable_with<A, B>
+void validateEqual(
+    const A& a,
+    const B& b,
+    std::string_view what,
+    std::source_location loc
+)
+{
+    if (a != b) [[unlikely]]
+    {
+        raise(
+            ErrorCode::InvalidArgument,
+            std::format("{} must be equal ({} != {})", what, a, b),
+            loc
+        );
+    }
+}
+
+template <std::floating_point T>
+void validateClose(T a, T b, T tol, std::string_view what, std::source_location loc)
+{
+    validateNonNegative(tol, "tol", loc);
+
+    const T diff{std::abs(a - b)};
+
+    if (diff > tol) [[unlikely]]
+    {
+        raise(
+            ErrorCode::InvalidArgument,
+            std::format("{} must be close: |{} - {}| = {} > {}", what, a, b, diff, tol),
             loc
         );
     }
@@ -338,31 +417,7 @@ template <std::floating_point T> void validateStrictlyIncreasing(
     std::source_location loc
 )
 {
-    const std::size_t n{xs.size()};
-
-    T prev{xs.front()};
-
-    for (std::size_t i = 1; i < n; ++i)
-    {
-        const T curr{xs[i]};
-
-        if (curr <= prev) [[unlikely]]
-        {
-            raise(
-                ErrorCode::InvalidArgument,
-                std::format(
-                    "{} not strictly increasing at {}: {} <= {}",
-                    what,
-                    i,
-                    curr,
-                    prev
-                ),
-                loc
-            );
-        }
-
-        prev = curr;
-    }
+    detail::validateStrictOrder(xs, what, loc, true);
 }
 
 template <detail::ContiguousFloatRange R> void
@@ -370,6 +425,67 @@ validateStrictlyIncreasing(const R& xs, std::string_view what, std::source_locat
 {
     using T = detail::RangeValue<R>;
     validateStrictlyIncreasing(
+        std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
+        what,
+        loc
+    );
+}
+
+template <std::floating_point T> void validateStrictlyDecreasing(
+    std::span<const T> xs,
+    std::string_view what,
+    std::source_location loc
+)
+{
+    detail::validateStrictOrder(xs, what, loc, false);
+}
+
+template <detail::ContiguousFloatRange R> void
+validateStrictlyDecreasing(const R& xs, std::string_view what, std::source_location loc)
+{
+    using T = detail::RangeValue<R>;
+    validateStrictlyDecreasing(
+        std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
+        what,
+        loc
+    );
+}
+
+template <std::floating_point T> void validateStrictlyMonotonic(
+    std::span<const T> xs,
+    std::string_view what,
+    std::source_location loc
+)
+{
+    const std::size_t n{xs.size()};
+
+    if (n < 2)
+        return;
+
+    if (xs[1] > xs[0])
+    {
+        validateStrictlyIncreasing(xs, what, loc);
+        return;
+    }
+
+    if (xs[1] < xs[0])
+    {
+        validateStrictlyDecreasing(xs, what, loc);
+        return;
+    }
+
+    raise(
+        ErrorCode::InvalidArgument,
+        std::format("{} not strictly monotonic at 1: {} == {}", what, xs[1], xs[0]),
+        loc
+    );
+}
+
+template <detail::ContiguousFloatRange R> void
+validateStrictlyMonotonic(const R& xs, std::string_view what, std::source_location loc)
+{
+    using T = detail::RangeValue<R>;
+    validateStrictlyMonotonic(
         std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
         what,
         loc

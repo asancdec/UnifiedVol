@@ -34,6 +34,28 @@
         ::uv::errors::validatePositive((x), #x, std::source_location::current());        \
     } while (0)
 
+#define UV_REQUIRE_EQUAL(a, b)                                                           \
+    do                                                                                   \
+    {                                                                                    \
+        ::uv::errors::validateEqual(                                                     \
+            (a),                                                                         \
+            (b),                                                                         \
+            #a " vs " #b,                                                                \
+            std::source_location::current()                                              \
+        );                                                                               \
+    } while (0)
+
+#define UV_REQUIRE_CLOSE(a, b, ...)                                                      \
+    do                                                                                   \
+    {                                                                                    \
+        ::uv::errors::validateClose(                                                     \
+            (a),                                                                         \
+            (b),                                                                         \
+            __VA_ARGS__ __VA_OPT__(, ) #a " vs " #b,                                     \
+            std::source_location::current()                                              \
+        );                                                                               \
+    } while (0)
+
 #define UV_REQUIRE_EQUAL_OR_LESS(x, threshold)                                           \
     do                                                                                   \
     {                                                                                    \
@@ -82,6 +104,26 @@
     do                                                                                   \
     {                                                                                    \
         ::uv::errors::validateStrictlyIncreasing(                                        \
+            (x),                                                                         \
+            #x,                                                                          \
+            std::source_location::current()                                              \
+        );                                                                               \
+    } while (0)
+
+#define UV_REQUIRE_STRICTLY_DECREASING(x)                                                \
+    do                                                                                   \
+    {                                                                                    \
+        ::uv::errors::validateStrictlyDecreasing(                                        \
+            (x),                                                                         \
+            #x,                                                                          \
+            std::source_location::current()                                              \
+        );                                                                               \
+    } while (0)
+
+#define UV_REQUIRE_STRICTLY_MONOTONIC(x)                                                 \
+    do                                                                                   \
+    {                                                                                    \
+        ::uv::errors::validateStrictlyMonotonic(                                         \
             (x),                                                                         \
             #x,                                                                          \
             std::source_location::current()                                              \

@@ -9,15 +9,35 @@
 
 namespace uv::math::pde
 {
-template <std::floating_point T, std::size_t N> struct Grid
+
+template <std::floating_point T, std::size_t N> class Grid
 {
+  private:
     std::array<T, N> x_;
     std::array<T, N - 1> dx_;
 
-    Grid() = delete;
+    void validate_() const;
+    void setGridSteps_() noexcept;
 
+  public:
+    Grid() = delete;
     explicit Grid(std::span<const T, N>);
+
+    std::span<const T> x() const noexcept;
+    std::span<const T> dx() const noexcept;
 };
+
+template <std::floating_point T, std::size_t N>
+Grid<T, N> generateCenteredSinHGrid(T xMin, T xMax, T beta = 0);
+
+template <std::floating_point T, std::size_t N>
+Grid<T, N> generateUniformGrid(T xMin, T xMax);
+
+namespace detail
+{
+template <std::floating_point T, std::size_t N>
+std::array<T, N> generateUniformGrid(T xMin, T xMax);
+}
 
 } // namespace uv::math::pde
 

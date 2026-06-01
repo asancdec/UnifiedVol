@@ -74,6 +74,23 @@ template <std::floating_point T> void validatePositive(
     std::source_location loc = std::source_location::current()
 );
 
+template <class A, class B>
+requires std::equality_comparable_with<A, B>
+void validateEqual(
+    const A& a,
+    const B& b,
+    std::string_view what,
+    std::source_location loc = std::source_location::current()
+);
+
+template <std::floating_point T> void validateClose(
+    T a,
+    T b,
+    T tol = T{1e-10},
+    std::string_view what = {},
+    std::source_location loc = std::source_location::current()
+);
+
 template <class T>
 requires std::totally_ordered<T>
 void validateEqualOrLess(
@@ -171,6 +188,30 @@ template <std::floating_point T> void validateStrictlyIncreasing(
 );
 
 template <detail::ContiguousFloatRange R> void validateStrictlyIncreasing(
+    const R& xs,
+    std::string_view what,
+    std::source_location loc = std::source_location::current()
+);
+
+template <std::floating_point T> void validateStrictlyDecreasing(
+    std::span<const T> xs,
+    std::string_view what,
+    std::source_location loc = std::source_location::current()
+);
+
+template <detail::ContiguousFloatRange R> void validateStrictlyDecreasing(
+    const R& xs,
+    std::string_view what,
+    std::source_location loc = std::source_location::current()
+);
+
+template <std::floating_point T> void validateStrictlyMonotonic(
+    std::span<const T> xs,
+    std::string_view what,
+    std::source_location loc = std::source_location::current()
+);
+
+template <detail::ContiguousFloatRange R> void validateStrictlyMonotonic(
     const R& xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
