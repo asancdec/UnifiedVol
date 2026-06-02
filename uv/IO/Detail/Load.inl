@@ -28,7 +28,7 @@ readLabeledMatrixCsv(const std::string& filename, const csv::Options& opt)
 {
     std::ifstream file(filename);
 
-    UV_REQUIRE_FILE_OPENED(file.is_open(), filename);
+    REQUIRE_FILE_OPENED(file.is_open(), filename);
 
     auto dense = csv::readLabeledDenseOrThrow<T, Vector>(file, filename, opt);
 

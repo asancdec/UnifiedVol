@@ -6,11 +6,11 @@
 #include <cstddef>
 #include <format>
 
-namespace uv::errors
+namespace uv::errors::validate
 {
 namespace detail
 {
-template <std::floating_point T> void validateStrictOrder(
+template <std::floating_point T> void strictOrder(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc,
@@ -51,8 +51,8 @@ template <std::floating_point T> void validateStrictOrder(
 }
 } // namespace detail
 
-template <std::floating_point T> void
-validateFinite(std::span<const T> xs, std::string_view what, std::source_location loc)
+template <std::floating_point T>
+void finite(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
     for (std::size_t i = 0; i < xs.size(); ++i)
     {
@@ -68,18 +68,14 @@ validateFinite(std::span<const T> xs, std::string_view what, std::source_locatio
 }
 
 template <detail::ContiguousFloatRange R>
-void validateFinite(const R& xs, std::string_view what, std::source_location loc)
+void finite(const R& xs, std::string_view what, std::source_location loc)
 {
     using T = detail::RangeValue<R>;
-    validateFinite(
-        std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
-        what,
-        loc
-    );
+    finite(std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)), what, loc);
 }
 
 template <std::floating_point T>
-void validateFinite(T x, std::string_view what, std::source_location loc)
+void finite(T x, std::string_view what, std::source_location loc)
 {
     if (!std::isfinite(x)) [[unlikely]]
     {
@@ -87,11 +83,8 @@ void validateFinite(T x, std::string_view what, std::source_location loc)
     }
 }
 
-template <std::floating_point T> void validateNonNegative(
-    std::span<const T> xs,
-    std::string_view what,
-    std::source_location loc
-)
+template <std::floating_point T>
+void nonNegative(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
     for (std::size_t i = 0; i < xs.size(); ++i)
     {
@@ -109,10 +102,10 @@ template <std::floating_point T> void validateNonNegative(
 }
 
 template <detail::ContiguousFloatRange R>
-void validateNonNegative(const R& xs, std::string_view what, std::source_location loc)
+void nonNegative(const R& xs, std::string_view what, std::source_location loc)
 {
     using T = detail::RangeValue<R>;
-    validateNonNegative(
+    nonNegative(
         std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
         what,
         loc
@@ -120,7 +113,7 @@ void validateNonNegative(const R& xs, std::string_view what, std::source_locatio
 }
 
 template <std::floating_point T>
-void validateNonNegative(T x, std::string_view what, std::source_location loc)
+void nonNegative(T x, std::string_view what, std::source_location loc)
 {
     if (x < 0.0) [[unlikely]]
     {
@@ -132,8 +125,8 @@ void validateNonNegative(T x, std::string_view what, std::source_location loc)
     }
 }
 
-template <std::floating_point T> void
-validatePositive(std::span<const T> xs, std::string_view what, std::source_location loc)
+template <std::floating_point T>
+void positive(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
     for (std::size_t i = 0; i < xs.size(); ++i)
     {
@@ -150,8 +143,15 @@ validatePositive(std::span<const T> xs, std::string_view what, std::source_locat
     }
 }
 
+template <detail::ContiguousFloatRange R>
+void positive(const R& xs, std::string_view what, std::source_location loc)
+{
+    using T = detail::RangeValue<R>;
+    positive(std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)), what, loc);
+}
+
 template <std::floating_point T>
-void validatePositive(T x, std::string_view what, std::source_location loc)
+void positive(T x, std::string_view what, std::source_location loc)
 {
     if (x <= 0.0) [[unlikely]]
     {
@@ -165,12 +165,7 @@ void validatePositive(T x, std::string_view what, std::source_location loc)
 
 template <class A, class B>
 requires std::equality_comparable_with<A, B>
-void validateEqual(
-    const A& a,
-    const B& b,
-    std::string_view what,
-    std::source_location loc
-)
+void equal(const A& a, const B& b, std::string_view what, std::source_location loc)
 {
     if (a != b) [[unlikely]]
     {
@@ -183,9 +178,9 @@ void validateEqual(
 }
 
 template <std::floating_point T>
-void validateClose(T a, T b, T tol, std::string_view what, std::source_location loc)
+void close(T a, T b, T tol, std::string_view what, std::source_location loc)
 {
-    validateNonNegative(tol, "tol", loc);
+    nonNegative(tol, "tol", loc);
 
     const T diff{std::abs(a - b)};
 
@@ -201,13 +196,15 @@ void validateClose(T a, T b, T tol, std::string_view what, std::source_location 
 
 template <class T>
 requires std::totally_ordered<T>
-void validateEqualOrLess(
+void equalOrLess(
     std::span<const T> xs,
     std::span<const T> threshold,
     std::string_view what,
     std::source_location loc
 )
 {
+    sameSize(xs, threshold, what, loc);
+
     for (std::size_t i = 0; i < xs.size(); ++i)
     {
         const T v{xs[i]};
@@ -226,7 +223,7 @@ void validateEqualOrLess(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateEqualOrLess(
+void equalOrLess(
     std::span<const T> xs,
     T threshold,
     std::string_view what,
@@ -250,12 +247,7 @@ void validateEqualOrLess(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateEqualOrLess(
-    T x,
-    T threshold,
-    std::string_view what,
-    std::source_location loc
-)
+void equalOrLess(T x, T threshold, std::string_view what, std::source_location loc)
 {
     if (x > threshold) [[unlikely]]
     {
@@ -269,7 +261,7 @@ void validateEqualOrLess(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateLess(
+void less(
     std::span<const T> xs,
     T threshold,
     std::string_view what,
@@ -293,7 +285,7 @@ void validateLess(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateLess(T x, T threshold, std::string_view what, std::source_location loc)
+void less(T x, T threshold, std::string_view what, std::source_location loc)
 {
     if (x >= threshold) [[unlikely]]
     {
@@ -307,13 +299,15 @@ void validateLess(T x, T threshold, std::string_view what, std::source_location 
 
 template <class T>
 requires std::totally_ordered<T>
-void validateEqualOrGreater(
+void equalOrGreater(
     std::span<const T> xs,
     std::span<const T> threshold,
     std::string_view what,
     std::source_location loc
 )
 {
+    sameSize(xs, threshold, what, loc);
+
     for (std::size_t i = 0; i < xs.size(); ++i)
     {
         const T v{xs[i]};
@@ -332,7 +326,7 @@ void validateEqualOrGreater(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateEqualOrGreater(
+void equalOrGreater(
     std::span<const T> xs,
     T threshold,
     std::string_view what,
@@ -356,12 +350,7 @@ void validateEqualOrGreater(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateEqualOrGreater(
-    T x,
-    T threshold,
-    std::string_view what,
-    std::source_location loc
-)
+void equalOrGreater(T x, T threshold, std::string_view what, std::source_location loc)
 {
     if (x < threshold) [[unlikely]]
     {
@@ -375,7 +364,7 @@ void validateEqualOrGreater(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateGreater(
+void greater(
     std::span<const T> xs,
     T threshold,
     std::string_view what,
@@ -399,7 +388,7 @@ void validateGreater(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateGreater(T x, T threshold, std::string_view what, std::source_location loc)
+void greater(T x, T threshold, std::string_view what, std::source_location loc)
 {
     if (x <= threshold) [[unlikely]]
     {
@@ -411,51 +400,42 @@ void validateGreater(T x, T threshold, std::string_view what, std::source_locati
     }
 }
 
-template <std::floating_point T> void validateStrictlyIncreasing(
-    std::span<const T> xs,
-    std::string_view what,
-    std::source_location loc
-)
+template <std::floating_point T> void
+strictlyIncreasing(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
-    detail::validateStrictOrder(xs, what, loc, true);
+    detail::strictOrder(xs, what, loc, true);
 }
 
-template <detail::ContiguousFloatRange R> void
-validateStrictlyIncreasing(const R& xs, std::string_view what, std::source_location loc)
+template <detail::ContiguousFloatRange R>
+void strictlyIncreasing(const R& xs, std::string_view what, std::source_location loc)
 {
     using T = detail::RangeValue<R>;
-    validateStrictlyIncreasing(
+    strictlyIncreasing(
         std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
         what,
         loc
     );
 }
 
-template <std::floating_point T> void validateStrictlyDecreasing(
-    std::span<const T> xs,
-    std::string_view what,
-    std::source_location loc
-)
+template <std::floating_point T> void
+strictlyDecreasing(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
-    detail::validateStrictOrder(xs, what, loc, false);
+    detail::strictOrder(xs, what, loc, false);
 }
 
-template <detail::ContiguousFloatRange R> void
-validateStrictlyDecreasing(const R& xs, std::string_view what, std::source_location loc)
+template <detail::ContiguousFloatRange R>
+void strictlyDecreasing(const R& xs, std::string_view what, std::source_location loc)
 {
     using T = detail::RangeValue<R>;
-    validateStrictlyDecreasing(
+    strictlyDecreasing(
         std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
         what,
         loc
     );
 }
 
-template <std::floating_point T> void validateStrictlyMonotonic(
-    std::span<const T> xs,
-    std::string_view what,
-    std::source_location loc
-)
+template <std::floating_point T> void
+strictlyMonotonic(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
     const std::size_t n{xs.size()};
 
@@ -464,13 +444,13 @@ template <std::floating_point T> void validateStrictlyMonotonic(
 
     if (xs[1] > xs[0])
     {
-        validateStrictlyIncreasing(xs, what, loc);
+        strictlyIncreasing(xs, what, loc);
         return;
     }
 
     if (xs[1] < xs[0])
     {
-        validateStrictlyDecreasing(xs, what, loc);
+        strictlyDecreasing(xs, what, loc);
         return;
     }
 
@@ -481,19 +461,19 @@ template <std::floating_point T> void validateStrictlyMonotonic(
     );
 }
 
-template <detail::ContiguousFloatRange R> void
-validateStrictlyMonotonic(const R& xs, std::string_view what, std::source_location loc)
+template <detail::ContiguousFloatRange R>
+void strictlyMonotonic(const R& xs, std::string_view what, std::source_location loc)
 {
     using T = detail::RangeValue<R>;
-    validateStrictlyMonotonic(
+    strictlyMonotonic(
         std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
         what,
         loc
     );
 }
 
-template <typename T> void
-validateNonEmpty(std::span<const T> xs, std::string_view what, std::source_location loc)
+template <typename T>
+void nonEmpty(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
     if (xs.empty()) [[unlikely]]
     {
@@ -502,18 +482,14 @@ validateNonEmpty(std::span<const T> xs, std::string_view what, std::source_locat
 }
 
 template <detail::ContiguousFloatRange R>
-void validateNonEmpty(const R& xs, std::string_view what, std::source_location loc)
+void nonEmpty(const R& xs, std::string_view what, std::source_location loc)
 {
     using T = detail::RangeValue<R>;
-    validateNonEmpty(
-        std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
-        what,
-        loc
-    );
+    nonEmpty(std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)), what, loc);
 }
 
 template <typename T>
-void validateNonNull(const T* x, std::string_view what, std::source_location loc)
+void nonNull(const T* x, std::string_view what, std::source_location loc)
 {
     if (x == nullptr) [[unlikely]]
     {
@@ -523,14 +499,14 @@ void validateNonNull(const T* x, std::string_view what, std::source_location loc
 
 template <typename Ptr>
 requires requires(const Ptr& p) { p.get(); }
-void validateNonNull(const Ptr& p, std::string_view what, std::source_location loc)
+void nonNull(const Ptr& p, std::string_view what, std::source_location loc)
 {
 
-    validateNonNull(p.get(), what, loc);
+    nonNull(p.get(), what, loc);
 }
 
-template <typename T> void
-validateSet(const std::optional<T>& x, std::string_view what, std::source_location loc)
+template <typename T>
+void set(const std::optional<T>& x, std::string_view what, std::source_location loc)
 {
     if (!x.has_value()) [[unlikely]]
     {
@@ -540,12 +516,7 @@ validateSet(const std::optional<T>& x, std::string_view what, std::source_locati
 
 template <typename A>
 requires requires(const A& a) { a.size(); }
-void validateSameSize(
-    const A& a,
-    std::size_t b,
-    std::string_view what,
-    std::source_location loc
-)
+void sameSize(const A& a, std::size_t b, std::string_view what, std::source_location loc)
 {
     if (static_cast<std::size_t>(a.size()) != b) [[unlikely]]
     {
@@ -564,12 +535,7 @@ void validateSameSize(
 
 template <typename B>
 requires requires(const B& b) { b.size(); }
-void validateSameSize(
-    std::size_t a,
-    const B& b,
-    std::string_view what,
-    std::source_location loc
-)
+void sameSize(std::size_t a, const B& b, std::string_view what, std::source_location loc)
 {
     if (a != static_cast<std::size_t>(b.size())) [[unlikely]]
     {
@@ -591,12 +557,7 @@ requires requires(const A& a, const B& b) {
     a.size();
     b.size();
 }
-void validateSameSize(
-    const A& a,
-    const B& b,
-    std::string_view what,
-    std::source_location loc
-)
+void sameSize(const A& a, const B& b, std::string_view what, std::source_location loc)
 {
     if (a.size() != b.size()) [[unlikely]]
     {
@@ -607,7 +568,7 @@ void validateSameSize(
         );
     }
 }
-template <typename T> void validateMinSize(
+template <typename T> void minSize(
     std::span<const T> x,
     std::size_t minSize,
     std::string_view what,
@@ -629,4 +590,4 @@ template <typename T> void validateMinSize(
     }
 }
 
-} // namespace uv::errors
+} // namespace uv::errors::validate

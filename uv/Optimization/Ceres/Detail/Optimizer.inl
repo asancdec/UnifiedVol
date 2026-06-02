@@ -67,7 +67,7 @@ template <typename PolicyT> void Optimizer<PolicyT>::setBounds_(
 
 template <typename PolicyT> void Optimizer<PolicyT>::requireInitialized_() const
 {
-    UV_REQUIRE_VALID_STATE(
+    REQUIRE_VALID_STATE(
         isInitialized_,
         "Optimizer not initialized. Call initialize() first."
     );
@@ -75,7 +75,7 @@ template <typename PolicyT> void Optimizer<PolicyT>::requireInitialized_() const
 
 template <typename PolicyT> void Optimizer<PolicyT>::requireRunStarted_() const
 {
-    UV_REQUIRE_VALID_STATE(isRunStarted_, "Run not started. Call beginRun() first.");
+    REQUIRE_VALID_STATE(isRunStarted_, "Run not started. Call beginRun() first.");
 }
 
 template <typename PolicyT> void Optimizer<PolicyT>::clampStoredBounds_()
@@ -134,7 +134,7 @@ void Optimizer<PolicyT>::addResidualBlock(std::unique_ptr<::ceres::CostFunction>
     requireInitialized_();
     requireRunStarted_();
 
-    UV_REQUIRE_NON_NULL(cf);
+    REQUIRE_NON_NULL(cf);
 
     problem_.AddResidualBlock(cf.release(), loss_.get(), x_.data());
 }
@@ -153,7 +153,7 @@ template <typename PolicyT> void Optimizer<PolicyT>::solveInPlace()
         io::ConsoleRedirect capture;
         options_.minimizer_progress_to_stdout = true;
         ::ceres::Solve(options_, &problem_, &summary);
-        UV_INFO(summary.FullReport());
+        INFO(summary.FullReport());
     }
     else
     {

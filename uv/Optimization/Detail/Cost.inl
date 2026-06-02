@@ -2,10 +2,7 @@
 
 #include "Base/Macros/Require.hpp"
 
-#include <algorithm>
 #include <cmath>
-#include <format>
-#include <string>
 
 namespace uv::opt::cost
 {
@@ -44,16 +41,16 @@ validateWeightsATM(std::span<const T> logKF, const WeightATM<T>& params, std::sp
     const T wATM{params.wATM};
     const T k0{params.k0};
 
-    UV_REQUIRE_NON_EMPTY(out);
-    UV_REQUIRE_NON_EMPTY(logKF);
+    REQUIRE_NON_EMPTY(out);
+    REQUIRE_NON_EMPTY(logKF);
 
-    UV_REQUIRE_FINITE(logKF);
-    UV_REQUIRE_FINITE(wATM);
-    UV_REQUIRE_FINITE(k0);
+    REQUIRE_FINITE(logKF);
+    REQUIRE_FINITE(wATM);
+    REQUIRE_FINITE(k0);
 
-    UV_REQUIRE_SAME_SIZE(out, logKF);
+    REQUIRE_SAME_SIZE(out, logKF);
 
-    UV_REQUIRE_EQUAL_OR_GREATER(wATM, 1.0);
-    UV_REQUIRE_NON_NEGATIVE(k0);
+    REQUIRE_EQUAL_OR_GREATER(wATM, 1.0);
+    REQUIRE_NON_NEGATIVE(k0);
 }
 } // namespace uv::opt::cost::detail

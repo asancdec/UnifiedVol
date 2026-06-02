@@ -32,7 +32,7 @@ void clampBounds(
         const double before{initGuess[i]};
         const double after{std::clamp(before, lowerBounds[i], upperBounds[i])};
 
-        UV_WARN(
+        WARN(
             after != before,
             std::format(
                 "[Calib]: parameter [{}] initial guess = {:.4f} "
@@ -68,7 +68,7 @@ void clampLowerBounds(
 
         const double after{bound >= before ? bound : before};
 
-        UV_WARN(
+        WARN(
             after != before,
             std::format(
                 "[Calib]: parameter [{}] initial guess = {:.6f} "
@@ -103,7 +103,7 @@ void clampUpperBounds(
 
         const double after{bound <= before ? bound : before};
 
-        UV_WARN(
+        WARN(
             after != before,
             std::format(
                 "[Calib]: parameter [{}] initial guess = {:.6f} "
@@ -174,7 +174,7 @@ void warnBoundsHit(
         {
             const double lb{lowerBounds[i]};
 
-            UV_WARN(
+            WARN(
                 near(v, lb),
                 std::format(
                     "[Calib]: parameter [{}] hit LOWER bound: v = {:.4f} (lb = {:.4f})",
@@ -189,7 +189,7 @@ void warnBoundsHit(
 
             const double ub{upperBounds[i]};
 
-            UV_WARN(
+            WARN(
                 near(v, ub),
                 std::format(
                     "[Calib]: parameter [{}] hit UPPER bound: v = {:.4f} (ub = {:.4f})",
@@ -222,7 +222,7 @@ void logResults(
     if (paramNames.empty())
     {
 
-        UV_INFO(std::format(
+        INFO(std::format(
             "[Calib] SSE={:.8e} ({:.2f} ms, {} it, {}",
             sse,
             elapsedMs,
@@ -234,7 +234,7 @@ void logResults(
 
     const std::size_t n{x.size()};
 
-    UV_REQUIRE_SAME_SIZE(paramNames, n);
+    REQUIRE_SAME_SIZE(paramNames, n);
 
     std::string paramsLine;
     paramsLine.reserve(n * 24);
@@ -249,7 +249,7 @@ void logResults(
         }
     }
 
-    UV_INFO(std::format(
+    INFO(std::format(
         "[Calib] {}  SSE={:.10e} ({:.2f} ms, {} it, {})",
         paramsLine,
         sse,
@@ -265,8 +265,8 @@ void validateBounds(
     std::span<const double> upperBounds
 )
 {
-    UV_REQUIRE_NON_EMPTY(x);
-    UV_REQUIRE_FINITE(x);
+    REQUIRE_NON_EMPTY(x);
+    REQUIRE_FINITE(x);
 
     validateBoundsSpec(x.size(), lowerBounds, upperBounds);
 }
@@ -277,41 +277,41 @@ void validateBoundsSpec(
     std::span<const double> upperBounds
 )
 {
-    UV_REQUIRE_SAME_SIZE(lowerBounds, n);
-    UV_REQUIRE_SAME_SIZE(upperBounds, n);
+    REQUIRE_SAME_SIZE(lowerBounds, n);
+    REQUIRE_SAME_SIZE(upperBounds, n);
 
-    UV_REQUIRE_FINITE(lowerBounds);
-    UV_REQUIRE_FINITE(upperBounds);
+    REQUIRE_FINITE(lowerBounds);
+    REQUIRE_FINITE(upperBounds);
 
-    UV_REQUIRE_EQUAL_OR_GREATER(upperBounds, lowerBounds);
+    REQUIRE_EQUAL_OR_GREATER(upperBounds, lowerBounds);
 }
 
 void validateLowerBounds(std::span<const double> x, std::span<const double> lowerBounds)
 {
-    UV_REQUIRE_NON_EMPTY(x);
-    UV_REQUIRE_FINITE(x);
+    REQUIRE_NON_EMPTY(x);
+    REQUIRE_FINITE(x);
     validateLowerBoundsSpec(x.size(), lowerBounds);
 }
 
 void validateLowerBoundsSpec(std::size_t n, std::span<const double> lowerBounds)
 {
-    UV_REQUIRE_NON_EMPTY(lowerBounds);
-    UV_REQUIRE_FINITE(lowerBounds);
-    UV_REQUIRE_SAME_SIZE(lowerBounds, n);
+    REQUIRE_NON_EMPTY(lowerBounds);
+    REQUIRE_FINITE(lowerBounds);
+    REQUIRE_SAME_SIZE(lowerBounds, n);
 }
 
 void validateUpperBounds(std::span<const double> x, std::span<const double> upperBounds)
 {
-    UV_REQUIRE_NON_EMPTY(x);
-    UV_REQUIRE_FINITE(x);
+    REQUIRE_NON_EMPTY(x);
+    REQUIRE_FINITE(x);
     validateUpperBoundsSpec(x.size(), upperBounds);
 }
 
 void validateUpperBoundsSpec(std::size_t n, std::span<const double> upperBounds)
 {
-    UV_REQUIRE_NON_EMPTY(upperBounds);
-    UV_REQUIRE_FINITE(upperBounds);
-    UV_REQUIRE_SAME_SIZE(upperBounds, n);
+    REQUIRE_NON_EMPTY(upperBounds);
+    REQUIRE_FINITE(upperBounds);
+    REQUIRE_SAME_SIZE(upperBounds, n);
 }
 
 } // namespace uv::opt

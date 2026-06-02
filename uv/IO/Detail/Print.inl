@@ -37,7 +37,7 @@ template <typename HeaderVec, typename RowLabels, typename Matrix> void printMat
         oss << '\n';
     }
 
-    UV_INFO(oss.str());
+    INFO(oss.str());
 }
 
 template <typename Vector>
@@ -51,7 +51,7 @@ void printVector(const Vector& v, unsigned int valuePrec) noexcept
 
     oss << '\n';
 
-    UV_INFO(oss.str());
+    INFO(oss.str());
 }
 
 } // namespace uv::utils

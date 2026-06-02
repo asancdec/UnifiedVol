@@ -4,7 +4,7 @@
 
 #include "Base/Utils/Detail/Log.hpp"
 
-#define UV_WARN(cond, msg)                                                               \
+#define WARN(cond, msg)                                                                  \
     do                                                                                   \
     {                                                                                    \
         if (cond)                                                                        \

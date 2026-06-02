@@ -2,73 +2,68 @@
 
 #pragma once
 
+#include "Base/Errors/Detail/ValidateConcepts.hpp"
+
 #include <concepts>
 #include <cstddef>
 #include <filesystem>
 #include <optional>
-#include <ranges>
 #include <source_location>
 #include <span>
 #include <string_view>
-#include <type_traits>
 
-namespace uv::errors
-{
-namespace detail
+namespace uv::errors::validate
 {
 
-template <typename R>
-concept ContiguousFloatRange =
-    std::ranges::contiguous_range<R> && std::ranges::sized_range<R> &&
-    std::floating_point<std::remove_cvref_t<std::ranges::range_value_t<R>>>;
-
-template <typename R> using RangeValue =
-    std::remove_cvref_t<std::ranges::range_value_t<R>>;
-} // namespace detail
-
-template <std::floating_point T> void validateFinite(
+template <std::floating_point T> void finite(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <detail::ContiguousFloatRange R> void validateFinite(
+template <detail::ContiguousFloatRange R> void finite(
     const R& xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T> void validateFinite(
+template <std::floating_point T> void finite(
     T x,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T> void validateNonNegative(
+template <std::floating_point T> void nonNegative(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <detail::ContiguousFloatRange R> void validateNonNegative(
+template <detail::ContiguousFloatRange R> void nonNegative(
     const R& xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T> void validateNonNegative(
+template <std::floating_point T> void nonNegative(
     T x,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T> void validatePositive(
+template <std::floating_point T> void positive(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T> void validatePositive(
+template <detail::ContiguousFloatRange R> void positive(
+    const R& xs,
+    std::string_view what,
+    std::source_location loc = std::source_location::current()
+);
+
+template <std::floating_point T> void positive(
     T x,
     std::string_view what,
     std::source_location loc = std::source_location::current()
@@ -76,14 +71,14 @@ template <std::floating_point T> void validatePositive(
 
 template <class A, class B>
 requires std::equality_comparable_with<A, B>
-void validateEqual(
+void equal(
     const A& a,
     const B& b,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T> void validateClose(
+template <std::floating_point T> void close(
     T a,
     T b,
     T tol = T{1e-10},
@@ -93,7 +88,7 @@ template <std::floating_point T> void validateClose(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateEqualOrLess(
+void equalOrLess(
     std::span<const T> xs,
     std::span<const T> threshold,
     std::string_view what,
@@ -102,7 +97,7 @@ void validateEqualOrLess(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateEqualOrLess(
+void equalOrLess(
     std::span<const T> xs,
     T threshold,
     std::string_view what,
@@ -111,7 +106,7 @@ void validateEqualOrLess(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateEqualOrLess(
+void equalOrLess(
     T x,
     T threshold,
     std::string_view what,
@@ -120,7 +115,7 @@ void validateEqualOrLess(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateLess(
+void less(
     std::span<const T> xs,
     T threshold,
     std::string_view what,
@@ -129,7 +124,7 @@ void validateLess(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateLess(
+void less(
     T x,
     T threshold,
     std::string_view what,
@@ -138,7 +133,7 @@ void validateLess(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateEqualOrGreater(
+void equalOrGreater(
     std::span<const T> xs,
     std::span<const T> threshold,
     std::string_view what,
@@ -147,7 +142,7 @@ void validateEqualOrGreater(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateEqualOrGreater(
+void equalOrGreater(
     std::span<const T> xs,
     T threshold,
     std::string_view what,
@@ -156,7 +151,7 @@ void validateEqualOrGreater(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateEqualOrGreater(
+void equalOrGreater(
     T x,
     T threshold,
     std::string_view what,
@@ -165,7 +160,7 @@ void validateEqualOrGreater(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateGreater(
+void greater(
     std::span<const T> xs,
     T threshold,
     std::string_view what,
@@ -174,62 +169,62 @@ void validateGreater(
 
 template <class T>
 requires std::totally_ordered<T>
-void validateGreater(
+void greater(
     T x,
     T threshold,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T> void validateStrictlyIncreasing(
+template <std::floating_point T> void strictlyIncreasing(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <detail::ContiguousFloatRange R> void validateStrictlyIncreasing(
+template <detail::ContiguousFloatRange R> void strictlyIncreasing(
     const R& xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T> void validateStrictlyDecreasing(
+template <std::floating_point T> void strictlyDecreasing(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <detail::ContiguousFloatRange R> void validateStrictlyDecreasing(
+template <detail::ContiguousFloatRange R> void strictlyDecreasing(
     const R& xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <std::floating_point T> void validateStrictlyMonotonic(
+template <std::floating_point T> void strictlyMonotonic(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <detail::ContiguousFloatRange R> void validateStrictlyMonotonic(
+template <detail::ContiguousFloatRange R> void strictlyMonotonic(
     const R& xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <typename T> void validateNonEmpty(
+template <typename T> void nonEmpty(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <detail::ContiguousFloatRange R> void validateNonEmpty(
+template <detail::ContiguousFloatRange R> void nonEmpty(
     const R& xs,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <typename T> void validateNonNull(
+template <typename T> void nonNull(
     const T* x,
     std::string_view what,
     std::source_location loc = std::source_location::current()
@@ -237,21 +232,20 @@ template <typename T> void validateNonNull(
 
 template <typename Ptr>
 requires requires(const Ptr& p) { p.get(); }
-void validateNonNull(
+void nonNull(
     const Ptr& p,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <typename T> void validateSet(
-    const std::optional<T>& x,
+template <typename T> void
+set(const std::optional<T>& x,
     std::string_view what,
-    std::source_location loc = std::source_location::current()
-);
+    std::source_location loc = std::source_location::current());
 
 template <typename A>
 requires requires(const A& a) { a.size(); }
-void validateSameSize(
+void sameSize(
     const A& a,
     std::size_t b,
     std::string_view what,
@@ -260,14 +254,14 @@ void validateSameSize(
 
 template <typename B>
 requires requires(const B& b) { b.size(); }
-void validateSameSize(
+void sameSize(
     std::size_t a,
     const B& b,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-void validateSameSize(
+void sameSize(
     std::size_t a,
     std::size_t b,
     std::string_view what,
@@ -279,38 +273,38 @@ requires requires(const A& a, const B& b) {
     a.size();
     b.size();
 }
-void validateSameSize(
+void sameSize(
     const A& a,
     const B& b,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <typename T> void validateMinSize(
+template <typename T> void minSize(
     std::span<const T> x,
     std::size_t minSize,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-void validateState(
+void state(
     bool ok,
     std::string_view message,
     std::source_location loc = std::source_location::current()
 );
 
-void validateFileOpened(
+void fileOpened(
     bool ok,
     const std::filesystem::path& file,
     std::source_location loc = std::source_location::current()
 );
 
-void validateDirCreated(
+void dirCreated(
     bool ok,
     const std::filesystem::path& dir,
     std::source_location loc = std::source_location::current()
 );
 
-} // namespace uv::errors
+} // namespace uv::errors::validate
 
 #include "Base/Errors/Detail/Validate.inl"

@@ -21,6 +21,6 @@ inline constexpr ::nlopt::algorithm toNlopt(Algorithm a) noexcept
         return ::nlopt::LN_BOBYQA;
     }
 
-    UV_UNREACHABLE(Algorithm, a);
+    UNREACHABLE(Algorithm, a);
 }
 } // namespace uv::opt::nlopt::detail

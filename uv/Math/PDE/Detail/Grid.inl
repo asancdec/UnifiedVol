@@ -16,7 +16,7 @@ template <std::floating_point T, std::size_t N> Grid<T, N>::Grid(std::span<const
 template <std::floating_point T, std::size_t N> void Grid<T, N>::validate_() const
 {
     static_assert(N > 2, "Size of grid must be larger than 2");
-    UV_REQUIRE_STRICTLY_MONOTONIC(x_);
+    REQUIRE_STRICTLY_MONOTONIC(x_);
 }
 
 template <std::floating_point T, std::size_t N> void Grid<T, N>::setGridSteps_() noexcept
@@ -44,8 +44,8 @@ Grid<T, N> generateCenteredSinHGrid(T xMin, T xMax, T beta)
 {
     constexpr T uniformThreshold{1e-10};
 
-    UV_REQUIRE_NON_NEGATIVE(beta);
-    UV_REQUIRE_CLOSE(xMin, -xMax);
+    REQUIRE_NON_NEGATIVE(beta);
+    REQUIRE_CLOSE(xMin, -xMax);
 
     if (beta < std::abs(uniformThreshold))
         return generateUniformGrid<T, N>(xMin, xMax);
@@ -75,7 +75,7 @@ namespace uv::math::pde::detail
 template <std::floating_point T, std::size_t N>
 std::array<T, N> generateUniformGrid(T xMin, T xMax)
 {
-    UV_REQUIRE_GREATER(xMax, xMin);
+    REQUIRE_GREATER(xMax, xMin);
     static_assert(N > 2, "Size of grid must be larger than 2");
 
     const T range{xMax - xMin};

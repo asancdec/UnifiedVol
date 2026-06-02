@@ -7,7 +7,7 @@
 
 #include <source_location>
 
-#define UV_REQUIRE(cond, code, message)                                                  \
+#define REQUIRE(cond, code, message)                                                     \
     do                                                                                   \
     {                                                                                    \
         if (!cond)                                                                       \
@@ -16,28 +16,28 @@
         }                                                                                \
     } while (0)
 
-#define UV_REQUIRE_FINITE(x)                                                             \
+#define REQUIRE_FINITE(x)                                                                \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateFinite((x), #x, std::source_location::current());          \
+        ::uv::errors::validate::finite((x), #x, std::source_location::current());        \
     } while (0)
 
-#define UV_REQUIRE_NON_NEGATIVE(x)                                                       \
+#define REQUIRE_NON_NEGATIVE(x)                                                          \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateNonNegative((x), #x, std::source_location::current());     \
+        ::uv::errors::validate::nonNegative((x), #x, std::source_location::current());   \
     } while (0)
 
-#define UV_REQUIRE_POSITIVE(x)                                                           \
+#define REQUIRE_POSITIVE(x)                                                              \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validatePositive((x), #x, std::source_location::current());        \
+        ::uv::errors::validate::positive((x), #x, std::source_location::current());      \
     } while (0)
 
-#define UV_REQUIRE_EQUAL(a, b)                                                           \
+#define REQUIRE_EQUAL(a, b)                                                              \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateEqual(                                                     \
+        ::uv::errors::validate::equal(                                                   \
             (a),                                                                         \
             (b),                                                                         \
             #a " vs " #b,                                                                \
@@ -45,10 +45,10 @@
         );                                                                               \
     } while (0)
 
-#define UV_REQUIRE_CLOSE(a, b, ...)                                                      \
+#define REQUIRE_CLOSE(a, b, ...)                                                         \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateClose(                                                     \
+        ::uv::errors::validate::close(                                                   \
             (a),                                                                         \
             (b),                                                                         \
             __VA_ARGS__ __VA_OPT__(, ) #a " vs " #b,                                     \
@@ -56,10 +56,10 @@
         );                                                                               \
     } while (0)
 
-#define UV_REQUIRE_EQUAL_OR_LESS(x, threshold)                                           \
+#define REQUIRE_EQUAL_OR_LESS(x, threshold)                                              \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateEqualOrLess(                                               \
+        ::uv::errors::validate::equalOrLess(                                             \
             (x),                                                                         \
             (threshold),                                                                 \
             #x,                                                                          \
@@ -67,10 +67,10 @@
         );                                                                               \
     } while (0)
 
-#define UV_REQUIRE_LESS(x, threshold)                                                    \
+#define REQUIRE_LESS(x, threshold)                                                       \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateLess(                                                      \
+        ::uv::errors::validate::less(                                                    \
             (x),                                                                         \
             (threshold),                                                                 \
             #x,                                                                          \
@@ -78,10 +78,10 @@
         );                                                                               \
     } while (0)
 
-#define UV_REQUIRE_EQUAL_OR_GREATER(x, threshold)                                        \
+#define REQUIRE_EQUAL_OR_GREATER(x, threshold)                                           \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateEqualOrGreater(                                            \
+        ::uv::errors::validate::equalOrGreater(                                          \
             (x),                                                                         \
             (threshold),                                                                 \
             #x,                                                                          \
@@ -89,10 +89,10 @@
         );                                                                               \
     } while (0)
 
-#define UV_REQUIRE_GREATER(x, threshold)                                                 \
+#define REQUIRE_GREATER(x, threshold)                                                    \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateGreater(                                                   \
+        ::uv::errors::validate::greater(                                                 \
             (x),                                                                         \
             (threshold),                                                                 \
             #x,                                                                          \
@@ -100,58 +100,58 @@
         );                                                                               \
     } while (0)
 
-#define UV_REQUIRE_STRICTLY_INCREASING(x)                                                \
+#define REQUIRE_STRICTLY_INCREASING(x)                                                   \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateStrictlyIncreasing(                                        \
+        ::uv::errors::validate::strictlyIncreasing(                                      \
             (x),                                                                         \
             #x,                                                                          \
             std::source_location::current()                                              \
         );                                                                               \
     } while (0)
 
-#define UV_REQUIRE_STRICTLY_DECREASING(x)                                                \
+#define REQUIRE_STRICTLY_DECREASING(x)                                                   \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateStrictlyDecreasing(                                        \
+        ::uv::errors::validate::strictlyDecreasing(                                      \
             (x),                                                                         \
             #x,                                                                          \
             std::source_location::current()                                              \
         );                                                                               \
     } while (0)
 
-#define UV_REQUIRE_STRICTLY_MONOTONIC(x)                                                 \
+#define REQUIRE_STRICTLY_MONOTONIC(x)                                                    \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateStrictlyMonotonic(                                         \
+        ::uv::errors::validate::strictlyMonotonic(                                       \
             (x),                                                                         \
             #x,                                                                          \
             std::source_location::current()                                              \
         );                                                                               \
     } while (0)
 
-#define UV_REQUIRE_NON_EMPTY(x)                                                          \
+#define REQUIRE_NON_EMPTY(x)                                                             \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateNonEmpty((x), #x, std::source_location::current());        \
+        ::uv::errors::validate::nonEmpty((x), #x, std::source_location::current());      \
     } while (0)
 
-#define UV_REQUIRE_NON_NULL(x)                                                           \
+#define REQUIRE_NON_NULL(x)                                                              \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateNonNull((x), #x, std::source_location::current());         \
+        ::uv::errors::validate::nonNull((x), #x, std::source_location::current());       \
     } while (0)
 
-#define UV_REQUIRE_SET(x)                                                                \
+#define REQUIRE_SET(x)                                                                   \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateSet((x), #x, std::source_location::current());             \
+        ::uv::errors::validate::set((x), #x, std::source_location::current());           \
     } while (0)
 
-#define UV_REQUIRE_SAME_SIZE(a, b)                                                       \
+#define REQUIRE_SAME_SIZE(a, b)                                                          \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateSameSize(                                                  \
+        ::uv::errors::validate::sameSize(                                                \
             (a),                                                                         \
             (b),                                                                         \
             #a " vs " #b,                                                                \
@@ -159,31 +159,39 @@
         );                                                                               \
     } while (0)
 
-#define UV_REQUIRE_MIN_SIZE(x, minSize)                                                  \
+#define REQUIRE_MIN_SIZE(x, minSizeValue)                                                \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateMinSize(                                                   \
+        ::uv::errors::validate::minSize(                                                 \
             (x),                                                                         \
-            (minSize),                                                                   \
+            (minSizeValue),                                                              \
             #x,                                                                          \
             std::source_location::current()                                              \
         );                                                                               \
     } while (0)
 
-#define UV_REQUIRE_VALID_STATE(ok, message)                                              \
+#define REQUIRE_VALID_STATE(ok, message)                                                 \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateState((ok), (message), std::source_location::current());   \
+        ::uv::errors::validate::state((ok), (message), std::source_location::current()); \
     } while (0)
 
-#define UV_REQUIRE_DIR_CREATED(ok, path)                                                 \
+#define REQUIRE_DIR_CREATED(ok, path)                                                    \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateDirCreated((ok), (path), std::source_location::current()); \
+        ::uv::errors::validate::dirCreated(                                              \
+            (ok),                                                                        \
+            (path),                                                                      \
+            std::source_location::current()                                              \
+        );                                                                               \
     } while (0)
 
-#define UV_REQUIRE_FILE_OPENED(ok, path)                                                 \
+#define REQUIRE_FILE_OPENED(ok, path)                                                    \
     do                                                                                   \
     {                                                                                    \
-        ::uv::errors::validateFileOpened((ok), (path), std::source_location::current()); \
+        ::uv::errors::validate::fileOpened(                                              \
+            (ok),                                                                        \
+            (path),                                                                      \
+            std::source_location::current()                                              \
+        );                                                                               \
     } while (0)

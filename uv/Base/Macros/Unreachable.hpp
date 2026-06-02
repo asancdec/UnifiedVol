@@ -6,7 +6,7 @@
 
 #include <source_location>
 
-#define UV_UNREACHABLE(EnumType, value)                                                  \
+#define UNREACHABLE(EnumType, value)                                                     \
     do                                                                                   \
     {                                                                                    \
         ::uv::errors::unreachableEnum(                                                   \

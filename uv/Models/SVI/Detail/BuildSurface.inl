@@ -8,7 +8,6 @@
 #include "Models/SVI/Calibrate/NLoptAdapter.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"
 
-#include <cmath>
 #include <cstddef>
 #include <span>
 
@@ -40,7 +39,7 @@ buildSurface(const core::VolSurface<T>& volSurface, const Vector<Params<T>>& par
 
     std::span<const T> maturities{volSurface.maturities()};
 
-    UV_REQUIRE_SAME_SIZE(maturities, params);
+    REQUIRE_SAME_SIZE(maturities, params);
 
     const core::Matrix<T> logKF{math::vol::logKF(volSurface)};
 

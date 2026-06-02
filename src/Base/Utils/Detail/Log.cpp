@@ -12,7 +12,6 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <time.h>
 
 namespace uv::utils
 {
@@ -39,7 +38,7 @@ void Log::setFile(std::string_view filename)
 
     std::filesystem::create_directories(logDir, ec);
 
-    UV_REQUIRE_DIR_CREATED(!ec, logDir);
+    REQUIRE_DIR_CREATED(!ec, logDir);
 
     std::filesystem::path fullPath = logDir / filename;
 
@@ -47,7 +46,7 @@ void Log::setFile(std::string_view filename)
 
     fileEnabled_ = file_.is_open();
 
-    UV_REQUIRE_FILE_OPENED(fileEnabled_, fullPath);
+    REQUIRE_FILE_OPENED(fileEnabled_, fullPath);
 }
 
 void Log::enableConsole(bool enabled) noexcept

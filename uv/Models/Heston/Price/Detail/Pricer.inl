@@ -3,7 +3,7 @@
 #include "Base/Macros/Require.hpp"
 #include "Math/Functions/Primitive.hpp"
 #include "Models/Heston/Price/Detail/Integrand.hpp"
-#include <ceres/context.h>
+
 #include <cmath>
 #include <limits>
 #include <numbers>
@@ -26,7 +26,7 @@ template <std::floating_point T, std::size_t N> Pricer<T, N>::Pricer(
     : quad_(std::move(quad))
 {
     setAlphas_(config);
-    UV_REQUIRE_NON_NULL(quad_);
+    REQUIRE_NON_NULL(quad_);
     validateAlphaDomain_();
 }
 
@@ -34,22 +34,22 @@ template <std::floating_point T, std::size_t N>
 void Pricer<T, N>::Pricer::validateAlphaDomain_() const
 {
     constexpr T EPS{std::numeric_limits<T>::epsilon() * 10};
-    UV_REQUIRE_EQUAL_OR_LESS(alphaItm_, 1.0 - EPS);
-    UV_REQUIRE_EQUAL_OR_GREATER(alphaOtm_, EPS);
+    REQUIRE_EQUAL_OR_LESS(alphaItm_, 1.0 - EPS);
+    REQUIRE_EQUAL_OR_GREATER(alphaOtm_, EPS);
 }
 
 template <std::floating_point T, std::size_t N>
 void Pricer<T, N>::Pricer::validateCallPrice_(T t, T dF, T F, T K) const
 {
-    UV_REQUIRE_SET(params_);
+    REQUIRE_SET(params_);
 
-    UV_REQUIRE_FINITE(t);
-    UV_REQUIRE_FINITE(dF);
-    UV_REQUIRE_FINITE(F);
-    UV_REQUIRE_FINITE(K);
+    REQUIRE_FINITE(t);
+    REQUIRE_FINITE(dF);
+    REQUIRE_FINITE(F);
+    REQUIRE_FINITE(K);
 
-    UV_REQUIRE_POSITIVE(t);
-    UV_REQUIRE_POSITIVE(dF);
+    REQUIRE_POSITIVE(t);
+    REQUIRE_POSITIVE(dF);
 }
 
 template <std::floating_point T, std::size_t N>
@@ -150,8 +150,8 @@ template <std::floating_point T, std::size_t N> void Pricer<T, N>::callPrice(
 {
     if (doValidate)
     {
-        UV_REQUIRE_NON_EMPTY(strikes);
-        UV_REQUIRE_SAME_SIZE(out, strikes);
+        REQUIRE_NON_EMPTY(strikes);
+        REQUIRE_SAME_SIZE(out, strikes);
     }
 
     for (std::size_t i{0}; i < strikes.size(); ++i)

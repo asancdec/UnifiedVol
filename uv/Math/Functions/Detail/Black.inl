@@ -5,7 +5,6 @@
 #include "Math/Functions/Primitive.hpp"
 
 #include <cmath>
-#include <numbers>
 #include <span>
 
 namespace uv::math::black
@@ -44,20 +43,20 @@ template <std::floating_point T> void priceB76(
     if (doValidate)
     {
 
-        UV_REQUIRE_SAME_SIZE(vol, K);
-        UV_REQUIRE_SAME_SIZE(vol, out);
+        REQUIRE_SAME_SIZE(vol, K);
+        REQUIRE_SAME_SIZE(vol, out);
 
-        UV_REQUIRE_FINITE(vol);
-        UV_REQUIRE_FINITE(t);
-        UV_REQUIRE_FINITE(dF);
-        UV_REQUIRE_FINITE(F);
-        UV_REQUIRE_FINITE(K);
+        REQUIRE_FINITE(vol);
+        REQUIRE_FINITE(t);
+        REQUIRE_FINITE(dF);
+        REQUIRE_FINITE(F);
+        REQUIRE_FINITE(K);
 
-        UV_REQUIRE_POSITIVE(vol);
-        UV_REQUIRE_POSITIVE(t);
-        UV_REQUIRE_POSITIVE(dF);
-        UV_REQUIRE_POSITIVE(F);
-        UV_REQUIRE_POSITIVE(K);
+        REQUIRE_POSITIVE(vol);
+        REQUIRE_POSITIVE(t);
+        REQUIRE_POSITIVE(dF);
+        REQUIRE_POSITIVE(F);
+        REQUIRE_POSITIVE(K);
     }
 
     for (std::size_t i{0}; i < vol.size(); ++i)
@@ -71,17 +70,17 @@ T priceBS(T t, T r, T q, T vol, T S, T K, bool doValidate, bool isCall)
 {
     if (doValidate)
     {
-        UV_REQUIRE_FINITE(vol);
-        UV_REQUIRE_FINITE(t);
-        UV_REQUIRE_FINITE(r);
-        UV_REQUIRE_FINITE(q);
-        UV_REQUIRE_FINITE(S);
-        UV_REQUIRE_FINITE(K);
+        REQUIRE_FINITE(vol);
+        REQUIRE_FINITE(t);
+        REQUIRE_FINITE(r);
+        REQUIRE_FINITE(q);
+        REQUIRE_FINITE(S);
+        REQUIRE_FINITE(K);
 
-        UV_REQUIRE_POSITIVE(vol);
-        UV_REQUIRE_POSITIVE(S);
-        UV_REQUIRE_POSITIVE(K);
-        UV_REQUIRE_POSITIVE(t);
+        REQUIRE_POSITIVE(vol);
+        REQUIRE_POSITIVE(S);
+        REQUIRE_POSITIVE(K);
+        REQUIRE_POSITIVE(t);
     }
 
     const T d1{detail::d1(t, r, q, vol, S, K)};
@@ -104,17 +103,17 @@ T priceB76(T t, T dF, T F, T vol, T K, bool doValidate, bool isCall)
 {
     if (doValidate)
     {
-        UV_REQUIRE_FINITE(vol);
-        UV_REQUIRE_FINITE(t);
-        UV_REQUIRE_FINITE(dF);
-        UV_REQUIRE_FINITE(F);
-        UV_REQUIRE_FINITE(K);
+        REQUIRE_FINITE(vol);
+        REQUIRE_FINITE(t);
+        REQUIRE_FINITE(dF);
+        REQUIRE_FINITE(F);
+        REQUIRE_FINITE(K);
 
-        UV_REQUIRE_POSITIVE(vol);
-        UV_REQUIRE_POSITIVE(t);
-        UV_REQUIRE_POSITIVE(dF);
-        UV_REQUIRE_POSITIVE(F);
-        UV_REQUIRE_POSITIVE(K);
+        REQUIRE_POSITIVE(vol);
+        REQUIRE_POSITIVE(t);
+        REQUIRE_POSITIVE(dF);
+        REQUIRE_POSITIVE(F);
+        REQUIRE_POSITIVE(K);
     }
 
     const T d1{detail::d1FromForward(t, vol, F, K)};

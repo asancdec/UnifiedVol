@@ -17,7 +17,7 @@ namespace uv::opt::ceres::detail
         return ::ceres::DOGLEG;
     }
 
-    UV_UNREACHABLE(TrustRegionStrategy, a);
+    UNREACHABLE(TrustRegionStrategy, a);
 }
 
 ::ceres::LinearSolverType toCeres(LinearSolver a)
@@ -33,7 +33,7 @@ namespace uv::opt::ceres::detail
     case LinearSolver::SparseSchur:
         return ::ceres::SPARSE_SCHUR;
     }
-    UV_UNREACHABLE(LinearSolver, a);
+    UNREACHABLE(LinearSolver, a);
 }
 
 std::unique_ptr<::ceres::LossFunction> makeLoss(Loss a, double lossParam)
@@ -50,7 +50,7 @@ std::unique_ptr<::ceres::LossFunction> makeLoss(Loss a, double lossParam)
         return std::make_unique<::ceres::SoftLOneLoss>(lossParam);
     }
 
-    UV_UNREACHABLE(Loss, a);
+    UNREACHABLE(Loss, a);
 }
 
 } // namespace uv::opt::ceres::detail

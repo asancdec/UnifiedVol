@@ -148,7 +148,7 @@ template <std::size_t N, Algorithm Algo> double Optimizer<N, Algo>::tol() const 
 template <std::size_t N, Algorithm Algo>
 const double& Optimizer<N, Algo>::userValue() const noexcept
 {
-    UV_REQUIRE_SET(userValue_);
+    REQUIRE_SET(userValue_);
 
     return *userValue_;
 }

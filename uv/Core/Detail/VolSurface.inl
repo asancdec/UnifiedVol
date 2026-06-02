@@ -20,34 +20,34 @@ template <std::floating_point T> VolSurface<T>::VolSurface(
       moneyness_(moneyness.begin(), moneyness.end()),
       vol_(vol)
 {
-    UV_REQUIRE_NON_EMPTY(maturities_);
-    UV_REQUIRE_NON_EMPTY(strikes_);
-    UV_REQUIRE_NON_EMPTY(forwards_);
-    UV_REQUIRE_NON_EMPTY(moneyness_);
+    REQUIRE_NON_EMPTY(maturities_);
+    REQUIRE_NON_EMPTY(strikes_);
+    REQUIRE_NON_EMPTY(forwards_);
+    REQUIRE_NON_EMPTY(moneyness_);
 
-    UV_REQUIRE_FINITE(maturities_);
-    UV_REQUIRE_FINITE(strikes_);
-    UV_REQUIRE_FINITE(forwards_);
+    REQUIRE_FINITE(maturities_);
+    REQUIRE_FINITE(strikes_);
+    REQUIRE_FINITE(forwards_);
 
-    UV_REQUIRE_NON_NEGATIVE(maturities_);
-    UV_REQUIRE_NON_NEGATIVE(moneyness_);
+    REQUIRE_NON_NEGATIVE(maturities_);
+    REQUIRE_NON_NEGATIVE(moneyness_);
 
-    UV_REQUIRE_STRICTLY_INCREASING(maturities_);
-    UV_REQUIRE_STRICTLY_INCREASING(strikes_);
-    UV_REQUIRE_STRICTLY_INCREASING(moneyness_);
+    REQUIRE_STRICTLY_INCREASING(maturities_);
+    REQUIRE_STRICTLY_INCREASING(strikes_);
+    REQUIRE_STRICTLY_INCREASING(moneyness_);
 
-    UV_REQUIRE_SAME_SIZE(maturities_, forwards_);
-    UV_REQUIRE_SAME_SIZE(maturities_, vol_.rows());
-    UV_REQUIRE_SAME_SIZE(strikes_, moneyness_);
-    UV_REQUIRE_SAME_SIZE(strikes_, vol_.cols());
+    REQUIRE_SAME_SIZE(maturities_, forwards_);
+    REQUIRE_SAME_SIZE(maturities_, vol_.rows());
+    REQUIRE_SAME_SIZE(strikes_, moneyness_);
+    REQUIRE_SAME_SIZE(strikes_, vol_.cols());
 
     for (std::size_t i{0}; i < numMaturities_; ++i)
     {
         std::span<const T> volSlice{vol_[i]};
 
-        UV_REQUIRE_NON_EMPTY(volSlice);
-        UV_REQUIRE_FINITE(volSlice);
-        UV_REQUIRE_NON_NEGATIVE(volSlice);
+        REQUIRE_NON_EMPTY(volSlice);
+        REQUIRE_FINITE(volSlice);
+        REQUIRE_NON_NEGATIVE(volSlice);
     }
 }
 

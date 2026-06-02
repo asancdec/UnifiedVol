@@ -5,13 +5,11 @@
 
 #include <algorithm>
 #include <array>
-#include <cmath>
 #include <concepts>
 #include <cstddef>
 #include <functional>
 #include <numeric>
 #include <span>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -71,7 +69,7 @@ template <std::floating_point T>
 Vector<T> hadamard(std::span<const T> a, std::span<const T> b)
 {
 
-    UV_REQUIRE_SAME_SIZE(a, b);
+    REQUIRE_SAME_SIZE(a, b);
 
     std::size_t aSize{a.size()};
 
@@ -94,14 +92,14 @@ template <typename T> Vector<T> makeSequence(std::size_t n, T start) noexcept
 
 template <typename T> T minValue(std::span<const T> x)
 {
-    UV_REQUIRE_NON_EMPTY(x);
+    REQUIRE_NON_EMPTY(x);
 
     return *std::min_element(x.begin(), x.end());
 }
 
 template <typename T> T maxValue(std::span<const T> x)
 {
-    UV_REQUIRE_NON_EMPTY(x);
+    REQUIRE_NON_EMPTY(x);
 
     return *std::max_element(x.begin(), x.end());
 }

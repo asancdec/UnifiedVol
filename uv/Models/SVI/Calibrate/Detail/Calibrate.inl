@@ -110,14 +110,14 @@ template <std::floating_point T> void validateInputs(
     const core::Matrix<T>& totalVariance
 )
 {
-    UV_REQUIRE_NON_EMPTY(maturities);
-    UV_REQUIRE_FINITE(maturities);
-    UV_REQUIRE_NON_NEGATIVE(maturities);
-    UV_REQUIRE_STRICTLY_INCREASING(maturities);
+    REQUIRE_NON_EMPTY(maturities);
+    REQUIRE_FINITE(maturities);
+    REQUIRE_NON_NEGATIVE(maturities);
+    REQUIRE_STRICTLY_INCREASING(maturities);
 
-    UV_REQUIRE_SAME_SIZE(maturities, logKF.rows());
-    UV_REQUIRE_SAME_SIZE(maturities, totalVariance.rows());
-    UV_REQUIRE_SAME_SIZE(logKF.cols(), totalVariance.cols());
+    REQUIRE_SAME_SIZE(maturities, logKF.rows());
+    REQUIRE_SAME_SIZE(maturities, totalVariance.rows());
+    REQUIRE_SAME_SIZE(logKF.cols(), totalVariance.cols());
 
     for (std::size_t i{0}; i < maturities.size(); ++i)
     {
@@ -125,15 +125,15 @@ template <std::floating_point T> void validateInputs(
         std::span<const T> logKFSlice{logKF[i]};
         std::span<const T> totalVarianceSlice{totalVariance[i]};
 
-        UV_REQUIRE_NON_EMPTY(logKFSlice);
-        UV_REQUIRE_NON_EMPTY(totalVarianceSlice);
+        REQUIRE_NON_EMPTY(logKFSlice);
+        REQUIRE_NON_EMPTY(totalVarianceSlice);
 
-        UV_REQUIRE_FINITE(logKFSlice);
-        UV_REQUIRE_FINITE(totalVarianceSlice);
+        REQUIRE_FINITE(logKFSlice);
+        REQUIRE_FINITE(totalVarianceSlice);
 
-        UV_REQUIRE_STRICTLY_INCREASING(logKFSlice);
+        REQUIRE_STRICTLY_INCREASING(logKFSlice);
 
-        UV_REQUIRE_NON_NEGATIVE(totalVarianceSlice);
+        REQUIRE_NON_NEGATIVE(totalVarianceSlice);
     }
 }
 

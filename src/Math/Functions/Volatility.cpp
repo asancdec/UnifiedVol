@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include <cmath>
-
-#include "Math/Functions/Detail/JackelDeclare.hpp"
 #include "Math/Functions/Volatility.hpp"
+#include "Math/Functions/Detail/JackelDeclare.hpp"
 
 namespace uv::math::vol::detail
 {

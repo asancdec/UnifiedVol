@@ -6,7 +6,6 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
-#include <string>
 
 namespace uv::math::interp
 {
@@ -268,19 +267,19 @@ template <std::floating_point T> void validateInputsDerivatives(
     std::span<const T> dydx
 )
 {
-    UV_REQUIRE_NON_EMPTY(xs);
-    UV_REQUIRE_NON_EMPTY(ys);
-    UV_REQUIRE_NON_EMPTY(dydx);
+    REQUIRE_NON_EMPTY(xs);
+    REQUIRE_NON_EMPTY(ys);
+    REQUIRE_NON_EMPTY(dydx);
 
-    UV_REQUIRE_SAME_SIZE(xs, ys);
-    UV_REQUIRE_SAME_SIZE(xs, dydx);
-    UV_REQUIRE_MIN_SIZE(xs, 2);
+    REQUIRE_SAME_SIZE(xs, ys);
+    REQUIRE_SAME_SIZE(xs, dydx);
+    REQUIRE_MIN_SIZE(xs, 2);
 
-    UV_REQUIRE_FINITE(xs);
-    UV_REQUIRE_FINITE(ys);
-    UV_REQUIRE_FINITE(dydx);
+    REQUIRE_FINITE(xs);
+    REQUIRE_FINITE(ys);
+    REQUIRE_FINITE(dydx);
 
-    UV_REQUIRE_STRICTLY_INCREASING(xs);
+    REQUIRE_STRICTLY_INCREASING(xs);
 }
 
 template <std::floating_point T> void validateInputsEvaluate(
@@ -294,8 +293,8 @@ template <std::floating_point T> void validateInputsEvaluate(
 {
     validateInputsDerivatives<T>(xs, ys, dydx);
 
-    UV_REQUIRE_FINITE(x);
-    UV_REQUIRE_NON_EMPTY(x);
-    UV_REQUIRE_SAME_SIZE(y, x);
+    REQUIRE_FINITE(x);
+    REQUIRE_NON_EMPTY(x);
+    REQUIRE_SAME_SIZE(y, x);
 }
 } // namespace uv::math::interp::detail

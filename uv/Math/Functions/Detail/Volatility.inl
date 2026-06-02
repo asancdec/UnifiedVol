@@ -23,11 +23,11 @@ template <std::floating_point T> T logKF(T F, T K, bool doValidate)
 {
     if (doValidate)
     {
-        UV_REQUIRE_FINITE(K);
-        UV_REQUIRE_FINITE(F);
+        REQUIRE_FINITE(K);
+        REQUIRE_FINITE(F);
 
-        UV_REQUIRE_POSITIVE(K);
-        UV_REQUIRE_POSITIVE(F);
+        REQUIRE_POSITIVE(K);
+        REQUIRE_POSITIVE(F);
     }
 
     return std::log(K / F);
@@ -38,13 +38,13 @@ void logKF(std::span<T> out, T F, std::span<const T> K, bool doValidate)
 {
     if (doValidate)
     {
-        UV_REQUIRE_SAME_SIZE(K, out);
+        REQUIRE_SAME_SIZE(K, out);
 
-        UV_REQUIRE_FINITE(K);
-        UV_REQUIRE_FINITE(F);
+        REQUIRE_FINITE(K);
+        REQUIRE_FINITE(F);
 
-        UV_REQUIRE_NON_NEGATIVE(K);
-        UV_REQUIRE_NON_NEGATIVE(F);
+        REQUIRE_NON_NEGATIVE(K);
+        REQUIRE_NON_NEGATIVE(F);
     }
 
     for (std::size_t i{0}; i < K.size(); ++i)
@@ -75,11 +75,11 @@ template <std::floating_point T> T totalVariance(T t, T vol, bool doValidate)
 {
     if (doValidate)
     {
-        UV_REQUIRE_FINITE(t);
-        UV_REQUIRE_FINITE(vol);
+        REQUIRE_FINITE(t);
+        REQUIRE_FINITE(vol);
 
-        UV_REQUIRE_NON_NEGATIVE(t);
-        UV_REQUIRE_NON_NEGATIVE(vol);
+        REQUIRE_NON_NEGATIVE(t);
+        REQUIRE_NON_NEGATIVE(vol);
     }
 
     return vol * vol * t;
@@ -90,13 +90,13 @@ void totalVariance(std::span<T> out, T t, std::span<const T> vol, bool doValidat
 {
     if (doValidate)
     {
-        UV_REQUIRE_SAME_SIZE(vol, out);
+        REQUIRE_SAME_SIZE(vol, out);
 
-        UV_REQUIRE_FINITE(t);
-        UV_REQUIRE_FINITE(vol);
+        REQUIRE_FINITE(t);
+        REQUIRE_FINITE(vol);
 
-        UV_REQUIRE_NON_NEGATIVE(t);
-        UV_REQUIRE_NON_NEGATIVE(vol);
+        REQUIRE_NON_NEGATIVE(t);
+        REQUIRE_NON_NEGATIVE(vol);
     }
 
     for (std::size_t i{0}; i < vol.size(); ++i)
@@ -132,13 +132,13 @@ template <std::floating_point T> void volFromTotalVariance(
 {
     if (doValidate)
     {
-        UV_REQUIRE_SAME_SIZE(totalVariance, out);
+        REQUIRE_SAME_SIZE(totalVariance, out);
 
-        UV_REQUIRE_FINITE(t);
-        UV_REQUIRE_FINITE(totalVariance);
+        REQUIRE_FINITE(t);
+        REQUIRE_FINITE(totalVariance);
 
-        UV_REQUIRE_POSITIVE(t);
-        UV_REQUIRE_NON_NEGATIVE(totalVariance);
+        REQUIRE_POSITIVE(t);
+        REQUIRE_NON_NEGATIVE(totalVariance);
     }
 
     T invT{1.0 / t};
@@ -155,7 +155,7 @@ template <std::floating_point T> core::Matrix<T> volFromTotalVariance(
     bool doValidate
 )
 {
-    UV_REQUIRE_SAME_SIZE(t, totalVariance.rows());
+    REQUIRE_SAME_SIZE(t, totalVariance.rows());
 
     const std::size_t n{t.size()};
 
@@ -173,8 +173,8 @@ template <std::floating_point T> T variance(T vol, bool doValidate)
 {
     if (doValidate)
     {
-        UV_REQUIRE_FINITE(vol);
-        UV_REQUIRE_NON_NEGATIVE(vol);
+        REQUIRE_FINITE(vol);
+        REQUIRE_NON_NEGATIVE(vol);
     }
 
     return vol * vol;
@@ -184,9 +184,9 @@ void variance(std::span<T> out, std::span<const T> vol, bool doValidate)
 {
     if (doValidate)
     {
-        UV_REQUIRE_SAME_SIZE(vol, out);
-        UV_REQUIRE_FINITE(vol);
-        UV_REQUIRE_NON_NEGATIVE(vol);
+        REQUIRE_SAME_SIZE(vol, out);
+        REQUIRE_FINITE(vol);
+        REQUIRE_NON_NEGATIVE(vol);
     }
 
     for (std::size_t i{0}; i < vol.size(); ++i)
@@ -216,15 +216,15 @@ T atmParameter(std::span<const T> parameters, std::span<const T> logKF, bool doV
 {
     if (doValidate)
     {
-        UV_REQUIRE_NON_EMPTY(parameters);
-        UV_REQUIRE_NON_EMPTY(logKF);
+        REQUIRE_NON_EMPTY(parameters);
+        REQUIRE_NON_EMPTY(logKF);
 
-        UV_REQUIRE_FINITE(parameters);
-        UV_REQUIRE_FINITE(logKF);
+        REQUIRE_FINITE(parameters);
+        REQUIRE_FINITE(logKF);
 
-        UV_REQUIRE_STRICTLY_INCREASING(logKF);
+        REQUIRE_STRICTLY_INCREASING(logKF);
 
-        UV_REQUIRE_SAME_SIZE(logKF, parameters);
+        REQUIRE_SAME_SIZE(logKF, parameters);
     }
 
     return math::interp::PchipInterpolator<T>{}(0.0, logKF, parameters);
@@ -235,17 +235,17 @@ T impliedVol(T callPrice, T t, T dF, T F, T K, bool doValidate)
 {
     if (doValidate)
     {
-        UV_REQUIRE_FINITE(callPrice);
-        UV_REQUIRE_FINITE(t);
-        UV_REQUIRE_FINITE(dF);
-        UV_REQUIRE_FINITE(F);
-        UV_REQUIRE_FINITE(K);
+        REQUIRE_FINITE(callPrice);
+        REQUIRE_FINITE(t);
+        REQUIRE_FINITE(dF);
+        REQUIRE_FINITE(F);
+        REQUIRE_FINITE(K);
 
-        UV_REQUIRE_NON_NEGATIVE(callPrice);
-        UV_REQUIRE_NON_NEGATIVE(t);
-        UV_REQUIRE_NON_NEGATIVE(dF);
-        UV_REQUIRE_NON_NEGATIVE(F);
-        UV_REQUIRE_NON_NEGATIVE(K);
+        REQUIRE_NON_NEGATIVE(callPrice);
+        REQUIRE_NON_NEGATIVE(t);
+        REQUIRE_NON_NEGATIVE(dF);
+        REQUIRE_NON_NEGATIVE(F);
+        REQUIRE_NON_NEGATIVE(K);
     }
 
     return static_cast<T>(detail::impliedVolJackelCall(
@@ -270,11 +270,11 @@ template <std::floating_point T> void impliedVol(
 
     if (doValidate)
     {
-        UV_REQUIRE_NON_EMPTY(callPrices);
-        UV_REQUIRE_NON_EMPTY(strikes);
+        REQUIRE_NON_EMPTY(callPrices);
+        REQUIRE_NON_EMPTY(strikes);
 
-        UV_REQUIRE_SAME_SIZE(callPrices, strikes);
-        UV_REQUIRE_SAME_SIZE(callPrices, out);
+        REQUIRE_SAME_SIZE(callPrices, strikes);
+        REQUIRE_SAME_SIZE(callPrices, out);
     }
 
     for (std::size_t i{0}; i < callPrices.size(); ++i)
@@ -295,12 +295,12 @@ template <std::floating_point T> core::Matrix<T> impliedVol(
 
     if (doValidate)
     {
-        UV_REQUIRE_NON_EMPTY(maturities);
-        UV_REQUIRE_NON_EMPTY(discountFactors);
-        UV_REQUIRE_NON_EMPTY(forwards);
+        REQUIRE_NON_EMPTY(maturities);
+        REQUIRE_NON_EMPTY(discountFactors);
+        REQUIRE_NON_EMPTY(forwards);
 
-        UV_REQUIRE_SAME_SIZE(maturities, discountFactors);
-        UV_REQUIRE_SAME_SIZE(maturities, callPrices.rows());
+        REQUIRE_SAME_SIZE(maturities, discountFactors);
+        REQUIRE_SAME_SIZE(maturities, callPrices.rows());
     }
 
     std::size_t numMaturities{maturities.size()};

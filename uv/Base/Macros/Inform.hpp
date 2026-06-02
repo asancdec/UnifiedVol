@@ -4,7 +4,7 @@
 
 #include "Base/Utils/Detail/Log.hpp"
 
-#define UV_INFO(msg)                                                                     \
+#define INFO(msg)                                                                        \
     do                                                                                   \
     {                                                                                    \
         ::uv::utils::Log::instance().log(::uv::utils::Level::Info, (msg));               \

@@ -69,31 +69,31 @@ void validateInputs(
     const core::Matrix<double>& vol
 )
 {
-    UV_REQUIRE_NON_EMPTY(maturities);
-    UV_REQUIRE_NON_EMPTY(discountFactors);
-    UV_REQUIRE_NON_EMPTY(forwards);
-    UV_REQUIRE_NON_EMPTY(strikes);
+    REQUIRE_NON_EMPTY(maturities);
+    REQUIRE_NON_EMPTY(discountFactors);
+    REQUIRE_NON_EMPTY(forwards);
+    REQUIRE_NON_EMPTY(strikes);
 
-    UV_REQUIRE_FINITE(maturities);
-    UV_REQUIRE_FINITE(discountFactors);
-    UV_REQUIRE_FINITE(forwards);
-    UV_REQUIRE_FINITE(strikes);
+    REQUIRE_FINITE(maturities);
+    REQUIRE_FINITE(discountFactors);
+    REQUIRE_FINITE(forwards);
+    REQUIRE_FINITE(strikes);
 
-    UV_REQUIRE_POSITIVE(maturities);
-    UV_REQUIRE_POSITIVE(discountFactors);
+    REQUIRE_POSITIVE(maturities);
+    REQUIRE_POSITIVE(discountFactors);
 
-    UV_REQUIRE_SAME_SIZE(maturities, forwards);
-    UV_REQUIRE_SAME_SIZE(maturities, discountFactors);
-    UV_REQUIRE_SAME_SIZE(maturities, vol.rows());
-    UV_REQUIRE_SAME_SIZE(strikes, vol.cols());
+    REQUIRE_SAME_SIZE(maturities, forwards);
+    REQUIRE_SAME_SIZE(maturities, discountFactors);
+    REQUIRE_SAME_SIZE(maturities, vol.rows());
+    REQUIRE_SAME_SIZE(strikes, vol.cols());
 
     for (std::size_t i{0}; i < maturities.size(); ++i)
     {
         std::span<const double> volRow{vol[i]};
 
-        UV_REQUIRE_NON_EMPTY(volRow);
-        UV_REQUIRE_FINITE(volRow);
-        UV_REQUIRE_POSITIVE(volRow);
+        REQUIRE_NON_EMPTY(volRow);
+        REQUIRE_FINITE(volRow);
+        REQUIRE_POSITIVE(volRow);
     }
 }
 } // namespace uv::models::heston::calibrate::detail

@@ -5,10 +5,10 @@
 
 #include <format>
 
-namespace uv::errors
+namespace uv::errors::validate
 {
 
-void validateSameSize(
+void sameSize(
     std::size_t a,
     std::size_t b,
     std::string_view what,
@@ -25,7 +25,7 @@ void validateSameSize(
     }
 }
 
-void validateState(bool ok, std::string_view message, std::source_location loc)
+void state(bool ok, std::string_view message, std::source_location loc)
 {
     if (!ok) [[unlikely]]
     {
@@ -33,11 +33,7 @@ void validateState(bool ok, std::string_view message, std::source_location loc)
     }
 }
 
-void validateDirCreated(
-    bool ok,
-    const std::filesystem::path& dir,
-    std::source_location loc
-)
+void dirCreated(bool ok, const std::filesystem::path& dir, std::source_location loc)
 {
     if (!ok) [[unlikely]]
     {
@@ -49,11 +45,7 @@ void validateDirCreated(
     }
 }
 
-void validateFileOpened(
-    bool ok,
-    const std::filesystem::path& file,
-    std::source_location loc
-)
+void fileOpened(bool ok, const std::filesystem::path& file, std::source_location loc)
 {
     if (!ok) [[unlikely]]
     {
@@ -64,4 +56,4 @@ void validateFileOpened(
         );
     }
 }
-} // namespace uv::errors
+} // namespace uv::errors::validate

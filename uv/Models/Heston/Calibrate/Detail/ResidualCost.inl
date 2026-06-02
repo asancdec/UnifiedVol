@@ -4,8 +4,8 @@
 #include "Math/Functions/Black.hpp"
 #include "Math/Functions/Volatility.hpp"
 
-#include <array>
 #include <span>
+#include <utility>
 
 #include <ceres/dynamic_numeric_diff_cost_function.h>
 
@@ -166,7 +166,7 @@ makeSliceCost(const MaturitySlice& slice, const price::Pricer<T, N>& pricer)
     }
     else [[unlikely]]
     {
-        UV_UNREACHABLE(opt::ceres::GradientMode, Mode);
+        UNREACHABLE(opt::ceres::GradientMode, Mode);
     }
 }
 

@@ -17,9 +17,9 @@ constexpr Params<T>::Params(T kappa_, T theta_, T sigma_, T rho_, T v0_) noexcep
 
 template <std::floating_point T> Params<T>::Params(std::span<const double> p)
 {
-    UV_REQUIRE_NON_EMPTY(p);
-    UV_REQUIRE_FINITE(p);
-    UV_REQUIRE_SAME_SIZE(p, std::size_t{5});
+    REQUIRE_NON_EMPTY(p);
+    REQUIRE_FINITE(p);
+    REQUIRE_SAME_SIZE(p, std::size_t{5});
 
     kappa = static_cast<T>(p[0]);
     theta = static_cast<T>(p[1]);

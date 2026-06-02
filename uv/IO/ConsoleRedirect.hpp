@@ -21,7 +21,7 @@ struct ConsoleRedirect
     ~ConsoleRedirect()
     {
         std::cout.rdbuf(oldBuf_);
-        UV_INFO("\n" + buffer_.str());
+        INFO("\n" + buffer_.str());
     }
 
   private:

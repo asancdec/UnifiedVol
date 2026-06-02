@@ -6,7 +6,7 @@
 
 #include <source_location>
 
-#define UV_NOT_IMPLEMENTED(msg)                                                          \
+#define NOT_IMPLEMENTED(msg)                                                             \
     do                                                                                   \
     {                                                                                    \
         ::uv::errors::raise(                                                             \

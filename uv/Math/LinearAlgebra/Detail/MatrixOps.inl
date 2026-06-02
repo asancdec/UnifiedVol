@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <functional>
 #include <span>
+#include <utility>
 
 namespace uv::math::linear_algebra
 {
@@ -78,8 +79,8 @@ void hadamardInplace(core::Matrix<T>& lhs, const core::Matrix<T>& rhs)
     const std::size_t numRows{lhs.rows()};
     const std::size_t numCols{lhs.cols()};
 
-    UV_REQUIRE_SAME_SIZE(numRows, rhs.rows());
-    UV_REQUIRE_SAME_SIZE(numCols, rhs.cols());
+    REQUIRE_SAME_SIZE(numRows, rhs.rows());
+    REQUIRE_SAME_SIZE(numCols, rhs.cols());
 
     for (std::size_t i = 0; i < numRows; ++i)
     {
@@ -107,7 +108,7 @@ void hadamardInplace(core::Matrix<T>& lhs, const Vector<T>& rhs)
     const std::size_t numRows{lhs.rows()};
     const std::size_t numCols{lhs.cols()};
 
-    UV_REQUIRE_SAME_SIZE(numRows, rhs.size());
+    REQUIRE_SAME_SIZE(numRows, rhs.size());
 
     for (std::size_t i = 0; i < numRows; ++i)
     {
@@ -135,8 +136,8 @@ void divideInplace(core::Matrix<T>& lhs, const core::Matrix<T>& rhs)
     const std::size_t numRows{lhs.rows()};
     const std::size_t numCols{lhs.cols()};
 
-    UV_REQUIRE_SAME_SIZE(numRows, rhs.rows());
-    UV_REQUIRE_SAME_SIZE(numCols, rhs.cols());
+    REQUIRE_SAME_SIZE(numRows, rhs.rows());
+    REQUIRE_SAME_SIZE(numCols, rhs.cols());
 
     for (std::size_t i = 0; i < numRows; ++i)
     {
@@ -211,7 +212,7 @@ template <std::floating_point T> void sqrtInplace(core::Matrix<T>& m)
     {
         std::span<T> row{m[i]};
 
-        UV_REQUIRE_NON_NEGATIVE(row);
+        REQUIRE_NON_NEGATIVE(row);
 
         for (std::size_t j = 0; j < numCols; ++j)
         {

@@ -35,7 +35,7 @@ template <typename Period> void StopWatch::LogTime() const noexcept
                                  : std::is_same_v<Period, std::nano>  ? "ns"
                                                                       : "s";
 
-    UV_INFO(std::format("Elapsed time: {:.6f} {}", dt, unit));
+    INFO(std::format("Elapsed time: {:.6f} {}", dt, unit));
 }
 
 template <typename Period>
@@ -50,11 +50,11 @@ void StopWatch::LogTime(std::string_view message) const noexcept
 
     if (!message.empty())
     {
-        UV_INFO(std::format("{} clocked at: {:.6f} {}", message, dt, unit));
+        INFO(std::format("{} clocked at: {:.6f} {}", message, dt, unit));
     }
     else
     {
-        UV_INFO(std::format("Clocked at: {:.6f} {}", dt, unit));
+        INFO(std::format("Clocked at: {:.6f} {}", dt, unit));
     }
 }
 } // namespace uv::utils

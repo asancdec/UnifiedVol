@@ -39,7 +39,7 @@ std::string_view toString(NLoptStatus s) noexcept
         return "FORCED_STOP";
     }
 
-    UV_UNREACHABLE(NLoptStatus, s);
+    UNREACHABLE(NLoptStatus, s);
 }
 
 std::string_view toString(const ::nlopt::result& r) noexcept
