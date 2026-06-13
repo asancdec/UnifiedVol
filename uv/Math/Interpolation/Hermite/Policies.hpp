@@ -7,7 +7,7 @@
 #include <concepts>
 #include <span>
 
-namespace uv::math::interp
+namespace uv::math::interp::hermite
 {
 
 template <class D, class T>
@@ -143,6 +143,6 @@ template <std::floating_point T> void validateInputsEvaluate(
 );
 
 } // namespace detail
-} // namespace uv::math::interp
+} // namespace uv::math::interp::hermite
 
-#include "Math/Interpolation/Detail/Policies.inl"
+#include "Math/Interpolation/Hermite/Detail/Policies.inl"

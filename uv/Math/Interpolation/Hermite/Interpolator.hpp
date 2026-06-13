@@ -3,12 +3,12 @@
 #pragma once
 
 #include "Base/Types.hpp"
-#include "Math/Interpolation/Policies.hpp"
+#include "Math/Interpolation/Hermite/Policies.hpp"
 
 #include <concepts>
 #include <span>
 
-namespace uv::math::interp
+namespace uv::math::interp::hermite
 {
 
 template <std::floating_point T, class DerivPolicy, class EvalPolicy> struct Interpolator
@@ -79,6 +79,6 @@ template <std::floating_point T, class DerivPolicy, class EvalPolicy> struct Int
 template <std::floating_point T> using PchipInterpolator =
     Interpolator<T, PchipDerivatives<T>, HermiteEval<T>>;
 
-} // namespace uv::math::interp
+} // namespace uv::math::interp::hermite
 
-#include "Math/Interpolation/Detail/Interpolator.inl"
+#include "Math/Interpolation/Hermite/Detail/Interpolator.inl"

@@ -5,7 +5,7 @@
 #include "Core/Curve.hpp"
 #include "Core/Matrix.hpp"
 #include "Core/VolSurface.hpp"
-#include "Math/Interpolation/Interpolator.hpp"
+#include "Math/Interpolation/Hermite/Interpolator.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -227,7 +227,7 @@ T atmParameter(std::span<const T> parameters, std::span<const T> logKF, bool doV
         REQUIRE_SAME_SIZE(logKF, parameters);
     }
 
-    return math::interp::PchipInterpolator<T>{}(0.0, logKF, parameters);
+    return math::interp::hermite::PchipInterpolator<T>{}(0.0, logKF, parameters);
 }
 
 template <std::floating_point T>

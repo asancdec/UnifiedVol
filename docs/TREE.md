@@ -162,11 +162,14 @@ UnifiedVol/
 │   │   │   │   ├── TanHSinH.inl
 │   │   │   ├── TanHSinH.hpp
 │   │   ├── Interpolation/
-│   │   │   ├── Detail/
-│   │   │   │   ├── Interpolator.inl
-│   │   │   │   ├── Policies.inl
-│   │   │   ├── Interpolator.hpp
-│   │   │   ├── Policies.hpp
+│   │   │   ├── BSpline/
+│   │   │   │   ├── Interpolator.hpp
+│   │   │   ├── Hermite/
+│   │   │   │   ├── Detail/
+│   │   │   │   │   ├── Interpolator.inl
+│   │   │   │   │   ├── Policies.inl
+│   │   │   │   ├── Interpolator.hpp
+│   │   │   │   ├── Policies.hpp
 │   │   ├── LinearAlgebra/
 │   │   │   ├── Detail/
 │   │   │   │   ├── MatrixOps.inl

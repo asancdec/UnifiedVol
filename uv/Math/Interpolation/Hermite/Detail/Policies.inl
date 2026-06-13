@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <iterator>
 
-namespace uv::math::interp
+namespace uv::math::interp::hermite
 {
 template <class Derived, std::floating_point T>
 Vector<T> Derivatives<Derived, T>::operator()(
@@ -101,9 +101,9 @@ template <std::floating_point T> void HermiteEval<T>::evaluate(
 {
     detail::hermiteSplineInterp<T>(x, xs, ys, dydx, y, doValidate);
 }
-} // namespace uv::math::interp
+} // namespace uv::math::interp::hermite
 
-namespace uv::math::interp::detail
+namespace uv::math::interp::hermite::detail
 {
 
 template <std::floating_point T> void hermiteSplineInterp(
@@ -300,4 +300,4 @@ template <std::floating_point T> void validateInputsEvaluate(
     REQUIRE_SAME_SIZE(y, x);
 }
 
-} // namespace uv::math::interp::detail
+} // namespace uv::math::interp::hermite::detail

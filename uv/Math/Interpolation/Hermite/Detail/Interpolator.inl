@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-namespace uv::math::interp
+namespace uv::math::interp::hermite
 {
 template <std::floating_point T, class DerivPolicy, class EvalPolicy>
 void Interpolator<T, DerivPolicy, EvalPolicy>::operator()(
@@ -106,4 +106,4 @@ requires HasDerivatives<DerivPolicy, T> && HasEvaluate<EvalPolicy, T>
     return y.front();
 }
 
-} // namespace uv::math::interp
+} // namespace uv::math::interp::hermite
