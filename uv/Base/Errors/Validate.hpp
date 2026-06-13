@@ -188,6 +188,18 @@ template <detail::ContiguousFloatRange R> void strictlyIncreasing(
     std::source_location loc = std::source_location::current()
 );
 
+template <std::floating_point T> void nonDecreasing(
+    std::span<const T> xs,
+    std::string_view what,
+    std::source_location loc = std::source_location::current()
+);
+
+template <detail::ContiguousFloatRange R> void nonDecreasing(
+    const R& xs,
+    std::string_view what,
+    std::source_location loc = std::source_location::current()
+);
+
 template <std::floating_point T> void strictlyDecreasing(
     std::span<const T> xs,
     std::string_view what,

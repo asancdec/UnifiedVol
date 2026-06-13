@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "Base/Errors/Errors.hpp"
-#include "Base/Errors/Validate.hpp"
+#include "Base/Errors/Errors.hpp"   // IWYU pragma: keep
+#include "Base/Errors/Validate.hpp" // IWYU pragma: keep
 
-#include <source_location>
+#include <source_location> // IWYU pragma: keep
 
 #define REQUIRE(cond, code, message)                                                     \
     do                                                                                   \
@@ -108,6 +108,12 @@
             #x,                                                                          \
             std::source_location::current()                                              \
         );                                                                               \
+    } while (0)
+
+#define REQUIRE_NON_DECREASING(x)                                                        \
+    do                                                                                   \
+    {                                                                                    \
+        ::uv::errors::validate::nonDecreasing((x), #x, std::source_location::current()); \
     } while (0)
 
 #define REQUIRE_STRICTLY_DECREASING(x)                                                   \

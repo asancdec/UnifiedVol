@@ -14,7 +14,8 @@ template <std::floating_point T> void strictOrder(
     std::span<const T> xs,
     std::string_view what,
     std::source_location loc,
-    bool increasing
+    bool increasing,
+    bool strict
 )
 {
     const std::size_t n{xs.size()};
@@ -27,19 +28,23 @@ template <std::floating_point T> void strictOrder(
     for (std::size_t i = 1; i < n; ++i)
     {
         const T curr{xs[i]};
-        const bool ok{increasing ? curr > prev : curr < prev};
+        const bool ok{
+            strict ? (increasing ? curr > prev : curr < prev)
+                   : (increasing ? curr >= prev : curr <= prev)
+        };
 
         if (!ok) [[unlikely]]
         {
             raise(
                 ErrorCode::InvalidArgument,
                 std::format(
-                    "{} not strictly {} at {}: {} {} {}",
+                    "{} not {}{} at {}: {} {} {}",
                     what,
+                    strict ? "strictly " : "",
                     increasing ? "increasing" : "decreasing",
                     i,
                     curr,
-                    increasing ? "<=" : ">=",
+                    increasing ? (strict ? "<=" : "<") : (strict ? ">=" : ">"),
                     prev
                 ),
                 loc
@@ -403,7 +408,7 @@ void greater(T x, T threshold, std::string_view what, std::source_location loc)
 template <std::floating_point T> void
 strictlyIncreasing(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
-    detail::strictOrder(xs, what, loc, true);
+    detail::strictOrder(xs, what, loc, true, true);
 }
 
 template <detail::ContiguousFloatRange R>
@@ -417,10 +422,27 @@ void strictlyIncreasing(const R& xs, std::string_view what, std::source_location
     );
 }
 
+template <std::floating_point T>
+void nonDecreasing(std::span<const T> xs, std::string_view what, std::source_location loc)
+{
+    detail::strictOrder(xs, what, loc, true, false);
+}
+
+template <detail::ContiguousFloatRange R>
+void nonDecreasing(const R& xs, std::string_view what, std::source_location loc)
+{
+    using T = detail::RangeValue<R>;
+    nonDecreasing(
+        std::span<const T>(std::ranges::data(xs), std::ranges::size(xs)),
+        what,
+        loc
+    );
+}
+
 template <std::floating_point T> void
 strictlyDecreasing(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
-    detail::strictOrder(xs, what, loc, false);
+    detail::strictOrder(xs, what, loc, false, true);
 }
 
 template <detail::ContiguousFloatRange R>

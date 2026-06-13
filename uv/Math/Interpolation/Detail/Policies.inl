@@ -6,6 +6,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <iterator>
 
 namespace uv::math::interp
 {
@@ -104,6 +105,7 @@ template <std::floating_point T> void HermiteEval<T>::evaluate(
 
 namespace uv::math::interp::detail
 {
+
 template <std::floating_point T> void hermiteSplineInterp(
     std::span<const T> x,
     std::span<const T> xs,
@@ -297,4 +299,5 @@ template <std::floating_point T> void validateInputsEvaluate(
     REQUIRE_NON_EMPTY(x);
     REQUIRE_SAME_SIZE(y, x);
 }
+
 } // namespace uv::math::interp::detail
