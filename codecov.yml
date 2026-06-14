@@ -1,0 +1,14 @@
+ignore:
+  - "tests/**"
+  - "external/**"
+  - "build/**"
+  - "**/vcpkg_installed/**"
+  - "/usr/include/**"
+  - "**/CMakeFiles/**"
+
+comment: false
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...95"
