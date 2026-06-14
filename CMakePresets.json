@@ -58,6 +58,13 @@
             "targets": [
                 "unifiedvol_tests"
             ]
+        },
+        {
+            "name": "linux-gcc-perf-tests",
+            "configurePreset": "linux-gcc-perf",
+            "targets": [
+                "unifiedvol_tests"
+            ]
         }
     ],
     "testPresets": [

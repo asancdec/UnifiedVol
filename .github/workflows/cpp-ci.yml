@@ -10,7 +10,7 @@ on:
 jobs:
   correctness:
     name: GCC Release non-performance tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repository
@@ -21,12 +21,18 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt update
-          sudo apt install -y cmake ninja-build g++
+          sudo apt install -y cmake ninja-build g++-13 git curl zip unzip tar pkg-config
 
-      - name: Configure
-        run: cmake --preset linux-gcc-release-tests
+      - name: Install vcpkg
+        run: |
+          mkdir -p "$HOME/dev"
+          git clone https://github.com/microsoft/vcpkg.git "$HOME/dev/vcpkg"
+          "$HOME/dev/vcpkg/bootstrap-vcpkg.sh"
 
-      - name: Build
+      - name: Configure release build
+        run: cmake --preset linux-gcc-release
+
+      - name: Build correctness tests
         run: cmake --build --preset linux-gcc-release-tests
 
       - name: Run non-performance tests
@@ -34,7 +40,7 @@ jobs:
 
   performance:
     name: GCC performance guardrails
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.event_name == 'workflow_dispatch'
 
     steps:
@@ -46,13 +52,19 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt update
-          sudo apt install -y cmake ninja-build g++
+          sudo apt install -y cmake ninja-build g++-13 git curl zip unzip tar pkg-config
+
+      - name: Install vcpkg
+        run: |
+          mkdir -p "$HOME/dev"
+          git clone https://github.com/microsoft/vcpkg.git "$HOME/dev/vcpkg"
+          "$HOME/dev/vcpkg/bootstrap-vcpkg.sh"
 
       - name: Configure performance build
         run: cmake --preset linux-gcc-perf
 
       - name: Build performance tests
-        run: cmake --build --preset linux-gcc-perf
+        run: cmake --build --preset linux-gcc-perf-tests
 
       - name: Run performance tests
         run: ctest --preset linux-gcc-perf-performance --output-on-failure

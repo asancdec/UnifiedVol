@@ -16,68 +16,109 @@ If you already cloned the repository without submodules, initialize them with:
 git submodule update --init --recursive
 ```
 
-## Standard Build (Recommended)
+## Standard Build
+
+Configure and build the standard release target:
 
 ```bash
 rm -rf build/linux-gcc-release
 
 cmake --preset linux-gcc-release
 cmake --build --preset linux-gcc-release
+```
 
+Run the example executable:
+
+```bash
 ./build/linux-gcc-release/unifiedvol_example
 ```
 
-## Run All Tests
+## Tests
 
 The test suite is split into **unit**, **integration**, **regression**, and
 **performance** tests:
 
-- **Unit:** correctness of one component.
-- **Integration:** components working together.
-- **Regression:** results match committed reference values.
-- **Performance:** speed, allocation, and scalability guardrails.
+- **Unit tests:** validate one component in isolation.
+- **Integration tests:** validate multiple components working together.
+- **Regression tests:** compare results against committed reference values.
+- **Performance tests:** check speed, allocation behavior, and scalability guardrails.
 
-Build the tests with:
+## Run Correctness Tests
+
+Correctness tests use the standard release build.
+
+Configure the release build:
+
+```bash
+cmake --preset linux-gcc-release
+```
+
+Build the correctness test targets:
 
 ```bash
 cmake --build --preset linux-gcc-release-tests
 ```
 
-Run the normal non-performance suite with CTest:
+Run all non-performance tests:
 
 ```bash
-ctest --preset linux-gcc-release-nonperformance
+ctest --preset linux-gcc-release-nonperformance --output-on-failure
 ```
 
-Run all discovered tests, including performance guardrails:
+Run a specific correctness test category:
 
 ```bash
-ctest --preset linux-gcc-release-full
+ctest --preset linux-gcc-release-unit --output-on-failure
+ctest --preset linux-gcc-release-integration --output-on-failure
+ctest --preset linux-gcc-release-regression --output-on-failure
 ```
 
-Run a specific test category with CTest presets:
+## Run Performance Tests
+
+Performance tests use a separate performance-oriented build. This avoids mixing
+correctness testing with benchmark-style checks and keeps performance results
+more stable.
+
+Configure the performance build:
 
 ```bash
-ctest --preset linux-gcc-release-unit
-ctest --preset linux-gcc-release-integration
-ctest --preset linux-gcc-release-regression
-cmake --build --preset linux-gcc-perf
-ctest --preset linux-gcc-perf-performance
+cmake --preset linux-gcc-perf
 ```
 
-You can also run the test executables directly:
+Build the performance test targets:
+
+```bash
+cmake --build --preset linux-gcc-perf-tests
+```
+
+Run the performance test suite:
+
+```bash
+ctest --preset linux-gcc-perf-performance --output-on-failure
+```
+
+## Run All Tests
+
+To run the full test set, run the correctness suite first, then the performance
+suite:
+
+```bash
+cmake --preset linux-gcc-release
+cmake --build --preset linux-gcc-release-tests
+ctest --preset linux-gcc-release-nonperformance --output-on-failure
+
+cmake --preset linux-gcc-perf
+cmake --build --preset linux-gcc-perf-tests
+ctest --preset linux-gcc-perf-performance --output-on-failure
+```
+
+## Run Test Executables Directly
+
+The test executables can also be run directly:
 
 ```bash
 ./build/linux-gcc-release/tests/unifiedvol_unit_tests
 ./build/linux-gcc-release/tests/unifiedvol_integration_tests
 ./build/linux-gcc-release/tests/unifiedvol_regression_tests
-./build/linux-gcc-release/tests/unifiedvol_performance_tests
+./build/linux-gcc-perf/tests/unifiedvol_performance_tests
 ```
-
-## Suggested CI Split
-
-- Debug or release: `linux-gcc-release-nonperformance` for ordinary correctness checks.
-- Perf build: `linux-gcc-perf-performance` when performance guardrails are requested.
-- Optional matrix: GCC and Clang release builds.
-- Golden files under `tests/Golden/` are manual reference data; normal test runs
-  must not rewrite them.
