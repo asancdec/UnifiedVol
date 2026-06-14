@@ -121,6 +121,7 @@ UnifiedVol/
 │   │   │   │   ├── SurfaceInvariants.cpp
 │   │   ├── OptimizerToyProblems.cpp
 │   ├── Performance/
+│   │   ├── BSplinePerformance.cpp
 │   │   ├── BudgetFixtures.cpp
 │   │   ├── Budgets.hpp
 │   │   ├── ExamplePipelinePerformance.cpp

@@ -34,6 +34,11 @@ TEST(PerformanceBudgetFixtures, CommittedBudgetsHaveValidSchemas)
         "tests/Golden/performance_budgets.json",
         "sviSyntheticCalibration"
     )));
+
+    EXPECT_NO_THROW(static_cast<void>(uv::tests::performance::readBudget(
+        "tests/Golden/performance_budgets.json",
+        "bsplineLargeEvaluation"
+    )));
 }
 
 TEST(PerformanceBudgetFixtures, RejectsMissingBudgetKey)

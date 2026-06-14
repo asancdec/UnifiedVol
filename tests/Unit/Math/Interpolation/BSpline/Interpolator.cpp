@@ -6,17 +6,21 @@
 #include "Support/Tolerances.hpp"
 
 #include <algorithm>
+#include <cstddef>
 #include <gtest/gtest.h>
 #include <vector>
+
+namespace bspline = uv::math::interp::bspline;
+namespace bspline_detail = uv::math::interp::bspline::detail;
 
 TEST(MathBSplineInterpolator, LinearSplineInterpolatesControlPolygon)
 {
     const std::vector<double> controlPoints{0.0, 2.0, 4.0};
     const std::vector<double> knots{0.0, 0.0, 1.0, 2.0, 2.0};
-    const uv::math::interp::bspline::BSpline<double, 1> spline{controlPoints, knots};
+    const bspline::BSpline<double, 1> spline{controlPoints, knots};
     const std::vector<double> x{0.0, 0.5, 1.0, 1.5, 2.0};
 
-    const auto y = spline.eval(x);
+    const auto y{spline.eval(x)};
 
     ASSERT_EQ(y.size(), x.size());
     EXPECT_NEAR(y[0], 0.0, 1e-15);
@@ -26,44 +30,39 @@ TEST(MathBSplineInterpolator, LinearSplineInterpolatesControlPolygon)
     EXPECT_NEAR(y[4], 4.0, 1e-15);
 }
 
-TEST(MathBSplineInterpolator, BasisFunctionsFormPartitionOfUnityOnClampedDomain)
+TEST(MathBSplineInterpolator, UnitControlSplinesFormPartitionOfUnityOnClampedDomain)
 {
+    constexpr std::size_t degree{3};
+
     const std::vector<double> knots{0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0};
+
     const std::vector<double> x{0.0, 0.2, 0.7, 1.0, 1.5, 2.25, 2.9, 3.0};
 
-    for (std::size_t basisIdx = 0; basisIdx < 6; ++basisIdx)
-    {
-        std::vector<double> basis(x.size());
-        uv::math::interp::bspline::detail::coxDeBoor<double, 3>(
-            basis,
-            x,
-            knots,
-            basisIdx
-        );
+    constexpr std::size_t basisCount{6};
 
-        for (double value : basis)
+    std::vector<double> sum(x.size(), 0.0);
+
+    for (std::size_t basisIdx{0}; basisIdx < basisCount; ++basisIdx)
+    {
+        std::vector<double> controlPoints(basisCount, 0.0);
+        controlPoints[basisIdx] = 1.0;
+
+        std::vector<double> basis(x.size());
+
+        bspline_detail::evalInplace<double, degree>(basis, x, knots, controlPoints);
+
+        for (std::size_t i{0}; i < x.size(); ++i)
         {
-            EXPECT_GE(value, -1e-15);
-            EXPECT_LE(value, 1.0 + 1e-15);
+            EXPECT_GE(basis[i], -1e-15) << "basisIdx=" << basisIdx << ", x=" << x[i];
+            EXPECT_LE(basis[i], 1.0 + 1e-15) << "basisIdx=" << basisIdx << ", x=" << x[i];
+
+            sum[i] += basis[i];
         }
     }
 
-    for (std::size_t sampleIdx = 0; sampleIdx < x.size() - 1; ++sampleIdx)
+    for (std::size_t i{0}; i < x.size(); ++i)
     {
-        double sum = 0.0;
-        for (std::size_t basisIdx = 0; basisIdx < 6; ++basisIdx)
-        {
-            std::vector<double> basis(x.size());
-            uv::math::interp::bspline::detail::coxDeBoor<double, 3>(
-                basis,
-                x,
-                knots,
-                basisIdx
-            );
-            sum += basis[sampleIdx];
-        }
-
-        EXPECT_NEAR(sum, 1.0, 1e-14);
+        EXPECT_NEAR(sum[i], 1.0, 1e-14) << "x=" << x[i];
     }
 }
 
@@ -71,10 +70,11 @@ TEST(MathBSplineInterpolator, ConstantControlPointsEvaluateToConstant)
 {
     const std::vector<double> controlPoints(6, 7.5);
     const std::vector<double> knots{0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0};
-    const uv::math::interp::bspline::BSpline<double, 3> spline{controlPoints, knots};
+
+    const bspline::BSpline<double, 3> spline{controlPoints, knots};
     const std::vector<double> x{0.0, 0.25, 0.75, 1.5, 2.5, 3.0};
 
-    const auto y = spline.eval(x);
+    const auto y{spline.eval(x)};
 
     for (double value : y)
     {
@@ -86,17 +86,20 @@ TEST(MathBSplineInterpolator, ClampedSplineStaysWithinControlPointBounds)
 {
     const std::vector<double> controlPoints{-1.0, 0.5, 3.0, 2.0, 4.5, 1.5};
     const std::vector<double> knots{0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0};
-    const uv::math::interp::bspline::BSpline<double, 3> spline{controlPoints, knots};
+
+    const bspline::BSpline<double, 3> spline{controlPoints, knots};
     const std::vector<double> x{0.0, 0.1, 0.4, 0.9, 1.4, 2.0, 2.6, 3.0};
+
     const auto [minIt, maxIt] =
         std::minmax_element(controlPoints.begin(), controlPoints.end());
 
-    const auto y = spline.eval(x);
+    const auto y{spline.eval(x)};
 
-    for (std::size_t i = 0; i < y.size(); ++i)
+    for (std::size_t i{0}; i < y.size(); ++i)
     {
         EXPECT_GE(y[i] + uv::tests::tolerance::InterpolationInvariant, *minIt)
             << "x=" << x[i];
+
         EXPECT_LE(y[i], *maxIt + uv::tests::tolerance::InterpolationInvariant)
             << "x=" << x[i];
     }
@@ -106,14 +109,96 @@ TEST(MathBSplineInterpolator, EvalInplaceMatchesEval)
 {
     const std::vector<double> controlPoints{0.0, 1.0, 0.0, 2.0};
     const std::vector<double> knots{0.0, 0.0, 0.0, 1.0, 2.0, 2.0, 2.0};
-    const uv::math::interp::bspline::BSpline<double, 2> spline{controlPoints, knots};
+    const bspline::BSpline<double, 2> spline{controlPoints, knots};
     const std::vector<double> x{0.0, 0.5, 1.0, 1.5, 2.0};
+
     std::vector<double> out(x.size());
 
     spline.evalInplace(out, x);
-    const auto y = spline.eval(x);
+    const auto y{spline.eval(x)};
 
     EXPECT_EQ(out, y);
+}
+
+TEST(MathBSplineInterpolator, DetailEvalOneMatchesDetailEvalInplace)
+{
+    const std::vector<double> controlPoints{-1.0, 0.5, 3.0, 2.0, 4.5, 1.5};
+    const std::vector<double> knots{0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0};
+
+    const std::vector<double> x{0.0, 0.1, 0.4, 0.9, 1.4, 2.0, 2.6, 3.0};
+    std::vector<double> out(x.size());
+
+    bspline_detail::evalInplace<double, 3>(out, x, knots, controlPoints);
+
+    for (std::size_t i{0}; i < x.size(); ++i)
+    {
+        const double value{bspline_detail::evalOne<double, 3>(x[i], knots, controlPoints)
+        };
+
+        EXPECT_NEAR(value, out[i], 1e-15) << "x=" << x[i];
+    }
+}
+
+TEST(MathBSplineInterpolator, DetailEvalMatchesPublicInterpolator)
+{
+    const std::vector<double> controlPoints{-1.0, 0.5, 3.0, 2.0, 4.5, 1.5};
+    const std::vector<double> knots{0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0};
+
+    const bspline::BSpline<double, 3> spline{controlPoints, knots};
+    const std::vector<double> x{0.0, 0.1, 0.4, 0.9, 1.4, 2.0, 2.6, 3.0};
+
+    const auto publicEval{spline.eval(x)};
+    const auto detailEval{bspline_detail::eval<double, 3>(x, knots, controlPoints)};
+
+    ASSERT_EQ(publicEval.size(), detailEval.size());
+
+    for (std::size_t i{0}; i < x.size(); ++i)
+    {
+        EXPECT_NEAR(publicEval[i], detailEval[i], 1e-15) << "x=" << x[i];
+    }
+}
+
+TEST(MathBSplineInterpolator, DetailEvalReturnsZeroOutsideDomain)
+{
+    const std::vector<double> controlPoints{0.0, 2.0, 4.0};
+    const std::vector<double> knots{0.0, 0.0, 1.0, 2.0, 2.0};
+
+    EXPECT_DOUBLE_EQ(
+        (bspline_detail::evalOne<double, 1>(-0.1, knots, controlPoints)),
+        0.0
+    );
+
+    EXPECT_DOUBLE_EQ(
+        (bspline_detail::evalOne<double, 1>(2.1, knots, controlPoints)),
+        0.0
+    );
+}
+
+TEST(MathBSplineInterpolator, DetailEvalAtRightEndpointReturnsLastControlPoint)
+{
+    const std::vector<double> controlPoints{0.0, 2.0, 4.0};
+    const std::vector<double> knots{0.0, 0.0, 1.0, 2.0, 2.0};
+
+    EXPECT_DOUBLE_EQ(
+        (bspline_detail::evalOne<double, 1>(2.0, knots, controlPoints)),
+        4.0
+    );
+}
+
+TEST(MathBSplineInterpolator, DegreeZeroSplineIsPiecewiseConstant)
+{
+    const std::vector<double> controlPoints{1.0, 3.0, 5.0};
+    const std::vector<double> knots{0.0, 1.0, 2.0, 3.0};
+    const bspline::BSpline<double, 0> spline{controlPoints, knots};
+    const std::vector<double> x{0.25, 1.25, 2.25, 3.0};
+
+    const auto y{spline.eval(x)};
+
+    ASSERT_EQ(y.size(), x.size());
+    EXPECT_DOUBLE_EQ(y[0], 1.0);
+    EXPECT_DOUBLE_EQ(y[1], 3.0);
+    EXPECT_DOUBLE_EQ(y[2], 5.0);
+    EXPECT_DOUBLE_EQ(y[3], 5.0);
 }
 
 TEST(MathBSplineInterpolator, RejectsInconsistentKnotCount)
@@ -122,7 +207,7 @@ TEST(MathBSplineInterpolator, RejectsInconsistentKnotCount)
     const std::vector<double> knots{0.0, 0.0, 1.0, 1.0};
 
     EXPECT_THROW(
-        (uv::math::interp::bspline::BSpline<double, 2>{controlPoints, knots}),
+        (bspline::BSpline<double, 2>{controlPoints, knots}),
         uv::errors::UnifiedVolError
     );
 }
@@ -132,7 +217,7 @@ TEST(MathBSplineInterpolator, RejectsNonDecreasingViolationsAndDegenerateDomain)
     const std::vector<double> controlPoints{1.0, 2.0, 3.0};
 
     EXPECT_THROW(
-        (uv::math::interp::bspline::BSpline<double, 1>{
+        (bspline::BSpline<double, 1>{
             controlPoints,
             std::vector<double>{0.0, 0.0, 2.0, 1.0, 2.0}
         }),
@@ -140,7 +225,7 @@ TEST(MathBSplineInterpolator, RejectsNonDecreasingViolationsAndDegenerateDomain)
     );
 
     EXPECT_THROW(
-        (uv::math::interp::bspline::BSpline<double, 1>{
+        (bspline::BSpline<double, 1>{
             controlPoints,
             std::vector<double>{0.0, 0.0, 0.0, 0.0, 0.0}
         }),
@@ -152,25 +237,9 @@ TEST(MathBSplineInterpolator, RejectsEvalInplaceSizeMismatch)
 {
     const std::vector<double> controlPoints{0.0, 2.0, 4.0};
     const std::vector<double> knots{0.0, 0.0, 1.0, 2.0, 2.0};
-    const uv::math::interp::bspline::BSpline<double, 1> spline{controlPoints, knots};
+    const bspline::BSpline<double, 1> spline{controlPoints, knots};
     const std::vector<double> x{0.0, 1.0, 2.0};
     std::vector<double> out(2);
 
     EXPECT_THROW(spline.evalInplace(out, x), uv::errors::UnifiedVolError);
-}
-
-TEST(MathBSplineInterpolator, DegreeZeroSplineIsPiecewiseConstant)
-{
-    const std::vector<double> controlPoints{1.0, 3.0, 5.0};
-    const std::vector<double> knots{0.0, 1.0, 2.0, 3.0};
-    const uv::math::interp::bspline::BSpline<double, 0> spline{controlPoints, knots};
-    const std::vector<double> x{0.25, 1.25, 2.25, 3.0};
-
-    const auto y = spline.eval(x);
-
-    ASSERT_EQ(y.size(), x.size());
-    EXPECT_DOUBLE_EQ(y[0], 1.0);
-    EXPECT_DOUBLE_EQ(y[1], 3.0);
-    EXPECT_DOUBLE_EQ(y[2], 5.0);
-    EXPECT_DOUBLE_EQ(y[3], 5.0);
 }

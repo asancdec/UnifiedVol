@@ -5,12 +5,13 @@
 #include "Base/Types.hpp"
 
 #include <concepts>
+#include <cstddef>
 #include <span>
 
 namespace uv::math::interp::bspline
 {
 
-template <std::floating_point T, int K = 3, bool doValidate = true> class BSpline
+template <std::floating_point T, std::size_t K = 3, bool doValidate = true> class BSpline
 {
   public:
     BSpline() = delete;

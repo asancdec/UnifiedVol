@@ -12,6 +12,9 @@
     },
     "sviSyntheticCalibration": {
       "maxMs": 1000.0
+    },
+    "bsplineLargeEvaluation": {
+      "maxMs": 1000.0
     }
   }
 }
