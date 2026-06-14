@@ -16,8 +16,8 @@ template <std::floating_point T, std::size_t N> class Grid
     std::array<T, N> x_;
     std::array<T, N - 1> dx_;
 
-    void validate_() const;
-    void setGridSteps_() noexcept;
+    void validate() const;
+    void setGridSteps() noexcept;
 
   public:
     Grid() = delete;

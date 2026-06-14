@@ -15,8 +15,8 @@ namespace uv::models::heston::price
 template <std::floating_point T, std::size_t N> Pricer<T, N>::Pricer()
     : Pricer(std::make_shared<const math::integration::TanHSinH<T, N>>())
 {
-    setAlphas_(Config<T>{});
-    validateAlphaDomain_();
+    setAlphas(Config<T>{});
+    validateAlphaDomain();
 }
 
 template <std::floating_point T, std::size_t N> Pricer<T, N>::Pricer(
@@ -25,13 +25,13 @@ template <std::floating_point T, std::size_t N> Pricer<T, N>::Pricer(
 )
     : quad_(std::move(quad))
 {
-    setAlphas_(config);
+    setAlphas(config);
     REQUIRE_NON_NULL(quad_);
-    validateAlphaDomain_();
+    validateAlphaDomain();
 }
 
 template <std::floating_point T, std::size_t N>
-void Pricer<T, N>::Pricer::validateAlphaDomain_() const
+void Pricer<T, N>::validateAlphaDomain() const
 {
     constexpr T EPS{std::numeric_limits<T>::epsilon() * 10};
     REQUIRE_EQUAL_OR_LESS(alphaItm_, 1.0 - EPS);
@@ -39,7 +39,7 @@ void Pricer<T, N>::Pricer::validateAlphaDomain_() const
 }
 
 template <std::floating_point T, std::size_t N>
-void Pricer<T, N>::Pricer::validateCallPrice_(T t, T dF, T F, T K) const
+void Pricer<T, N>::validateCallPrice(T t, T dF, T F, T K) const
 {
     REQUIRE_SET(params_);
 
@@ -50,17 +50,19 @@ void Pricer<T, N>::Pricer::validateCallPrice_(T t, T dF, T F, T K) const
 
     REQUIRE_POSITIVE(t);
     REQUIRE_POSITIVE(dF);
+    REQUIRE_POSITIVE(F);
+    REQUIRE_POSITIVE(K);
 }
 
 template <std::floating_point T, std::size_t N>
-void Pricer<T, N>::Pricer::setAlphas_(const Config<T>& config)
+void Pricer<T, N>::setAlphas(const Config<T>& config)
 {
     alphaItm_ = config.alphaItm;
     alphaOtm_ = config.alphaOtm;
 }
 
 template <std::floating_point T, std::size_t N>
-T Pricer<T, N>::getAlpha_(T w) const noexcept
+T Pricer<T, N>::getAlpha(T w) const noexcept
 {
     if (w >= T{0})
         return alphaItm_;
@@ -69,7 +71,7 @@ T Pricer<T, N>::getAlpha_(T w) const noexcept
 }
 
 template <std::floating_point T, std::size_t N>
-T Pricer<T, N>::getResidues_(T alpha, const T F, const T K) noexcept
+T Pricer<T, N>::getResidues(T alpha, const T F, const T K) noexcept
 {
     if (alpha < -T{1})
         return F - K;
@@ -78,7 +80,7 @@ T Pricer<T, N>::getResidues_(T alpha, const T F, const T K) noexcept
 }
 
 template <std::floating_point T, std::size_t N>
-T Pricer<T, N>::getPhi_(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcept
+T Pricer<T, N>::getPhi(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcept
 {
     if (w * (rho - sigma * w / (v0 + kappa * theta * t)) >= T{0})
         return T{0};
@@ -94,8 +96,8 @@ T Pricer<T, N>::callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F
     constexpr Complex<T> i{T{0}, T{1}};
 
     const T w{std::log(F / K)};
-    const T alpha{getAlpha_(w)};
-    const T tanPhi{std::tan(getPhi_(kappa, theta, sigma, rho, v0, t, w))};
+    const T alpha{getAlpha(w)};
+    const T tanPhi{std::tan(getPhi(kappa, theta, sigma, rho, v0, t, w))};
 
     const T sigma2{sigma * sigma};
 
@@ -114,15 +116,15 @@ T Pricer<T, N>::callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F
 
     constexpr T invPi{T{1} / std::numbers::pi_v<T>};
 
-    return dF * (getResidues_(alpha, F, K) - (F * invPi) * std::exp(alpha * w) *
-                                                 quad_->integrateZeroToInf(integrand));
+    return dF * (getResidues(alpha, F, K) - (F * invPi) * std::exp(alpha * w) *
+                                                quad_->integrateZeroToInf(integrand));
 }
 
 template <std::floating_point T, std::size_t N>
 T Pricer<T, N>::callPrice(T t, T dF, T F, T K, bool doValidate) const
 {
     if (doValidate)
-        validateCallPrice_(t, dF, F, K);
+        validateCallPrice(t, dF, F, K);
 
     const Params<T>& params{*params_};
 
@@ -208,8 +210,8 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
     constexpr Complex<T> i{T{0}, T{1}};
 
     const T w{std::log(F / K)};
-    const T alpha{getAlpha_(w)};
-    const T tanPhi{std::tan(getPhi_(kappa, theta, sigma, rho, v0, t, w))};
+    const T alpha{getAlpha(w)};
+    const T tanPhi{std::tan(getPhi(kappa, theta, sigma, rho, v0, t, w))};
     const T sigma2{sigma * sigma};
     const T invSigma3{T{1} / (sigma2 * sigma)};
     const T invSigma2{T{1} / sigma2};
@@ -243,7 +245,7 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
     const T scale{dF * pref};
 
     return std::array<T, 6>{
-        dF * (getResidues_(alpha, F, K) + pref * integrals[0]),
+        dF * (getResidues(alpha, F, K) + pref * integrals[0]),
         scale * integrals[1],
         scale * integrals[2],
         scale * integrals[3],

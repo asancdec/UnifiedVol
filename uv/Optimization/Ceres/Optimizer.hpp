@@ -28,18 +28,18 @@ template <typename PolicyT = Policy<>> class Optimizer
     Vector<double> x_;
     ::ceres::Problem problem_;
 
-    void setOptions_();
+    void setOptions();
 
-    void setBounds_(
+    void setBounds(
         std::size_t n,
         std::span<const double> lowerBounds,
         std::span<const double> upperBounds
     );
 
-    void clampStoredBounds_();
+    void clampStoredBounds();
 
-    void requireInitialized_() const;
-    void requireRunStarted_() const;
+    void requireInitialized() const;
+    void requireRunStarted() const;
 
   public:
     Optimizer() = delete;

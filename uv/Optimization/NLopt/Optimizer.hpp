@@ -56,7 +56,7 @@ template <std::size_t N, Algorithm Algo> class Optimizer
         std::array<double, N> initGuess,
         std::array<double, N> lowerBounds,
         std::array<double, N> upperBounds
-    ) noexcept;
+    );
 
     void addInequalityConstraint(NloptFunction c, void* data) noexcept;
 
@@ -72,7 +72,7 @@ template <std::size_t N, Algorithm Algo> class Optimizer
 
     double tol() const noexcept;
 
-    const double& userValue() const noexcept;
+    const double& userValue() const;
 };
 } // namespace uv::opt::nlopt
 

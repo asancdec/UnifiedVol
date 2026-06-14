@@ -38,7 +38,7 @@ template <std::size_t N, Algorithm Algo> void Optimizer<N, Algo>::setGuessBounds
     std::array<double, N> initGuess,
     std::array<double, N> lowerBounds,
     std::array<double, N> upperBounds
-) noexcept
+)
 {
 
     clampBounds(initGuess, lowerBounds, upperBounds);
@@ -146,7 +146,7 @@ template <std::size_t N, Algorithm Algo> double Optimizer<N, Algo>::tol() const 
 }
 
 template <std::size_t N, Algorithm Algo>
-const double& Optimizer<N, Algo>::userValue() const noexcept
+const double& Optimizer<N, Algo>::userValue() const
 {
     REQUIRE_SET(userValue_);
 

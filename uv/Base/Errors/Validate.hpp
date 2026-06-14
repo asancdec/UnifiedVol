@@ -299,6 +299,15 @@ template <typename T> void minSize(
     std::source_location loc = std::source_location::current()
 );
 
+template <typename R>
+requires requires(const R& x) { x.size(); }
+void minSize(
+    const R& x,
+    std::size_t minSize,
+    std::string_view what,
+    std::source_location loc = std::source_location::current()
+);
+
 void state(
     bool ok,
     std::string_view message,

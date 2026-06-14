@@ -92,9 +92,73 @@ UnifiedVol/
 │   │   │   │   ├── NLoptStatus.cpp
 ├── tests/
 │   ├── CMakeLists.txt
-│   ├── Heston/
-│   │   ├── IntrinsicValue.cpp
-│   │   ├── SigmaZeroMatchesBlack.cpp
+│   ├── Integration/
+│   │   ├── BlackSurfacePricing.cpp
+│   │   ├── LoadAndReport.cpp
+│   │   ├── MarketStateGeneration.cpp
+│   │   ├── Math/
+│   │   │   ├── Integration/
+│   │   │   │   ├── TanHSinH.cpp
+│   │   ├── Models/
+│   │   │   ├── Heston/
+│   │   │   │   ├── PricingInvariants.cpp
+│   │   │   │   ├── SurfacePricing.cpp
+│   │   │   ├── SVI/
+│   │   │   │   ├── SurfaceBuild.cpp
+│   │   │   │   ├── SurfaceInvariants.cpp
+│   │   ├── OptimizerToyProblems.cpp
+│   ├── Regression/
+│   │   ├── BSplineKnownValues.cpp
+│   │   ├── BlackKnownValues.cpp
+│   │   ├── ExamplePipeline.cpp
+│   │   ├── Models/
+│   │   │   ├── Heston/
+│   │   │   │   ├── GradientFiniteDifference.cpp
+│   │   │   │   ├── IntrinsicValue.cpp
+│   │   │   │   ├── SigmaZeroMatchesBlack.cpp
+│   │   │   ├── SVI/
+│   │   │   │   ├── SyntheticCalibration.cpp
+│   ├── Unit/
+│   │   ├── Base/
+│   │   │   ├── Errors/
+│   │   │   │   ├── Errors.cpp
+│   │   │   │   ├── Validate.cpp
+│   │   │   ├── Execution/
+│   │   │   │   ├── ThreadPolicy.cpp
+│   │   │   ├── Types.cpp
+│   │   ├── Core/
+│   │   │   ├── Curve.cpp
+│   │   │   ├── Matrix.cpp
+│   │   │   ├── VolSurface.cpp
+│   │   ├── IO/
+│   │   │   ├── CSV/
+│   │   │   │   ├── Read.cpp
+│   │   ├── Math/
+│   │   │   ├── Functions/
+│   │   │   │   ├── Black.cpp
+│   │   │   │   ├── Primitive.cpp
+│   │   │   │   ├── Volatility.cpp
+│   │   │   ├── Integration/
+│   │   │   │   ├── TanHSinH.cpp
+│   │   │   ├── Interpolation/
+│   │   │   │   ├── BSpline/
+│   │   │   │   │   ├── Interpolator.cpp
+│   │   │   │   ├── Hermite/
+│   │   │   │   │   ├── Interpolator.cpp
+│   │   │   ├── LinearAlgebra/
+│   │   │   │   ├── MatrixOps.cpp
+│   │   │   │   ├── VectorOps.cpp
+│   │   │   ├── PDE/
+│   │   │   │   ├── Grid.cpp
+│   │   ├── Models/
+│   │   │   ├── Heston/
+│   │   │   │   ├── Params.cpp
+│   │   │   ├── SVI/
+│   │   │   │   ├── Math.cpp
+│   │   │   │   ├── Params.cpp
+│   │   ├── Optimization/
+│   │   │   ├── Cost.cpp
+│   │   │   ├── Helpers.cpp
 ├── uv/
 │   ├── Base/
 │   │   ├── Config.hpp
@@ -163,6 +227,10 @@ UnifiedVol/
 │   │   │   ├── TanHSinH.hpp
 │   │   ├── Interpolation/
 │   │   │   ├── BSpline/
+│   │   │   │   ├── Detail/
+│   │   │   │   │   ├── Evaluate.hpp
+│   │   │   │   │   ├── Evaluate.inl
+│   │   │   │   │   ├── Interpolator.inl
 │   │   │   │   ├── Interpolator.hpp
 │   │   │   ├── Hermite/
 │   │   │   │   ├── Detail/

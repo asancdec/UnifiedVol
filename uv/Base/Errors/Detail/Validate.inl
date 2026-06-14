@@ -612,4 +612,30 @@ template <typename T> void minSize(
     }
 }
 
+template <typename R>
+requires requires(const R& x) { x.size(); }
+void minSize(
+    const R& x,
+    std::size_t minSize,
+    std::string_view what,
+    std::source_location loc
+)
+{
+    const std::size_t size{static_cast<std::size_t>(x.size())};
+
+    if (size < minSize) [[unlikely]]
+    {
+        raise(
+            ErrorCode::InvalidArgument,
+            std::format(
+                "{} has size {}, but minimum required size is {}",
+                what,
+                size,
+                minSize
+            ),
+            loc
+        );
+    }
+}
+
 } // namespace uv::errors::validate

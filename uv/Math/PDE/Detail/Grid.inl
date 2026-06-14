@@ -2,24 +2,25 @@
 
 #include "Base/Macros/Require.hpp"
 
+#include <algorithm>
 #include <cmath>
 
 namespace uv::math::pde
 {
 template <std::floating_point T, std::size_t N> Grid<T, N>::Grid(std::span<const T, N> x)
-    : x_(x.begin(), x.end())
 {
-    validate_();
-    setGridSteps_();
+    std::copy(x.begin(), x.end(), x_.begin());
+    validate();
+    setGridSteps();
 }
 
-template <std::floating_point T, std::size_t N> void Grid<T, N>::validate_() const
+template <std::floating_point T, std::size_t N> void Grid<T, N>::validate() const
 {
     static_assert(N > 2, "Size of grid must be larger than 2");
     REQUIRE_STRICTLY_MONOTONIC(x_);
 }
 
-template <std::floating_point T, std::size_t N> void Grid<T, N>::setGridSteps_() noexcept
+template <std::floating_point T, std::size_t N> void Grid<T, N>::setGridSteps() noexcept
 {
     for (std::size_t i{0}; i < N - 1; ++i)
     {
@@ -45,7 +46,7 @@ Grid<T, N> generateCenteredSinHGrid(T xMin, T xMax, T beta)
     constexpr T uniformThreshold{1e-10};
 
     REQUIRE_NON_NEGATIVE(beta);
-    REQUIRE_CLOSE(xMin, -xMax);
+    REQUIRE_CLOSE(xMin, -xMax, T{1e-12});
 
     if (beta < std::abs(uniformThreshold))
         return generateUniformGrid<T, N>(xMin, xMax);

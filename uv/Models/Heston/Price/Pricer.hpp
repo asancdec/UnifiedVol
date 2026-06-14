@@ -29,17 +29,17 @@ template <std::floating_point T, std::size_t N = defaultNodes> class Pricer
     T alphaItm_;
     T alphaOtm_;
 
-    void validateAlphaDomain_() const;
-    void validateCallPrice_(T t, T dF, T F, T K) const;
+    void validateAlphaDomain() const;
+    void validateCallPrice(T t, T dF, T F, T K) const;
 
-    void setAlphas_(const Config<T>& config);
+    void setAlphas(const Config<T>& config);
 
-    [[gnu::hot]] T getAlpha_(T w) const noexcept;
+    [[gnu::hot]] T getAlpha(T w) const noexcept;
 
-    [[gnu::hot]] static T getResidues_(T alpha, T F, T K) noexcept;
+    [[gnu::hot]] static T getResidues(T alpha, T F, T K) noexcept;
 
     [[gnu::hot]] static T
-    getPhi_(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcept;
+    getPhi(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcept;
 
   public:
     Pricer();
