@@ -1,3 +1,43 @@
+name: C++ CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  correctness:
+    name: GCC Release non-performance tests
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install build tools
+        run: |
+          sudo apt update
+          sudo apt install -y cmake ninja-build g++-13 git curl zip unzip tar pkg-config
+
+      - name: Install vcpkg
+        run: |
+          mkdir -p "$HOME/dev"
+          git clone https://github.com/microsoft/vcpkg.git "$HOME/dev/vcpkg"
+          "$HOME/dev/vcpkg/bootstrap-vcpkg.sh"
+
+      - name: Configure release build
+        run: cmake --preset linux-gcc-release
+
+      - name: Build correctness tests
+        run: cmake --build --preset linux-gcc-release-tests
+
+      - name: Run non-performance tests
+        run: ctest --preset linux-gcc-release-nonperformance --output-on-failure
+
   coverage:
     name: GCC coverage report
     runs-on: ubuntu-24.04
@@ -60,3 +100,34 @@
           flags: gcc
           name: gcc-coverage
           fail_ci_if_error: true
+
+  performance:
+    name: GCC performance guardrails
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Install build tools
+        run: |
+          sudo apt update
+          sudo apt install -y cmake ninja-build g++-13 git curl zip unzip tar pkg-config
+
+      - name: Install vcpkg
+        run: |
+          mkdir -p "$HOME/dev"
+          git clone https://github.com/microsoft/vcpkg.git "$HOME/dev/vcpkg"
+          "$HOME/dev/vcpkg/bootstrap-vcpkg.sh"
+
+      - name: Configure performance build
+        run: cmake --preset linux-gcc-perf
+
+      - name: Build performance tests
+        run: cmake --build --preset linux-gcc-perf-tests
+
+      - name: Run performance tests
+        run: ctest --preset linux-gcc-perf-performance --output-on-failure
