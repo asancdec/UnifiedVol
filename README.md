@@ -1,7 +1,6 @@
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)]()
-[![License](https://img.shields.io/badge/license-Apache--2.0-lightgrey.svg)]()
-[![Build](https://img.shields.io/badge/build-passing-success.svg)]()
-![C++ CI](https://github.com/asancdec/UnifiedVol/actions/workflows/ci.yml/badge.svg)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](LICENSE)
+[![C++ CI](https://github.com/asancdec/UnifiedVol/actions/workflows/ci.yml/badge.svg)](https://github.com/asancdec/UnifiedVol/actions/workflows/ci.yml)
 
 # UnifiedVol
 
