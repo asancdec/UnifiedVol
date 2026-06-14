@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
+#include "Base/Types.hpp"
+
 #include <algorithm>
+#include <concepts>
+#include <cstddef>
+#include <span>
 
 namespace uv::math::interp::bspline::detail
 {

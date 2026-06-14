@@ -1,8 +1,6 @@
 #include "Base/Macros/Require.hpp"
 #include "Math/Interpolation/BSpline/Detail/Evaluate.hpp"
 
-#include <cstddef>
-
 namespace uv::math::interp::bspline
 {
 

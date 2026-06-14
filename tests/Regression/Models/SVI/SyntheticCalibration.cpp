@@ -71,14 +71,46 @@ calibrateSynthetic(const SyntheticSVICase& data)
         optimizer
     );
 }
+
+void expectParamsNear(
+    const uv::models::svi::Params<double>& actual,
+    const uv::models::svi::Params<double>& expected,
+    const double tolerance
+)
+{
+    EXPECT_NEAR(actual.t, expected.t, tolerance);
+    EXPECT_NEAR(actual.a, expected.a, tolerance);
+    EXPECT_NEAR(actual.b, expected.b, tolerance);
+    EXPECT_NEAR(actual.rho, expected.rho, tolerance);
+    EXPECT_NEAR(actual.m, expected.m, tolerance);
+    EXPECT_NEAR(actual.sigma, expected.sigma, tolerance);
+}
 } // namespace
 
 TEST(RegressionSVICalibration, RecoversSyntheticSurfaceShapeAndVols)
 {
+    constexpr double tolerance = 1e-8;
     const auto data = makeSyntheticSVICase();
     const auto calibrated = calibrateSynthetic(data);
+    const uv::Vector<uv::models::svi::Params<double>> expectedCalibrated{
+        {0.5,
+         0.024999999999999412,
+         0.30000000000000093,
+         -0.34999999999999831,
+         0.020000000000000202,
+         0.30000000000000088},
+        {1.0,
+         0.040000000000003061,
+         0.34999999999999609,
+         -0.25000000000000444,
+         0.039999999999999307,
+         0.34999999999999526}
+    };
 
     ASSERT_EQ(calibrated.size(), data.truth.size());
+    ASSERT_EQ(calibrated.size(), expectedCalibrated.size());
+    for (std::size_t i = 0; i < calibrated.size(); ++i)
+        expectParamsNear(calibrated[i], expectedCalibrated[i], tolerance);
 
     for (std::size_t i = 0; i < calibrated.size(); ++i)
     {
@@ -93,7 +125,7 @@ TEST(RegressionSVICalibration, RecoversSyntheticSurfaceShapeAndVols)
                 p.sigma,
                 data.logKF[j]
             );
-            EXPECT_NEAR(fitted, data.totalVariance[i][j], 5e-5)
+            EXPECT_NEAR(fitted, data.totalVariance[i][j], tolerance)
                 << "slice " << i << " strike " << j;
         }
     }
