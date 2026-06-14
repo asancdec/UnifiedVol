@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "Math/Functions/Black.hpp"
+#include "Support/Tolerances.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <gtest/gtest.h>
 #include <span>
@@ -65,4 +67,42 @@ TEST(MathBlack, VectorizedB76MatchesScalarPrices)
 TEST(MathBlack, VegaIsPositiveForRegularOption)
 {
     EXPECT_GT(uv::math::black::vegaB76(1.0, 0.98, 100.0, 0.2, 100.0), 0.0);
+}
+
+TEST(MathBlack, CallPriceIsMonotoneDecreasingInStrike)
+{
+    const double t = 1.0;
+    const double dF = 0.98;
+    const double F = 100.0;
+    const double vol = 0.25;
+    const std::vector<double> strikes{60.0, 80.0, 100.0, 120.0, 150.0};
+
+    double previous = uv::math::black::priceB76(t, dF, F, vol, strikes.front());
+    for (std::size_t i = 1; i < strikes.size(); ++i)
+    {
+        const double price = uv::math::black::priceB76(t, dF, F, vol, strikes[i]);
+        EXPECT_LE(price, previous) << "strike=" << strikes[i];
+        previous = price;
+    }
+}
+
+TEST(MathBlack, CallPriceStaysWithinNoArbitrageBounds)
+{
+    const double t = 2.0;
+    const double dF = 0.94;
+    const double F = 105.0;
+    const double vol = 0.30;
+    const std::vector<double> strikes{70.0, 100.0, 130.0};
+
+    for (const double K : strikes)
+    {
+        const double price = uv::math::black::priceB76(t, dF, F, vol, K);
+        EXPECT_GE(
+            price + uv::tests::tolerance::PricingInvariant,
+            dF * std::max(F - K, 0.0)
+        ) << "strike="
+          << K;
+        EXPECT_LE(price, dF * F + uv::tests::tolerance::PricingInvariant)
+            << "strike=" << K;
+    }
 }

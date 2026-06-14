@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "description": "Loose performance guardrails for release-mode tests. These are not microbenchmark baselines.",
+    "regeneration": "Manual only; adjust intentionally when hardware or workload assumptions change."
+  },
+  "budgets": {
+    "examplePipeline": {
+      "maxMs": 1000.0
+    },
+    "hestonMediumSurface": {
+      "maxMs": 1000.0
+    },
+    "sviSyntheticCalibration": {
+      "maxMs": 1000.0
+    }
+  }
+}

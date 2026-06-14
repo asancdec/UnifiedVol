@@ -164,7 +164,7 @@ makeSliceCost(const MaturitySlice& slice, const price::Pricer<T, N>& pricer)
     {
         return makeSliceCostNumericCentral<T, N>(slice, pricer);
     }
-    else [[unlikely]]
+    else
     {
         UNREACHABLE(opt::ceres::GradientMode, Mode);
     }

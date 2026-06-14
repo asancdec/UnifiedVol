@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "description": "Regression goldens for synthetic SVI calibration parameters and fit quality.",
+    "sourceInput": "Synthetic surface generated in tests/Regression/Models/SVI/SyntheticCalibration.cpp.",
+    "regeneration": "Manual only; normal ctest must not update this file."
+  },
+  "tolerance": 1e-8,
+  "calibratedParams": [
+    {
+      "t": 0.5,
+      "a": 0.024999999999999412,
+      "b": 0.30000000000000093,
+      "rho": -0.34999999999999831,
+      "m": 0.020000000000000202,
+      "sigma": 0.30000000000000088
+    },
+    {
+      "t": 1.0,
+      "a": 0.040000000000003061,
+      "b": 0.34999999999999609,
+      "rho": -0.25000000000000444,
+      "m": 0.039999999999999307,
+      "sigma": 0.34999999999999526
+    }
+  ],
+  "errors": {
+    "meanAbsTotalVariance": 0.0,
+    "maxAbsTotalVariance": 0.0,
+    "rmseTotalVariance": 0.0
+  }
+}

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
+#include "Golden.hpp"
 #include "IO/Load.hpp"
 #include "Models/Heston/BuildSurface.hpp"
 #include "Models/Heston/Calibrate/Calibrate.hpp"
@@ -7,13 +8,24 @@
 #include "Models/SVI/Calibrate/Calibrate.hpp"
 #include "Models/SVI/Calibrate/NLoptAdapter.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"
+#include "Support/Tolerances.hpp"
 
+#include <algorithm>
 #include <cmath>
+#include <concepts>
+#include <cstddef>
 #include <filesystem>
 #include <gtest/gtest.h>
 
 namespace
 {
+struct ErrorDiagnostics
+{
+    double meanAbs{};
+    double maxAbs{};
+    double rmse{};
+};
+
 template <std::floating_point T>
 void expectFiniteNonNegativeVolSurface(const uv::core::VolSurface<T>& surface)
 {
@@ -27,12 +39,13 @@ void expectFiniteNonNegativeVolSurface(const uv::core::VolSurface<T>& surface)
     }
 }
 
-template <std::floating_point T> std::pair<T, T> meanAndMaxAbsVolError(
+template <std::floating_point T> ErrorDiagnostics volErrorDiagnostics(
     const uv::core::VolSurface<T>& lhs,
     const uv::core::VolSurface<T>& rhs
 )
 {
     T sum{0};
+    T sumSquared{0};
     T maxError{0};
     std::size_t count{0};
 
@@ -42,12 +55,17 @@ template <std::floating_point T> std::pair<T, T> meanAndMaxAbsVolError(
         {
             const T error = std::abs(lhs.vol()[i][j] - rhs.vol()[i][j]);
             sum += error;
+            sumSquared += error * error;
             maxError = std::max(maxError, error);
             ++count;
         }
     }
 
-    return {sum / static_cast<T>(count), maxError};
+    return {
+        static_cast<double>(sum / static_cast<T>(count)),
+        static_cast<double>(maxError),
+        static_cast<double>(std::sqrt(sumSquared / static_cast<T>(count)))
+    };
 }
 
 template <std::floating_point T> void expectSVIParamsNear(
@@ -56,12 +74,13 @@ template <std::floating_point T> void expectSVIParamsNear(
     const T tolerance
 )
 {
-    EXPECT_NEAR(actual.t, expected.t, tolerance);
-    EXPECT_NEAR(actual.a, expected.a, tolerance);
-    EXPECT_NEAR(actual.b, expected.b, tolerance);
-    EXPECT_NEAR(actual.rho, expected.rho, tolerance);
-    EXPECT_NEAR(actual.m, expected.m, tolerance);
-    EXPECT_NEAR(actual.sigma, expected.sigma, tolerance);
+    EXPECT_NEAR(actual.t, expected.t, tolerance) << "field=t";
+    EXPECT_NEAR(actual.a, expected.a, tolerance) << "field=a t=" << expected.t;
+    EXPECT_NEAR(actual.b, expected.b, tolerance) << "field=b t=" << expected.t;
+    EXPECT_NEAR(actual.rho, expected.rho, tolerance) << "field=rho t=" << expected.t;
+    EXPECT_NEAR(actual.m, expected.m, tolerance) << "field=m t=" << expected.t;
+    EXPECT_NEAR(actual.sigma, expected.sigma, tolerance)
+        << "field=sigma t=" << expected.t;
 }
 
 template <std::floating_point T> void expectHestonParamsNear(
@@ -70,20 +89,84 @@ template <std::floating_point T> void expectHestonParamsNear(
     const T tolerance
 )
 {
-    EXPECT_NEAR(actual.kappa, expected.kappa, tolerance);
-    EXPECT_NEAR(actual.theta, expected.theta, tolerance);
-    EXPECT_NEAR(actual.sigma, expected.sigma, tolerance);
-    EXPECT_NEAR(actual.rho, expected.rho, tolerance);
-    EXPECT_NEAR(actual.v0, expected.v0, tolerance);
+    EXPECT_NEAR(actual.kappa, expected.kappa, tolerance) << "field=kappa";
+    EXPECT_NEAR(actual.theta, expected.theta, tolerance) << "field=theta";
+    EXPECT_NEAR(actual.sigma, expected.sigma, tolerance) << "field=sigma";
+    EXPECT_NEAR(actual.rho, expected.rho, tolerance) << "field=rho";
+    EXPECT_NEAR(actual.v0, expected.v0, tolerance) << "field=v0";
+}
+
+template <std::floating_point T> void expectVolPointsNear(
+    const uv::core::VolSurface<T>& surface,
+    const uv::Vector<uv::tests::golden::VolPoint>& expected,
+    const T tolerance
+)
+{
+    for (const auto& point : expected)
+    {
+        ASSERT_LT(point.maturity, surface.numMaturities());
+        ASSERT_LT(point.strike, surface.numStrikes());
+        EXPECT_NEAR(surface.vol()[point.maturity][point.strike], point.value, tolerance)
+            << "maturity=" << point.maturity << " strike=" << point.strike;
+    }
+}
+
+template <std::floating_point T> void expectCallSurfaceNoArbitrage(
+    const uv::core::Matrix<T>& prices,
+    const uv::core::VolSurface<T>& surface,
+    const uv::core::Curve<T>& curve
+)
+{
+    const auto discountFactors = curve.interpolateDF(surface.maturities());
+    const auto forwards = surface.forwards();
+    const auto strikes = surface.strikes();
+
+    ASSERT_EQ(prices.rows(), surface.numMaturities());
+    ASSERT_EQ(prices.cols(), surface.numStrikes());
+
+    for (std::size_t i = 0; i < prices.rows(); ++i)
+    {
+        for (std::size_t j = 0; j < prices.cols(); ++j)
+        {
+            const T price = prices[i][j];
+            const T intrinsic =
+                discountFactors[i] * std::max(forwards[i] - strikes[j], T{0});
+            EXPECT_TRUE(std::isfinite(price)) << "row=" << i << " col=" << j;
+            EXPECT_GE(price + uv::tests::tolerance::NoArb, intrinsic)
+                << "row=" << i << " col=" << j;
+            EXPECT_LE(
+                price,
+                discountFactors[i] * forwards[i] + uv::tests::tolerance::NoArb
+            ) << "row="
+              << i << " col=" << j;
+
+            if (j > 0)
+            {
+                EXPECT_LE(price, prices[i][j - 1] + uv::tests::tolerance::NoArb)
+                    << "row=" << i << " col=" << j;
+            }
+            if (j > 0 && j + 1 < prices.cols())
+            {
+                const T leftSlope =
+                    (prices[i][j] - prices[i][j - 1]) / (strikes[j] - strikes[j - 1]);
+                const T rightSlope =
+                    (prices[i][j + 1] - prices[i][j]) / (strikes[j + 1] - strikes[j]);
+                EXPECT_GE(rightSlope + uv::tests::tolerance::NoArb, leftSlope)
+                    << "row=" << i << " col=" << j;
+            }
+        }
+    }
 }
 } // namespace
 
 TEST(RegressionExamplePipeline, MainCppResultsRemainStable)
 {
     using Real = double;
-    constexpr Real tolerance = 1e-8;
 
     const std::filesystem::path path{"data/VolSurface_SPY_04072011.csv"};
+    const auto golden =
+        uv::tests::golden::readExamplePipeline("tests/Golden/example_pipeline.json");
+    const Real tolerance{golden.tolerance};
     const uv::core::MarketData<Real> marketData{
         .interestRate = 0.0,
         .dividendYield = 0.0,
@@ -136,102 +219,22 @@ TEST(RegressionExamplePipeline, MainCppResultsRemainStable)
     expectFiniteNonNegativeVolSurface(sviVolSurface);
     expectFiniteNonNegativeVolSurface(hestonVolSurface);
 
-    const uv::Vector<uv::models::svi::Params<Real>> expectedSVIParams{
-        {0.083333332999999996,
-         -0.0454222144615542,
-         0.149236855731602,
-         0.07186134006880307,
-         0.216970201378966,
-         0.35679911238289619},
-        {0.16666666699999999,
-         -0.34981866687376706,
-         1.1138461886956372,
-         0.79558005431799084,
-         0.93867382539223965,
-         0.53374713287635056},
-        {0.25,
-         -0.32562925881393973,
-         1.1176709797956048,
-         0.78943538496968424,
-         0.90125265042249558,
-         0.49317518375943226},
-        {0.33333333300000001,
-         -0.3321410667384247,
-         1.1241712488889342,
-         0.77908837463747904,
-         0.89702509048526358,
-         0.49248616320897554},
-        {0.41666666699999999,
-         -0.34974817266854857,
-         1.1311717936054102,
-         0.76807803315653156,
-         0.90421212190972311,
-         0.50607232414172265},
-        {0.5,
-         -0.38037109273030467,
-         1.1392419272638081,
-         0.75555336591546474,
-         0.92078057695565396,
-         0.53420944189653552},
-        {0.75,
-         -0.33544940678689933,
-         1.1381434904514793,
-         0.7572476728805424,
-         0.89705071489944921,
-         0.48193506493710564},
-        {1.0,
-         -0.61994739213481764,
-         1.1798007573948683,
-         0.695201488441339,
-         1.102542642233225,
-         0.76660421138127122},
-        {1.5,
-         -0.46411964308195713,
-         1.1574473349798731,
-         0.72794039051001858,
-         1.1141215410541001,
-         0.63310633745924194},
-        {2.0,
-         -0.83331114115360672,
-         1.1787248954911986,
-         0.69674875592284291,
-         1.6136221389666017,
-         1.0351188825402371},
-        {3.0,
-         -8.8444781368502241,
-         1.3080206169361941,
-         -0.52902788694924741,
-         -3.3612344508812764,
-         7.9680550126940988}
-    };
-    const uv::models::heston::Params<Real> expectedHestonParams{
-        11.166908774640188,
-        0.061835473188871844,
-        4.1454420263519616,
-        -0.7480708082612596,
-        0.37975758619313726
-    };
-
-    ASSERT_EQ(sviParams.size(), expectedSVIParams.size());
+    ASSERT_EQ(sviParams.size(), golden.sviParams.size());
     for (std::size_t i = 0; i < sviParams.size(); ++i)
-        expectSVIParamsNear(sviParams[i], expectedSVIParams[i], tolerance);
-    expectHestonParamsNear(hestonParams, expectedHestonParams, tolerance);
+        expectSVIParamsNear(sviParams[i], golden.sviParams[i], tolerance);
+    expectHestonParamsNear(hestonParams, golden.hestonParams, tolerance);
+    expectVolPointsNear(marketState.volSurface, golden.marketVols, tolerance);
+    expectVolPointsNear(sviVolSurface, golden.sviVols, tolerance);
+    expectVolPointsNear(hestonVolSurface, golden.hestonVols, tolerance);
+    expectCallSurfaceNoArbitrage(
+        hestonPricer.callPrice(sviVolSurface, marketState.interestCurve),
+        sviVolSurface,
+        marketState.interestCurve
+    );
 
-    EXPECT_NEAR(marketState.volSurface.vol()[0][0], 1.0398700000000001, 1e-12);
-    EXPECT_NEAR(marketState.volSurface.vol()[7][8], 0.24507000000000001, 1e-12);
-    EXPECT_NEAR(marketState.volSurface.vol()[10][16], 0.15731999999999999, 1e-12);
+    const ErrorDiagnostics errors{volErrorDiagnostics(hestonVolSurface, sviVolSurface)};
 
-    EXPECT_NEAR(sviVolSurface.vol()[0][0], 1.0432929310422308, tolerance);
-    EXPECT_NEAR(sviVolSurface.vol()[7][8], 0.24506999999999993, tolerance);
-    EXPECT_NEAR(sviVolSurface.vol()[10][16], 0.16051357088354287, tolerance);
-
-    EXPECT_NEAR(hestonVolSurface.vol()[0][0], 0.97326102349139154, tolerance);
-    EXPECT_NEAR(hestonVolSurface.vol()[7][8], 0.24270179257833455, tolerance);
-    EXPECT_NEAR(hestonVolSurface.vol()[10][16], 0.1790726912635392, tolerance);
-
-    const auto [meanError, maxError] =
-        meanAndMaxAbsVolError(hestonVolSurface, sviVolSurface);
-
-    EXPECT_NEAR(meanError, 0.011480071785533133, tolerance);
-    EXPECT_NEAR(maxError, 0.070031907550839212, tolerance);
+    EXPECT_NEAR(errors.meanAbs, golden.meanAbsVolError, tolerance);
+    EXPECT_NEAR(errors.maxAbs, golden.maxAbsVolError, tolerance);
+    EXPECT_NEAR(errors.rmse, golden.rmseVolError, tolerance);
 }

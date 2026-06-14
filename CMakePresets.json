@@ -36,9 +36,9 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
                 "CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O3 -g -fno-omit-frame-pointer"
+            }
         }
-        }
-            ],
+    ],
     "buildPresets": [
         {
             "name": "linux-gcc-debug",
@@ -49,8 +49,90 @@
             "configurePreset": "linux-gcc-release"
         },
         {
-        "name": "linux-gcc-perf",
-        "configurePreset": "linux-gcc-perf"
+            "name": "linux-gcc-perf",
+            "configurePreset": "linux-gcc-perf"
+        },
+        {
+            "name": "linux-gcc-release-tests",
+            "configurePreset": "linux-gcc-release",
+            "targets": [
+                "unifiedvol_tests"
+            ]
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "linux-gcc-release-nonperformance",
+            "configurePreset": "linux-gcc-release",
+            "displayName": "Linux GCC Release tests except performance",
+            "filter": {
+                "exclude": {
+                    "label": "performance"
+                }
+            },
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-gcc-release-full",
+            "configurePreset": "linux-gcc-release",
+            "displayName": "Linux GCC Release full test suite",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-gcc-release-unit",
+            "configurePreset": "linux-gcc-release",
+            "displayName": "Linux GCC Release unit tests",
+            "filter": {
+                "include": {
+                    "label": "unit"
+                }
+            },
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-gcc-release-integration",
+            "configurePreset": "linux-gcc-release",
+            "displayName": "Linux GCC Release integration tests",
+            "filter": {
+                "include": {
+                    "label": "integration"
+                }
+            },
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-gcc-release-regression",
+            "configurePreset": "linux-gcc-release",
+            "displayName": "Linux GCC Release regression tests",
+            "filter": {
+                "include": {
+                    "label": "regression"
+                }
+            },
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "linux-gcc-perf-performance",
+            "configurePreset": "linux-gcc-perf",
+            "displayName": "Linux GCC perf build performance tests",
+            "filter": {
+                "include": {
+                    "label": "performance"
+                }
+            },
+            "output": {
+                "outputOnFailure": true
+            }
         }
     ]
 }

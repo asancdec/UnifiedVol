@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
+#include "../../../Support/Tolerances.hpp"
 #include "Models/Heston/Price/Pricer.hpp"
 
 #include <algorithm>
@@ -24,9 +25,9 @@ TEST(IntegrationHestonPricingInvariants, CallPricesRespectBoundsAndStrikeMonoton
         const double intrinsic = dF * std::max(F - K, 0.0);
 
         EXPECT_TRUE(std::isfinite(price)) << "K=" << K;
-        EXPECT_GE(price + 5e-10, intrinsic) << "K=" << K;
-        EXPECT_LE(price, dF * F + 5e-10) << "K=" << K;
-        EXPECT_LE(price, previous + 5e-10) << "K=" << K;
+        EXPECT_GE(price + uv::tests::tolerance::NoArb, intrinsic) << "K=" << K;
+        EXPECT_LE(price, dF * F + uv::tests::tolerance::NoArb) << "K=" << K;
+        EXPECT_LE(price, previous + uv::tests::tolerance::NoArb) << "K=" << K;
 
         previous = price;
     }
@@ -48,8 +49,36 @@ TEST(IntegrationHestonPricingInvariants, CallPriceIncreasesWithForward)
     EXPECT_TRUE(std::isfinite(lowForward));
     EXPECT_TRUE(std::isfinite(midForward));
     EXPECT_TRUE(std::isfinite(highForward));
-    EXPECT_LE(lowForward, midForward + 5e-10);
-    EXPECT_LE(midForward, highForward + 5e-10);
+    EXPECT_LE(lowForward, midForward + uv::tests::tolerance::NoArb);
+    EXPECT_LE(midForward, highForward + uv::tests::tolerance::NoArb);
+}
+
+TEST(IntegrationHestonPricingInvariants, CallPricesAreConvexInStrike)
+{
+    uv::models::heston::price::Pricer<double, 192> pricer{};
+    pricer.setParams({2.2, 0.045, 0.40, -0.65, 0.05});
+
+    constexpr double t = 1.5;
+    constexpr double dF = 0.96;
+    constexpr double F = 100.0;
+    constexpr double strikeStep = 10.0;
+    const std::array<double, 9>
+        strikes{60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0, 130.0, 140.0};
+    std::array<double, strikes.size()> prices{};
+
+    for (std::size_t i = 0; i < strikes.size(); ++i)
+    {
+        prices[i] = pricer.callPrice(t, dF, F, strikes[i]);
+        EXPECT_TRUE(std::isfinite(prices[i])) << "K=" << strikes[i];
+    }
+
+    for (std::size_t i = 1; i + 1 < strikes.size(); ++i)
+    {
+        const double secondDifference =
+            (prices[i - 1] - 2.0 * prices[i] + prices[i + 1]) / (strikeStep * strikeStep);
+        EXPECT_GE(secondDifference + uv::tests::tolerance::NoArb, 0.0)
+            << "K=" << strikes[i];
+    }
 }
 
 TEST(IntegrationHestonPricingInvariants, SurfacePricesStayWithinNoArbitrageBounds)
@@ -72,9 +101,12 @@ TEST(IntegrationHestonPricingInvariants, SurfacePricesStayWithinNoArbitrageBound
             const double intrinsic = discountFactors[i] * std::max(forwards[i] - K, 0.0);
 
             EXPECT_TRUE(std::isfinite(price));
-            EXPECT_GE(price + 5e-10, intrinsic);
-            EXPECT_LE(price, discountFactors[i] * forwards[i] + 5e-10);
-            EXPECT_LE(price, previous + 5e-10);
+            EXPECT_GE(price + uv::tests::tolerance::NoArb, intrinsic);
+            EXPECT_LE(
+                price,
+                discountFactors[i] * forwards[i] + uv::tests::tolerance::NoArb
+            );
+            EXPECT_LE(price, previous + uv::tests::tolerance::NoArb);
 
             previous = price;
         }

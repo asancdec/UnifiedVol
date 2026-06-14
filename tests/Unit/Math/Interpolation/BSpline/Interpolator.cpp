@@ -3,7 +3,9 @@
 #include "Math/Interpolation/BSpline/Interpolator.hpp"
 #include "Base/Errors/Errors.hpp"
 #include "Math/Interpolation/BSpline/Detail/Evaluate.hpp"
+#include "Support/Tolerances.hpp"
 
+#include <algorithm>
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -77,6 +79,26 @@ TEST(MathBSplineInterpolator, ConstantControlPointsEvaluateToConstant)
     for (double value : y)
     {
         EXPECT_NEAR(value, 7.5, 1e-14);
+    }
+}
+
+TEST(MathBSplineInterpolator, ClampedSplineStaysWithinControlPointBounds)
+{
+    const std::vector<double> controlPoints{-1.0, 0.5, 3.0, 2.0, 4.5, 1.5};
+    const std::vector<double> knots{0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0};
+    const uv::math::interp::bspline::BSpline<double, 3> spline{controlPoints, knots};
+    const std::vector<double> x{0.0, 0.1, 0.4, 0.9, 1.4, 2.0, 2.6, 3.0};
+    const auto [minIt, maxIt] =
+        std::minmax_element(controlPoints.begin(), controlPoints.end());
+
+    const auto y = spline.eval(x);
+
+    for (std::size_t i = 0; i < y.size(); ++i)
+    {
+        EXPECT_GE(y[i] + uv::tests::tolerance::InterpolationInvariant, *minIt)
+            << "x=" << x[i];
+        EXPECT_LE(y[i], *maxIt + uv::tests::tolerance::InterpolationInvariant)
+            << "x=" << x[i];
     }
 }
 

@@ -92,6 +92,12 @@ UnifiedVol/
 │   │   │   │   ├── NLoptStatus.cpp
 ├── tests/
 │   ├── CMakeLists.txt
+│   ├── Golden/
+│   │   ├── black_known_value.json
+│   │   ├── bspline_known_values.json
+│   │   ├── example_pipeline.json
+│   │   ├── performance_budgets.json
+│   │   ├── synthetic_svi_calibration.json
 │   ├── Integration/
 │   │   ├── BlackSurfacePricing.cpp
 │   │   ├── LoadAndReport.cpp
@@ -101,23 +107,39 @@ UnifiedVol/
 │   │   │   │   ├── TanHSinH.cpp
 │   │   ├── Models/
 │   │   │   ├── Heston/
+│   │   │   │   ├── ParameterBoundaries.cpp
 │   │   │   │   ├── PricingInvariants.cpp
+│   │   │   │   ├── Stress.cpp
 │   │   │   │   ├── SurfacePricing.cpp
 │   │   │   ├── SVI/
+│   │   │   │   ├── CalibrationValidation.cpp
 │   │   │   │   ├── SurfaceBuild.cpp
 │   │   │   │   ├── SurfaceInvariants.cpp
 │   │   ├── OptimizerToyProblems.cpp
+│   ├── Performance/
+│   │   ├── BudgetFixtures.cpp
+│   │   ├── Budgets.hpp
+│   │   ├── ExamplePipelinePerformance.cpp
+│   │   ├── HestonPerformance.cpp
+│   │   ├── SVIPerformance.cpp
+│   │   ├── Timing.hpp
 │   ├── Regression/
 │   │   ├── BSplineKnownValues.cpp
 │   │   ├── BlackKnownValues.cpp
 │   │   ├── ExamplePipeline.cpp
+│   │   ├── Golden.hpp
+│   │   ├── GoldenFixtures.cpp
 │   │   ├── Models/
 │   │   │   ├── Heston/
 │   │   │   │   ├── GradientFiniteDifference.cpp
 │   │   │   │   ├── IntrinsicValue.cpp
 │   │   │   │   ├── SigmaZeroMatchesBlack.cpp
 │   │   │   ├── SVI/
+│   │   │   │   ├── StressCalibration.cpp
 │   │   │   │   ├── SyntheticCalibration.cpp
+│   ├── Support/
+│   │   ├── Json.hpp
+│   │   ├── Tolerances.hpp
 │   ├── Unit/
 │   │   ├── Base/
 │   │   │   ├── Errors/

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
+#include "../../../Support/Tolerances.hpp"
 #include "Models/Heston/Price/Pricer.hpp"
 
 #include <array>
@@ -47,7 +48,11 @@ TEST(RegressionHestonGradient, MatchesCentralFiniteDifference)
             steps[idx]
         );
 
-        EXPECT_NEAR(analytic[idx + 1], finiteDifference, 2e-4)
-            << "parameter index " << idx;
+        EXPECT_NEAR(
+            analytic[idx + 1],
+            finiteDifference,
+            uv::tests::tolerance::FiniteDifference
+        ) << "parameter index "
+          << idx;
     }
 }

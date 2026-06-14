@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "description": "Known Black-76 ATM one-year call price.",
+    "regeneration": "Manual only; normal ctest must not update this file."
+  },
+  "tolerance": 1e-12,
+  "input": {
+    "t": 1.0,
+    "discountFactor": 0.95,
+    "forward": 100.0,
+    "volatility": 0.20,
+    "strike": 100.0
+  },
+  "price": 7.567289082635459
+}

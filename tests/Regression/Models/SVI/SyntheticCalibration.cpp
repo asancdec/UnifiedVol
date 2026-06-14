@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
+#include "../../Golden.hpp"
 #include "Core/Matrix.hpp"
 #include "Models/SVI/Calibrate/Calibrate.hpp"
 #include "Models/SVI/Calibrate/NLoptAdapter.hpp"
@@ -15,6 +16,13 @@
 
 namespace
 {
+struct ErrorDiagnostics
+{
+    double meanAbs{};
+    double maxAbs{};
+    double rmse{};
+};
+
 struct SyntheticSVICase
 {
     std::vector<double> maturities{0.5, 1.0};
@@ -78,39 +86,24 @@ void expectParamsNear(
     const double tolerance
 )
 {
-    EXPECT_NEAR(actual.t, expected.t, tolerance);
-    EXPECT_NEAR(actual.a, expected.a, tolerance);
-    EXPECT_NEAR(actual.b, expected.b, tolerance);
-    EXPECT_NEAR(actual.rho, expected.rho, tolerance);
-    EXPECT_NEAR(actual.m, expected.m, tolerance);
-    EXPECT_NEAR(actual.sigma, expected.sigma, tolerance);
+    EXPECT_NEAR(actual.t, expected.t, tolerance) << "field=t";
+    EXPECT_NEAR(actual.a, expected.a, tolerance) << "field=a t=" << expected.t;
+    EXPECT_NEAR(actual.b, expected.b, tolerance) << "field=b t=" << expected.t;
+    EXPECT_NEAR(actual.rho, expected.rho, tolerance) << "field=rho t=" << expected.t;
+    EXPECT_NEAR(actual.m, expected.m, tolerance) << "field=m t=" << expected.t;
+    EXPECT_NEAR(actual.sigma, expected.sigma, tolerance)
+        << "field=sigma t=" << expected.t;
 }
-} // namespace
 
-TEST(RegressionSVICalibration, RecoversSyntheticSurfaceShapeAndVols)
+ErrorDiagnostics totalVarianceDiagnostics(
+    const uv::Vector<uv::models::svi::Params<double>>& calibrated,
+    const SyntheticSVICase& data
+)
 {
-    constexpr double tolerance = 1e-8;
-    const auto data = makeSyntheticSVICase();
-    const auto calibrated = calibrateSynthetic(data);
-    const uv::Vector<uv::models::svi::Params<double>> expectedCalibrated{
-        {0.5,
-         0.024999999999999412,
-         0.30000000000000093,
-         -0.34999999999999831,
-         0.020000000000000202,
-         0.30000000000000088},
-        {1.0,
-         0.040000000000003061,
-         0.34999999999999609,
-         -0.25000000000000444,
-         0.039999999999999307,
-         0.34999999999999526}
-    };
-
-    ASSERT_EQ(calibrated.size(), data.truth.size());
-    ASSERT_EQ(calibrated.size(), expectedCalibrated.size());
-    for (std::size_t i = 0; i < calibrated.size(); ++i)
-        expectParamsNear(calibrated[i], expectedCalibrated[i], tolerance);
+    double sumAbs{};
+    double sumSquared{};
+    double maxAbs{};
+    std::size_t count{};
 
     for (std::size_t i = 0; i < calibrated.size(); ++i)
     {
@@ -125,8 +118,60 @@ TEST(RegressionSVICalibration, RecoversSyntheticSurfaceShapeAndVols)
                 p.sigma,
                 data.logKF[j]
             );
-            EXPECT_NEAR(fitted, data.totalVariance[i][j], tolerance)
-                << "slice " << i << " strike " << j;
+            const double error = std::abs(fitted - data.totalVariance[i][j]);
+
+            sumAbs += error;
+            sumSquared += error * error;
+            maxAbs = std::max(maxAbs, error);
+            ++count;
+        }
+    }
+
+    return {
+        sumAbs / static_cast<double>(count),
+        maxAbs,
+        std::sqrt(sumSquared / static_cast<double>(count))
+    };
+}
+} // namespace
+
+TEST(RegressionSVICalibration, RecoversSyntheticSurfaceShapeAndVols)
+{
+    const auto data = makeSyntheticSVICase();
+    const auto calibrated = calibrateSynthetic(data);
+    const auto golden = uv::tests::golden::readSyntheticSVICalibration(
+        "tests/Golden/synthetic_svi_calibration.json"
+    );
+
+    ASSERT_EQ(calibrated.size(), data.truth.size());
+    ASSERT_EQ(calibrated.size(), golden.calibratedParams.size());
+    for (std::size_t i = 0; i < calibrated.size(); ++i)
+        expectParamsNear(calibrated[i], golden.calibratedParams[i], golden.tolerance);
+
+    const ErrorDiagnostics errors{totalVarianceDiagnostics(calibrated, data)};
+    EXPECT_NEAR(errors.meanAbs, golden.meanAbsTotalVarianceError, golden.tolerance)
+        << "metric=meanAbsTotalVariance";
+    EXPECT_NEAR(errors.maxAbs, golden.maxAbsTotalVarianceError, golden.tolerance)
+        << "metric=maxAbsTotalVariance";
+    EXPECT_NEAR(errors.rmse, golden.rmseTotalVarianceError, golden.tolerance)
+        << "metric=rmseTotalVariance";
+
+    for (std::size_t i = 0; i < calibrated.size(); ++i)
+    {
+        for (std::size_t j = 0; j < data.logKF.size(); ++j)
+        {
+            const auto& p = calibrated[i];
+            const double fitted = uv::models::svi::totalVariance(
+                p.a,
+                p.b,
+                p.rho,
+                p.m,
+                p.sigma,
+                data.logKF[j]
+            );
+            EXPECT_NEAR(fitted, data.totalVariance[i][j], golden.tolerance)
+                << "slice=" << i << " strike=" << j << " logKF=" << data.logKF[j]
+                << " actual=" << fitted << " expected=" << data.totalVariance[i][j];
         }
     }
 }

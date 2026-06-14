@@ -1,0 +1,11 @@
+{
+  "metadata": {
+    "description": "Known cubic B-spline sample values for regression coverage.",
+    "regeneration": "Manual only; normal ctest must not update this file."
+  },
+  "tolerance": 1e-15,
+  "controlPoints": [0.0, 1.0, 0.0, 2.0, 1.0, 3.0],
+  "knots": [0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0],
+  "x": [0.0, 0.5, 1.5, 2.5, 3.0],
+  "y": [0.0, 0.6354166666666666, 1.0, 1.4895833333333333, 3.0]
+}
