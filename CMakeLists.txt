@@ -8,6 +8,20 @@ if(MSVC)
   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
 
+# --- Coverage ---
+option(UNIFIEDVOL_ENABLE_COVERAGE "Enable GCC coverage instrumentation" OFF)
+
+if(UNIFIEDVOL_ENABLE_COVERAGE)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    message(STATUS "UnifiedVol coverage instrumentation enabled")
+
+    add_compile_options(-O0 -g --coverage)
+    add_link_options(--coverage)
+  else()
+    message(FATAL_ERROR "Coverage is currently supported only with GCC")
+  endif()
+endif()
+
 # --- UnifiedVol ---
 file(GLOB_RECURSE UNIFIEDVOL_SOURCES CONFIGURE_DEPENDS
   ${CMAKE_SOURCE_DIR}/src/*.cpp

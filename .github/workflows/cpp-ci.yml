@@ -1,16 +1,7 @@
-name: C++ CI
-
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
-  workflow_dispatch:
-
-jobs:
-  correctness:
-    name: GCC Release non-performance tests
+  coverage:
+    name: GCC coverage report
     runs-on: ubuntu-24.04
+    needs: correctness
 
     steps:
       - name: Checkout repository
@@ -21,7 +12,7 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt update
-          sudo apt install -y cmake ninja-build g++-13 git curl zip unzip tar pkg-config
+          sudo apt install -y cmake ninja-build g++-13 git curl zip unzip tar pkg-config gcovr
 
       - name: Install vcpkg
         run: |
@@ -29,42 +20,43 @@ jobs:
           git clone https://github.com/microsoft/vcpkg.git "$HOME/dev/vcpkg"
           "$HOME/dev/vcpkg/bootstrap-vcpkg.sh"
 
-      - name: Configure release build
-        run: cmake --preset linux-gcc-release
+      - name: Configure coverage build
+        run: cmake --preset linux-gcc-coverage
+        env:
+          CC: gcc-13
+          CXX: g++-13
 
-      - name: Build correctness tests
-        run: cmake --build --preset linux-gcc-release-tests
+      - name: Build coverage tests
+        run: cmake --build --preset linux-gcc-coverage-tests
 
-      - name: Run non-performance tests
-        run: ctest --preset linux-gcc-release-nonperformance --output-on-failure
+      - name: Run coverage tests
+        run: ctest --preset linux-gcc-coverage-nonperformance --output-on-failure
 
-  performance:
-    name: GCC performance guardrails
-    runs-on: ubuntu-24.04
-    if: github.event_name == 'workflow_dispatch'
+      - name: Generate coverage report
+        run: |
+          mkdir -p build/linux-gcc-coverage/coverage
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
+          gcovr build/linux-gcc-coverage \
+            --root . \
+            --object-directory build/linux-gcc-coverage \
+            --filter 'uv/' \
+            --exclude 'tests/' \
+            --exclude 'external/' \
+            --exclude 'build/' \
+            --gcov-executable gcov-13 \
+            --gcov-ignore-parse-errors negative_hits.warn_once_per_file \
+            --gcov-ignore-errors=no_working_dir_found \
+            --html-details build/linux-gcc-coverage/coverage/coverage.html \
+            --xml-pretty \
+            --xml build/linux-gcc-coverage/coverage/coverage.xml \
+            --print-summary \
+            --fail-under-line 85
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
         with:
-          submodules: recursive
-
-      - name: Install build tools
-        run: |
-          sudo apt update
-          sudo apt install -y cmake ninja-build g++-13 git curl zip unzip tar pkg-config
-
-      - name: Install vcpkg
-        run: |
-          mkdir -p "$HOME/dev"
-          git clone https://github.com/microsoft/vcpkg.git "$HOME/dev/vcpkg"
-          "$HOME/dev/vcpkg/bootstrap-vcpkg.sh"
-
-      - name: Configure performance build
-        run: cmake --preset linux-gcc-perf
-
-      - name: Build performance tests
-        run: cmake --build --preset linux-gcc-perf-tests
-
-      - name: Run performance tests
-        run: ctest --preset linux-gcc-perf-performance --output-on-failure
+          files: build/linux-gcc-coverage/coverage/coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: gcc
+          name: gcc-coverage
+          fail_ci_if_error: true
