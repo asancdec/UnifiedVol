@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "Budgets.hpp"
 #include "Core/Curve.hpp"
 #include "Core/Matrix.hpp"
 #include "Core/VolSurface.hpp"
 #include "Models/Heston/Price/Pricer.hpp"
-#include "Timing.hpp"
+#include "Support/Performance/Budgets.hpp"
+#include "Support/Performance/Timing.hpp"
 
 #include <cmath>
 #include <gtest/gtest.h>
@@ -15,7 +15,7 @@ TEST(PerformanceHeston, PricesMediumSurfaceWithinThroughputBudget)
 {
     const auto budget = uv::tests::performance::readBudget(
         "tests/Golden/performance_budgets.json",
-        "hestonMediumSurface"
+        uv::tests::performance::HestonMediumSurfaceBudgetKey
     );
     const std::vector<double>
         maturities{0.08, 0.16, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 5.0};

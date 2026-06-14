@@ -4,6 +4,7 @@
 #include "Base/Errors/Errors.hpp"
 
 #include <gtest/gtest.h>
+#include <limits>
 #include <vector>
 
 TEST(ModelsHestonParams, ConstructsFromSpanAndConvertsType)
@@ -23,6 +24,14 @@ TEST(ModelsHestonParams, ConstructsFromSpanAndConvertsType)
 TEST(ModelsHestonParams, RejectsWrongSpanSize)
 {
     const std::vector<double> raw{1.0, 0.04, 0.3};
+
+    EXPECT_THROW((uv::models::heston::Params<double>{raw}), uv::errors::UnifiedVolError);
+}
+
+TEST(ModelsHestonParams, RejectsNonFiniteSpanValues)
+{
+    std::vector<double>
+        raw{1.0, 0.04, std::numeric_limits<double>::quiet_NaN(), -0.7, 0.05};
 
     EXPECT_THROW((uv::models::heston::Params<double>{raw}), uv::errors::UnifiedVolError);
 }

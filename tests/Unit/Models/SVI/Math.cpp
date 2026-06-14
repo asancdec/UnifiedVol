@@ -40,3 +40,8 @@ TEST(UnitModelsSVIMath, ButterflyDiagnosticIsPositiveForBenignParameters)
 {
     EXPECT_GT(uv::models::svi::gk(0.04, 0.2, -0.3, 0.0, 0.5, 0.1), 0.0);
 }
+
+TEST(UnitModelsSVIMath, ButterflyDiagnosticDetectsInvalidParameters)
+{
+    EXPECT_LT(uv::models::svi::gk(0.001, 5.0, 0.0, 0.0, 0.01, 0.5), 0.0);
+}

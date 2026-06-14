@@ -24,26 +24,13 @@ std::size_t findSpan(T x, std::span<const T> knots, std::span<const T> cPoints) 
     return static_cast<std::size_t>(std::upper_bound(first, last, x) - knots.begin() - 1);
 }
 
-template <std::floating_point T, std::size_t K>
-T evalOne(T x, std::span<const T> knots, std::span<const T> cPoints) noexcept
+template <std::floating_point T, std::size_t K> T evalOneInSpan(
+    T x,
+    const std::size_t span,
+    std::span<const T> knots,
+    std::span<const T> cPoints
+) noexcept
 {
-    const std::size_t n{cPoints.size() - 1};
-
-    const T leftDomain{knots[K]};
-    const T rightDomain{knots[n + 1]};
-
-    if (x < leftDomain || x > rightDomain)
-    {
-        return T{0};
-    }
-
-    if (x == rightDomain)
-    {
-        return cPoints.back();
-    }
-
-    const std::size_t span{findSpan<T, K>(x, knots, cPoints)};
-
     std::array<T, K + 1> d;
 
     for (std::size_t j{0}; j <= K; ++j)
@@ -74,6 +61,27 @@ T evalOne(T x, std::span<const T> knots, std::span<const T> cPoints) noexcept
     return d[K];
 }
 
+template <std::floating_point T, std::size_t K>
+T evalOne(T x, std::span<const T> knots, std::span<const T> cPoints) noexcept
+{
+    const std::size_t n{cPoints.size() - 1};
+
+    const T leftDomain{knots[K]};
+    const T rightDomain{knots[n + 1]};
+
+    if (x < leftDomain || x > rightDomain)
+    {
+        return T{0};
+    }
+
+    if (x == rightDomain)
+    {
+        return cPoints.back();
+    }
+
+    return evalOneInSpan<T, K>(x, findSpan<T, K>(x, knots, cPoints), knots, cPoints);
+}
+
 template <std::floating_point T, std::size_t K> void evalInplace(
     std::span<T> out,
     std::span<const T> x,
@@ -81,9 +89,48 @@ template <std::floating_point T, std::size_t K> void evalInplace(
     std::span<const T> cPoints
 ) noexcept
 {
+    const std::size_t n{cPoints.size() - 1};
+    const T leftDomain{knots[K]};
+    const T rightDomain{knots[n + 1]};
+
+    bool haveSpan{false};
+    T previous{};
+    std::size_t span{K};
+
     for (std::size_t i{0}; i < x.size(); ++i)
     {
-        out[i] = evalOne<T, K>(x[i], knots, cPoints);
+        const T xi{x[i]};
+
+        if (xi < leftDomain || xi > rightDomain)
+        {
+            out[i] = T{0};
+            haveSpan = false;
+            previous = xi;
+            continue;
+        }
+
+        if (xi == rightDomain)
+        {
+            out[i] = cPoints.back();
+            previous = xi;
+            continue;
+        }
+
+        if (!haveSpan || xi < previous)
+        {
+            span = findSpan<T, K>(xi, knots, cPoints);
+            haveSpan = true;
+        }
+        else
+        {
+            while (span < n && xi >= knots[span + 1])
+            {
+                ++span;
+            }
+        }
+
+        out[i] = evalOneInSpan<T, K>(xi, span, knots, cPoints);
+        previous = xi;
     }
 }
 

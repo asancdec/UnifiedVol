@@ -2,6 +2,17 @@ find_package(GTest CONFIG REQUIRED)
 
 include(GoogleTest)
 
+file(GLOB_RECURSE TEST_SUPPORT_SOURCES
+    CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/Support/*.cpp
+)
+
+add_library(UnifiedVolTestSupport STATIC ${TEST_SUPPORT_SOURCES})
+target_link_libraries(UnifiedVolTestSupport PUBLIC UnifiedVol)
+target_include_directories(UnifiedVolTestSupport PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 function(add_unifiedvol_test_executable target source_dir label)
   file(GLOB_RECURSE TEST_SOURCES
       CONFIGURE_DEPENDS
@@ -12,6 +23,7 @@ function(add_unifiedvol_test_executable target source_dir label)
     add_executable(${target} ${TEST_SOURCES})
 
     target_link_libraries(${target} PRIVATE
+      UnifiedVolTestSupport
       UnifiedVol
       GTest::gtest_main
     )

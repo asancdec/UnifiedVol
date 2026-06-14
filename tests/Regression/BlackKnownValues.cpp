@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "Golden.hpp"
 #include "Math/Functions/Black.hpp"
+#include "Support/Golden.hpp"
 
 #include <gtest/gtest.h>
 
 TEST(RegressionMathBlack, AtmOneYearCallMatchesKnownValue)
 {
     const auto golden =
-        uv::tests::golden::readBlackKnownValue("tests/Golden/black_known_value.json");
+        uv::tests::golden::readBlackKnownValue("tests/Golden/black_known_values.json");
     const double price = uv::math::black::priceB76(
         golden.t,
         golden.discountFactor,

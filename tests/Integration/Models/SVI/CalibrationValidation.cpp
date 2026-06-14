@@ -107,4 +107,15 @@ TEST(IntegrationSVICalibrationValidation, RejectsInvalidSliceData)
         ),
         uv::errors::UnifiedVolError
     );
+
+    totalVariance[0][1] = std::numeric_limits<double>::infinity();
+    EXPECT_THROW(
+        uv::models::svi::calibrate(
+            std::span<const double>{maturities},
+            logKF,
+            totalVariance,
+            optimizer
+        ),
+        uv::errors::UnifiedVolError
+    );
 }

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "../../Golden.hpp"
-#include "Core/Matrix.hpp"
 #include "Models/SVI/Calibrate/Calibrate.hpp"
 #include "Models/SVI/Calibrate/NLoptAdapter.hpp"
 #include "Models/SVI/Math.hpp"
-#include "Models/SVI/Params.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"
+#include "Support/Assertions.hpp"
+#include "Support/Golden.hpp"
+#include "Support/Models/SVI.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -16,51 +16,11 @@
 
 namespace
 {
-struct ErrorDiagnostics
-{
-    double meanAbs{};
-    double maxAbs{};
-    double rmse{};
-};
-
-struct SyntheticSVICase
-{
-    std::vector<double> maturities{0.5, 1.0};
-    std::vector<double> logKF{-0.25, -0.10, 0.0, 0.10, 0.25};
-    uv::core::Matrix<double> logKFMatrix{maturities.size(), logKF.size()};
-    uv::core::Matrix<double> totalVariance{maturities.size(), logKF.size()};
-    uv::Vector<uv::models::svi::Params<double>> truth{
-        {0.5, 0.025, 0.30, -0.35, 0.02, 0.30},
-        {1.0, 0.040, 0.35, -0.25, 0.04, 0.35}
-    };
-};
-
-SyntheticSVICase makeSyntheticSVICase()
-{
-    SyntheticSVICase data;
-
-    for (std::size_t i = 0; i < data.maturities.size(); ++i)
-    {
-        for (std::size_t j = 0; j < data.logKF.size(); ++j)
-        {
-            data.logKFMatrix[i][j] = data.logKF[j];
-            const auto& p = data.truth[i];
-            data.totalVariance[i][j] = uv::models::svi::totalVariance(
-                p.a,
-                p.b,
-                p.rho,
-                p.m,
-                p.sigma,
-                data.logKF[j]
-            );
-        }
-    }
-
-    return data;
-}
+namespace assertions = uv::tests::assertions;
+namespace svi_support = uv::tests::models::svi;
 
 uv::Vector<uv::models::svi::Params<double>>
-calibrateSynthetic(const SyntheticSVICase& data)
+calibrateSynthetic(const svi_support::SyntheticSurfaceCase& data)
 {
     const uv::models::svi::Config config{
         .objectiveTol = 1e-12,
@@ -80,64 +40,11 @@ calibrateSynthetic(const SyntheticSVICase& data)
     );
 }
 
-void expectParamsNear(
-    const uv::models::svi::Params<double>& actual,
-    const uv::models::svi::Params<double>& expected,
-    const double tolerance
-)
-{
-    EXPECT_NEAR(actual.t, expected.t, tolerance) << "field=t";
-    EXPECT_NEAR(actual.a, expected.a, tolerance) << "field=a t=" << expected.t;
-    EXPECT_NEAR(actual.b, expected.b, tolerance) << "field=b t=" << expected.t;
-    EXPECT_NEAR(actual.rho, expected.rho, tolerance) << "field=rho t=" << expected.t;
-    EXPECT_NEAR(actual.m, expected.m, tolerance) << "field=m t=" << expected.t;
-    EXPECT_NEAR(actual.sigma, expected.sigma, tolerance)
-        << "field=sigma t=" << expected.t;
-}
-
-ErrorDiagnostics totalVarianceDiagnostics(
-    const uv::Vector<uv::models::svi::Params<double>>& calibrated,
-    const SyntheticSVICase& data
-)
-{
-    double sumAbs{};
-    double sumSquared{};
-    double maxAbs{};
-    std::size_t count{};
-
-    for (std::size_t i = 0; i < calibrated.size(); ++i)
-    {
-        for (std::size_t j = 0; j < data.logKF.size(); ++j)
-        {
-            const auto& p = calibrated[i];
-            const double fitted = uv::models::svi::totalVariance(
-                p.a,
-                p.b,
-                p.rho,
-                p.m,
-                p.sigma,
-                data.logKF[j]
-            );
-            const double error = std::abs(fitted - data.totalVariance[i][j]);
-
-            sumAbs += error;
-            sumSquared += error * error;
-            maxAbs = std::max(maxAbs, error);
-            ++count;
-        }
-    }
-
-    return {
-        sumAbs / static_cast<double>(count),
-        maxAbs,
-        std::sqrt(sumSquared / static_cast<double>(count))
-    };
-}
 } // namespace
 
 TEST(RegressionSVICalibration, RecoversSyntheticSurfaceShapeAndVols)
 {
-    const auto data = makeSyntheticSVICase();
+    const auto data = svi_support::makeDefaultSyntheticSurfaceCase();
     const auto calibrated = calibrateSynthetic(data);
     const auto golden = uv::tests::golden::readSyntheticSVICalibration(
         "tests/Golden/synthetic_svi_calibration.json"
@@ -146,9 +53,15 @@ TEST(RegressionSVICalibration, RecoversSyntheticSurfaceShapeAndVols)
     ASSERT_EQ(calibrated.size(), data.truth.size());
     ASSERT_EQ(calibrated.size(), golden.calibratedParams.size());
     for (std::size_t i = 0; i < calibrated.size(); ++i)
-        expectParamsNear(calibrated[i], golden.calibratedParams[i], golden.tolerance);
+        assertions::expectSVIParamsNear(
+            calibrated[i],
+            golden.calibratedParams[i],
+            golden.tolerance
+        );
 
-    const ErrorDiagnostics errors{totalVarianceDiagnostics(calibrated, data)};
+    const uv::tests::ErrorDiagnostics errors{
+        svi_support::totalVarianceDiagnostics(calibrated, data)
+    };
     EXPECT_NEAR(errors.meanAbs, golden.meanAbsTotalVarianceError, golden.tolerance)
         << "metric=meanAbsTotalVariance";
     EXPECT_NEAR(errors.maxAbs, golden.maxAbsTotalVarianceError, golden.tolerance)
@@ -181,7 +94,7 @@ TEST(RegressionSVIStaticArbitrage, CalibratedParamsSatisfyAllConstraints)
     constexpr double eps = 1e-12;
     constexpr double wingDelta = 0.15;
 
-    const auto data = makeSyntheticSVICase();
+    const auto data = svi_support::makeDefaultSyntheticSurfaceCase();
     const auto calibrated = calibrateSynthetic(data);
     const auto [minIt, maxIt] = std::minmax_element(data.logKF.begin(), data.logKF.end());
 

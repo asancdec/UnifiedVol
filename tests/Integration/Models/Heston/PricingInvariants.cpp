@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "../../../Support/Tolerances.hpp"
 #include "Models/Heston/Price/Pricer.hpp"
+#include "Support/Tolerances.hpp"
 
 #include <algorithm>
 #include <array>
@@ -51,6 +51,26 @@ TEST(IntegrationHestonPricingInvariants, CallPriceIncreasesWithForward)
     EXPECT_TRUE(std::isfinite(highForward));
     EXPECT_LE(lowForward, midForward + uv::tests::tolerance::NoArb);
     EXPECT_LE(midForward, highForward + uv::tests::tolerance::NoArb);
+}
+
+TEST(IntegrationHestonPricingInvariants, CallPriceIsContinuousInInitialVariance)
+{
+    uv::models::heston::price::Pricer<double, 160> lowV0{};
+    uv::models::heston::price::Pricer<double, 160> highV0{};
+    lowV0.setParams({1.8, 0.04, 0.35, -0.50, 0.0400});
+    highV0.setParams({1.8, 0.04, 0.35, -0.50, 0.0401});
+
+    constexpr double t = 1.0;
+    constexpr double dF = 0.98;
+    constexpr double F = 100.0;
+    constexpr double K = 100.0;
+
+    const double lowPrice = lowV0.callPrice(t, dF, F, K);
+    const double highPrice = highV0.callPrice(t, dF, F, K);
+
+    EXPECT_TRUE(std::isfinite(lowPrice));
+    EXPECT_TRUE(std::isfinite(highPrice));
+    EXPECT_NEAR(lowPrice, highPrice, 0.05);
 }
 
 TEST(IntegrationHestonPricingInvariants, CallPricesAreConvexInStrike)

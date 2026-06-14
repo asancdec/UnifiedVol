@@ -36,6 +36,26 @@ TEST(IntegrationHestonSurfacePricing, PricesWholeSurfaceWithStoredParams)
     }
 }
 
+TEST(IntegrationHestonSurfacePricing, PreservesNonSquareSurfaceShape)
+{
+    const std::vector<double> maturities{0.25, 1.0, 2.0};
+    const std::vector<double> forwards{99.0, 101.0, 103.0};
+    const std::vector<double> strikes{80.0, 95.0, 110.0, 130.0};
+    const std::vector<double> moneyness{0.8, 0.95, 1.1, 1.3};
+    const uv::core::Matrix<double> vols{maturities.size(), strikes.size(), 0.24};
+    const uv::core::VolSurface<double>
+        surface{maturities, forwards, strikes, moneyness, vols};
+    const uv::core::Curve<double> curve{0.02, maturities};
+    uv::models::heston::price::Pricer<double, 64> pricer{};
+    pricer.setParams({2.0, 0.04, 0.35, -0.6, 0.04});
+
+    const auto prices = pricer.callPrice(surface, curve);
+
+    EXPECT_EQ(prices.rows(), 3U);
+    EXPECT_EQ(prices.cols(), 4U);
+    EXPECT_TRUE(std::isfinite(prices[2][3]));
+}
+
 TEST(IntegrationHestonSurfacePricing, StoredParamsValidatePricingInputs)
 {
     uv::models::heston::price::Pricer<double, 64> pricer{};

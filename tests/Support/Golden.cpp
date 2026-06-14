@@ -1,95 +1,45 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#pragma once
+#include "Support/Golden.hpp"
 
-#include "Base/Types.hpp"
-#include "Models/Heston/Params.hpp"
-#include "Models/SVI/Params.hpp"
-#include "Support/Json.hpp"
+#include "IO/JSON/Read.hpp"
 
 #include <cmath>
-#include <cstddef>
-#include <filesystem>
 #include <stdexcept>
 #include <string>
 
 namespace uv::tests::golden
 {
-struct VolPoint
+namespace
 {
-    std::size_t maturity{};
-    std::size_t strike{};
-    double value{};
-};
+namespace json = uv::io::json;
 
-struct ExamplePipeline
-{
-    double tolerance{};
-    Vector<models::svi::Params<double>> sviParams;
-    models::heston::Params<double> hestonParams{0.0, 0.0, 0.0, 0.0, 0.0};
-    Vector<VolPoint> marketVols;
-    Vector<VolPoint> sviVols;
-    Vector<VolPoint> hestonVols;
-    double meanAbsVolError{};
-    double maxAbsVolError{};
-    double rmseVolError{};
-};
-
-struct SyntheticSVICalibration
-{
-    double tolerance{};
-    Vector<models::svi::Params<double>> calibratedParams;
-    double meanAbsTotalVarianceError{};
-    double maxAbsTotalVarianceError{};
-    double rmseTotalVarianceError{};
-};
-
-struct BSplineKnownValues
-{
-    double tolerance{};
-    Vector<double> controlPoints;
-    Vector<double> knots;
-    Vector<double> x;
-    Vector<double> y;
-};
-
-struct BlackKnownValue
-{
-    double tolerance{};
-    double t{};
-    double discountFactor{};
-    double forward{};
-    double volatility{};
-    double strike{};
-    double price{};
-};
-
-inline void requireObject(const json::Value& value, const std::string& path)
+void requireObject(const json::Value& value, const std::string& path)
 {
     if (value.type != json::Value::Type::Object)
         throw std::runtime_error("Expected JSON object at: " + path);
 }
 
-inline void requireArray(const json::Value& value, const std::string& path)
+void requireArray(const json::Value& value, const std::string& path)
 {
     if (value.type != json::Value::Type::Array)
         throw std::runtime_error("Expected JSON array at: " + path);
 }
 
-inline void requireFinite(const double value, const std::string& path)
+void requireFinite(const double value, const std::string& path)
 {
     if (!std::isfinite(value))
         throw std::runtime_error("Expected finite JSON number at: " + path);
 }
 
-inline void requirePositiveFinite(const double value, const std::string& path)
+void requirePositiveFinite(const double value, const std::string& path)
 {
     requireFinite(value, path);
     if (value <= 0.0)
         throw std::runtime_error("Expected positive JSON number at: " + path);
 }
 
-inline std::size_t readIndex(const json::Value& tree, const std::string& path)
+std::size_t readIndex(const json::Value& tree, const std::string& path)
 {
     const double value{tree.asNumber()};
     requireFinite(value, path);
@@ -98,7 +48,7 @@ inline std::size_t readIndex(const json::Value& tree, const std::string& path)
     return static_cast<std::size_t>(value);
 }
 
-inline models::svi::Params<double> readSVIParams(const json::Value& tree)
+models::svi::Params<double> readSVIParams(const json::Value& tree)
 {
     requireObject(tree, "sviParams[]");
     return {
@@ -111,7 +61,7 @@ inline models::svi::Params<double> readSVIParams(const json::Value& tree)
     };
 }
 
-inline Vector<models::svi::Params<double>>
+Vector<models::svi::Params<double>>
 readSVIParamsArray(const json::Value& tree, const std::string& path)
 {
     requireArray(tree.at(path), path);
@@ -123,7 +73,7 @@ readSVIParamsArray(const json::Value& tree, const std::string& path)
     return params;
 }
 
-inline Vector<VolPoint> readVolPoints(const json::Value& tree, const std::string& path)
+Vector<VolPoint> readVolPoints(const json::Value& tree, const std::string& path)
 {
     requireArray(tree.at(path), path);
     Vector<VolPoint> points;
@@ -147,7 +97,7 @@ inline Vector<VolPoint> readVolPoints(const json::Value& tree, const std::string
     return points;
 }
 
-inline Vector<double> readDoubleArray(const json::Value& tree, const std::string& path)
+Vector<double> readDoubleArray(const json::Value& tree, const std::string& path)
 {
     requireArray(tree.at(path), path);
     Vector<double> values;
@@ -163,7 +113,7 @@ inline Vector<double> readDoubleArray(const json::Value& tree, const std::string
     return values;
 }
 
-inline void validateSVIParams(
+void validateSVIParams(
     const Vector<models::svi::Params<double>>& params,
     const std::string& path
 )
@@ -189,7 +139,7 @@ inline void validateSVIParams(
     }
 }
 
-inline void validateHestonParams(const models::heston::Params<double>& params)
+void validateHestonParams(const models::heston::Params<double>& params)
 {
     requirePositiveFinite(params.kappa, "hestonParams.kappa");
     requirePositiveFinite(params.theta, "hestonParams.theta");
@@ -199,8 +149,9 @@ inline void validateHestonParams(const models::heston::Params<double>& params)
     if (params.rho <= -1.0 || params.rho >= 1.0)
         throw std::runtime_error("Expected rho in (-1, 1) at: hestonParams.rho");
 }
+} // namespace
 
-inline ExamplePipeline readExamplePipeline(const std::filesystem::path& path)
+ExamplePipeline readExamplePipeline(const std::filesystem::path& path)
 {
     const json::Value tree{json::read(path)};
     requireObject(tree, path.string());
@@ -232,8 +183,7 @@ inline ExamplePipeline readExamplePipeline(const std::filesystem::path& path)
     return fixture;
 }
 
-inline SyntheticSVICalibration
-readSyntheticSVICalibration(const std::filesystem::path& path)
+SyntheticSVICalibration readSyntheticSVICalibration(const std::filesystem::path& path)
 {
     const json::Value tree{json::read(path)};
     requireObject(tree, path.string());
@@ -255,7 +205,7 @@ readSyntheticSVICalibration(const std::filesystem::path& path)
     return fixture;
 }
 
-inline BSplineKnownValues readBSplineKnownValues(const std::filesystem::path& path)
+BSplineKnownValues readBSplineKnownValues(const std::filesystem::path& path)
 {
     const json::Value tree{json::read(path)};
     requireObject(tree, path.string());
@@ -283,7 +233,7 @@ inline BSplineKnownValues readBSplineKnownValues(const std::filesystem::path& pa
     return fixture;
 }
 
-inline BlackKnownValue readBlackKnownValue(const std::filesystem::path& path)
+BlackKnownValue readBlackKnownValue(const std::filesystem::path& path)
 {
     const json::Value tree{json::read(path)};
     requireObject(tree, path.string());

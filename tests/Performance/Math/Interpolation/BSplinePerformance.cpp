@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "Budgets.hpp"
 #include "Math/Interpolation/BSpline/Interpolator.hpp"
-#include "Timing.hpp"
+#include "Support/Performance/Budgets.hpp"
+#include "Support/Performance/Timing.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -74,7 +74,7 @@ TEST(PerformanceBSpline, EvaluatesLargeCubicGridWithinThroughputBudget)
 {
     const auto budget = uv::tests::performance::readBudget(
         "tests/Golden/performance_budgets.json",
-        "bsplineLargeEvaluation"
+        uv::tests::performance::BSplineLargeEvaluationBudgetKey
     );
 
     constexpr std::size_t controlPointCount{64};

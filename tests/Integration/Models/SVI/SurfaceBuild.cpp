@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
+#include "Base/Errors/Errors.hpp"
 #include "Core/Matrix.hpp"
 #include "Core/VolSurface.hpp"
 #include "Models/SVI/BuildSurface.hpp"
@@ -30,4 +31,23 @@ TEST(IntegrationModelsSVIBuildSurface, BuildsVolSurfaceFromKnownParams)
     EXPECT_DOUBLE_EQ(output.strikes()[2], input.strikes()[2]);
     EXPECT_GT(output.vol()[0][0], 0.0);
     EXPECT_GT(output.vol()[1][2], 0.0);
+}
+
+TEST(IntegrationModelsSVIBuildSurface, RejectsMismatchedParams)
+{
+    const std::vector<double> maturities{1.0, 2.0};
+    const std::vector<double> forwards{100.0, 100.0};
+    const std::vector<double> strikes{90.0, 100.0, 110.0};
+    const std::vector<double> moneyness{0.9, 1.0, 1.1};
+    const uv::core::Matrix<double> inputVol{2, 3, 0.2};
+    const uv::core::VolSurface<double>
+        input{maturities, forwards, strikes, moneyness, inputVol};
+    const uv::Vector<uv::models::svi::Params<double>> params{
+        {1.0, 0.02, 0.10, 0.0, 0.0, 0.20}
+    };
+
+    EXPECT_THROW(
+        static_cast<void>(uv::models::svi::buildSurface(input, params)),
+        uv::errors::UnifiedVolError
+    );
 }

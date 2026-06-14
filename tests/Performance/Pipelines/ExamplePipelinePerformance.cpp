@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "Budgets.hpp"
 #include "IO/Load.hpp"
 #include "Models/Heston/BuildSurface.hpp"
 #include "Models/Heston/Calibrate/Config.hpp"
 #include "Models/SVI/BuildSurface.hpp"
-#include "Timing.hpp"
+#include "Support/Performance/Budgets.hpp"
+#include "Support/Performance/Timing.hpp"
 
 #include <filesystem>
 #include <gtest/gtest.h>
@@ -15,7 +15,7 @@ TEST(PerformanceExamplePipeline, BuildsSVIAndHestonSurfacesWithinLatencyBudget)
     using Real = double;
     const auto budget = uv::tests::performance::readBudget(
         "tests/Golden/performance_budgets.json",
-        "examplePipeline"
+        uv::tests::performance::ExamplePipelineBudgetKey
     );
 
     const std::filesystem::path path{"data/VolSurface_SPY_04072011.csv"};

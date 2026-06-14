@@ -125,7 +125,8 @@ TEST(MathBSplineInterpolator, DetailEvalOneMatchesDetailEvalInplace)
     const std::vector<double> controlPoints{-1.0, 0.5, 3.0, 2.0, 4.5, 1.5};
     const std::vector<double> knots{0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0};
 
-    const std::vector<double> x{0.0, 0.1, 0.4, 0.9, 1.4, 2.0, 2.6, 3.0};
+    const std::vector<double>
+        x{0.0, 0.1, 1.0, 1.0, 0.4, -0.2, 0.9, 1.4, 3.1, 2.0, 2.6, 3.0};
     std::vector<double> out(x.size());
 
     bspline_detail::evalInplace<double, 3>(out, x, knots, controlPoints);

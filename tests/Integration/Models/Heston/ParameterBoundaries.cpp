@@ -6,6 +6,7 @@
 #include <array>
 #include <cmath>
 #include <gtest/gtest.h>
+#include <limits>
 
 TEST(IntegrationHestonParameterBoundaries, NearBoundaryParametersProduceFinitePrices)
 {
@@ -34,4 +35,12 @@ TEST(IntegrationHestonPricingValidation, RejectsInvalidCallInputs)
     EXPECT_THROW(pricer.callPrice(1.0, 0.0, 100.0, 100.0), uv::errors::UnifiedVolError);
     EXPECT_THROW(pricer.callPrice(1.0, 0.98, -100.0, 100.0), uv::errors::UnifiedVolError);
     EXPECT_THROW(pricer.callPrice(1.0, 0.98, 100.0, -100.0), uv::errors::UnifiedVolError);
+    EXPECT_THROW(
+        pricer.callPrice(std::numeric_limits<double>::quiet_NaN(), 0.98, 100.0, 100.0),
+        uv::errors::UnifiedVolError
+    );
+    EXPECT_THROW(
+        pricer.callPrice(1.0, std::numeric_limits<double>::infinity(), 100.0, 100.0),
+        uv::errors::UnifiedVolError
+    );
 }

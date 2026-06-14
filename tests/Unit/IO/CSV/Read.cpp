@@ -30,6 +30,15 @@ TEST(UnitIOCSVRead, ParsesNumbersAndPercentCells)
     );
 }
 
+TEST(UnitIOCSVRead, RejectsPercentCellsWhenDisabled)
+{
+    EXPECT_THROW(
+        uv::io::csv::parseNumberCellOrThrow<
+            double>("12.5%", "cell", 1, 1, {.allowPercent = false}),
+        uv::errors::UnifiedVolError
+    );
+}
+
 TEST(UnitIOCSVRead, ReadsLabeledDenseMatrix)
 {
     std::istringstream csv{"maturity,90,100\n"
@@ -79,6 +88,40 @@ TEST(UnitIOCSVRead, HandlesBlankLinesWhenConfigured)
     EXPECT_DOUBLE_EQ(dense.values[0], 0.20);
 }
 
+TEST(UnitIOCSVRead, RejectsBlankLinesWhenDisabled)
+{
+    std::istringstream csv{"maturity,90\n"
+                           "\n"
+                           "0.5,20%\n"};
+
+    EXPECT_THROW(
+        uv::io::csv::readLabeledDenseOrThrow<double>(
+            csv,
+            "blank-lines-disabled.csv",
+            {.skipBlankLines = false}
+        ),
+        uv::errors::UnifiedVolError
+    );
+}
+
+TEST(UnitIOCSVRead, RejectsMalformedLabels)
+{
+    {
+        std::istringstream csv{"maturity,bad-strike\n0.5,20%\n"};
+        EXPECT_THROW(
+            uv::io::csv::readLabeledDenseOrThrow<double>(csv, "bad-col-label.csv"),
+            uv::errors::UnifiedVolError
+        );
+    }
+    {
+        std::istringstream csv{"maturity,90\nbad-maturity,20%\n"};
+        EXPECT_THROW(
+            uv::io::csv::readLabeledDenseOrThrow<double>(csv, "bad-row-label.csv"),
+            uv::errors::UnifiedVolError
+        );
+    }
+}
+
 TEST(UnitIOCSVRead, RejectsMalformedDenseCsv)
 {
     {
@@ -110,6 +153,13 @@ TEST(UnitIOCSVRead, RejectsMalformedDenseCsv)
                 "extra-cols.csv",
                 {.allowExtraCols = false}
             ),
+            uv::errors::UnifiedVolError
+        );
+    }
+    {
+        std::istringstream csv{"maturity,90,100\n0.5,20%,\n"};
+        EXPECT_THROW(
+            uv::io::csv::readLabeledDenseOrThrow<double>(csv, "trailing-comma.csv"),
             uv::errors::UnifiedVolError
         );
     }

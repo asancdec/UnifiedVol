@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "../../../Support/Tolerances.hpp"
 #include "Models/Heston/Price/Pricer.hpp"
+#include "Support/Tolerances.hpp"
 
 #include <array>
 #include <cmath>

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "Golden.hpp"
 #include "Math/Interpolation/BSpline/Interpolator.hpp"
+#include "Support/Golden.hpp"
 
 #include <cstddef>
 #include <gtest/gtest.h>

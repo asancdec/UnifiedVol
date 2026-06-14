@@ -69,6 +69,8 @@ UnifiedVol/
 │   ├── IO/
 │   │   ├── CSV/
 │   │   │   ├── Read.cpp
+│   │   ├── JSON/
+│   │   │   ├── Read.cpp
 │   ├── Math/
 │   │   ├── Functions/
 │   │   │   ├── Volatility.cpp
@@ -97,7 +99,7 @@ UnifiedVol/
 ├── tests/
 │   ├── CMakeLists.txt
 │   ├── Golden/
-│   │   ├── black_known_value.json
+│   │   ├── black_known_values.json
 │   │   ├── bspline_known_values.json
 │   │   ├── example_pipeline.json
 │   │   ├── performance_budgets.json
@@ -107,8 +109,7 @@ UnifiedVol/
 │   │   ├── LoadAndReport.cpp
 │   │   ├── MarketStateGeneration.cpp
 │   │   ├── Math/
-│   │   │   ├── Integration/
-│   │   │   │   ├── TanHSinH.cpp
+│   │   │   ├── TanHSinH.cpp
 │   │   ├── Models/
 │   │   │   ├── Heston/
 │   │   │   │   ├── ParameterBoundaries.cpp
@@ -121,19 +122,18 @@ UnifiedVol/
 │   │   │   │   ├── SurfaceInvariants.cpp
 │   │   ├── OptimizerToyProblems.cpp
 │   ├── Performance/
-│   │   ├── BSplinePerformance.cpp
-│   │   ├── BudgetFixtures.cpp
-│   │   ├── Budgets.hpp
-│   │   ├── ExamplePipelinePerformance.cpp
-│   │   ├── HestonPerformance.cpp
-│   │   ├── SVIPerformance.cpp
-│   │   ├── Timing.hpp
+│   │   ├── Math/
+│   │   │   ├── Interpolation/
+│   │   │   │   ├── BSplinePerformance.cpp
+│   │   ├── Models/
+│   │   │   ├── HestonPerformance.cpp
+│   │   │   ├── SVIPerformance.cpp
+│   │   ├── Pipelines/
+│   │   │   ├── ExamplePipelinePerformance.cpp
 │   ├── Regression/
 │   │   ├── BSplineKnownValues.cpp
 │   │   ├── BlackKnownValues.cpp
 │   │   ├── ExamplePipeline.cpp
-│   │   ├── Golden.hpp
-│   │   ├── GoldenFixtures.cpp
 │   │   ├── Models/
 │   │   │   ├── Heston/
 │   │   │   │   ├── GradientFiniteDifference.cpp
@@ -143,7 +143,16 @@ UnifiedVol/
 │   │   │   │   ├── StressCalibration.cpp
 │   │   │   │   ├── SyntheticCalibration.cpp
 │   ├── Support/
-│   │   ├── Json.hpp
+│   │   ├── Assertions.hpp
+│   │   ├── Diagnostics.hpp
+│   │   ├── Golden.cpp
+│   │   ├── Golden.hpp
+│   │   ├── Models/
+│   │   │   ├── SVI.hpp
+│   │   ├── Performance/
+│   │   │   ├── Budgets.hpp
+│   │   │   ├── Timing.hpp
+│   │   ├── TempFile.hpp
 │   │   ├── Tolerances.hpp
 │   ├── Unit/
 │   │   ├── Base/
@@ -159,6 +168,8 @@ UnifiedVol/
 │   │   │   ├── VolSurface.cpp
 │   │   ├── IO/
 │   │   │   ├── CSV/
+│   │   │   │   ├── Read.cpp
+│   │   │   ├── JSON/
 │   │   │   │   ├── Read.cpp
 │   │   ├── Math/
 │   │   │   ├── Functions/
@@ -186,6 +197,10 @@ UnifiedVol/
 │   │   ├── Optimization/
 │   │   │   ├── Cost.cpp
 │   │   │   ├── Helpers.cpp
+│   │   ├── Support/
+│   │   │   ├── GoldenFixtures.cpp
+│   │   │   ├── PerformanceBudgetFixtures.cpp
+│   │   │   ├── Timing.cpp
 ├── uv/
 │   ├── Base/
 │   │   ├── Config.hpp
@@ -236,6 +251,8 @@ UnifiedVol/
 │   │   │   ├── Print.hpp
 │   │   │   ├── Print.inl
 │   │   │   ├── Report.inl
+│   │   ├── JSON/
+│   │   │   ├── Read.hpp
 │   │   ├── Load.hpp
 │   │   ├── Report.hpp
 │   ├── Math/
