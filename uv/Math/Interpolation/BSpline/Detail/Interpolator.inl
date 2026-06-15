@@ -1,6 +1,8 @@
 #include "Base/Macros/Require.hpp"
 #include "Math/Interpolation/BSpline/Detail/Evaluate.hpp"
 
+#include <utility>
+
 namespace uv::math::interp::bspline
 {
 
@@ -15,6 +17,32 @@ BSpline<T, K, doValidate>::BSpline(std::span<const T> cPoints, std::span<const T
     {
         validate();
     }
+}
+
+template <std::floating_point T, std::size_t K, bool doValidate>
+void BSpline<T, K, doValidate>::setControlPoints(std::span<const T> cPoints)
+{
+    Vector<T> nextCPoints(cPoints.begin(), cPoints.end());
+
+    if constexpr (doValidate)
+    {
+        validate(nextCPoints, knots_);
+    }
+
+    cPoints_ = std::move(nextCPoints);
+}
+
+template <std::floating_point T, std::size_t K, bool doValidate>
+void BSpline<T, K, doValidate>::setKnots(std::span<const T> knots)
+{
+    Vector<T> nextKnots(knots.begin(), knots.end());
+
+    if constexpr (doValidate)
+    {
+        validate(cPoints_, nextKnots);
+    }
+
+    knots_ = std::move(nextKnots);
 }
 
 template <std::floating_point T, std::size_t K, bool doValidate>
@@ -34,18 +62,24 @@ Vector<T> BSpline<T, K, doValidate>::eval(std::span<const T> x) const
     return detail::eval<T, K>(x, knots_, cPoints_);
 }
 
+template <std::floating_point T, std::size_t K, bool doValidate> void
+BSpline<T, K, doValidate>::validate(std::span<const T> cPoints, std::span<const T> knots)
+{
+    REQUIRE_NON_EMPTY(cPoints);
+    REQUIRE_NON_EMPTY(knots);
+    REQUIRE_MIN_SIZE(cPoints, K + 1);
+    REQUIRE_EQUAL(knots.size(), cPoints.size() + K + 1);
+
+    REQUIRE_FINITE(cPoints);
+    REQUIRE_FINITE(knots);
+    REQUIRE_NON_DECREASING(knots);
+    REQUIRE_LESS(knots[K], knots[knots.size() - K - 1]);
+}
+
 template <std::floating_point T, std::size_t K, bool doValidate>
 void BSpline<T, K, doValidate>::validate() const
 {
-    REQUIRE_NON_EMPTY(cPoints_);
-    REQUIRE_NON_EMPTY(knots_);
-    REQUIRE_MIN_SIZE(cPoints_, K + 1);
-    REQUIRE_EQUAL(knots_.size(), cPoints_.size() + K + 1);
-
-    REQUIRE_FINITE(cPoints_);
-    REQUIRE_FINITE(knots_);
-    REQUIRE_NON_DECREASING(knots_);
-    REQUIRE_LESS(knots_[K], knots_[knots_.size() - K - 1]);
+    validate(cPoints_, knots_);
 }
 
 } // namespace uv::math::interp::bspline

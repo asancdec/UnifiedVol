@@ -120,6 +120,62 @@ TEST(MathBSplineInterpolator, EvalInplaceMatchesEval)
     EXPECT_EQ(out, y);
 }
 
+TEST(MathBSplineInterpolator, SetControlPointsUpdatesOwnedState)
+{
+    const std::vector<double> controlPoints{0.0, 2.0, 4.0};
+    const std::vector<double> knots{0.0, 0.0, 1.0, 2.0, 2.0};
+    bspline::BSpline<double, 1> spline{controlPoints, knots};
+    std::vector<double> nextControlPoints{1.0, 3.0, 5.0};
+
+    spline.setControlPoints(nextControlPoints);
+    nextControlPoints.assign(nextControlPoints.size(), 100.0);
+
+    const auto y{spline.eval(std::vector<double>{0.0, 1.0, 2.0})};
+
+    ASSERT_EQ(y.size(), 3U);
+    EXPECT_DOUBLE_EQ(y[0], 1.0);
+    EXPECT_DOUBLE_EQ(y[1], 3.0);
+    EXPECT_DOUBLE_EQ(y[2], 5.0);
+}
+
+TEST(MathBSplineInterpolator, SetKnotsUpdatesOwnedState)
+{
+    const std::vector<double> controlPoints{0.0, 2.0, 4.0};
+    const std::vector<double> knots{0.0, 0.0, 1.0, 2.0, 2.0};
+    bspline::BSpline<double, 1> spline{controlPoints, knots};
+    std::vector<double> nextKnots{0.0, 0.0, 2.0, 4.0, 4.0};
+
+    spline.setKnots(nextKnots);
+    nextKnots.assign(nextKnots.size(), -10.0);
+
+    const auto y{spline.eval(std::vector<double>{1.0, 2.0, 3.0})};
+
+    ASSERT_EQ(y.size(), 3U);
+    EXPECT_DOUBLE_EQ(y[0], 1.0);
+    EXPECT_DOUBLE_EQ(y[1], 2.0);
+    EXPECT_DOUBLE_EQ(y[2], 3.0);
+}
+
+TEST(MathBSplineInterpolator, RejectedSettersPreservePreviousState)
+{
+    const std::vector<double> controlPoints{0.0, 2.0, 4.0};
+    const std::vector<double> knots{0.0, 0.0, 1.0, 2.0, 2.0};
+    bspline::BSpline<double, 1> spline{controlPoints, knots};
+    const std::vector<double> x{0.0, 1.0, 2.0};
+    const auto before{spline.eval(x)};
+
+    EXPECT_THROW(
+        spline.setControlPoints(std::vector<double>{1.0, 2.0}),
+        uv::errors::UnifiedVolError
+    );
+    EXPECT_THROW(
+        spline.setKnots(std::vector<double>{0.0, 0.0, 2.0, 1.0, 2.0}),
+        uv::errors::UnifiedVolError
+    );
+
+    EXPECT_EQ(spline.eval(x), before);
+}
+
 TEST(MathBSplineInterpolator, DetailEvalOneMatchesDetailEvalInplace)
 {
     const std::vector<double> controlPoints{-1.0, 0.5, 3.0, 2.0, 4.5, 1.5};
