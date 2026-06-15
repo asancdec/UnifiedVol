@@ -152,8 +152,7 @@ void divideInplace(core::Matrix<T>& lhs, const core::Matrix<T>& rhs)
     }
 }
 
-template <std::floating_point T>
-core::Matrix<T> reciprocal(const core::Matrix<T>& m) noexcept
+template <std::floating_point T> core::Matrix<T> reciprocal(const core::Matrix<T>& m)
 {
     core::Matrix<T> out{m};
     reciprocalInplace(out);
@@ -175,7 +174,7 @@ template <std::floating_point T> void reciprocalInplace(core::Matrix<T>& m) noex
     }
 }
 
-template <std::floating_point T> core::Matrix<T> square(const core::Matrix<T>& m) noexcept
+template <std::floating_point T> core::Matrix<T> square(const core::Matrix<T>& m)
 {
     core::Matrix<T> out{m};
     squareInplace(out);

@@ -17,14 +17,14 @@
 namespace uv::math::linear_algebra
 {
 template <std::floating_point T, std::size_t N, typename F>
-std::array<T, N> eval(std::array<T, N> grid, F&& f) noexcept
+std::array<T, N> eval(std::array<T, N> grid, F&& f)
 {
     evalInplace<T, N, F>(grid, std::forward<F>(f));
     return grid;
 }
 
 template <std::floating_point T, std::size_t N, typename F>
-void evalInplace(std::array<T, N>& grid, F&& f) noexcept
+void evalInplace(std::array<T, N>& grid, F&& f)
 {
     auto&& func = std::forward<F>(f);
 

@@ -13,10 +13,10 @@ namespace uv::math::linear_algebra
 {
 
 template <std::floating_point T, std::size_t N, typename F>
-std::array<T, N> eval(std::array<T, N> grid, F&& f) noexcept;
+std::array<T, N> eval(std::array<T, N> grid, F&& f);
 
 template <std::floating_point T, std::size_t N, typename F>
-void evalInplace(std::array<T, N>& grid, F&& f) noexcept;
+void evalInplace(std::array<T, N>& grid, F&& f);
 
 template <std::floating_point T> T sum(std::span<const T>) noexcept;
 

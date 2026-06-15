@@ -38,12 +38,11 @@ core::Matrix<T> divide(const core::Matrix<T>& lhs, const core::Matrix<T>& rhs);
 template <std::floating_point T>
 void divideInplace(core::Matrix<T>& lhs, const core::Matrix<T>& rhs);
 
-template <std::floating_point T>
-core::Matrix<T> reciprocal(const core::Matrix<T>&) noexcept;
+template <std::floating_point T> core::Matrix<T> reciprocal(const core::Matrix<T>&);
 
 template <std::floating_point T> void reciprocalInplace(core::Matrix<T>&) noexcept;
 
-template <std::floating_point T> core::Matrix<T> square(const core::Matrix<T>&) noexcept;
+template <std::floating_point T> core::Matrix<T> square(const core::Matrix<T>&);
 
 template <std::floating_point T> void squareInplace(core::Matrix<T>&) noexcept;
 

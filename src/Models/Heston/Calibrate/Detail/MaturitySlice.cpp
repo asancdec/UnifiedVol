@@ -7,7 +7,7 @@
 namespace uv::models::heston::calibrate::detail
 {
 
-MaturitySlice::MaturitySlice(std::size_t capacity) noexcept
+MaturitySlice::MaturitySlice(std::size_t capacity)
 {
     K.reserve(capacity);
     vol.reserve(capacity);

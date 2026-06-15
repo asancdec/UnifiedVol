@@ -27,7 +27,7 @@ namespace uv::io::report
 {
 
 template <std::floating_point T>
-void volatility(const core::VolSurface<T>& volSurface, unsigned int valuePrec) noexcept
+void volatility(const core::VolSurface<T>& volSurface, unsigned int valuePrec)
 {
 
     utils::printMatrix(
@@ -42,13 +42,13 @@ void volatility(const core::VolSurface<T>& volSurface, unsigned int valuePrec) n
 }
 
 template <std::floating_point T>
-void volatility(const core::MarketState<T>& marketState, unsigned int valuePrec) noexcept
+void volatility(const core::MarketState<T>& marketState, unsigned int valuePrec)
 {
     volatility(marketState.volSurface, valuePrec);
 }
 
 template <std::floating_point T>
-void totalVariance(const core::VolSurface<T>& volSurface, unsigned int valuePrec) noexcept
+void totalVariance(const core::VolSurface<T>& volSurface, unsigned int valuePrec)
 {
 
     utils::printMatrix(
@@ -62,14 +62,14 @@ void totalVariance(const core::VolSurface<T>& volSurface, unsigned int valuePrec
     );
 }
 
-template <std::floating_point T> void
-totalVariance(const core::MarketState<T>& marketState, unsigned int valuePrec) noexcept
+template <std::floating_point T>
+void totalVariance(const core::MarketState<T>& marketState, unsigned int valuePrec)
 {
     totalVariance(marketState.volSurface, valuePrec);
 }
 
 template <std::floating_point T>
-void variance(const core::VolSurface<T>& volSurface, unsigned int valuePrec) noexcept
+void variance(const core::VolSurface<T>& volSurface, unsigned int valuePrec)
 {
 
     utils::printMatrix(
@@ -83,13 +83,13 @@ void variance(const core::VolSurface<T>& volSurface, unsigned int valuePrec) noe
     );
 }
 template <std::floating_point T>
-void variance(const core::MarketState<T>& marketState, unsigned int valuePrec) noexcept
+void variance(const core::MarketState<T>& marketState, unsigned int valuePrec)
 {
     variance(marketState.volSurface, valuePrec);
 }
 
 template <std::floating_point T>
-void logKF(const core::VolSurface<T>& volSurface, unsigned int valuePrec) noexcept
+void logKF(const core::VolSurface<T>& volSurface, unsigned int valuePrec)
 {
 
     utils::printMatrix(
@@ -103,7 +103,7 @@ void logKF(const core::VolSurface<T>& volSurface, unsigned int valuePrec) noexce
     );
 }
 template <std::floating_point T>
-void logKF(const core::MarketState<T>& marketState, unsigned int valuePrec) noexcept
+void logKF(const core::MarketState<T>& marketState, unsigned int valuePrec)
 {
     logKF(marketState.volSurface, valuePrec);
 }
@@ -112,7 +112,7 @@ template <std::floating_point T> void callPrices(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
     unsigned int valuePrec
-) noexcept
+)
 {
     utils::printMatrix(
         "T\\K/S",
@@ -126,7 +126,7 @@ template <std::floating_point T> void callPrices(
 }
 
 template <std::floating_point T>
-void callPrices(const core::MarketState<T>& marketState, unsigned int valuePrec) noexcept
+void callPrices(const core::MarketState<T>& marketState, unsigned int valuePrec)
 {
     const core::VolSurface<T>& volSurface{marketState.volSurface};
 
@@ -145,7 +145,7 @@ template <std::floating_point T> void putPrices(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
     unsigned int valuePrec
-) noexcept
+)
 {
     utils::printMatrix(
         "T\\K/S",
@@ -159,7 +159,7 @@ template <std::floating_point T> void putPrices(
 }
 
 template <std::floating_point T>
-void putPrices(const core::MarketState<T>& marketState, unsigned int valuePrec) noexcept
+void putPrices(const core::MarketState<T>& marketState, unsigned int valuePrec)
 {
     const core::VolSurface<T>& volSurface{marketState.volSurface};
 
@@ -175,7 +175,7 @@ void putPrices(const core::MarketState<T>& marketState, unsigned int valuePrec) 
 }
 
 template <std::floating_point T>
-void sviParams(const models::svi::Params<T>& params, unsigned int valuePrec) noexcept
+void sviParams(const models::svi::Params<T>& params, unsigned int valuePrec)
 {
     INFO(std::format(
         "T={:.4f}, a={:.{}f}, b={:.{}f}, rho={:.{}f}, m={:.{}f}, sigma={:.{}f}",

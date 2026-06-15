@@ -29,7 +29,7 @@ Optimizer<N, Algo>::Optimizer(const Config<N>& config)
 }
 
 template <std::size_t N, Algorithm Algo>
-Optimizer<N, Algo> Optimizer<N, Algo>::fresh() const noexcept
+Optimizer<N, Algo> Optimizer<N, Algo>::fresh() const
 {
     return Optimizer<N, Algo>{config_};
 }
@@ -64,24 +64,20 @@ template <std::size_t N, Algorithm Algo> double Optimizer<N, Algo>::objectiveThu
 }
 
 template <std::size_t N, Algorithm Algo>
-void Optimizer<N, Algo>::addInequalityConstraint(NloptFunction c, void* data) noexcept
+void Optimizer<N, Algo>::addInequalityConstraint(NloptFunction c, void* data)
 {
     opt_.add_inequality_constraint(c, data, config_.tol);
 }
 
-template <std::size_t N, Algorithm Algo>
-void Optimizer<N, Algo>::addInequalityMConstraint(
-    std::size_t m,
-    NloptMFunction c,
-    void* data
-) noexcept
+template <std::size_t N, Algorithm Algo> void
+Optimizer<N, Algo>::addInequalityMConstraint(std::size_t m, NloptMFunction c, void* data)
 {
     Vector<double> tol(m, config_.tol);
     opt_.add_inequality_mconstraint(c, data, tol);
 }
 
 template <std::size_t N, Algorithm Algo>
-void Optimizer<N, Algo>::setMinObjective(NloptFunction f, void* data) noexcept
+void Optimizer<N, Algo>::setMinObjective(NloptFunction f, void* data)
 {
     iterCount_ = 0U;
     userFn_ = f;

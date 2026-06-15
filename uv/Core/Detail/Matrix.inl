@@ -6,7 +6,7 @@
 namespace uv::core
 {
 template <std::floating_point T>
-Matrix<T>::Matrix(const std::size_t numRows, std::size_t numCols, T val) noexcept
+Matrix<T>::Matrix(const std::size_t numRows, std::size_t numCols, T val)
     : numRows_(numRows),
       numCols_(numCols),
       data_(numRows * numCols, val)
@@ -101,7 +101,7 @@ template <std::floating_point T> Matrix<T>& Matrix<T>::operator/=(T scalar) noex
     return *this;
 }
 
-template <std::floating_point T> Matrix<T> Matrix<T>::operator-() const noexcept
+template <std::floating_point T> Matrix<T> Matrix<T>::operator-() const
 {
     Matrix<T> result(*this);
 
@@ -131,7 +131,7 @@ template <std::floating_point T> std::size_t Matrix<T>::cols() const noexcept
 }
 
 template <std::floating_point T> template <std::floating_point U>
-Matrix<U> Matrix<T>::as() const noexcept
+Matrix<U> Matrix<T>::as() const
 {
     Matrix<U> out(numRows_, numCols_);
 
@@ -149,33 +149,31 @@ Matrix<U> Matrix<T>::as() const noexcept
     return out;
 }
 
-template <std::floating_point T>
-Matrix<T> operator+(Matrix<T> lhs, const Matrix<T>& rhs) noexcept
+template <std::floating_point T> Matrix<T> operator+(Matrix<T> lhs, const Matrix<T>& rhs)
 {
     lhs += rhs;
     return lhs;
 }
 
-template <std::floating_point T>
-Matrix<T> operator-(Matrix<T> lhs, const Matrix<T>& rhs) noexcept
+template <std::floating_point T> Matrix<T> operator-(Matrix<T> lhs, const Matrix<T>& rhs)
 {
     lhs -= rhs;
     return lhs;
 }
 
-template <std::floating_point T> Matrix<T> operator*(Matrix<T> lhs, T scalar) noexcept
+template <std::floating_point T> Matrix<T> operator*(Matrix<T> lhs, T scalar)
 {
     lhs *= scalar;
     return lhs;
 }
 
-template <std::floating_point T> Matrix<T> operator/(Matrix<T> lhs, T scalar) noexcept
+template <std::floating_point T> Matrix<T> operator/(Matrix<T> lhs, T scalar)
 {
     lhs /= scalar;
     return lhs;
 }
 
-template <std::floating_point T> Matrix<T> operator*(T scalar, Matrix<T> rhs) noexcept
+template <std::floating_point T> Matrix<T> operator*(T scalar, Matrix<T> rhs)
 {
     rhs *= scalar;
     return rhs;

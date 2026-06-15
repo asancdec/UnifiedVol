@@ -15,10 +15,9 @@ template <typename HeaderVec, typename RowLabels, typename Matrix> void printMat
     unsigned int headerPrec = 2,
     unsigned int rowLabelPrec = 2,
     unsigned int valuePrec = 5
-) noexcept;
+);
 
-template <typename Vector>
-void printVector(const Vector& v, unsigned int valuePrec = 5) noexcept;
+template <typename Vector> void printVector(const Vector& v, unsigned int valuePrec = 5);
 
 } // namespace uv::io
 

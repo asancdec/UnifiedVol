@@ -23,7 +23,7 @@ struct MaturitySlice
 
     MaturitySlice() = delete;
 
-    explicit MaturitySlice(std::size_t capacity) noexcept;
+    explicit MaturitySlice(std::size_t capacity);
 };
 
 Vector<MaturitySlice> makeSlices(

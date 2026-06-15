@@ -21,7 +21,7 @@ template <std::floating_point T> class Matrix
   public:
     Matrix() = delete;
 
-    Matrix(std::size_t numRows, std::size_t numCols, T val = 0.0) noexcept;
+    Matrix(std::size_t numRows, std::size_t numCols, T val = 0.0);
 
     std::span<T> operator[](std::size_t) noexcept;
 
@@ -39,7 +39,7 @@ template <std::floating_point T> class Matrix
 
     Matrix& operator/=(T) noexcept;
 
-    Matrix operator-() const noexcept;
+    Matrix operator-() const;
 
     bool empty() const noexcept;
 
@@ -47,20 +47,18 @@ template <std::floating_point T> class Matrix
 
     std::size_t cols() const noexcept;
 
-    template <std::floating_point U> Matrix<U> as() const noexcept;
+    template <std::floating_point U> Matrix<U> as() const;
 };
 
-template <std::floating_point T>
-Matrix<T> operator+(Matrix<T>, const Matrix<T>&) noexcept;
+template <std::floating_point T> Matrix<T> operator+(Matrix<T>, const Matrix<T>&);
 
-template <std::floating_point T>
-Matrix<T> operator-(Matrix<T>, const Matrix<T>&) noexcept;
+template <std::floating_point T> Matrix<T> operator-(Matrix<T>, const Matrix<T>&);
 
-template <std::floating_point T> Matrix<T> operator*(Matrix<T>, T) noexcept;
+template <std::floating_point T> Matrix<T> operator*(Matrix<T>, T);
 
-template <std::floating_point T> Matrix<T> operator/(Matrix<T>, T) noexcept;
+template <std::floating_point T> Matrix<T> operator/(Matrix<T>, T);
 
-template <std::floating_point T> Matrix<T> operator*(T, Matrix<T>) noexcept;
+template <std::floating_point T> Matrix<T> operator*(T, Matrix<T>);
 
 } // namespace uv::core
 

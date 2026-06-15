@@ -4,7 +4,7 @@
 
 namespace uv::models::heston::calibrate::detail
 {
-opt::ceres::Config makeCeresConfig(const Config& config) noexcept
+opt::ceres::Config makeCeresConfig(const Config& config)
 {
 
     return opt::ceres::Config{
@@ -18,7 +18,7 @@ opt::ceres::Config makeCeresConfig(const Config& config) noexcept
     };
 }
 
-opt::ceres::Optimizer<HestonPolicy> makeOptimizer(const Config& config) noexcept
+opt::ceres::Optimizer<HestonPolicy> makeOptimizer(const Config& config)
 {
     return opt::ceres::Optimizer<HestonPolicy>{makeCeresConfig(config)};
 }

@@ -50,7 +50,7 @@ template <std::size_t N, Algorithm Algo> class Optimizer
 
     explicit Optimizer(const Config<N>& config);
 
-    Optimizer<N, Algo> fresh() const noexcept;
+    Optimizer<N, Algo> fresh() const;
 
     void setGuessBounds(
         std::array<double, N> initGuess,
@@ -58,11 +58,11 @@ template <std::size_t N, Algorithm Algo> class Optimizer
         std::array<double, N> upperBounds
     );
 
-    void addInequalityConstraint(NloptFunction c, void* data) noexcept;
+    void addInequalityConstraint(NloptFunction c, void* data);
 
-    void addInequalityMConstraint(std::size_t m, NloptMFunction c, void* data) noexcept;
+    void addInequalityMConstraint(std::size_t m, NloptMFunction c, void* data);
 
-    void setMinObjective(NloptFunction f, void* data) noexcept;
+    void setMinObjective(NloptFunction f, void* data);
 
     Vector<double> optimize();
 

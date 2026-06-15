@@ -29,7 +29,7 @@ void BSpline<T, K, doValidate>::evalInplace(std::span<T> out, std::span<const T>
 }
 
 template <std::floating_point T, std::size_t K, bool doValidate>
-Vector<T> BSpline<T, K, doValidate>::eval(std::span<const T> x) const noexcept
+Vector<T> BSpline<T, K, doValidate>::eval(std::span<const T> x) const
 {
     return detail::eval<T, K>(x, knots_, cPoints_);
 }

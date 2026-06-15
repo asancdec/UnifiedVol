@@ -16,7 +16,7 @@ template <typename HeaderVec, typename RowLabels, typename Matrix> void printMat
     unsigned int headerPrec,
     unsigned int rowLabelPrec,
     unsigned int valuePrec
-) noexcept
+)
 {
     std::ostringstream oss;
     oss << '\n' << title << '\t';
@@ -40,8 +40,7 @@ template <typename HeaderVec, typename RowLabels, typename Matrix> void printMat
     INFO(oss.str());
 }
 
-template <typename Vector>
-void printVector(const Vector& v, unsigned int valuePrec) noexcept
+template <typename Vector> void printVector(const Vector& v, unsigned int valuePrec)
 {
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(valuePrec);
