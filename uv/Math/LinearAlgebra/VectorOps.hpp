@@ -20,14 +20,20 @@ void evalInplace(std::array<T, N>& grid, F&& f) noexcept;
 
 template <std::floating_point T> T sum(std::span<const T>) noexcept;
 
-template <std::floating_point T> Vector<T> multiply(std::span<const T> v, T x) noexcept;
+template <std::floating_point T> Vector<T> multiply(std::span<const T> v, T x);
 
-template <std::floating_point T> Vector<T> reciprocal(std::span<const T>) noexcept;
+template <std::floating_point T> Vector<T> reciprocal(std::span<const T>);
+
+template <std::floating_point T> Vector<T> exponential(std::span<const T>);
+
+template <std::floating_point T> Vector<T> squareRoot(std::span<const T>);
+
+template <std::floating_point T> void squareRootInplace(std::span<T>, std::span<const T>);
 
 template <std::floating_point T>
 Vector<T> hadamard(std::span<const T> a, std::span<const T> b);
 
-template <typename T> Vector<T> makeSequence(std::size_t n, T start) noexcept;
+template <typename T> Vector<T> makeSequence(std::size_t n, T start);
 
 template <typename T> T minValue(std::span<const T>);
 

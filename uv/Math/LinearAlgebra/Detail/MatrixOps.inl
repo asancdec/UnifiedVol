@@ -2,6 +2,7 @@
 
 #include "Base/Macros/Require.hpp"
 #include "Core/Matrix.hpp"
+#include "Math/LinearAlgebra/VectorOps.hpp"
 
 #include <cmath>
 #include <concepts>
@@ -214,10 +215,7 @@ template <std::floating_point T> void sqrtInplace(core::Matrix<T>& m)
 
         REQUIRE_NON_NEGATIVE(row);
 
-        for (std::size_t j = 0; j < numCols; ++j)
-        {
-            row[j] = std::sqrt(row[j]);
-        }
+        squareRootInplace<T>(row, row);
     }
 }
 } // namespace uv::math::linear_algebra

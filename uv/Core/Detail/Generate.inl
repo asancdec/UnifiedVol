@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
+#include "Math/LinearAlgebra/VectorOps.hpp"
+
 #include <cstddef>
 
 namespace uv::core
@@ -96,18 +98,8 @@ template <std::floating_point T> Vector<T> generateForwards(
 }
 
 template <std::floating_point T>
-Vector<T> generateStrikes(T spot, const std::span<const T> moneyness) noexcept
+Vector<T> generateStrikes(T spot, const std::span<const T> moneyness)
 {
-    const std::size_t n{moneyness.size()};
-
-    Vector<T> strikes;
-    strikes.resize(n);
-
-    for (std::size_t i{0}; i < n; ++i)
-    {
-        strikes[i] = moneyness[i] * spot;
-    }
-
-    return strikes;
+    return math::linear_algebra::multiply<T>(moneyness, spot);
 }
 } // namespace uv::core::detail

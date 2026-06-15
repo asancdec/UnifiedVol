@@ -51,7 +51,7 @@ template <std::floating_point T> Vector<T> generateForwards(
 );
 
 template <std::floating_point T>
-Vector<T> generateStrikes(T spot, const std::span<const T> moneyness) noexcept;
+Vector<T> generateStrikes(T spot, const std::span<const T> moneyness);
 
 } // namespace detail
 } // namespace uv::core

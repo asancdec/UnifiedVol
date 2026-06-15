@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <concepts>
 #include <cstddef>
 #include <functional>
@@ -36,8 +37,7 @@ template <std::floating_point T> T sum(std::span<const T> x) noexcept
     return std::accumulate(x.begin(), x.end(), T{});
 }
 
-template <std::floating_point T>
-Vector<T> multiply(std::span<const T> v, const T x) noexcept
+template <std::floating_point T> Vector<T> multiply(std::span<const T> v, const T x)
 {
     std::size_t vSize{v.size()};
 
@@ -51,7 +51,7 @@ Vector<T> multiply(std::span<const T> v, const T x) noexcept
     return result;
 }
 
-template <std::floating_point T> Vector<T> reciprocal(std::span<const T> v) noexcept
+template <std::floating_point T> Vector<T> reciprocal(std::span<const T> v)
 {
     std::size_t vSize{v.size()};
 
@@ -63,6 +63,41 @@ template <std::floating_point T> Vector<T> reciprocal(std::span<const T> v) noex
     }
 
     return result;
+}
+
+template <std::floating_point T> Vector<T> exponential(std::span<const T> x)
+{
+    const std::size_t n{x.size()};
+
+    Vector<T> out(n);
+
+    for (std::size_t i{0}; i < n; ++i)
+    {
+        out[i] = std::exp(x[i]);
+    }
+
+    return out;
+}
+
+template <std::floating_point T> Vector<T> squareRoot(std::span<const T> x)
+{
+    Vector<T> out(x.size());
+    squareRootInplace<T>(out, x);
+
+    return out;
+}
+
+template <std::floating_point T>
+void squareRootInplace(std::span<T> out, std::span<const T> x)
+{
+    REQUIRE_SAME_SIZE(out, x);
+
+    const std::size_t n{x.size()};
+
+    for (std::size_t i{0}; i < n; ++i)
+    {
+        out[i] = std::sqrt(x[i]);
+    }
 }
 
 template <std::floating_point T>
@@ -83,7 +118,7 @@ Vector<T> hadamard(std::span<const T> a, std::span<const T> b)
     return c;
 }
 
-template <typename T> Vector<T> makeSequence(std::size_t n, T start) noexcept
+template <typename T> Vector<T> makeSequence(std::size_t n, T start)
 {
     Vector<T> v(n);
     std::iota(v.begin(), v.end(), start);

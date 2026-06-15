@@ -6,6 +6,7 @@
 #include "Core/Matrix.hpp"
 #include "Core/VolSurface.hpp"
 #include "Math/Interpolation/Hermite/Interpolator.hpp"
+#include "Math/LinearAlgebra/VectorOps.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -141,12 +142,12 @@ template <std::floating_point T> void volFromTotalVariance(
         REQUIRE_NON_NEGATIVE(totalVariance);
     }
 
-    T invT{1.0 / t};
+    const T invT{1.0 / t};
+    const Vector<T> variancePerUnitTime{
+        math::linear_algebra::multiply<T>(totalVariance, invT)
+    };
 
-    for (std::size_t i{0}; i < totalVariance.size(); ++i)
-    {
-        out[i] = std::sqrt(totalVariance[i] * invT);
-    }
+    math::linear_algebra::squareRootInplace<T>(out, variancePerUnitTime);
 }
 
 template <std::floating_point T> core::Matrix<T> volFromTotalVariance(
