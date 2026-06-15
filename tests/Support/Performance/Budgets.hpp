@@ -25,14 +25,17 @@ inline constexpr std::string_view SVISyntheticCalibrationBudgetKey{
 };
 inline constexpr std::string_view BSplineLargeEvaluationBudgetKey{"bsplineLargeEvaluation"
 };
+inline constexpr std::string_view TridiagonalThomasSolveBudgetKey{"tridiagonalThomasSolve"
+};
 
-inline constexpr std::array<std::string_view, 4> expectedBudgetKeys()
+inline constexpr std::array<std::string_view, 5> expectedBudgetKeys()
 {
     return {
         ExamplePipelineBudgetKey,
         HestonMediumSurfaceBudgetKey,
         SVISyntheticCalibrationBudgetKey,
-        BSplineLargeEvaluationBudgetKey
+        BSplineLargeEvaluationBudgetKey,
+        TridiagonalThomasSolveBudgetKey
     };
 }
 

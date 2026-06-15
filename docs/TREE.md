@@ -125,6 +125,8 @@ UnifiedVol/
 │   │   ├── Math/
 │   │   │   ├── Interpolation/
 │   │   │   │   ├── BSplinePerformance.cpp
+│   │   │   ├── LinearAlgebra/
+│   │   │   │   ├── TridiagonalPerformance.cpp
 │   │   ├── Models/
 │   │   │   ├── HestonPerformance.cpp
 │   │   │   ├── SVIPerformance.cpp
@@ -147,6 +149,9 @@ UnifiedVol/
 │   │   ├── Diagnostics.hpp
 │   │   ├── Golden.cpp
 │   │   ├── Golden.hpp
+│   │   ├── Math/
+│   │   │   ├── LinearAlgebra/
+│   │   │   │   ├── Tridiagonal.hpp
 │   │   ├── Models/
 │   │   │   ├── SVI.hpp
 │   │   ├── Performance/
@@ -185,6 +190,7 @@ UnifiedVol/
 │   │   │   │   │   ├── Interpolator.cpp
 │   │   │   ├── LinearAlgebra/
 │   │   │   │   ├── MatrixOps.cpp
+│   │   │   │   ├── Tridiagonal.cpp
 │   │   │   │   ├── VectorOps.cpp
 │   │   │   ├── PDE/
 │   │   │   │   ├── Grid.cpp
@@ -285,8 +291,10 @@ UnifiedVol/
 │   │   ├── LinearAlgebra/
 │   │   │   ├── Detail/
 │   │   │   │   ├── MatrixOps.inl
+│   │   │   │   ├── Tridiagonal.inl
 │   │   │   │   ├── VectorOps.inl
 │   │   │   ├── MatrixOps.hpp
+│   │   │   ├── Tridiagonal.hpp
 │   │   │   ├── VectorOps.hpp
 │   │   ├── PDE/
 │   │   │   ├── Detail/
