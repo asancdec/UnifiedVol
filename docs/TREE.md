@@ -201,8 +201,10 @@ UnifiedVol/
 │   │   │   │   ├── Math.cpp
 │   │   │   │   ├── Params.cpp
 │   │   ├── Optimization/
+│   │   │   ├── CeresAdapter.cpp
 │   │   │   ├── Cost.cpp
 │   │   │   ├── Helpers.cpp
+│   │   │   ├── NLoptStatus.cpp
 │   │   ├── Support/
 │   │   │   ├── GoldenFixtures.cpp
 │   │   │   ├── PerformanceBudgetFixtures.cpp
