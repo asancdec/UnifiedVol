@@ -13,7 +13,7 @@ guardrails, and documented references for the implemented methods.
 
 ---
 
-## Engineering Highlights
+## Milestones
 
 - C++20  library with CMake/vcpkg presets for reproducible Linux GCC builds
 - SVI and Heston calibration pipelines with NLopt and Ceres Solver integration
