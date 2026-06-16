@@ -13,13 +13,6 @@ guardrails, and documented references for the implemented methods.
 
 ---
 
-## Supported Volatility Models
-
-- Arbitrage-free SVI parametrization
-- Heston stochastic volatility (Andersen–Lake)
-
----
-
 ## Engineering Highlights
 
 - C++20  library with CMake/vcpkg presets for reproducible Linux GCC builds
