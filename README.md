@@ -7,13 +7,26 @@
 
 **UnifiedVol** is a **C++20 quantitative finance library** for volatility surface modelling.
 
+The project focuses on front-office style numerical engineering: explicit model
+validation, reproducible public-data fixtures, regression coverage, performance
+guardrails, and documented references for the implemented methods.
+
 ---
 
 ## Supported Volatility Models
 
 - Arbitrage-free SVI parametrization
-- Dupire Local Volatility (Andreasen–Huge)
 - Heston stochastic volatility (Andersen–Lake)
+
+---
+
+## Engineering Highlights
+
+- C++20  library with CMake/vcpkg presets for reproducible Linux GCC builds
+- SVI and Heston calibration pipelines with NLopt and Ceres Solver integration
+- Numerical methods including tanh-sinh integration, Thomas solver, B-splines, PCHIP/Fritsch-Carlson interpolation, non-uniform grids, and root-finding utilities
+- Core market-data objects for curves, volatility surfaces, and market states
+- Unit, integration, regression, and performance tests with CI and coverage guardrails
 
 ---
 
@@ -56,10 +69,12 @@ io::report::volatility(hestonVolSurface);
 
 ## Documentation
 
+- Contributing: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
 - Build instructions: [docs/BUILD.md](docs/BUILD.md)
 - File tree: [docs/TREE.md](docs/TREE.md)
 - Data sources: [docs/DATA.md](docs/DATA.md)
 - Dependencies: [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)
+- Numerical references: [docs/NUMERICAL_REFERENCES.md](docs/NUMERICAL_REFERENCES.md)
 - Bibliography: [docs/citations.bib](docs/citations.bib)
 
 ---
@@ -73,7 +88,8 @@ This software is provided for **research and educational purposes only**. It is 
 
 All model implementations and market data used in examples and tests have been
 derived from **publicly available sources** and are **explicitly cited**
-where applicable (see `citations.bib` and `DATA.md`).
+where applicable (see [docs/NUMERICAL_REFERENCES.md](docs/NUMERICAL_REFERENCES.md),
+[docs/citations.bib](docs/citations.bib), and [docs/DATA.md](docs/DATA.md)).
 
 This project is **Apache License 2.0 compliant**, and all third-party
 dependencies are used and distributed in accordance with their respective

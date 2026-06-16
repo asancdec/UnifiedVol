@@ -1,29 +1,24 @@
-@article{Lee2003Moment,
+@article{Lee2004Moment,
   author  = {Lee, Roger W.},
   title   = {The Moment Formula for Implied Volatility at Extreme Strikes},
   journal = {Mathematical Finance},
-  year    = {2003}
+  volume  = {14},
+  number  = {3},
+  pages   = {469--480},
+  year    = {2004}
 }
 
 @article{GatheralJacquier2014SVI,
-  author = {Gatheral, Jim and Jacquier, Antoine},
-  title  = {Arbitrage-Free SVI Volatility Surfaces},
-  year   = {2014}
-}
-
-@techreport{Zeliade2012SVI,
-  author      = {{Zeliade Systems}},
-  title       = {Quasi-Explicit Calibration of Gatheral’s SVI Model},
-  institution = {Zeliade Systems},
-  year        = {2012},
-  note        = {White Paper}
-}
-
-@techreport{Ferhati2020SVI,
-  author = {Ferhati, Tahar},
-  title  = {Robust Calibration for SVI Model Arbitrage-Free},
-  year   = {2020},
-  note   = {Second version, March 14, 2020}
+  author  = {Gatheral, Jim and Jacquier, Antoine},
+  title   = {Arbitrage-Free SVI Volatility Surfaces},
+  journal = {Quantitative Finance},
+  volume  = {14},
+  number  = {1},
+  pages   = {59--71},
+  year    = {2014},
+  eprint  = {1204.0646},
+  archivePrefix = {arXiv},
+  doi     = {10.1080/14697688.2013.819986}
 }
 
 @article{Heston1993SV,
@@ -33,7 +28,8 @@
   volume  = {6},
   number  = {2},
   pages   = {327--343},
-  year    = {1993}
+  year    = {1993},
+  doi     = {10.1093/rfs/6.2.327}
 }
 
 @article{Albrecher2006LittleHeston,
@@ -45,9 +41,30 @@
 @article{Cui2016FastHeston,
   author  = {Cui, Yiran and del Ba{\~n}o Rollin, Sebastian and Germano, Guido},
   title   = {Full and Fast Calibration of the Heston Stochastic Volatility Model},
-  journal = {arXiv},
-  year    = {2016},
-  eprint  = {1511.08718}
+  journal = {European Journal of Operational Research},
+  volume  = {263},
+  number  = {2},
+  pages   = {625--638},
+  year    = {2017},
+  eprint  = {1511.08718},
+  archivePrefix = {arXiv},
+  doi     = {10.1016/j.ejor.2017.05.018}
+}
+
+@misc{MartiniMingone2020NoArbitrageSVI,
+  author        = {Martini, Claude and Mingone, Arianna},
+  title         = {No Arbitrage SVI},
+  year          = {2020},
+  eprint        = {2005.03340},
+  archivePrefix = {arXiv},
+  doi           = {10.48550/arXiv.2005.03340}
+}
+
+@techreport{Ferhati2020SVI,
+  author = {Ferhati, Tahar},
+  title  = {Robust Calibration for SVI Model Arbitrage-Free},
+  year   = {2020},
+  note   = {Second version, March 14, 2020}
 }
 
 @techreport{AndersenLake2018Fourier,
@@ -74,6 +91,9 @@
   author  = {Fritsch, F. N. and Carlson, R. E.},
   title   = {Monotone Piecewise Cubic Interpolation},
   journal = {SIAM Journal on Numerical Analysis},
+  volume  = {17},
+  number  = {2},
+  pages   = {238--246},
   year    = {1980}
 }
 
@@ -81,6 +101,9 @@
   author  = {Fritsch, F. N. and Butland, J.},
   title   = {A Method for Constructing Local Monotone Piecewise Cubic Interpolants},
   journal = {SIAM Journal on Scientific and Statistical Computing},
+  volume  = {5},
+  number  = {2},
+  pages   = {300--304},
   year    = {1984}
 }
 
@@ -91,4 +114,89 @@
   howpublished = {Technical report},
   url          = {https://www.jaeckel.org/LetsBeRational.pdf},
   note         = {Robust algorithm for Black--Scholes implied volatility}
+}
+
+@article{Black1976Commodity,
+  author  = {Black, Fischer},
+  title   = {The Pricing of Commodity Contracts},
+  journal = {Journal of Financial Economics},
+  volume  = {3},
+  number  = {1--2},
+  pages   = {167--179},
+  year    = {1976},
+  doi     = {10.1016/0304-405X(76)90024-6}
+}
+
+@book{DeBoor2001Splines,
+  author    = {de Boor, Carl},
+  title     = {A Practical Guide to Splines},
+  edition   = {Revised},
+  publisher = {Springer},
+  year      = {2001},
+  isbn      = {978-0-387-95366-3}
+}
+
+@article{TakahasiMori1974DoubleExponential,
+  author  = {Takahasi, Hidetosi and Mori, Masatake},
+  title   = {Double Exponential Formulas for Numerical Integration},
+  journal = {Publications of the Research Institute for Mathematical Sciences},
+  volume  = {9},
+  number  = {3},
+  pages   = {721--741},
+  year    = {1974},
+  doi     = {10.2977/prims/1195192451}
+}
+
+@book{Higham2002Accuracy,
+  author    = {Higham, Nicholas J.},
+  title     = {Accuracy and Stability of Numerical Algorithms},
+  edition   = {Second},
+  publisher = {SIAM},
+  year      = {2002},
+  doi       = {10.1137/1.9780898718027}
+}
+
+@software{Agarwal2023Ceres,
+  author  = {Agarwal, Sameer and Mierle, Keir and The Ceres Solver Team},
+  title   = {Ceres Solver},
+  year    = {2023},
+  month   = oct,
+  version = {2.2},
+  license = {Apache-2.0},
+  url     = {https://github.com/ceres-solver/ceres-solver}
+}
+
+@misc{JohnsonNLopt,
+  author       = {Johnson, Steven G.},
+  title        = {The NLopt Nonlinear-Optimization Package},
+  howpublished = {Software documentation},
+  url          = {https://nlopt.readthedocs.io/en/latest/}
+}
+
+@misc{BoostMath,
+  author       = {{Boost Contributors}},
+  title        = {Boost Math Toolkit},
+  howpublished = {Software documentation},
+  url          = {https://www.boost.org/doc/libs/release/libs/math/doc/html/index.html}
+}
+
+@misc{GoogleTest,
+  author       = {{Google}},
+  title        = {GoogleTest},
+  howpublished = {Software documentation and source repository},
+  url          = {https://github.com/google/googletest}
+}
+
+@misc{CMake,
+  author       = {{Kitware}},
+  title        = {CMake},
+  howpublished = {Build system documentation},
+  url          = {https://cmake.org}
+}
+
+@misc{Vcpkg,
+  author       = {{Microsoft}},
+  title        = {vcpkg},
+  howpublished = {C/C++ package manager documentation and source repository},
+  url          = {https://github.com/microsoft/vcpkg}
 }

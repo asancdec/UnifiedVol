@@ -1,5 +1,18 @@
 # Build Instructions
 
+## Prerequisites
+
+The documented presets target Linux with GCC, Ninja, CMake, and vcpkg.
+
+- CMake >= 3.22
+- Ninja
+- GCC 13, available as `/usr/bin/g++-13`
+- vcpkg checked out at `$HOME/dev/vcpkg`
+- initialized git submodules
+
+The vcpkg toolchain path is set in `CMakePresets.json`. If vcpkg is installed
+elsewhere, update `CMAKE_TOOLCHAIN_FILE` in the presets before configuring.
+
 ## Cloning the Repository
 
 This project uses **git submodules**.
@@ -21,8 +34,6 @@ git submodule update --init --recursive
 Configure and build the standard release target:
 
 ```bash
-rm -rf build/linux-gcc-release
-
 cmake --preset linux-gcc-release
 cmake --build --preset linux-gcc-release
 ```
@@ -31,6 +42,13 @@ Run the example executable:
 
 ```bash
 ./build/linux-gcc-release/unifiedvol_example
+```
+
+## Debug Build
+
+```bash
+cmake --preset linux-gcc-debug
+cmake --build --preset linux-gcc-debug
 ```
 
 ## Tests
@@ -65,6 +83,13 @@ Run all non-performance tests:
 ctest --preset linux-gcc-release-nonperformance --output-on-failure
 ```
 
+Run the full release test suite, including performance-labelled tests in the
+release build:
+
+```bash
+ctest --preset linux-gcc-release-full --output-on-failure
+```
+
 Run a specific correctness test category:
 
 ```bash
@@ -97,6 +122,22 @@ Run the performance test suite:
 ctest --preset linux-gcc-perf-performance --output-on-failure
 ```
 
+Run performance tests on a quiet Linux machine when possible. The perf preset
+uses `RelWithDebInfo`, `-O3`, debug symbols, and frame pointers for profiling.
+
+## Run Coverage Tests
+
+Coverage is GCC-only in this project.
+
+```bash
+cmake --preset linux-gcc-coverage
+cmake --build --preset linux-gcc-coverage-tests
+ctest --preset linux-gcc-coverage-nonperformance --output-on-failure
+```
+
+Use local `gcov`/`lcov` tooling, if installed, to generate reports from
+`build/linux-gcc-coverage`.
+
 ## Run All Tests
 
 To run the full test set, run the correctness suite first, then the performance
@@ -121,4 +162,18 @@ The test executables can also be run directly:
 ./build/linux-gcc-release/tests/unifiedvol_integration_tests
 ./build/linux-gcc-release/tests/unifiedvol_regression_tests
 ./build/linux-gcc-perf/tests/unifiedvol_performance_tests
+```
+
+## Build Options
+
+Common CMake options:
+
+- `UNIFIEDVOL_BUILD_TESTS=ON/OFF`
+- `UNIFIEDVOL_BUILD_EXAMPLE=ON/OFF`
+- `UNIFIEDVOL_ENABLE_COVERAGE=ON/OFF`
+
+Example:
+
+```bash
+cmake --preset linux-gcc-release -DUNIFIEDVOL_BUILD_EXAMPLE=OFF
 ```
