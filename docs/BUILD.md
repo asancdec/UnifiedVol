@@ -13,6 +13,23 @@ The documented presets target Linux with GCC, Ninja, CMake, and vcpkg.
 The vcpkg toolchain path is set in `CMakePresets.json`. If vcpkg is installed
 elsewhere, update `CMAKE_TOOLCHAIN_FILE` in the presets before configuring.
 
+## Quick Start
+
+Configure, build, and run the standard release correctness suite:
+
+```bash
+cmake --preset linux-gcc-release
+cmake --build --preset linux-gcc-release-tests
+ctest --preset linux-gcc-release-nonperformance --output-on-failure
+```
+
+Build and run the example executable:
+
+```bash
+cmake --build --preset linux-gcc-release
+./build/linux-gcc-release/unifiedvol_example
+```
+
 ## Cloning the Repository
 
 This project uses **git submodules**.
@@ -127,7 +144,8 @@ uses `RelWithDebInfo`, `-O3`, debug symbols, and frame pointers for profiling.
 
 ## Run Coverage Tests
 
-Coverage is GCC-only in this project.
+Coverage is GCC-only in this project. The coverage preset enables
+`UNIFIEDVOL_ENABLE_COVERAGE`.
 
 ```bash
 cmake --preset linux-gcc-coverage
@@ -135,8 +153,8 @@ cmake --build --preset linux-gcc-coverage-tests
 ctest --preset linux-gcc-coverage-nonperformance --output-on-failure
 ```
 
-Use local `gcov`/`lcov` tooling, if installed, to generate reports from
-`build/linux-gcc-coverage`.
+Use local coverage-report tooling, such as `gcov` or `lcov` if installed, to
+generate reports from `build/linux-gcc-coverage`.
 
 ## Run All Tests
 

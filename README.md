@@ -1,7 +1,9 @@
 ![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](LICENSE.txt)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
 [![C++ CI](https://github.com/asancdec/UnifiedVol/actions/workflows/cpp-ci.yml/badge.svg?branch=master)](https://github.com/asancdec/UnifiedVol/actions/workflows/cpp-ci.yml)
 [![codecov](https://codecov.io/gh/asancdec/UnifiedVol/branch/master/graph/badge.svg)](https://codecov.io/gh/asancdec/UnifiedVol)
+
 
 # UnifiedVol
 
@@ -67,8 +69,9 @@ io::report::volatility(hestonVolSurface);
 - File tree: [docs/TREE.md](docs/TREE.md)
 - Data sources: [docs/DATA.md](docs/DATA.md)
 - Dependencies: [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md)
-- Numerical references: [docs/NUMERICAL_REFERENCES.md](docs/NUMERICAL_REFERENCES.md)
-- Bibliography: [docs/citations.bib](docs/citations.bib)
+
+For model and numerical-method references, see [References](docs/references.md).
+Full BibTeX entries are available in [`citations.bib`](citations.bib).
 
 ---
 
@@ -79,10 +82,9 @@ implementations are subject to change.
 
 This software is provided for **research and educational purposes only**. It is **not investment advice** and must not be used in trading systems.
 
-All model implementations and market data used in examples and tests have been
-derived from **publicly available sources** and are **explicitly cited**
-where applicable (see [docs/NUMERICAL_REFERENCES.md](docs/NUMERICAL_REFERENCES.md),
-[docs/citations.bib](docs/citations.bib), and [docs/DATA.md](docs/DATA.md)).
+Model implementations and market data used in examples and tests are documented
+where applicable in [docs/references.md](docs/references.md),
+[citations.bib](citations.bib), and [docs/DATA.md](docs/DATA.md).
 
 This project is **Apache License 2.0 compliant**, and all third-party
 dependencies are used and distributed in accordance with their respective

@@ -8,12 +8,12 @@ Transitive dependencies are resolved by vcpkg and by the upstream packages.
 - **CMake >= 3.22**  
   https://cmake.org  
   License: BSD 3-Clause  
-  Citation: `CMake` in [citations.bib](citations.bib)
+  Citation: `CMake` in [citations.bib](../citations.bib)
 
 - **vcpkg** (manifest mode)  
   https://github.com/microsoft/vcpkg  
   License: MIT  
-  Citation: `Vcpkg` in [citations.bib](citations.bib)
+  Citation: `Vcpkg` in [citations.bib](../citations.bib)
 
 The package manifest is [vcpkg.json](../vcpkg.json).
 
@@ -23,27 +23,27 @@ The package manifest is [vcpkg.json](../vcpkg.json).
   https://www.boost.org/doc/libs/release/libs/math/doc/html/index.html  
   License: Boost Software License 1.0  
   Used for special functions in numerical integration code.  
-  Citation: `BoostMath` in [citations.bib](citations.bib)
+  Citation: `BoostMath` in [citations.bib](../citations.bib)
 
 ## Optimization Libraries
 
 - **NLopt** — Nonlinear optimization  
   https://github.com/stevengj/nlopt  
-  License: LGPL v2.1  
-  Citation: `JohnsonNLopt` in [citations.bib](citations.bib)
+  License: GNU LGPL  
+  Citation: `JohnsonNLopt` in [citations.bib](../citations.bib)
 
 - **Ceres Solver** — Nonlinear least-squares optimization  
   https://github.com/ceres-solver/ceres-solver  
-  License: Apache License 2.0  
-  Citation: `Agarwal2023Ceres` in [citations.bib](citations.bib)
+  License: See upstream LICENSE file  
+  Citation: `Agarwal2023Ceres` in [citations.bib](../citations.bib)
 
 ## Implied Volatility
 
 - **Let’s Be Rational** — Robust Black–Scholes implied volatility  
   Author: Peter Jäckel  
   https://github.com/vollib/lets_be_rational  
-  License: Permissive (custom, attribution required)  
-  Citation: `Jaeckel2015LetsBeRational` in [citations.bib](citations.bib)
+  License: Custom permissive license; copyright notice must be preserved  
+  Citation: `Jaeckel2015LetsBeRational` in [citations.bib](../citations.bib)
 
 ## Test Dependencies
 
@@ -51,17 +51,16 @@ The package manifest is [vcpkg.json](../vcpkg.json).
   https://github.com/google/googletest  
   License: BSD 3-Clause  
   Used only by the test targets under `tests/`.  
-  Citation: `GoogleTest` in [citations.bib](citations.bib)
+  Citation: `GoogleTest` in [citations.bib](../citations.bib)
 
-### Notes
+## Notes
+
 This project includes the *Let’s Be Rational* implementation by Peter Jäckel,
 used to compute Black–Scholes implied volatility with full double-precision
 accuracy and guaranteed convergence.
 
 The library is included as a git submodule and built as part of this project.
 The original copyright notice is preserved in accordance with the license.
-
-## Notes
 
 All third-party libraries remain the property of their respective authors.
 Users are responsible for complying with the corresponding license terms.
