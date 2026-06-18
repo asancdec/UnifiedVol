@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Core/Curve.hpp"
+#include "Core/MarketState.hpp"
 #include "Core/VolSurface.hpp"
 #include "Models/Heston/Calibrate/Config.hpp"
 #include "Models/Heston/Price/Pricer.hpp"
@@ -20,9 +21,22 @@ core::VolSurface<T> buildSurface(
     const calibrate::Config& config = {}
 );
 
+template <std::floating_point T, std::size_t N = calibrate::defaultNodes>
+core::VolSurface<T> buildSurface(
+    const core::VolSurface<T>& volSurface,
+    const core::MarketState<T>& marketState,
+    const calibrate::Config& config = {}
+);
+
 template <std::floating_point T, std::size_t N> core::VolSurface<T> buildSurface(
     const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
+    const price::Pricer<T, N>& pricer
+);
+
+template <std::floating_point T, std::size_t N> core::VolSurface<T> buildSurface(
+    const core::VolSurface<T>& volSurface,
+    const core::MarketState<T>& marketState,
     const price::Pricer<T, N>& pricer
 );
 

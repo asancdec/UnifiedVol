@@ -24,6 +24,15 @@ template <std::floating_point T, std::size_t N> core::VolSurface<T> buildSurface
 
 template <std::floating_point T, std::size_t N> core::VolSurface<T> buildSurface(
     const core::VolSurface<T>& volSurface,
+    const core::MarketState<T>& marketState,
+    const calibrate::Config& config
+)
+{
+    return buildSurface<T, N>(volSurface, marketState.interestCurve, config);
+}
+
+template <std::floating_point T, std::size_t N> core::VolSurface<T> buildSurface(
+    const core::VolSurface<T>& volSurface,
     const core::Curve<T>& curve,
     const price::Pricer<T, N>& pricer
 )
@@ -32,5 +41,14 @@ template <std::floating_point T, std::size_t N> core::VolSurface<T> buildSurface
         volSurface,
         math::vol::impliedVol(pricer.callPrice(volSurface, curve), volSurface, curve)
     );
+}
+
+template <std::floating_point T, std::size_t N> core::VolSurface<T> buildSurface(
+    const core::VolSurface<T>& volSurface,
+    const core::MarketState<T>& marketState,
+    const price::Pricer<T, N>& pricer
+)
+{
+    return buildSurface(volSurface, marketState.interestCurve, pricer);
 }
 } // namespace uv::models::heston

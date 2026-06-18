@@ -47,7 +47,7 @@ TEST(PerformanceExamplePipeline, BuildsSVIAndHestonSurfacesWithinLatencyBudget)
                 uv::models::svi::buildSurface(marketState, sviConfig);
             const auto hestonVolSurface = uv::models::heston::buildSurface<Real>(
                 sviVolSurface,
-                marketState.interestCurve,
+                marketState,
                 hestonConfig
             );
             sviMaturities = sviVolSurface.numMaturities();

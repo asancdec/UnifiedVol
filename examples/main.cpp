@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
         // --------------  Heston calibration --------------
 
         const core::VolSurface<Real> hestonVolSurface{
-            models::heston::buildSurface<Real>(sviVolSurface, marketState.interestCurve)
+            models::heston::buildSurface<Real>(sviVolSurface, marketState)
         };
 
         io::report::volatility(hestonVolSurface);

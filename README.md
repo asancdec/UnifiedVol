@@ -53,7 +53,7 @@ io::report::volatility(sviVolSurface);
 
 // Calibrate
 const core::VolSurface<Real> hestonVolSurface{
-    models::heston::buildSurface<Real>(sviVolSurface, marketState.interestCurve)
+    models::heston::buildSurface<Real>(sviVolSurface, marketState)
 };
 
 // Inspect
