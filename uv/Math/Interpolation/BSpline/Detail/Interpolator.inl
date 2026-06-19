@@ -11,8 +11,6 @@ BSpline<T, K, doValidate>::BSpline(std::span<const T> cPoints, std::span<const T
     : cPoints_(cPoints.begin(), cPoints.end()),
       knots_(knots.begin(), knots.end())
 {
-    static_assert(K >= 0, "BSpline degree must be non-negative");
-
     if constexpr (doValidate)
     {
         validate();

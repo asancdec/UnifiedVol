@@ -67,7 +67,7 @@ class Parser
         {
             const std::string key{parseString()};
             expect(':');
-            auto [_, inserted] = value.object.emplace(key, parseValue());
+            const bool inserted{value.object.emplace(key, parseValue()).second};
             if (!inserted)
                 throw std::runtime_error("Duplicate JSON key: " + key);
             skipWhitespace();

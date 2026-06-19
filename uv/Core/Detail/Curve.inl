@@ -38,7 +38,7 @@ T Curve<T>::interpolateDF(T maturity, bool doValidate) const
 
     for (std::size_t i{0}; i < numMaturities_; ++i)
     {
-        if (maturity == maturities_[i])
+        if (!(maturity < maturities_[i]) && !(maturities_[i] < maturity))
         {
             return discountFactors_[i];
         }
