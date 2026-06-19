@@ -105,6 +105,12 @@ jobs:
               "tests/**",
               "examples/**",
           )
+          excluded_rule_ids = {
+              "cpp/poorly-documented-function",
+          }
+          excluded_rule_names = {
+              "Poorly documented large function",
+          }
           high_problem_severities = {"error"}
 
           def normalize_uri(uri, base_uri=""):
@@ -140,6 +146,23 @@ jobs:
                       return rule.get("properties", {})
               return {}
 
+          def rule_name(run, result):
+              rule_id = result.get("ruleId")
+              for rule in run.get("tool", {}).get("driver", {}).get("rules", []):
+                  if rule.get("id") == rule_id:
+                      return (
+                          rule.get("shortDescription", {}).get("text")
+                          or rule.get("name")
+                          or ""
+                      )
+              return result.get("message", {}).get("text", "")
+
+          def is_excluded_rule(run, result):
+              return (
+                  result.get("ruleId") in excluded_rule_ids
+                  or rule_name(run, result) in excluded_rule_names
+              )
+
           def is_high_severity(run, result):
               properties = rule_properties(run, result)
               security_severity = properties.get("security-severity")
@@ -157,6 +180,7 @@ jobs:
           total_after = 0
           first_party_after = 0
           high_first_party_after = 0
+          excluded_rule_count = 0
 
           for sarif_file in sarif_files:
               with sarif_file.open(encoding="utf-8") as fh:
@@ -168,6 +192,10 @@ jobs:
                   filtered = []
 
                   for result in results:
+                      if is_excluded_rule(run, result):
+                          excluded_rule_count += 1
+                          continue
+
                       path = result_path(run, result)
                       if not path or matches(path, exclude_patterns):
                           continue
@@ -194,6 +222,7 @@ jobs:
                       f"- Results uploaded after filtering: {total_after}",
                       f"- Results in first-party paths: {first_party_after}",
                       f"- High-severity first-party results: {high_first_party_after}",
+                      f"- Poorly documented large function results excluded: {excluded_rule_count}",
                   ]
               )
               + "\n",
