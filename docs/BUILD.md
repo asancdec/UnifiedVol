@@ -9,9 +9,17 @@ The documented presets target Linux with GCC, Ninja, CMake, and vcpkg.
 - GCC 13, available as `/usr/bin/g++-13`
 - vcpkg checked out at `$HOME/dev/vcpkg`
 - initialized git submodules
+- ccache, optional; used automatically when installed
 
 The vcpkg toolchain path is set in `CMakePresets.json`. If vcpkg is installed
 elsewhere, update `CMAKE_TOOLCHAIN_FILE` in the presets before configuring.
+
+When `ccache` is installed, CMake uses it automatically to speed up repeated
+local builds. To disable this behavior for a build tree, configure with:
+
+```bash
+cmake --preset linux-gcc-release -DUNIFIEDVOL_ENABLE_CCACHE=OFF
+```
 
 ## Quick Start
 
@@ -153,8 +161,8 @@ cmake --build --preset linux-gcc-coverage-tests
 ctest --preset linux-gcc-coverage-nonperformance --output-on-failure
 ```
 
-Use local coverage-report tooling, such as `gcov` or `lcov` if installed, to
-generate reports from `build/linux-gcc-coverage`.
+Use local coverage-report tooling, such as `gcovr`, `gcov`, or `lcov`,
+to generate reports from `build/linux-gcc-coverage`.
 
 ## Run All Tests
 
@@ -189,6 +197,7 @@ Common CMake options:
 - `UNIFIEDVOL_BUILD_TESTS=ON/OFF`
 - `UNIFIEDVOL_BUILD_EXAMPLE=ON/OFF`
 - `UNIFIEDVOL_ENABLE_COVERAGE=ON/OFF`
+- `UNIFIEDVOL_ENABLE_CCACHE=ON/OFF`
 
 Example:
 

@@ -56,7 +56,7 @@ jobs:
             ccache-${{ runner.os }}-gcc13-
 
       - name: Configure release build
-        run: cmake --preset linux-gcc-release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        run: cmake --preset linux-gcc-release
 
       - name: Build correctness tests
         run: cmake --build --preset linux-gcc-release-tests
@@ -109,7 +109,7 @@ jobs:
             ccache-${{ runner.os }}-gcc13-
 
       - name: Configure coverage build
-        run: cmake --preset linux-gcc-coverage -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        run: cmake --preset linux-gcc-coverage
         env:
           CC: gcc-13
           CXX: g++-13
@@ -199,7 +199,7 @@ jobs:
             ccache-${{ runner.os }}-gcc13-
 
       - name: Configure performance build
-        run: cmake --preset linux-gcc-perf -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        run: cmake --preset linux-gcc-perf
 
       - name: Build performance tests
         run: cmake --build --preset linux-gcc-perf-tests

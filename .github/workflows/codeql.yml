@@ -63,7 +63,7 @@ jobs:
           queries: security-and-quality
 
       - name: Configure release build
-        run: cmake --preset linux-gcc-release
+        run: cmake --preset linux-gcc-release -DUNIFIEDVOL_ENABLE_CCACHE=OFF
 
       - name: Build correctness tests
         run: cmake --build --preset linux-gcc-release-tests
@@ -249,3 +249,4 @@ jobs:
             codeql-results-filtered
             codeql-filter-summary.md
           retention-days: 14
+          if-no-files-found: warn

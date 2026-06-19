@@ -4,6 +4,22 @@ project(UnifiedVol VERSION 0.1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(UNIFIEDVOL_ENABLE_CCACHE "Use ccache if available" ON)
+
+if(UNIFIEDVOL_ENABLE_CCACHE AND NOT CMAKE_CXX_COMPILER_LAUNCHER)
+  find_program(CCACHE_PROGRAM ccache)
+
+  if(CCACHE_PROGRAM)
+    message(STATUS "UnifiedVol ccache enabled: ${CCACHE_PROGRAM}")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}" CACHE STRING "C++ compiler launcher" FORCE)
+  else()
+    message(STATUS "UnifiedVol ccache requested but ccache was not found")
+  endif()
+elseif(NOT UNIFIEDVOL_ENABLE_CCACHE AND CMAKE_CXX_COMPILER_LAUNCHER MATCHES "(^|/)ccache$")
+  message(STATUS "UnifiedVol ccache disabled")
+  set(CMAKE_CXX_COMPILER_LAUNCHER "" CACHE STRING "C++ compiler launcher" FORCE)
+endif()
+
 if(MSVC)
   set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
