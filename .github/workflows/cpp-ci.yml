@@ -35,7 +35,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .vcpkg-cache
-          key: vcpkg-${{ runner.os }}-gcc13-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{ runner.os }}-gcc13-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'CMakePresets.json') }}
           restore-keys: |
             vcpkg-${{ runner.os }}-gcc13-
 
@@ -79,7 +79,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .vcpkg-cache
-          key: vcpkg-${{ runner.os }}-gcc13-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{ runner.os }}-gcc13-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'CMakePresets.json') }}
           restore-keys: |
             vcpkg-${{ runner.os }}-gcc13-
 
@@ -160,7 +160,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .vcpkg-cache
-          key: vcpkg-${{ runner.os }}-gcc13-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{ runner.os }}-gcc13-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'CMakePresets.json') }}
           restore-keys: |
             vcpkg-${{ runner.os }}-gcc13-
 

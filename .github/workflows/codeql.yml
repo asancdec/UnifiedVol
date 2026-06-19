@@ -42,7 +42,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .vcpkg-cache
-          key: vcpkg-${{ runner.os }}-gcc13-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{ runner.os }}-gcc13-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'CMakePresets.json') }}
           restore-keys: |
             vcpkg-${{ runner.os }}-gcc13-
 
@@ -70,3 +70,152 @@ jobs:
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4
+        with:
+          upload: never
+          output: codeql-results
+
+      - name: Filter third-party CodeQL results
+        run: |
+          python3 - <<'PY'
+          import fnmatch
+          import json
+          import posixpath
+          import pathlib
+          import urllib.parse
+
+          input_dir = pathlib.Path("codeql-results")
+          output_dir = pathlib.Path("codeql-results-filtered")
+          output_dir.mkdir(exist_ok=True)
+
+          sarif_files = sorted(input_dir.rglob("*.sarif"))
+          if not sarif_files:
+              raise SystemExit("No SARIF files found in codeql-results")
+
+          exclude_patterns = (
+              "build/**",
+              "**/vcpkg_installed/**",
+              "external/**",
+              "**/Eigen/**",
+              "**/nlopt/**",
+          )
+          first_party_patterns = (
+              "uv/**",
+              "src/**",
+              "include/**",
+              "tests/**",
+              "examples/**",
+          )
+          high_problem_severities = {"error"}
+
+          def normalize_uri(uri, base_uri=""):
+              uri = f"{base_uri}{uri}" if base_uri else uri
+              parsed = urllib.parse.urlparse(uri)
+              path = urllib.parse.unquote(parsed.path if parsed.scheme == "file" else uri)
+              path = path.lstrip("/")
+              marker = "UnifiedVol/"
+              if marker in path:
+                  path = path.split(marker, 1)[1]
+              return posixpath.normpath(path.replace("\\", "/")).lstrip("./")
+
+          def base_uri(run, uri_base_id):
+              if not uri_base_id:
+                  return ""
+              base = run.get("originalUriBaseIds", {}).get(uri_base_id, {})
+              return base.get("uri", "")
+
+          def result_path(run, result):
+              locations = result.get("locations") or []
+              if not locations:
+                  return ""
+              artifact = locations[0].get("physicalLocation", {}).get("artifactLocation", {})
+              return normalize_uri(artifact.get("uri", ""), base_uri(run, artifact.get("uriBaseId", "")))
+
+          def matches(path, patterns):
+              return any(fnmatch.fnmatch(path, pattern) for pattern in patterns)
+
+          def rule_properties(run, result):
+              rule_id = result.get("ruleId")
+              for rule in run.get("tool", {}).get("driver", {}).get("rules", []):
+                  if rule.get("id") == rule_id:
+                      return rule.get("properties", {})
+              return {}
+
+          def is_high_severity(run, result):
+              properties = rule_properties(run, result)
+              security_severity = properties.get("security-severity")
+              if security_severity is not None:
+                  try:
+                      return float(security_severity) >= 7.0
+                  except (TypeError, ValueError):
+                      pass
+              return (
+                  properties.get("problem.severity") in high_problem_severities
+                  or result.get("level") == "error"
+              )
+
+          total_before = 0
+          total_after = 0
+          first_party_after = 0
+          high_first_party_after = 0
+
+          for sarif_file in sarif_files:
+              with sarif_file.open(encoding="utf-8") as fh:
+                  sarif = json.load(fh)
+
+              for run in sarif.get("runs", []):
+                  results = run.get("results", [])
+                  total_before += len(results)
+                  filtered = []
+
+                  for result in results:
+                      path = result_path(run, result)
+                      if not path or matches(path, exclude_patterns):
+                          continue
+                      if not matches(path, first_party_patterns):
+                          continue
+
+                      filtered.append(result)
+                      total_after += 1
+                      first_party_after += 1
+                      if is_high_severity(run, result):
+                          high_first_party_after += 1
+
+                  run["results"] = filtered
+
+              with (output_dir / sarif_file.name).open("w", encoding="utf-8") as fh:
+                  json.dump(sarif, fh)
+
+          summary = pathlib.Path("codeql-filter-summary.md")
+          summary.write_text(
+              "\n".join(
+                  [
+                      "### CodeQL SARIF filter",
+                      f"- Results before filtering: {total_before}",
+                      f"- Results uploaded after filtering: {total_after}",
+                      f"- Results in first-party paths: {first_party_after}",
+                      f"- High-severity first-party results: {high_first_party_after}",
+                  ]
+              )
+              + "\n",
+              encoding="utf-8",
+          )
+          with pathlib.Path(__import__("os").environ["GITHUB_STEP_SUMMARY"]).open(
+              "a", encoding="utf-8"
+          ) as fh:
+              fh.write(summary.read_text(encoding="utf-8"))
+          PY
+
+      - name: Upload filtered CodeQL results
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: codeql-results-filtered
+
+      - name: Upload CodeQL SARIF artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codeql-sarif
+          path: |
+            codeql-results
+            codeql-results-filtered
+            codeql-filter-summary.md
