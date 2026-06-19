@@ -7,6 +7,10 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   correctness:
     name: GCC Release non-performance tests
@@ -23,7 +27,7 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt update
-          sudo apt install -y cmake ninja-build g++-13 git curl zip unzip tar pkg-config
+          sudo apt install -y cmake ninja-build g++-13 git curl zip unzip tar pkg-config ccache
 
       - name: Install vcpkg
         run: |
@@ -42,8 +46,17 @@ jobs:
       - name: Prepare vcpkg binary cache
         run: mkdir -p .vcpkg-cache
 
+      - name: Cache ccache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-gcc13-${{ github.job }}-${{ hashFiles('CMakePresets.json', 'CMakeLists.txt', 'tests/CMakeLists.txt', 'src/**/*.cpp', 'uv/**/*.hpp', 'uv/**/*.inl', 'tests/**/*.cpp', 'tests/**/*.hpp', 'examples/**/*.cpp') }}
+          restore-keys: |
+            ccache-${{ runner.os }}-gcc13-${{ github.job }}-
+            ccache-${{ runner.os }}-gcc13-
+
       - name: Configure release build
-        run: cmake --preset linux-gcc-release
+        run: cmake --preset linux-gcc-release -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Build correctness tests
         run: cmake --build --preset linux-gcc-release-tests
@@ -67,7 +80,7 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt update
-          sudo apt install -y cmake ninja-build g++-13 git curl zip unzip tar pkg-config gcovr
+          sudo apt install -y cmake ninja-build g++-13 git curl zip unzip tar pkg-config ccache gcovr
 
       - name: Install vcpkg
         run: |
@@ -86,8 +99,17 @@ jobs:
       - name: Prepare vcpkg binary cache
         run: mkdir -p .vcpkg-cache
 
+      - name: Cache ccache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-gcc13-${{ github.job }}-${{ hashFiles('CMakePresets.json', 'CMakeLists.txt', 'tests/CMakeLists.txt', 'src/**/*.cpp', 'uv/**/*.hpp', 'uv/**/*.inl', 'tests/**/*.cpp', 'tests/**/*.hpp', 'examples/**/*.cpp') }}
+          restore-keys: |
+            ccache-${{ runner.os }}-gcc13-${{ github.job }}-
+            ccache-${{ runner.os }}-gcc13-
+
       - name: Configure coverage build
-        run: cmake --preset linux-gcc-coverage
+        run: cmake --preset linux-gcc-coverage -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
         env:
           CC: gcc-13
           CXX: g++-13
@@ -148,7 +170,7 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt update
-          sudo apt install -y cmake ninja-build g++-13 git curl zip unzip tar pkg-config
+          sudo apt install -y cmake ninja-build g++-13 git curl zip unzip tar pkg-config ccache
 
       - name: Install vcpkg
         run: |
@@ -167,8 +189,17 @@ jobs:
       - name: Prepare vcpkg binary cache
         run: mkdir -p .vcpkg-cache
 
+      - name: Cache ccache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ runner.os }}-gcc13-${{ github.job }}-${{ hashFiles('CMakePresets.json', 'CMakeLists.txt', 'tests/CMakeLists.txt', 'src/**/*.cpp', 'uv/**/*.hpp', 'uv/**/*.inl', 'tests/**/*.cpp', 'tests/**/*.hpp', 'examples/**/*.cpp') }}
+          restore-keys: |
+            ccache-${{ runner.os }}-gcc13-${{ github.job }}-
+            ccache-${{ runner.os }}-gcc13-
+
       - name: Configure performance build
-        run: cmake --preset linux-gcc-perf
+        run: cmake --preset linux-gcc-perf -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Build performance tests
         run: cmake --build --preset linux-gcc-perf-tests
