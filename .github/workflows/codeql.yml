@@ -18,6 +18,8 @@ jobs:
   analyze:
     name: Analyze C++
     runs-on: ubuntu-24.04
+    env:
+      VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite"
 
     steps:
       - name: Checkout repository
@@ -35,6 +37,17 @@ jobs:
           mkdir -p "$HOME/dev"
           git clone https://github.com/microsoft/vcpkg.git "$HOME/dev/vcpkg"
           "$HOME/dev/vcpkg/bootstrap-vcpkg.sh"
+
+      - name: Cache vcpkg binary packages
+        uses: actions/cache@v4
+        with:
+          path: .vcpkg-cache
+          key: vcpkg-${{ runner.os }}-gcc13-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-gcc13-
+
+      - name: Prepare vcpkg binary cache
+        run: mkdir -p .vcpkg-cache
 
       - name: Validate CMake presets
         run: |
