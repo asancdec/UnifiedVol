@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "IO/Load.hpp"
+#include "IO/CSV/Load.hpp"
 #include "Math/Functions/Black.hpp"
 #include "Math/Functions/Volatility.hpp"
 
@@ -18,7 +18,7 @@ TEST(IntegrationLoadAndReport, LoadsExampleCsv)
         .spot = 485.77548
     };
 
-    const auto marketState = uv::io::load::marketState(path, marketData);
+    const auto marketState = uv::io::csv::load::marketState(path, marketData);
 
     ASSERT_EQ(marketState.volSurface.numMaturities(), 11U);
     ASSERT_EQ(marketState.volSurface.numStrikes(), 17U);

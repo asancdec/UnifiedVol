@@ -38,7 +38,7 @@ Vector<MaturitySlice> makeSlices(
     {
         const double F{forwards[i]};
 
-        out.emplace_back(MaturitySlice{numStrikes});
+        out.emplace_back(numStrikes);
         MaturitySlice& s = out.back();
 
         s.t = maturities[i];

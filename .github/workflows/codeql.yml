@@ -113,6 +113,13 @@ jobs:
           }
           high_problem_severities = {"error"}
 
+          def result_line(result):
+              locations = result.get("locations") or []
+              if not locations:
+                  return None
+              region = locations[0].get("physicalLocation", {}).get("region", {})
+              return region.get("startLine")
+
           def normalize_uri(uri, base_uri=""):
               uri = f"{base_uri}{uri}" if base_uri else uri
               parsed = urllib.parse.urlparse(uri)
@@ -150,12 +157,30 @@ jobs:
               rule_id = result.get("ruleId")
               for rule in run.get("tool", {}).get("driver", {}).get("rules", []):
                   if rule.get("id") == rule_id:
-                      return (
-                          rule.get("shortDescription", {}).get("text")
-                          or rule.get("name")
-                          or ""
-                      )
+                      short_description = rule.get("shortDescription", {}).get("text")
+                      return short_description or rule.get("name") or ""
               return result.get("message", {}).get("text", "")
+
+          def source_line(path, line_number):
+              if not path or not line_number:
+                  return ""
+              try:
+                  lines = pathlib.Path(path).read_text(encoding="utf-8").splitlines()
+              except OSError:
+                  return ""
+              index = line_number - 1
+              if index < 0 or index >= len(lines):
+                  return ""
+              return lines[index]
+
+          def has_source_suppression(path, line_number, rule_id):
+              if line_number is None:
+                  return False
+              token = f"codeql-suppress[{rule_id}]"
+              return (
+                  token in source_line(path, line_number)
+                  or token in source_line(path, line_number - 1)
+              )
 
           def is_excluded_rule(run, result):
               return (
@@ -181,6 +206,7 @@ jobs:
           first_party_after = 0
           high_first_party_after = 0
           excluded_rule_count = 0
+          source_suppressed_count = 0
 
           for sarif_file in sarif_files:
               with sarif_file.open(encoding="utf-8") as fh:
@@ -200,6 +226,9 @@ jobs:
                       if not path or matches(path, exclude_patterns):
                           continue
                       if not matches(path, first_party_patterns):
+                          continue
+                      if has_source_suppression(path, result_line(result), result.get("ruleId", "")):
+                          source_suppressed_count += 1
                           continue
 
                       filtered.append(result)
@@ -223,6 +252,7 @@ jobs:
                       f"- Results in first-party paths: {first_party_after}",
                       f"- High-severity first-party results: {high_first_party_after}",
                       f"- Poorly documented large function results excluded: {excluded_rule_count}",
+                      f"- Source-suppressed first-party results: {source_suppressed_count}",
                   ]
               )
               + "\n",

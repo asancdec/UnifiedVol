@@ -12,10 +12,10 @@ namespace uv::opt::nlopt
 template <std::size_t N> struct Config
 {
     double eps{1e-12};
-    double tol;
-    double ftolRel;
-    unsigned int maxEval;
-    bool verbose;
+    double tol{};
+    double ftolRel{};
+    unsigned int maxEval{};
+    bool verbose{};
     std::array<std::string_view, N> paramNames;
 };
 } // namespace uv::opt::nlopt

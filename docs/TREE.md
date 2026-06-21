@@ -3,6 +3,7 @@
 ```text
 UnifiedVol/
 ├── .clang-format
+├── .clang-tidy
 ├── .gitattributes
 ├── .githooks/
 │   ├── pre-commit
@@ -16,6 +17,7 @@ UnifiedVol/
 ├── LICENSE.txt
 ├── README.md
 ├── citations.bib
+├── clang-tidy-report.txt
 ├── codecov.yml
 ├── data/
 │   ├── VolSurface_SPY_04072011.csv
@@ -72,6 +74,8 @@ UnifiedVol/
 │   ├── IO/
 │   │   ├── CSV/
 │   │   │   ├── Read.cpp
+│   │   ├── Console/
+│   │   │   ├── Report.cpp
 │   │   ├── JSON/
 │   │   │   ├── Read.cpp
 │   ├── Math/
@@ -254,18 +258,17 @@ UnifiedVol/
 │   ├── IO/
 │   │   ├── CSV/
 │   │   │   ├── Detail/
+│   │   │   │   ├── Load.inl
+│   │   │   │   ├── Read.hpp
 │   │   │   │   ├── Read.inl
-│   │   │   ├── Read.hpp
-│   │   ├── ConsoleRedirect.hpp
-│   │   ├── Detail/
-│   │   │   ├── Load.inl
-│   │   │   ├── Print.hpp
-│   │   │   ├── Print.inl
-│   │   │   ├── Report.inl
+│   │   │   ├── Load.hpp
+│   │   ├── Console/
+│   │   │   ├── Detail/
+│   │   │   │   ├── Report.inl
+│   │   │   ├── Redirect.hpp
+│   │   │   ├── Report.hpp
 │   │   ├── JSON/
 │   │   │   ├── Read.hpp
-│   │   ├── Load.hpp
-│   │   ├── Report.hpp
 │   ├── Math/
 │   │   ├── Functions/
 │   │   │   ├── Black.hpp

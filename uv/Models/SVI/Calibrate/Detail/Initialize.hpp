@@ -16,7 +16,7 @@ template <std::floating_point T, opt::nlopt::Algorithm Algo> void setGuessBounds
     opt::nlopt::Optimizer<4, Algo>& optimizer,
     const Params<T>* prevParams,
     const SliceData& sliceData
-) noexcept;
+);
 
 std::array<double, 4> coldGuess() noexcept;
 

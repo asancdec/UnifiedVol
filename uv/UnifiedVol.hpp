@@ -12,8 +12,8 @@
 #include "Core/MarketState.hpp"
 #include "Core/VolSurface.hpp"
 
-#include "IO/Load.hpp"
-#include "IO/Report.hpp"
+#include "IO/CSV/Load.hpp"
+#include "IO/Console/Report.hpp"
 
 #include "Optimization/Ceres/Config.hpp"
 #include "Optimization/Ceres/Optimizer.hpp"

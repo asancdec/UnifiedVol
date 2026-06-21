@@ -1,0 +1,50 @@
+Checks: >
+  -*,
+
+  clang-diagnostic-*,
+
+  clang-analyzer-*,
+  -clang-analyzer-optin.core.EnumCastOutOfRange,
+
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+
+  misc-confusable-identifiers,
+  misc-definitions-in-headers,
+  misc-redundant-expression,
+
+  performance-*,
+  -performance-enum-size,
+
+  portability-*,
+
+  cppcoreguidelines-pro-type-member-init,
+  cppcoreguidelines-prefer-member-initializer,
+
+  modernize-loop-convert,
+  modernize-make-unique,
+  modernize-return-braced-init-list,
+  modernize-use-default-member-init,
+  modernize-use-emplace,
+  modernize-use-equals-default,
+  modernize-use-equals-delete,
+  modernize-use-nullptr,
+  modernize-use-override,
+
+  readability-const-return-type,
+  readability-container-size-empty,
+  readability-duplicate-include,
+  readability-inconsistent-declaration-parameter-name,
+  readability-misleading-indentation,
+  readability-redundant-casting,
+  readability-redundant-declaration,
+  readability-redundant-member-init,
+  readability-redundant-smartptr-get,
+  readability-redundant-string-init,
+  readability-simplify-boolean-expr,
+  readability-static-accessed-through-instance,
+  readability-use-anyofallof
+
+HeaderFilterRegex: '(^|.*/)(uv|src|tests|examples)/.*'
+SystemHeaders: false
+FormatStyle: file

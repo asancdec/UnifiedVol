@@ -47,3 +47,42 @@ TEST(CoreVolSurface, RejectsShapeMismatch)
         uv::errors::UnifiedVolError
     );
 }
+
+TEST(CoreVolSurface, RejectsZeroForwardStrikeAndMoneyness)
+{
+    const std::vector<double> maturities{0.5, 1.0};
+    const std::vector<double> forwards{100.0, 101.0};
+    const std::vector<double> strikes{90.0, 100.0};
+    const std::vector<double> moneyness{0.9, 1.0};
+    const uv::core::Matrix<double> vols{2, 2, 0.2};
+
+    {
+        auto badForwards{forwards};
+        badForwards[0] = 0.0;
+        EXPECT_THROW(
+            (uv::core::VolSurface<
+                double>{maturities, badForwards, strikes, moneyness, vols}),
+            uv::errors::UnifiedVolError
+        );
+    }
+
+    {
+        auto badStrikes{strikes};
+        badStrikes[0] = 0.0;
+        EXPECT_THROW(
+            (uv::core::VolSurface<
+                double>{maturities, forwards, badStrikes, moneyness, vols}),
+            uv::errors::UnifiedVolError
+        );
+    }
+
+    {
+        auto badMoneyness{moneyness};
+        badMoneyness[0] = 0.0;
+        EXPECT_THROW(
+            (uv::core::VolSurface<
+                double>{maturities, forwards, strikes, badMoneyness, vols}),
+            uv::errors::UnifiedVolError
+        );
+    }
+}

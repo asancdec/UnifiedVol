@@ -43,8 +43,7 @@ std::size_t readIndex(const json::Value& tree, const std::string& path)
 {
     const double value{tree.asNumber()};
     requireFinite(value, path);
-    const double nearestInteger{std::round(value)};
-    if (value < 0.0 || std::abs(value - nearestInteger) > 0.0)
+    if (value < 0.0 || std::floor(value) != value)
         throw std::runtime_error("Expected non-negative integer JSON index at: " + path);
     return static_cast<std::size_t>(value);
 }

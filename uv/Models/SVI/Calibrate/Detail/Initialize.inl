@@ -6,7 +6,7 @@ template <std::floating_point T, opt::nlopt::Algorithm Algo> void setGuessBounds
     opt::nlopt::Optimizer<4, Algo>& optimizer,
     const Params<T>* prevParams,
     const SliceData& sliceData
-) noexcept
+)
 {
     const std::array<double, 4> lowerBounds{detail::lowerBounds(sliceData.logKFMin)};
     const std::array<double, 4> upperBounds{detail::upperBounds(sliceData.logKFMax)};

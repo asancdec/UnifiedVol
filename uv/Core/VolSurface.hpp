@@ -32,7 +32,7 @@ template <std::floating_point T> class VolSurface
         std::span<const T> maturities,
         std::span<const T> forwards,
         std::span<const T> strikes,
-        std::span<const T> moneyenss,
+        std::span<const T> moneyness,
         const Matrix<T>& vol
     );
 

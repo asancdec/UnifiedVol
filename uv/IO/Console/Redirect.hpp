@@ -12,10 +12,9 @@ namespace uv::io
 
 struct ConsoleRedirect
 {
-
     explicit ConsoleRedirect()
+        : oldBuf_(std::cout.rdbuf(buffer_.rdbuf()))
     {
-        oldBuf_ = std::cout.rdbuf(buffer_.rdbuf());
     }
 
     ~ConsoleRedirect()
@@ -28,4 +27,5 @@ struct ConsoleRedirect
     std::stringstream buffer_;
     std::streambuf* oldBuf_{};
 };
+
 } // namespace uv::io

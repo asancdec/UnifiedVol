@@ -10,7 +10,7 @@
 #define REQUIRE(cond, code, message)                                                     \
     do                                                                                   \
     {                                                                                    \
-        if (!cond)                                                                       \
+        if (!(cond))                                                                     \
         {                                                                                \
             ::uv::errors::raise((code), (message), std::source_location::current());     \
         }                                                                                \

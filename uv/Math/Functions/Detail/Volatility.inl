@@ -15,11 +15,6 @@
 namespace uv::math::vol
 {
 
-namespace detail
-{
-double impliedVolJackelCall(double callPrice, double t, double dF, double F, double K);
-}
-
 template <std::floating_point T> T logKF(T F, T K, bool doValidate)
 {
     if (doValidate)
@@ -44,8 +39,8 @@ void logKF(std::span<T> out, T F, std::span<const T> K, bool doValidate)
         REQUIRE_FINITE(K);
         REQUIRE_FINITE(F);
 
-        REQUIRE_NON_NEGATIVE(K);
-        REQUIRE_NON_NEGATIVE(F);
+        REQUIRE_POSITIVE(K);
+        REQUIRE_POSITIVE(F);
     }
 
     for (std::size_t i{0}; i < K.size(); ++i)

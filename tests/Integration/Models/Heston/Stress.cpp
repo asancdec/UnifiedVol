@@ -18,6 +18,19 @@ struct HestonStressScenario
     double t{};
     double discountFactor{};
     double forward{};
+
+    HestonStressScenario(
+        uv::models::heston::Params<double> params_,
+        double t_,
+        double discountFactor_,
+        double forward_
+    )
+        : params{params_},
+          t{t_},
+          discountFactor{discountFactor_},
+          forward{forward_}
+    {
+    }
 };
 
 void expectFiniteBoundedMonotoneCalls(

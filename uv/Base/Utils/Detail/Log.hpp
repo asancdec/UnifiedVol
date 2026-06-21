@@ -19,7 +19,7 @@ class Log
   public:
     static Log& instance();
 
-    void setFile(std::string_view path);
+    void setFile(std::string_view filename);
 
     void enableConsole(bool enabled) noexcept;
 

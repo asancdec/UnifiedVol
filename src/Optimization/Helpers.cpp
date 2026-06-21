@@ -33,7 +33,7 @@ void clampBounds(
         const double after{std::clamp(before, lowerBounds[i], upperBounds[i])};
 
         WARN(
-            before < lowerBounds[i] || before > upperBounds[i],
+            after != before,
             std::format(
                 "[Calib]: parameter [{}] initial guess = {:.4f} "
                 "out of bounds -> clamped to {:.4f} "
@@ -69,7 +69,7 @@ void clampLowerBounds(
         const double after{bound >= before ? bound : before};
 
         WARN(
-            before < bound,
+            after != before,
             std::format(
                 "[Calib]: parameter [{}] initial guess = {:.6f} "
                 "below lower bound -> clamped to {:.6f} "
@@ -104,7 +104,7 @@ void clampUpperBounds(
         const double after{bound <= before ? bound : before};
 
         WARN(
-            before > bound,
+            after != before,
             std::format(
                 "[Calib]: parameter [{}] initial guess = {:.6f} "
                 "above upper bound -> clamped to {:.6f} "

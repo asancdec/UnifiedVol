@@ -17,23 +17,23 @@ template <std::floating_point T, opt::nlopt::Algorithm Algo> void addCalendarCon
     const Params<T>* prevParams,
     std::span<const double> logKF,
     const SliceData& sliceData
-) noexcept;
+);
 
 template <opt::nlopt::Algorithm Algo> void addConvexityConstraints(
     opt::nlopt::Optimizer<4, Algo>& optimizer,
     ConvexityMContext& convexityCtxs,
     std::span<const double> logKF,
     double atmTotalVariance
-) noexcept;
+);
 
 template <opt::nlopt::Algorithm Algo>
-void addWMinConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept;
+void addWMinConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer);
 
 template <opt::nlopt::Algorithm Algo>
-void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept;
+void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer);
 
 template <opt::nlopt::Algorithm Algo>
-void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept;
+void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer);
 
 [[gnu::hot]] void calendarMConstraint(
     unsigned m,

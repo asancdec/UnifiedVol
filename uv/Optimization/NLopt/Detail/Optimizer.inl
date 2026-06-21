@@ -144,7 +144,10 @@ template <std::size_t N, Algorithm Algo> double Optimizer<N, Algo>::tol() const 
 template <std::size_t N, Algorithm Algo>
 const double& Optimizer<N, Algo>::userValue() const
 {
-    REQUIRE_SET(userValue_);
+    if (!userValue_.has_value()) [[unlikely]]
+    {
+        errors::raise(errors::ErrorCode::InvalidState, "userValue_ must be set");
+    }
 
     return *userValue_;
 }

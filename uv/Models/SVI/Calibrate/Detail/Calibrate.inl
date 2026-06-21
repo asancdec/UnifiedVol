@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "Base/Macros/Require.hpp"
-#include "IO/Report.hpp"
+#include "IO/Console/Report.hpp"
 #include "Math/Functions/Volatility.hpp"
 #include "Models/SVI/Calibrate/Detail/Constraints.hpp"
 #include "Models/SVI/Calibrate/Detail/Contexts.hpp"

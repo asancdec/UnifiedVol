@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "IO/Load.hpp"
+#include "IO/CSV/Load.hpp"
 #include "Models/Heston/BuildSurface.hpp"
 #include "Models/Heston/Calibrate/Calibrate.hpp"
 #include "Models/SVI/BuildSurface.hpp"
@@ -44,7 +44,7 @@ TEST(RegressionExamplePipeline, MainCppResultsRemainStable)
         .verbosity = uv::opt::ceres::Verbosity::None
     };
 
-    const auto marketState = uv::io::load::marketState(path, marketData);
+    const auto marketState = uv::io::csv::load::marketState(path, marketData);
 
     const uv::opt::nlopt::Optimizer<4, uv::opt::nlopt::Algorithm::LD_SLSQP> sviOptimizer{
         uv::models::svi::detail::makeNLoptConfig(sviConfig)

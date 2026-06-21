@@ -3,6 +3,7 @@
 #include "Math/Functions/Volatility.hpp"
 #include "Math/Functions/Black.hpp"
 
+#include "Base/Errors/Errors.hpp"
 #include "Core/Matrix.hpp"
 #include "Core/VolSurface.hpp"
 
@@ -36,6 +37,40 @@ TEST(MathVolatility, LogKfVarianceAndTotalVarianceAreComputedElementwise)
     EXPECT_DOUBLE_EQ(variances[2], 0.09);
     EXPECT_DOUBLE_EQ(totalVariances[0], 0.08);
     EXPECT_DOUBLE_EQ(totalVariances[2], 0.18);
+}
+
+TEST(MathVolatility, LogKfRejectsZeroForwardAndStrike)
+{
+    const std::vector<double> validStrikes{90.0, 100.0, 110.0};
+    std::vector<double> logKF(3);
+
+    EXPECT_THROW(
+        uv::math::vol::logKF(
+            std::span<double>{logKF},
+            0.0,
+            std::span<const double>{validStrikes}
+        ),
+        uv::errors::UnifiedVolError
+    );
+
+    const std::vector<double> zeroStrike{90.0, 0.0, 110.0};
+    EXPECT_THROW(
+        uv::math::vol::logKF(
+            std::span<double>{logKF},
+            100.0,
+            std::span<const double>{zeroStrike}
+        ),
+        uv::errors::UnifiedVolError
+    );
+
+    EXPECT_THROW(
+        static_cast<void>(uv::math::vol::logKF(100.0, 0.0)),
+        uv::errors::UnifiedVolError
+    );
+    EXPECT_THROW(
+        static_cast<void>(uv::math::vol::logKF(0.0, 100.0)),
+        uv::errors::UnifiedVolError
+    );
 }
 
 TEST(MathVolatility, VolFromTotalVarianceInvertsTotalVariance)

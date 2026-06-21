@@ -1,6 +1,6 @@
 ﻿// SPDX-License-Identifier: Apache-2.0
 
-#include "IO/Report.hpp"
+#include "IO/Console/Report.hpp"
 #include <UnifiedVol.hpp>
 #include <cstdlib>
 #include <exception>
@@ -30,7 +30,8 @@ int main(int argc, char* argv[])
 
         // -------------- Market data -------------
 
-        const core::MarketState<Real> marketState{io::load::marketState(path, marketData)
+        const core::MarketState<Real> marketState{
+            io::csv::load::marketState(path, marketData)
         };
 
         io::report::volatility(marketState);

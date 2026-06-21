@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "IO/Load.hpp"
+#include "IO/CSV/Load.hpp"
 #include "Models/Heston/BuildSurface.hpp"
 #include "Models/Heston/Calibrate/Config.hpp"
 #include "Models/SVI/BuildSurface.hpp"
@@ -36,7 +36,7 @@ TEST(PerformanceExamplePipeline, BuildsSVIAndHestonSurfacesWithinLatencyBudget)
         .verbosity = uv::opt::ceres::Verbosity::None
     };
 
-    const auto marketState = uv::io::load::marketState(path, marketData);
+    const auto marketState = uv::io::csv::load::marketState(path, marketData);
     std::size_t sviMaturities{};
     std::size_t hestonStrikes{};
 

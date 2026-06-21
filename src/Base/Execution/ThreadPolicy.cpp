@@ -5,14 +5,32 @@
 
 #include <algorithm>
 #include <format>
+#include <limits>
 #include <thread>
 
 namespace uv::execution
 {
+namespace detail
+{
+int availableThreads() noexcept
+{
+    const unsigned int hw{std::thread::hardware_concurrency()};
+    if (hw == 0u)
+    {
+        return 1;
+    }
+
+    const unsigned int capped{std::min<unsigned int>(
+        hw,
+        static_cast<unsigned int>(std::numeric_limits<int>::max())
+    )};
+    return static_cast<int>(capped);
+}
+} // namespace detail
+
 int requestThreads(int numRequested)
 {
-    unsigned int hw{std::thread::hardware_concurrency()};
-    int numAvailable = (hw == 0u) ? 1 : hw;
+    const int numAvailable{detail::availableThreads()};
 
     if (numRequested < 0)
     {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "IO/JSON/Read.hpp"
+#include "Base/Errors/Errors.hpp"
 
 #include <cctype>
 #include <cmath>
@@ -8,13 +9,30 @@
 #include <cstdlib>
 #include <fstream>
 #include <iterator>
-#include <stdexcept>
+#include <source_location>
+#include <string_view>
 #include <utility>
 
 namespace uv::io::json
 {
 namespace
 {
+[[noreturn]] void raiseDataFormat(
+    std::string_view message,
+    std::source_location loc = std::source_location::current()
+)
+{
+    errors::raise(errors::ErrorCode::DataFormat, message, loc);
+}
+
+[[noreturn]] void raiseFileIO(
+    std::string_view message,
+    std::source_location loc = std::source_location::current()
+)
+{
+    errors::raise(errors::ErrorCode::FileIO, message, loc);
+}
+
 class Parser
 {
   public:
@@ -28,7 +46,7 @@ class Parser
         Value value{parseValue()};
         skipWhitespace();
         if (pos_ != text_.size())
-            throw std::runtime_error("Unexpected trailing content in JSON");
+            raiseDataFormat("Unexpected trailing content in JSON");
         return value;
     }
 
@@ -37,7 +55,7 @@ class Parser
     {
         skipWhitespace();
         if (pos_ == text_.size())
-            throw std::runtime_error("Unexpected end of JSON");
+            raiseDataFormat("Unexpected end of JSON");
 
         if (text_[pos_] == '{')
             return parseObject();
@@ -69,7 +87,7 @@ class Parser
             expect(':');
             const bool inserted{value.object.emplace(key, parseValue()).second};
             if (!inserted)
-                throw std::runtime_error("Duplicate JSON key: " + key);
+                raiseDataFormat("Duplicate JSON key: " + key);
             skipWhitespace();
             if (consume('}'))
                 return value;
@@ -123,7 +141,7 @@ class Parser
         char* end{};
         const double number{std::strtod(begin, &end)};
         if (end != text_.c_str() + pos_ || !std::isfinite(number))
-            throw std::runtime_error("Expected finite numeric JSON value");
+            raiseDataFormat("Expected finite numeric JSON value");
 
         Value value;
         value.type = Value::Type::Number;
@@ -150,7 +168,7 @@ class Parser
             if (c == '"')
                 return out;
             if (static_cast<unsigned char>(c) < 0x20U)
-                throw std::runtime_error("Control character in JSON string");
+                raiseDataFormat("Control character in JSON string");
             if (c == '\\')
             {
                 out.push_back(parseEscape());
@@ -158,13 +176,13 @@ class Parser
             }
             out.push_back(c);
         }
-        throw std::runtime_error("Unterminated JSON string");
+        raiseDataFormat("Unterminated JSON string");
     }
 
     char parseEscape()
     {
         if (pos_ == text_.size())
-            throw std::runtime_error("Unfinished escape in JSON string");
+            raiseDataFormat("Unfinished escape in JSON string");
 
         const char c{text_[pos_++]};
         switch (c)
@@ -184,7 +202,7 @@ class Parser
         case 't':
             return '\t';
         default:
-            throw std::runtime_error("Unsupported escape in JSON string");
+            raiseDataFormat("Unsupported escape in JSON string");
         }
     }
 
@@ -194,13 +212,13 @@ class Parser
             ++pos_;
 
         if (pos_ == text_.size())
-            throw std::runtime_error("Expected numeric JSON value");
+            raiseDataFormat("Expected numeric JSON value");
 
         if (text_[pos_] == '0')
         {
             ++pos_;
             if (pos_ < text_.size() && isDigit(text_[pos_]))
-                throw std::runtime_error("Leading zero in JSON number");
+                raiseDataFormat("Leading zero in JSON number");
         }
         else if (isDigitOneToNine(text_[pos_]))
         {
@@ -209,15 +227,14 @@ class Parser
         }
         else
         {
-            throw std::runtime_error("Expected numeric JSON value");
+            raiseDataFormat("Expected numeric JSON value");
         }
 
         if (pos_ < text_.size() && text_[pos_] == '.')
         {
             ++pos_;
             if (pos_ == text_.size() || !isDigit(text_[pos_]))
-                throw std::runtime_error("Expected digit after JSON number decimal point"
-                );
+                raiseDataFormat("Expected digit after JSON number decimal point");
             while (pos_ < text_.size() && isDigit(text_[pos_]))
                 ++pos_;
         }
@@ -228,7 +245,7 @@ class Parser
             if (pos_ < text_.size() && (text_[pos_] == '+' || text_[pos_] == '-'))
                 ++pos_;
             if (pos_ == text_.size() || !isDigit(text_[pos_]))
-                throw std::runtime_error("Expected digit in JSON number exponent");
+                raiseDataFormat("Expected digit in JSON number exponent");
             while (pos_ < text_.size() && isDigit(text_[pos_]))
                 ++pos_;
         }
@@ -263,7 +280,7 @@ class Parser
     void expect(const char c)
     {
         if (!consume(c))
-            throw std::runtime_error("Unexpected token in JSON");
+            raiseDataFormat("Unexpected token in JSON");
     }
 
     void skipWhitespace()
@@ -281,32 +298,32 @@ class Parser
 const Value& Value::at(const std::string& key) const
 {
     if (type != Type::Object)
-        throw std::runtime_error("Expected JSON object");
+        raiseDataFormat("Expected JSON object");
 
     const auto it = object.find(key);
     if (it == object.end())
-        throw std::runtime_error("Missing JSON key: " + key);
+        raiseDataFormat("Missing JSON key: " + key);
     return it->second;
 }
 
 bool Value::asBool() const
 {
     if (type != Type::Bool)
-        throw std::runtime_error("Expected boolean JSON value");
+        raiseDataFormat("Expected boolean JSON value");
     return boolean;
 }
 
 double Value::asNumber() const
 {
     if (type != Type::Number)
-        throw std::runtime_error("Expected numeric JSON value");
+        raiseDataFormat("Expected numeric JSON value");
     return number;
 }
 
 const std::string& Value::asString() const
 {
     if (type != Type::String)
-        throw std::runtime_error("Expected string JSON value");
+        raiseDataFormat("Expected string JSON value");
     return string;
 }
 
@@ -319,7 +336,7 @@ Value read(const std::filesystem::path& path)
 {
     std::ifstream in{path};
     if (!in)
-        throw std::runtime_error("Could not open JSON file: " + path.string());
+        raiseFileIO("Could not open JSON file: " + path.string());
 
     std::string text{
         std::istreambuf_iterator<char>{in},

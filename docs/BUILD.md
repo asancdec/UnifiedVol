@@ -76,6 +76,30 @@ cmake --preset linux-gcc-debug
 cmake --build --preset linux-gcc-debug
 ```
 
+## Static Analysis
+
+Configure the debug build first so `clang-tidy` can use
+`build/linux-gcc-debug/compile_commands.json`:
+
+```bash
+cmake --preset linux-gcc-debug
+```
+
+Run `clang-tidy` with the repository `.clang-tidy` configuration:
+
+```bash
+find src tests examples -name '*.cpp' -print0 \
+  | xargs -0 clang-tidy \
+      -p build/linux-gcc-debug \
+      --quiet \
+      --extra-arg=-Wno-everything \
+  2>&1 \
+  | sed -E '/^[0-9]+ warnings generated\.$/d'
+```
+
+Run `clang-tidy` on `.cpp` translation units only. First-party headers and
+`.inl` files are still checked when included by those translation units.
+
 ## Tests
 
 The test suite is split into **unit**, **integration**, **regression**, and

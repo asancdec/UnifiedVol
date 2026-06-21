@@ -16,7 +16,7 @@ template <std::floating_point T, opt::nlopt::Algorithm Algo> void addCalendarCon
     const Params<T>* prevParams,
     std::span<const double> logKF,
     const SliceData& sliceData
-) noexcept
+)
 {
     if (!prevParams)
         return;
@@ -43,7 +43,7 @@ template <opt::nlopt::Algorithm Algo> void addConvexityConstraints(
     ConvexityMContext& convexityCtx,
     std::span<const double> logKF,
     double atmTotalVariance
-) noexcept
+)
 {
     convexityCtx.logKF = logKF;
     convexityCtx.atmTotalVariance = atmTotalVariance;
@@ -53,7 +53,7 @@ template <opt::nlopt::Algorithm Algo> void addConvexityConstraints(
 }
 
 template <opt::nlopt::Algorithm Algo>
-void addWMinConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept
+void addWMinConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
 {
     optimizer.addInequalityConstraint(
         +[](unsigned, const double* x, double* grad, void* data) noexcept -> double
@@ -90,7 +90,7 @@ void addWMinConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept
     );
 }
 template <opt::nlopt::Algorithm Algo>
-void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept
+void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
 {
 
     optimizer.addInequalityConstraint(
@@ -139,7 +139,7 @@ void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept
 }
 
 template <opt::nlopt::Algorithm Algo>
-void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer) noexcept
+void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
 {
 
     optimizer.addInequalityConstraint(

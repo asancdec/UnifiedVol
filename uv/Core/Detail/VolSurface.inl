@@ -30,7 +30,9 @@ template <std::floating_point T> VolSurface<T>::VolSurface(
     REQUIRE_FINITE(forwards_);
 
     REQUIRE_NON_NEGATIVE(maturities_);
-    REQUIRE_NON_NEGATIVE(moneyness_);
+    REQUIRE_POSITIVE(strikes_);
+    REQUIRE_POSITIVE(forwards_);
+    REQUIRE_POSITIVE(moneyness_);
 
     REQUIRE_STRICTLY_INCREASING(maturities_);
     REQUIRE_STRICTLY_INCREASING(strikes_);

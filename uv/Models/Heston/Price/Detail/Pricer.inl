@@ -1,5 +1,6 @@
 ﻿// SPDX-License-Identifier: Apache-2.0
 
+#include "Base/Errors/Errors.hpp"
 #include "Base/Macros/Require.hpp"
 #include "Math/Functions/Primitive.hpp"
 #include "Models/Heston/Price/Detail/Integrand.hpp"
@@ -41,8 +42,6 @@ void Pricer<T, N>::validateAlphaDomain() const
 template <std::floating_point T, std::size_t N>
 void Pricer<T, N>::validateCallPrice(T t, T dF, T F, T K) const
 {
-    REQUIRE_SET(params_);
-
     REQUIRE_FINITE(t);
     REQUIRE_FINITE(dF);
     REQUIRE_FINITE(F);
@@ -123,6 +122,11 @@ T Pricer<T, N>::callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F
 template <std::floating_point T, std::size_t N>
 T Pricer<T, N>::callPrice(T t, T dF, T F, T K, bool doValidate) const
 {
+    if (!params_.has_value()) [[unlikely]]
+    {
+        errors::raise(errors::ErrorCode::InvalidState, "params_ must be set");
+    }
+
     if (doValidate)
         validateCallPrice(t, dF, F, K);
 

@@ -82,7 +82,7 @@ std::array<T, N> generateUniformGrid(T xMin, T xMax)
     const T range{xMax - xMin};
     const T stepSize{range / static_cast<T>(N - 1)};
 
-    std::array<T, N> x;
+    std::array<T, N> x{};
 
     for (std::size_t i{0}; i < N; ++i)
     {

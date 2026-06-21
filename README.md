@@ -35,7 +35,7 @@ See the `examples/` directory for complete working programs.
 // -------------- Market data -------------
 
 // Build
-const core::MarketState<Real> marketState{io::load::marketState(path, marketData)
+const core::MarketState<Real> marketState{io::csv::load::marketState(path, marketData)
 };
 
 // Inspect

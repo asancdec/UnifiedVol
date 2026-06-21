@@ -4,5 +4,10 @@
 
 namespace uv::execution
 {
-int requestThreads(int numRequested);
-}
+namespace detail
+{
+int availableThreads() noexcept;
+} // namespace detail
+
+int requestThreads(int);
+} // namespace uv::execution

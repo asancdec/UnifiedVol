@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "IO/JSON/Read.hpp"
+#include "Base/Errors/Errors.hpp"
 #include "Support/TempFile.hpp"
 
 #include <filesystem>
 #include <gtest/gtest.h>
-#include <stdexcept>
 
 TEST(UnitIOJSONRead, ParsesObjectsArraysAndScalarValues)
 {
@@ -58,25 +58,25 @@ TEST(UnitIOJSONRead, RejectsMalformedJsonAndTypeMismatches)
 {
     EXPECT_THROW(
         static_cast<void>(uv::io::json::parse(R"({"x": [1, 2,]})")),
-        std::runtime_error
+        uv::errors::UnifiedVolError
     );
 
     const auto root = uv::io::json::parse(R"({"x": "not a number"})");
-    EXPECT_THROW(static_cast<void>(root.at("x").asNumber()), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(root.at("missing")), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(root.at("x").asNumber()), uv::errors::UnifiedVolError);
+    EXPECT_THROW(static_cast<void>(root.at("missing")), uv::errors::UnifiedVolError);
 
-    EXPECT_THROW(static_cast<void>(root.at("x").asBool()), std::runtime_error);
+    EXPECT_THROW(static_cast<void>(root.at("x").asBool()), uv::errors::UnifiedVolError);
     EXPECT_THROW(
         static_cast<void>(uv::io::json::parse("1").asString()),
-        std::runtime_error
+        uv::errors::UnifiedVolError
     );
     EXPECT_THROW(
         static_cast<void>(uv::io::json::parse("true").asNumber()),
-        std::runtime_error
+        uv::errors::UnifiedVolError
     );
     EXPECT_THROW(
         static_cast<void>(uv::io::json::parse("[1]").at("x")),
-        std::runtime_error
+        uv::errors::UnifiedVolError
     );
 }
 
@@ -87,19 +87,22 @@ TEST(UnitIOJSONRead, RejectsMissingEmptyAndMalformedFiles)
             std::filesystem::temp_directory_path() /
             "unifiedvol_json_missing_fixture.json"
         )),
-        std::runtime_error
+        uv::errors::UnifiedVolError
     );
 
     const auto emptyPath =
         uv::tests::writeTempFile("unifiedvol_json_empty_fixture.json", "");
-    EXPECT_THROW(static_cast<void>(uv::io::json::read(emptyPath)), std::runtime_error);
+    EXPECT_THROW(
+        static_cast<void>(uv::io::json::read(emptyPath)),
+        uv::errors::UnifiedVolError
+    );
 }
 
 TEST(UnitIOJSONRead, RejectsDuplicateObjectKeys)
 {
     EXPECT_THROW(
         static_cast<void>(uv::io::json::parse(R"({"x": 1, "x": 2})")),
-        std::runtime_error
+        uv::errors::UnifiedVolError
     );
 }
 
@@ -107,7 +110,7 @@ TEST(UnitIOJSONRead, RejectsTrailingContent)
 {
     EXPECT_THROW(
         static_cast<void>(uv::io::json::parse(R"({"x": 1} trailing)")),
-        std::runtime_error
+        uv::errors::UnifiedVolError
     );
 }
 
@@ -115,14 +118,52 @@ TEST(UnitIOJSONRead, RejectsUnsupportedUnicodeEscapes)
 {
     EXPECT_THROW(
         static_cast<void>(uv::io::json::parse(R"({"text": "\u1234"})")),
-        std::runtime_error
+        uv::errors::UnifiedVolError
     );
 }
 
 TEST(UnitIOJSONRead, RejectsInvalidNumberForms)
 {
-    EXPECT_THROW(static_cast<void>(uv::io::json::parse("01")), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(uv::io::json::parse("+1")), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(uv::io::json::parse("1.")), std::runtime_error);
-    EXPECT_THROW(static_cast<void>(uv::io::json::parse("1e")), std::runtime_error);
+    EXPECT_THROW(
+        static_cast<void>(uv::io::json::parse("01")),
+        uv::errors::UnifiedVolError
+    );
+    EXPECT_THROW(
+        static_cast<void>(uv::io::json::parse("+1")),
+        uv::errors::UnifiedVolError
+    );
+    EXPECT_THROW(
+        static_cast<void>(uv::io::json::parse("1.")),
+        uv::errors::UnifiedVolError
+    );
+    EXPECT_THROW(
+        static_cast<void>(uv::io::json::parse("1e")),
+        uv::errors::UnifiedVolError
+    );
+}
+
+TEST(UnitIOJSONRead, UsesSpecificUnifiedVolErrorCodes)
+{
+    try
+    {
+        static_cast<void>(uv::io::json::parse(R"({"x": [1, 2,]})"));
+        FAIL() << "Expected malformed JSON to throw";
+    }
+    catch (const uv::errors::UnifiedVolError& e)
+    {
+        EXPECT_EQ(e.code(), uv::errors::ErrorCode::DataFormat);
+    }
+
+    try
+    {
+        static_cast<void>(uv::io::json::read(
+            std::filesystem::temp_directory_path() /
+            "unifiedvol_json_missing_code_fixture.json"
+        ));
+        FAIL() << "Expected missing JSON file to throw";
+    }
+    catch (const uv::errors::UnifiedVolError& e)
+    {
+        EXPECT_EQ(e.code(), uv::errors::ErrorCode::FileIO);
+    }
 }

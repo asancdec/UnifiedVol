@@ -2,14 +2,18 @@
 
 #pragma once
 
+#include "Base/Types.hpp"
+#include "Core/Matrix.hpp"
+
 #include <concepts>
 #include <cstddef>
 #include <istream>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
-namespace uv::io::csv
+namespace uv::io::csv::detail
 {
 template <class T> using StdVector = std::vector<T>;
 
@@ -20,9 +24,9 @@ struct Options
     bool skipBlankLines{true};
 };
 
-std::string_view trimView(std::string_view s) noexcept;
+std::string_view trimView(std::string_view) noexcept;
 
-StdVector<std::string> splitComma(std::string_view line);
+StdVector<std::string> splitComma(std::string_view);
 
 template <std::floating_point T> T parseNumberCellOrThrow(
     std::string_view raw,
@@ -48,6 +52,9 @@ LabeledDense<T, Vector> readLabeledDenseOrThrow(
     std::string_view filenameForErrors,
     Options opt = {}
 );
-} // namespace uv::io::csv
+
+template <std::floating_point T> std::tuple<Vector<T>, Vector<T>, core::Matrix<T>>
+readLabeledMatrixCsv(const std::string& filename, const Options& opt = {});
+} // namespace uv::io::csv::detail
 
 #include "IO/CSV/Detail/Read.inl"

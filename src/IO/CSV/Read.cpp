@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "IO/CSV/Read.hpp"
+#include "IO/CSV/Detail/Read.hpp"
 
 #include <cctype>
 #include <sstream>
 
-namespace uv::io::csv
+namespace uv::io::csv::detail
 {
 
 std::string_view trimView(std::string_view s) noexcept
@@ -47,4 +47,4 @@ StdVector<std::string> splitComma(std::string_view line)
     return out;
 }
 
-} // namespace uv::io::csv
+} // namespace uv::io::csv::detail

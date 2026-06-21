@@ -16,21 +16,70 @@
  */
 
 #include "Base/Macros/Inform.hpp"
-#include "Core/Matrix.hpp"
-#include "IO/Detail/Print.hpp"
 #include "Math/Functions/Black.hpp"
 #include "Math/Functions/Volatility.hpp"
 
+#include <cstddef>
 #include <format>
+#include <iomanip>
+#include <sstream>
 
 namespace uv::io::report
 {
+namespace detail
+{
+template <typename HeaderVec, typename RowLabels, typename Matrix> void printMatrix(
+    std::string_view title,
+    const HeaderVec& header,
+    const RowLabels& rowLabels,
+    const Matrix& M,
+    unsigned int headerPrec,
+    unsigned int rowLabelPrec,
+    unsigned int valuePrec
+)
+{
+    std::ostringstream oss;
+    oss << '\n' << title << '\t';
+
+    oss << std::fixed << std::setprecision(precision(headerPrec));
+    for (const auto& h : header)
+        oss << h << '\t';
+    oss << '\n';
+
+    for (std::size_t i = 0; i < M.rows(); ++i)
+    {
+        oss << std::fixed << std::setprecision(precision(rowLabelPrec)) << rowLabels[i]
+            << '\t';
+
+        oss << std::fixed << std::setprecision(precision(valuePrec));
+        for (const auto& v : M[i])
+            oss << v << '\t';
+
+        oss << '\n';
+    }
+
+    INFO(oss.str());
+}
+
+template <typename Vector> void printVector(const Vector& v, unsigned int valuePrec)
+{
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(precision(valuePrec));
+
+    for (const auto& x : v)
+        oss << x << '\t';
+
+    oss << '\n';
+
+    INFO(oss.str());
+}
+} // namespace detail
 
 template <std::floating_point T>
 void volatility(const core::VolSurface<T>& volSurface, unsigned int valuePrec)
 {
 
-    utils::printMatrix(
+    detail::printMatrix(
         "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
@@ -51,7 +100,7 @@ template <std::floating_point T>
 void totalVariance(const core::VolSurface<T>& volSurface, unsigned int valuePrec)
 {
 
-    utils::printMatrix(
+    detail::printMatrix(
         "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
@@ -72,7 +121,7 @@ template <std::floating_point T>
 void variance(const core::VolSurface<T>& volSurface, unsigned int valuePrec)
 {
 
-    utils::printMatrix(
+    detail::printMatrix(
         "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
@@ -92,7 +141,7 @@ template <std::floating_point T>
 void logKF(const core::VolSurface<T>& volSurface, unsigned int valuePrec)
 {
 
-    utils::printMatrix(
+    detail::printMatrix(
         "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
@@ -114,7 +163,7 @@ template <std::floating_point T> void callPrices(
     unsigned int valuePrec
 )
 {
-    utils::printMatrix(
+    detail::printMatrix(
         "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
@@ -130,7 +179,7 @@ void callPrices(const core::MarketState<T>& marketState, unsigned int valuePrec)
 {
     const core::VolSurface<T>& volSurface{marketState.volSurface};
 
-    utils::printMatrix(
+    detail::printMatrix(
         "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
@@ -147,7 +196,7 @@ template <std::floating_point T> void putPrices(
     unsigned int valuePrec
 )
 {
-    utils::printMatrix(
+    detail::printMatrix(
         "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),
@@ -163,7 +212,7 @@ void putPrices(const core::MarketState<T>& marketState, unsigned int valuePrec)
 {
     const core::VolSurface<T>& volSurface{marketState.volSurface};
 
-    utils::printMatrix(
+    detail::printMatrix(
         "T\\K/S",
         volSurface.moneyness(),
         volSurface.maturities(),

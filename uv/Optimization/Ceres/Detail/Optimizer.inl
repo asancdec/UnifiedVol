@@ -2,7 +2,7 @@
 
 #include "Base/Execution/ThreadPolicy.hpp"
 #include "Base/Macros/Require.hpp"
-#include "IO/ConsoleRedirect.hpp"
+#include "IO/Console/Redirect.hpp"
 #include "Optimization/Ceres/Config.hpp"
 #include "Optimization/Helpers.hpp"
 

@@ -31,8 +31,8 @@ struct CalendarMContext
 {
     std::span<const double> logKF;
     std::span<const double> prevWk;
-    double atmTotalVariance;
-    double eps;
+    double atmTotalVariance{};
+    double eps{};
 };
 
 struct SliceConstraints

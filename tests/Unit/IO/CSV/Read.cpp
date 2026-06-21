@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "IO/CSV/Read.hpp"
+#include "IO/CSV/Detail/Read.hpp"
 #include "Base/Errors/Errors.hpp"
 
 #include <gtest/gtest.h>
 #include <sstream>
 
+namespace csv_detail = uv::io::csv::detail;
+
 TEST(UnitIOCSVRead, TrimsAndSplitsCommaSeparatedCells)
 {
-    EXPECT_EQ(uv::io::csv::trimView(" \t 12.5 \n "), "12.5");
+    EXPECT_EQ(csv_detail::trimView(" \t 12.5 \n "), "12.5");
 
-    const auto cells = uv::io::csv::splitComma("a,b,");
+    const auto cells = csv_detail::splitComma("a,b,");
 
     ASSERT_EQ(cells.size(), 3U);
     EXPECT_EQ(cells[0], "a");
@@ -21,11 +23,11 @@ TEST(UnitIOCSVRead, TrimsAndSplitsCommaSeparatedCells)
 TEST(UnitIOCSVRead, ParsesNumbersAndPercentCells)
 {
     EXPECT_DOUBLE_EQ(
-        uv::io::csv::parseNumberCellOrThrow<double>(" 12.5% ", "cell", 1, 1),
+        csv_detail::parseNumberCellOrThrow<double>(" 12.5% ", "cell", 1, 1),
         0.125
     );
     EXPECT_DOUBLE_EQ(
-        uv::io::csv::parseNumberCellOrThrow<double>("-3.25", "cell", 1, 2),
+        csv_detail::parseNumberCellOrThrow<double>("-3.25", "cell", 1, 2),
         -3.25
     );
 }
@@ -33,7 +35,7 @@ TEST(UnitIOCSVRead, ParsesNumbersAndPercentCells)
 TEST(UnitIOCSVRead, RejectsPercentCellsWhenDisabled)
 {
     EXPECT_THROW(
-        uv::io::csv::parseNumberCellOrThrow<
+        csv_detail::parseNumberCellOrThrow<
             double>("12.5%", "cell", 1, 1, {.allowPercent = false}),
         uv::errors::UnifiedVolError
     );
@@ -45,7 +47,7 @@ TEST(UnitIOCSVRead, ReadsLabeledDenseMatrix)
                            "0.5,20%,21%\n"
                            "1.0,22%,23%\n"};
 
-    const auto dense = uv::io::csv::readLabeledDenseOrThrow<double>(csv, "memory.csv");
+    const auto dense = csv_detail::readLabeledDenseOrThrow<double>(csv, "memory.csv");
 
     EXPECT_EQ(dense.rows, 2U);
     EXPECT_EQ(dense.cols, 2U);
@@ -58,7 +60,7 @@ TEST(UnitIOCSVRead, ReadsLabeledDenseMatrix)
 TEST(UnitIOCSVRead, RejectsMalformedNumericCells)
 {
     EXPECT_THROW(
-        uv::io::csv::parseNumberCellOrThrow<double>("abc", "cell", 2, 3),
+        csv_detail::parseNumberCellOrThrow<double>("abc", "cell", 2, 3),
         uv::errors::UnifiedVolError
     );
 }
@@ -66,11 +68,11 @@ TEST(UnitIOCSVRead, RejectsMalformedNumericCells)
 TEST(UnitIOCSVRead, RejectsEmptyAndLonelyPercentCells)
 {
     EXPECT_THROW(
-        uv::io::csv::parseNumberCellOrThrow<double>("   ", "cell", 2, 3),
+        csv_detail::parseNumberCellOrThrow<double>("   ", "cell", 2, 3),
         uv::errors::UnifiedVolError
     );
     EXPECT_THROW(
-        uv::io::csv::parseNumberCellOrThrow<double>(" % ", "cell", 2, 3),
+        csv_detail::parseNumberCellOrThrow<double>(" % ", "cell", 2, 3),
         uv::errors::UnifiedVolError
     );
 }
@@ -81,7 +83,7 @@ TEST(UnitIOCSVRead, HandlesBlankLinesWhenConfigured)
                            "\n"
                            "0.5,20%\n"};
 
-    const auto dense = uv::io::csv::readLabeledDenseOrThrow<double>(csv, "memory.csv");
+    const auto dense = csv_detail::readLabeledDenseOrThrow<double>(csv, "memory.csv");
 
     EXPECT_EQ(dense.rows, 1U);
     EXPECT_EQ(dense.cols, 1U);
@@ -95,7 +97,7 @@ TEST(UnitIOCSVRead, RejectsBlankLinesWhenDisabled)
                            "0.5,20%\n"};
 
     EXPECT_THROW(
-        uv::io::csv::readLabeledDenseOrThrow<double>(
+        csv_detail::readLabeledDenseOrThrow<double>(
             csv,
             "blank-lines-disabled.csv",
             {.skipBlankLines = false}
@@ -109,14 +111,14 @@ TEST(UnitIOCSVRead, RejectsMalformedLabels)
     {
         std::istringstream csv{"maturity,bad-strike\n0.5,20%\n"};
         EXPECT_THROW(
-            uv::io::csv::readLabeledDenseOrThrow<double>(csv, "bad-col-label.csv"),
+            csv_detail::readLabeledDenseOrThrow<double>(csv, "bad-col-label.csv"),
             uv::errors::UnifiedVolError
         );
     }
     {
         std::istringstream csv{"maturity,90\nbad-maturity,20%\n"};
         EXPECT_THROW(
-            uv::io::csv::readLabeledDenseOrThrow<double>(csv, "bad-row-label.csv"),
+            csv_detail::readLabeledDenseOrThrow<double>(csv, "bad-row-label.csv"),
             uv::errors::UnifiedVolError
         );
     }
@@ -127,28 +129,28 @@ TEST(UnitIOCSVRead, RejectsMalformedDenseCsv)
     {
         std::istringstream csv{};
         EXPECT_THROW(
-            uv::io::csv::readLabeledDenseOrThrow<double>(csv, "empty.csv"),
+            csv_detail::readLabeledDenseOrThrow<double>(csv, "empty.csv"),
             uv::errors::UnifiedVolError
         );
     }
     {
         std::istringstream csv{"maturity\n0.5\n"};
         EXPECT_THROW(
-            uv::io::csv::readLabeledDenseOrThrow<double>(csv, "bad-header.csv"),
+            csv_detail::readLabeledDenseOrThrow<double>(csv, "bad-header.csv"),
             uv::errors::UnifiedVolError
         );
     }
     {
         std::istringstream csv{"maturity,90,100\n0.5,20%\n"};
         EXPECT_THROW(
-            uv::io::csv::readLabeledDenseOrThrow<double>(csv, "short-row.csv"),
+            csv_detail::readLabeledDenseOrThrow<double>(csv, "short-row.csv"),
             uv::errors::UnifiedVolError
         );
     }
     {
         std::istringstream csv{"maturity,90\n0.5,20%,21%\n"};
         EXPECT_THROW(
-            uv::io::csv::readLabeledDenseOrThrow<double>(
+            csv_detail::readLabeledDenseOrThrow<double>(
                 csv,
                 "extra-cols.csv",
                 {.allowExtraCols = false}
@@ -159,14 +161,14 @@ TEST(UnitIOCSVRead, RejectsMalformedDenseCsv)
     {
         std::istringstream csv{"maturity,90,100\n0.5,20%,\n"};
         EXPECT_THROW(
-            uv::io::csv::readLabeledDenseOrThrow<double>(csv, "trailing-comma.csv"),
+            csv_detail::readLabeledDenseOrThrow<double>(csv, "trailing-comma.csv"),
             uv::errors::UnifiedVolError
         );
     }
     {
         std::istringstream csv{"maturity,90\n"};
         EXPECT_THROW(
-            uv::io::csv::readLabeledDenseOrThrow<double>(csv, "no-rows.csv"),
+            csv_detail::readLabeledDenseOrThrow<double>(csv, "no-rows.csv"),
             uv::errors::UnifiedVolError
         );
     }

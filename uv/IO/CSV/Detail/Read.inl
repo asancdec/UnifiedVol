@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "Base/Errors/Errors.hpp"
+#include "Base/Macros/Require.hpp"
 
-#include <cctype>
 #include <charconv>
+#include <fstream>
 #include <system_error>
+#include <utility>
 
-namespace uv::io::csv
+namespace uv::io::csv::detail
 {
 
 template <std::floating_point T> T parseNumberCellOrThrow(
@@ -173,4 +175,22 @@ readLabeledDenseOrThrow(std::istream& is, std::string_view filenameForErrors, Op
 
     return out;
 }
-} // namespace uv::io::csv
+
+template <std::floating_point T> std::tuple<Vector<T>, Vector<T>, core::Matrix<T>>
+readLabeledMatrixCsv(const std::string& filename, const Options& opt)
+{
+    std::ifstream file(filename);
+
+    REQUIRE_FILE_OPENED(file.is_open(), filename);
+
+    auto dense = readLabeledDenseOrThrow<T, Vector>(file, filename, opt);
+
+    core::Matrix<T> mat(dense.rows, dense.cols);
+
+    for (std::size_t i = 0; i < dense.rows; ++i)
+        for (std::size_t j = 0; j < dense.cols; ++j)
+            mat[i][j] = dense.values[i * dense.cols + j];
+
+    return {std::move(dense.rowLabels), std::move(dense.colLabels), std::move(mat)};
+}
+} // namespace uv::io::csv::detail

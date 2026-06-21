@@ -12,16 +12,11 @@ namespace uv::utils
 
 class StopWatch
 {
-  private:
-    std::chrono::high_resolution_clock::time_point startTime_;
-    std::chrono::high_resolution_clock::time_point endTime_;
-    bool running_{false};
-
+  public:
     StopWatch(const StopWatch&) = delete;
 
     StopWatch& operator=(const StopWatch&) = delete;
 
-  public:
     StopWatch();
 
     void StartStopWatch() noexcept;
@@ -36,6 +31,11 @@ class StopWatch
 
     template <typename Period = std::milli>
     void LogTime(std::string_view message) const noexcept;
+
+  private:
+    std::chrono::high_resolution_clock::time_point startTime_;
+    std::chrono::high_resolution_clock::time_point endTime_;
+    bool running_{false};
 };
 } // namespace uv::utils
 

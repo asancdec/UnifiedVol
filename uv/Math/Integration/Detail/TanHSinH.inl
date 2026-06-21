@@ -50,8 +50,8 @@ std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti(F&& f) const noexcept
         if (!anyA && !anyB)
             break;
 
-        std::array<T, M> ta;
-        std::array<T, M> tb;
+        std::array<T, M> ta{};
+        std::array<T, M> tb{};
         T fa{T(0.0)}, fb{T(0.0)};
         if (anyA)
         {
@@ -97,8 +97,8 @@ std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti(F&& f) const noexcept
         if (!anyA && !anyB)
             break;
 
-        std::array<T, M> ta;
-        std::array<T, M> tb;
+        std::array<T, M> ta{};
+        std::array<T, M> tb{};
         T fa{T(0.0)}, fb{T(0.0)};
         if (anyA)
         {

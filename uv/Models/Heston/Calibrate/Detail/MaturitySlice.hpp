@@ -14,9 +14,9 @@ namespace uv::models::heston::calibrate::detail
 
 struct MaturitySlice
 {
-    double t;
-    double dF;
-    double F;
+    double t{};
+    double dF{};
+    double F{};
     Vector<double> K;
     Vector<double> vol;
     Vector<double> w;

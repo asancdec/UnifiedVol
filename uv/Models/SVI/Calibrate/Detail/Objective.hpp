@@ -8,10 +8,8 @@
 namespace uv::models::svi::detail
 {
 
-template <opt::nlopt::Algorithm Algo> void setMinObjective(
-    opt::nlopt::Optimizer<4, Algo>& optimizer,
-    const ObjectiveContexts& ctx
-) noexcept;
+template <opt::nlopt::Algorithm Algo> void
+setMinObjective(opt::nlopt::Optimizer<4, Algo>& optimizer, const ObjectiveContexts& ctx);
 
 [[gnu::hot]] double
 objectiveThunk(unsigned /*n*/, const double* x, double* grad, void* data) noexcept;
