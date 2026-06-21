@@ -43,6 +43,7 @@ std::size_t readIndex(const json::Value& tree, const std::string& path)
 {
     const double value{tree.asNumber()};
     requireFinite(value, path);
+    // codeql-suppress[cpp/equality-on-floats]: value must be the same if not floored
     if (value < 0.0 || std::floor(value) != value)
         throw std::runtime_error("Expected non-negative integer JSON index at: " + path);
     return static_cast<std::size_t>(value);

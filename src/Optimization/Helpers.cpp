@@ -33,6 +33,8 @@ void clampBounds(
         const double after{std::clamp(before, lowerBounds[i], upperBounds[i])};
 
         WARN(
+            // codeql-suppress[cpp/equality-on-floats]: val must be the same if not
+            // clamped
             after != before,
             std::format(
                 "[Calib]: parameter [{}] initial guess = {:.4f} "
@@ -69,6 +71,8 @@ void clampLowerBounds(
         const double after{bound >= before ? bound : before};
 
         WARN(
+            // codeql-suppress[cpp/equality-on-floats]: val must be the same if not
+            // clamped
             after != before,
             std::format(
                 "[Calib]: parameter [{}] initial guess = {:.6f} "
@@ -104,6 +108,8 @@ void clampUpperBounds(
         const double after{bound <= before ? bound : before};
 
         WARN(
+            // codeql-suppress[cpp/equality-on-floats]: val must be the same if not
+            // clamped
             after != before,
             std::format(
                 "[Calib]: parameter [{}] initial guess = {:.6f} "
