@@ -17,7 +17,6 @@ UnifiedVol/
 ├── LICENSE.txt
 ├── README.md
 ├── citations.bib
-├── clang-tidy-report.txt
 ├── codecov.yml
 ├── data/
 │   ├── VolSurface_SPY_04072011.csv
@@ -335,6 +334,10 @@ UnifiedVol/
 │   │   │   │   │   ├── Integrand.inl
 │   │   │   │   │   ├── Pricer.inl
 │   │   │   │   ├── Pricer.hpp
+│   │   ├── LocalVol/
+│   │   │   ├── Detail/
+│   │   │   │   ├── LocalVolSurface.inl
+│   │   │   ├── LocalVolSurface.hpp
 │   │   ├── SVI/
 │   │   │   ├── BuildSurface.hpp
 │   │   │   ├── Calibrate/
