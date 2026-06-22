@@ -71,6 +71,7 @@ jobs:
       - name: Run Clang-Tidy
         run: |
           run-clang-tidy-18 \
+            -quiet \
             -p build/linux-gcc-release \
             -config-file .clang-tidy \
             -header-filter "^$(pwd)/(uv|src|tests|examples)/.*" \

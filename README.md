@@ -3,6 +3,7 @@
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
 [![C++ CI](https://github.com/asancdec/UnifiedVol/actions/workflows/cpp-ci.yml/badge.svg?branch=master)](https://github.com/asancdec/UnifiedVol/actions/workflows/cpp-ci.yml)
 [![CodeQL](https://github.com/asancdec/UnifiedVol/actions/workflows/codeql.yml/badge.svg)](https://github.com/asancdec/UnifiedVol/actions/workflows/codeql.yml)
+[![Clang-Tidy](https://github.com/asancdec/UnifiedVol/actions/workflows/clang-tidy.yml/badge.svg?branch=master)](https://github.com/asancdec/UnifiedVol/actions/workflows/clang-tidy.yml)
 [![codecov](https://codecov.io/gh/asancdec/UnifiedVol/branch/master/graph/badge.svg)](https://codecov.io/gh/asancdec/UnifiedVol)
 
 

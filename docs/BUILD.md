@@ -221,6 +221,7 @@ Run Clang-Tidy 18 with the repository `.clang-tidy` configuration:
 
 ```bash
 run-clang-tidy-18 \
+  -quiet \
   -p build/linux-gcc-release \
   -config-file .clang-tidy \
   -header-filter "^$(pwd)/(uv|src|tests|examples)/.*" \
