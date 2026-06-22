@@ -1,0 +1,73 @@
+name: Set up C++ toolchain
+description: Install build tools and configure pinned vcpkg and ccache caches
+
+inputs:
+  cache-key:
+    description: Cache namespace for the calling build
+    required: true
+  extra-packages:
+    description: Additional Ubuntu packages to install
+    required: false
+    default: ""
+  enable-ccache:
+    description: Whether to restore and configure ccache
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Install required packages
+      shell: bash
+      run: |
+        packages=(g++-13 ninja-build pkg-config)
+        if [[ "${{ inputs.enable-ccache }}" == "true" ]]; then
+          packages+=(ccache)
+        fi
+        if [[ -n "${{ inputs.extra-packages }}" ]]; then
+          read -r -a extras <<< "${{ inputs.extra-packages }}"
+          packages+=("${extras[@]}")
+        fi
+
+        missing=()
+        for package in "${packages[@]}"; do
+          if ! dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -q "ok installed"; then
+            missing+=("$package")
+          fi
+        done
+
+        if (( ${#missing[@]} )); then
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends "${missing[@]}"
+        fi
+
+    - name: Set up pinned vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgDirectory: ${{ github.workspace }}/.vcpkg
+        vcpkgJsonGlob: ${{ github.workspace }}/vcpkg.json
+
+    - name: Expose vcpkg to CMake presets
+      shell: bash
+      run: |
+        mkdir -p "$HOME/dev"
+        ln -sfnT "${{ github.workspace }}/.vcpkg" "$HOME/dev/vcpkg"
+
+    - name: Restore ccache
+      if: inputs.enable-ccache == 'true'
+      uses: actions/cache@v5
+      with:
+        path: ~/.cache/ccache
+        key: ccache-${{ runner.os }}-gcc13-${{ inputs.cache-key }}-${{ github.sha }}
+        restore-keys: |
+          ccache-${{ runner.os }}-gcc13-${{ inputs.cache-key }}-
+          ccache-${{ runner.os }}-gcc13-
+
+    - name: Configure ccache
+      if: inputs.enable-ccache == 'true'
+      shell: bash
+      run: |
+        ccache --set-config=base_dir="${{ github.workspace }}"
+        ccache --set-config=compression=true
+        ccache --set-config=max_size=300M
+        ccache --zero-stats

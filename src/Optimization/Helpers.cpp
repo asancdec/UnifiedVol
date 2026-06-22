@@ -160,13 +160,13 @@ void warnBoundsHit(
         }
     }
 
-    constexpr double absEps{1e-8};
-    constexpr double relEps{1e-8};
-
-    const auto near = [absEps, relEps](double v, double bd) noexcept
+    const auto near = [](double v, double bd) noexcept
     {
+        constexpr double absEps{1e-8};
+        constexpr double relEps{1e-8};
+
         return std::fabs(v - bd) <=
-               (absEps + relEps * (std::max)(std::fabs(v), std::fabs(bd)));
+               absEps + relEps * (std::max)(std::fabs(v), std::fabs(bd));
     };
 
     for (std::size_t i = 0; i < x.size(); ++i)

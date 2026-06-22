@@ -8,10 +8,16 @@ UnifiedVol/
 ├── .githooks/
 │   ├── pre-commit
 ├── .github/
+│   ├── actions/
+│   │   ├── setup-cpp/
+│   │   │   ├── action.yml
+│   ├── dependabot.yml
 │   ├── workflows/
+│   │   ├── ci.yml
 │   │   ├── clang-tidy.yml
 │   │   ├── codeql.yml
-│   │   ├── cpp-ci.yml
+│   │   ├── performance.yml
+│   │   ├── quality.yml
 ├── .gitignore
 ├── CMakeLists.txt
 ├── CMakePresets.json
@@ -59,6 +65,7 @@ UnifiedVol/
 │   │   │   ├── rationalcubic.cpp
 │   │   │   ├── rationalcubic.h
 │   │   │   ├── version.h
+├── sonar-project.properties
 ├── src/
 │   ├── Base/
 │   │   ├── Config.cpp

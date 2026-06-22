@@ -1,0 +1,97 @@
+name: Quality
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage-sonar:
+    name: Coverage and SonarQube
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up C++ toolchain
+        uses: ./.github/actions/setup-cpp
+        with:
+          cache-key: coverage
+          extra-packages: gcovr
+
+      - name: Configure coverage build
+        run: cmake --preset linux-gcc-coverage
+
+      - name: Build coverage tests
+        run: cmake --build --preset linux-gcc-coverage-tests --parallel
+
+      - name: Run coverage tests
+        run: ctest --preset linux-gcc-coverage-nonperformance
+
+      - name: Generate and enforce coverage report
+        run: |
+          mkdir -p build/linux-gcc-coverage/coverage
+          gcovr build/linux-gcc-coverage \
+            --root . \
+            --object-directory build/linux-gcc-coverage \
+            --filter '^uv/' \
+            --filter '^src/' \
+            --exclude '^tests/' \
+            --exclude '^external/' \
+            --exclude '^build/' \
+            --exclude '.*/vcpkg_installed/.*' \
+            --exclude '.*/usr/include/.*' \
+            --gcov-executable gcov-13 \
+            --gcov-ignore-parse-errors negative_hits.warn_once_per_file \
+            --gcov-ignore-errors=no_working_dir_found \
+            --html-details build/linux-gcc-coverage/coverage/coverage.html \
+            --xml-pretty \
+            --xml build/linux-gcc-coverage/coverage/coverage.xml \
+            --print-summary \
+            --fail-under-line 85
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        continue-on-error: true
+        with:
+          files: build/linux-gcc-coverage/coverage/coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: gcc
+          name: gcc-coverage
+          fail_ci_if_error: false
+
+      - name: Run SonarQube analysis
+        if: >-
+          github.actor != 'dependabot[bot]' &&
+          (github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository)
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: gcc-coverage-report
+          path: build/linux-gcc-coverage/coverage
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Report ccache statistics
+        if: always()
+        run: ccache --show-stats

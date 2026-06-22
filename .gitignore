@@ -52,6 +52,7 @@ CMakeUserPresets.json
 # ───────────────────────────────
 #  vcpkg (keep only manifest files)
 # ───────────────────────────────
+.vcpkg/
 vcpkg_installed/
 vcpkg_downloads/
 buildtrees/

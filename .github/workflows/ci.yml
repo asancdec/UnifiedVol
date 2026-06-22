@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  correctness:
+    name: GCC 13 release correctness
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up C++ toolchain
+        uses: ./.github/actions/setup-cpp
+        with:
+          cache-key: release
+
+      - name: Configure release build
+        run: cmake --preset linux-gcc-release
+
+      - name: Build correctness tests
+        run: cmake --build --preset linux-gcc-release-tests --parallel
+
+      - name: Run non-performance tests
+        run: ctest --preset linux-gcc-release-nonperformance
+
+      - name: Report ccache statistics
+        if: always()
+        run: ccache --show-stats

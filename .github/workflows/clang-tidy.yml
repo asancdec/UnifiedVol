@@ -20,53 +20,23 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
 
-    env:
-      VCPKG_BINARY_SOURCES: "clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite"
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           submodules: recursive
 
-      - name: Install build and analysis tools
-        run: |
-          sudo apt update
-          sudo apt install -y cmake ninja-build g++-13 clang-tidy-18 git curl zip unzip tar pkg-config ccache
-
-      - name: Install vcpkg
-        run: |
-          mkdir -p "$HOME/dev"
-          git clone https://github.com/microsoft/vcpkg.git "$HOME/dev/vcpkg"
-          "$HOME/dev/vcpkg/bootstrap-vcpkg.sh"
-
-      - name: Cache vcpkg binary packages
-        uses: actions/cache@v5
+      - name: Set up C++ toolchain
+        uses: ./.github/actions/setup-cpp
         with:
-          path: .vcpkg-cache
-          key: vcpkg-${{ runner.os }}-gcc13-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'CMakePresets.json') }}
-          restore-keys: |
-            vcpkg-${{ runner.os }}-gcc13-
-
-      - name: Prepare vcpkg binary cache
-        run: mkdir -p .vcpkg-cache
-
-      - name: Cache ccache
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-gcc13-${{ github.job }}-${{ hashFiles('CMakePresets.json', 'CMakeLists.txt', 'tests/CMakeLists.txt', 'src/**/*.cpp', 'uv/**/*.hpp', 'uv/**/*.inl', 'tests/**/*.cpp', 'tests/**/*.hpp', 'examples/**/*.cpp') }}
-          restore-keys: |
-            ccache-${{ runner.os }}-gcc13-${{ github.job }}-
-            ccache-${{ runner.os }}-gcc13-
+          cache-key: clang-tidy
+          extra-packages: clang-tidy-18
+          enable-ccache: "false"
 
       - name: Configure release build
         run: |
           cmake --preset linux-gcc-release \
             -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
-      - name: Build project
-        run: cmake --build --preset linux-gcc-release -j "$(nproc)"
 
       - name: Run Clang-Tidy
         run: |
