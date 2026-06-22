@@ -54,7 +54,22 @@ If you already cloned the repository without submodules, initialize them with:
 git submodule update --init --recursive
 ```
 
-## Standard Build
+## Build Options
+
+Common CMake options:
+
+- `UNIFIEDVOL_BUILD_TESTS=ON/OFF`
+- `UNIFIEDVOL_BUILD_EXAMPLE=ON/OFF`
+- `UNIFIEDVOL_ENABLE_COVERAGE=ON/OFF`
+- `UNIFIEDVOL_ENABLE_CCACHE=ON/OFF`
+
+Example:
+
+```bash
+cmake --preset linux-gcc-release -DUNIFIEDVOL_BUILD_EXAMPLE=OFF
+```
+
+### Standard Build
 
 Configure and build the standard release target:
 
@@ -69,36 +84,12 @@ Run the example executable:
 ./build/linux-gcc-release/unifiedvol_example
 ```
 
-## Debug Build
+### Debug Build
 
 ```bash
 cmake --preset linux-gcc-debug
 cmake --build --preset linux-gcc-debug
 ```
-
-## Static Analysis
-
-Configure the debug build first so `clang-tidy` can use
-`build/linux-gcc-debug/compile_commands.json`:
-
-```bash
-cmake --preset linux-gcc-debug
-```
-
-Run `clang-tidy` with the repository `.clang-tidy` configuration:
-
-```bash
-find src tests examples -name '*.cpp' -print0 \
-  | xargs -0 clang-tidy \
-      -p build/linux-gcc-debug \
-      --quiet \
-      --extra-arg=-Wno-everything \
-  2>&1 \
-  | sed -E '/^[0-9]+ warnings generated\.$/d'
-```
-
-Run `clang-tidy` on `.cpp` translation units only. First-party headers and
-`.inl` files are still checked when included by those translation units.
 
 ## Tests
 
@@ -110,7 +101,7 @@ The test suite is split into **unit**, **integration**, **regression**, and
 - **Regression tests:** compare results against committed reference values.
 - **Performance tests:** check speed, allocation behavior, and scalability guardrails.
 
-## Run Correctness Tests
+### Run Correctness Tests
 
 Correctness tests use the standard release build.
 
@@ -147,7 +138,7 @@ ctest --preset linux-gcc-release-integration --output-on-failure
 ctest --preset linux-gcc-release-regression --output-on-failure
 ```
 
-## Run Performance Tests
+### Run Performance Tests
 
 Performance tests use a separate performance-oriented build. This avoids mixing
 correctness testing with benchmark-style checks and keeps performance results
@@ -174,7 +165,7 @@ ctest --preset linux-gcc-perf-performance --output-on-failure
 Run performance tests on a quiet Linux machine when possible. The perf preset
 uses `RelWithDebInfo`, `-O3`, debug symbols, and frame pointers for profiling.
 
-## Run Coverage Tests
+### Run Coverage Tests
 
 Coverage is GCC-only in this project. The coverage preset enables
 `UNIFIEDVOL_ENABLE_COVERAGE`.
@@ -188,7 +179,7 @@ ctest --preset linux-gcc-coverage-nonperformance --output-on-failure
 Use local coverage-report tooling, such as `gcovr`, `gcov`, or `lcov`,
 to generate reports from `build/linux-gcc-coverage`.
 
-## Run All Tests
+### Run All Tests
 
 To run the full test set, run the correctness suite first, then the performance
 suite:
@@ -203,7 +194,7 @@ cmake --build --preset linux-gcc-perf-tests
 ctest --preset linux-gcc-perf-performance --output-on-failure
 ```
 
-## Run Test Executables Directly
+### Run Test Executables Directly
 
 The test executables can also be run directly:
 
@@ -214,17 +205,31 @@ The test executables can also be run directly:
 ./build/linux-gcc-perf/tests/unifiedvol_performance_tests
 ```
 
-## Build Options
+## Static Analysis
 
-Common CMake options:
-
-- `UNIFIEDVOL_BUILD_TESTS=ON/OFF`
-- `UNIFIEDVOL_BUILD_EXAMPLE=ON/OFF`
-- `UNIFIEDVOL_ENABLE_COVERAGE=ON/OFF`
-- `UNIFIEDVOL_ENABLE_CCACHE=ON/OFF`
-
-Example:
+Configure the release build and generate the compilation database used by
+`clang-tidy`:
 
 ```bash
-cmake --preset linux-gcc-release -DUNIFIEDVOL_BUILD_EXAMPLE=OFF
+cmake --preset linux-gcc-release \
+  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+cmake --build --preset linux-gcc-release -j "$(nproc)"
 ```
+
+Run Clang-Tidy 18 with the repository `.clang-tidy` configuration:
+
+```bash
+run-clang-tidy-18 \
+  -p build/linux-gcc-release \
+  -config-file .clang-tidy \
+  -header-filter "^$(pwd)/(uv|src|tests|examples)/.*" \
+  -warnings-as-errors '*' \
+  -j "$(nproc)" \
+  "^$(pwd)/(uv|src|tests|examples)/.*\.(c|cc|cpp|cxx)$"
+```
+
+Only first-party translation units are analysed directly, excluding vendored
+code under `external/`. First-party headers and `.inl` files are still checked
+when included by those translation units. All enabled findings are treated as
+errors.
