@@ -9,7 +9,7 @@
 
 namespace uv::opt::nlopt::detail
 {
-inline constexpr ::nlopt::algorithm toNlopt(Algorithm a) noexcept
+constexpr ::nlopt::algorithm toNlopt(Algorithm a) noexcept
 {
     switch (a)
     {

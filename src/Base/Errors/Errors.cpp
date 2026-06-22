@@ -12,23 +12,33 @@ namespace uv::errors
 
 std::string_view to_string(ErrorCode c) noexcept
 {
+    using enum ErrorCode;
+
     switch (c)
     {
-    case ErrorCode::InvalidArgument:
+    case InvalidArgument:
         return "InvalidArgument";
-    case ErrorCode::OutOfRange:
+    case OutOfRange:
         return "OutOfRange";
-    case ErrorCode::FileIO:
+    case FileIO:
         return "FileIO";
-    case ErrorCode::NotImplemented:
+    case NotImplemented:
         return "NotImplemented";
-    case ErrorCode::DataFormat:
+    case DataFormat:
         return "DataFormat";
-    case ErrorCode::CalibrationError:
+    case InvalidState:
+        return "InvalidState";
+    case CalibrationError:
         return "CalibrationError";
-    default:
-        return "Unknown";
+    case LinearAlgebra:
+        return "LinearAlgebra";
+    case Unreachable:
+        return "Unreachable";
+    case Unknown:
+        break;
     }
+
+    return "Unknown";
 }
 
 std::string

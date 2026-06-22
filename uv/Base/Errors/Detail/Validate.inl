@@ -519,8 +519,7 @@ void nonNull(const T* x, std::string_view what, std::source_location loc)
     }
 }
 
-template <typename Ptr>
-requires requires(const Ptr& p) { p.get(); }
+template <detail::PointerLike Ptr>
 void nonNull(const Ptr& p, std::string_view what, std::source_location loc)
 {
 
@@ -536,56 +535,44 @@ void set(const std::optional<T>& x, std::string_view what, std::source_location 
     }
 }
 
-template <typename A>
-requires requires(const A& a) { a.size(); }
+template <detail::Sized A>
 void sameSize(const A& a, std::size_t b, std::string_view what, std::source_location loc)
 {
-    if (static_cast<std::size_t>(a.size()) != b) [[unlikely]]
+    const std::size_t aSize{static_cast<std::size_t>(std::size(a))};
+    if (aSize != b) [[unlikely]]
     {
         raise(
             ErrorCode::InvalidArgument,
-            std::format(
-                "{} size mismatch: {} != {}",
-                what,
-                static_cast<std::size_t>(a.size()),
-                b
-            ),
+            std::format("{} size mismatch: {} != {}", what, aSize, b),
             loc
         );
     }
 }
 
-template <typename B>
-requires requires(const B& b) { b.size(); }
+template <detail::Sized B>
 void sameSize(std::size_t a, const B& b, std::string_view what, std::source_location loc)
 {
-    if (a != static_cast<std::size_t>(b.size())) [[unlikely]]
+    const std::size_t bSize{static_cast<std::size_t>(std::size(b))};
+    if (a != bSize) [[unlikely]]
     {
         raise(
             ErrorCode::InvalidArgument,
-            std::format(
-                "{} size mismatch: {} != {}",
-                what,
-                a,
-                static_cast<std::size_t>(b.size())
-            ),
+            std::format("{} size mismatch: {} != {}", what, a, bSize),
             loc
         );
     }
 }
 
-template <typename A, typename B>
-requires requires(const A& a, const B& b) {
-    a.size();
-    b.size();
-}
+template <detail::Sized A, detail::Sized B>
 void sameSize(const A& a, const B& b, std::string_view what, std::source_location loc)
 {
-    if (a.size() != b.size()) [[unlikely]]
+    const std::size_t aSize{static_cast<std::size_t>(std::size(a))};
+    const std::size_t bSize{static_cast<std::size_t>(std::size(b))};
+    if (aSize != bSize) [[unlikely]]
     {
         raise(
             ErrorCode::InvalidArgument,
-            std::format("{} size mismatch: {} != {}", what, a.size(), b.size()),
+            std::format("{} size mismatch: {} != {}", what, aSize, bSize),
             loc
         );
     }
@@ -612,16 +599,10 @@ template <typename T> void minSize(
     }
 }
 
-template <typename R>
-requires requires(const R& x) { x.size(); }
-void minSize(
-    const R& x,
-    std::size_t minSize,
-    std::string_view what,
-    std::source_location loc
-)
+template <detail::Sized R> void
+minSize(const R& x, std::size_t minSize, std::string_view what, std::source_location loc)
 {
-    const std::size_t size{static_cast<std::size_t>(x.size())};
+    const std::size_t size{static_cast<std::size_t>(std::size(x))};
 
     if (size < minSize) [[unlikely]]
     {

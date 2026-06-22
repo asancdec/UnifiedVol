@@ -18,9 +18,9 @@ template <std::floating_point T, class DerivPolicy, class EvalPolicy> struct Int
     using derivatives_type = DerivPolicy;
     using evaluator_type = EvalPolicy;
 
-    DerivPolicy deriv{};
+    [[no_unique_address]] DerivPolicy deriv{};
 
-    EvalPolicy eval{};
+    [[no_unique_address]] EvalPolicy eval{};
 
     void operator()(
         std::span<const T> x,

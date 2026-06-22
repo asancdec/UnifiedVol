@@ -85,8 +85,7 @@ class Parser
         {
             const std::string key{parseString()};
             expect(':');
-            const bool inserted{value.object.emplace(key, parseValue()).second};
-            if (!inserted)
+            if (!value.object.try_emplace(key, parseValue()).second)
                 raiseDataFormat("Duplicate JSON key: " + key);
             skipWhitespace();
             if (consume('}'))
@@ -208,6 +207,13 @@ class Parser
 
     void consumeJsonNumber()
     {
+        consumeIntegerPart();
+        consumeFractionPart();
+        consumeExponentPart();
+    }
+
+    void consumeIntegerPart()
+    {
         if (pos_ < text_.size() && text_[pos_] == '-')
             ++pos_;
 
@@ -219,36 +225,43 @@ class Parser
             ++pos_;
             if (pos_ < text_.size() && isDigit(text_[pos_]))
                 raiseDataFormat("Leading zero in JSON number");
+            return;
         }
-        else if (isDigitOneToNine(text_[pos_]))
-        {
-            while (pos_ < text_.size() && isDigit(text_[pos_]))
-                ++pos_;
-        }
-        else
-        {
+
+        if (!isDigitOneToNine(text_[pos_]))
             raiseDataFormat("Expected numeric JSON value");
-        }
 
-        if (pos_ < text_.size() && text_[pos_] == '.')
-        {
-            ++pos_;
-            if (pos_ == text_.size() || !isDigit(text_[pos_]))
-                raiseDataFormat("Expected digit after JSON number decimal point");
-            while (pos_ < text_.size() && isDigit(text_[pos_]))
-                ++pos_;
-        }
+        consumeDigits();
+    }
 
-        if (pos_ < text_.size() && (text_[pos_] == 'e' || text_[pos_] == 'E'))
-        {
+    void consumeFractionPart()
+    {
+        if (pos_ == text_.size() || text_[pos_] != '.')
+            return;
+
+        ++pos_;
+        if (pos_ == text_.size() || !isDigit(text_[pos_]))
+            raiseDataFormat("Expected digit after JSON number decimal point");
+        consumeDigits();
+    }
+
+    void consumeExponentPart()
+    {
+        if (pos_ == text_.size() || (text_[pos_] != 'e' && text_[pos_] != 'E'))
+            return;
+
+        ++pos_;
+        if (pos_ < text_.size() && (text_[pos_] == '+' || text_[pos_] == '-'))
             ++pos_;
-            if (pos_ < text_.size() && (text_[pos_] == '+' || text_[pos_] == '-'))
-                ++pos_;
-            if (pos_ == text_.size() || !isDigit(text_[pos_]))
-                raiseDataFormat("Expected digit in JSON number exponent");
-            while (pos_ < text_.size() && isDigit(text_[pos_]))
-                ++pos_;
-        }
+        if (pos_ == text_.size() || !isDigit(text_[pos_]))
+            raiseDataFormat("Expected digit in JSON number exponent");
+        consumeDigits();
+    }
+
+    void consumeDigits()
+    {
+        while (pos_ < text_.size() && isDigit(text_[pos_]))
+            ++pos_;
     }
 
     static bool isDigit(const char c) noexcept
@@ -261,7 +274,7 @@ class Parser
         return c >= '1' && c <= '9';
     }
 
-    bool startsWith(const std::string& literal) const
+    bool startsWith(std::string_view literal) const
     {
         return text_.compare(pos_, literal.size(), literal) == 0;
     }
@@ -295,14 +308,14 @@ class Parser
 };
 } // namespace
 
-const Value& Value::at(const std::string& key) const
+const Value& Value::at(std::string_view key) const
 {
     if (type != Type::Object)
         raiseDataFormat("Expected JSON object");
 
     const auto it = object.find(key);
     if (it == object.end())
-        raiseDataFormat("Missing JSON key: " + key);
+        raiseDataFormat("Missing JSON key: " + std::string{key});
     return it->second;
 }
 

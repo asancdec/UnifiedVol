@@ -13,7 +13,7 @@ void calendarMConstraint(
     unsigned,
     const double* x,
     double* grad,
-    void* data
+    void* data // NOSONAR: NLopt's callback ABI requires an opaque context pointer.
 ) noexcept
 {
 #if defined(__GNUC__) || defined(__clang__) || defined(_MSC_VER)
@@ -98,7 +98,7 @@ void convexityMConstraint(
     unsigned,
     const double* x,
     double* grad,
-    void* data
+    void* data // NOSONAR: NLopt's callback ABI requires an opaque context pointer.
 ) noexcept
 {
 #if defined(__GNUC__) || defined(__clang__) || defined(_MSC_VER)

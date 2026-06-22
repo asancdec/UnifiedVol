@@ -16,7 +16,7 @@ template <typename Period = std::milli> class ScopedTimer
         watch_.StartStopWatch();
     }
 
-    ScopedTimer(std::string_view label) noexcept
+    explicit ScopedTimer(std::string_view label) noexcept
         : label_(label)
     {
         watch_.StartStopWatch();

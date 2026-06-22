@@ -5,8 +5,10 @@
 #include "Base/Types.hpp"
 
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <string>
+#include <string_view>
 
 namespace uv::io::json
 {
@@ -26,10 +28,10 @@ struct Value
     bool boolean{};
     double number{};
     std::string string;
-    std::map<std::string, Value> object;
+    std::map<std::string, Value, std::less<>> object;
     Vector<Value> array;
 
-    const Value& at(const std::string& key) const;
+    const Value& at(std::string_view key) const;
     bool asBool() const;
     double asNumber() const;
     const std::string& asString() const;

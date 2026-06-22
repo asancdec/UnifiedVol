@@ -3,12 +3,12 @@
 #include "Base/Utils/Detail/Log.hpp"
 #include "Base/Macros/Require.hpp"
 
+#include <array>
 #include <chrono>
 #include <ctime>
 #include <filesystem>
-#include <iomanip>
+#include <format>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -71,11 +71,11 @@ void Log::log(Level lvl, std::string_view msg)
 
     const char* lvlStr = (lvl == Level::Info) ? "INFO" : "WARN";
 
-    std::ostringstream oss;
-    oss << '[' << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << '.' << std::setw(3)
-        << std::setfill('0') << ms.count() << ']' << '[' << lvlStr << "] " << msg << '\n';
-
-    const std::string line = oss.str();
+    std::array<char, 20> timestamp{};
+    std::strftime(timestamp.data(), timestamp.size(), "%Y-%m-%d %H:%M:%S", &tm);
+    const std::string line{
+        std::format("[{}.{:03}][{}] {}\n", timestamp.data(), ms.count(), lvlStr, msg)
+    };
 
     if (consoleEnabled_)
     {

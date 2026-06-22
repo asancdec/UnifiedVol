@@ -33,7 +33,7 @@ using HestonPolicy = opt::ceres::Policy<
 
 namespace detail
 {
-inline Vector<std::string_view> paramNames{"kappa", "theta", "sigma", "rho", "v0"};
+inline const Vector<std::string_view> paramNames{"kappa", "theta", "sigma", "rho", "v0"};
 }
 
 } // namespace uv::models::heston::calibrate

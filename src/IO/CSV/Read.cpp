@@ -27,23 +27,18 @@ StdVector<std::string> splitComma(std::string_view line)
     StdVector<std::string> out;
     std::size_t start = 0;
 
-    while (true)
+    while (start <= line.size())
     {
         const std::size_t pos = line.find(',', start);
         if (pos == std::string_view::npos)
         {
             out.emplace_back(line.substr(start));
-            break;
+            return out;
         }
         out.emplace_back(line.substr(start, pos - start));
         start = pos + 1;
-
-        if (start == line.size())
-        {
-            out.emplace_back("");
-            break;
-        }
     }
+
     return out;
 }
 

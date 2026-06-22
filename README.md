@@ -2,7 +2,6 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-lightgrey.svg)](LICENSE.txt)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
 [![CI](https://github.com/asancdec/UnifiedVol/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/asancdec/UnifiedVol/actions/workflows/ci.yml)
-[![Quality](https://github.com/asancdec/UnifiedVol/actions/workflows/quality.yml/badge.svg?branch=master)](https://github.com/asancdec/UnifiedVol/actions/workflows/quality.yml)
 [![SonarQube Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=asancdec_UnifiedVol&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=asancdec_UnifiedVol)
 [![CodeQL](https://github.com/asancdec/UnifiedVol/actions/workflows/codeql.yml/badge.svg)](https://github.com/asancdec/UnifiedVol/actions/workflows/codeql.yml)
 [![Clang-Tidy](https://github.com/asancdec/UnifiedVol/actions/workflows/clang-tidy.yml/badge.svg?branch=master)](https://github.com/asancdec/UnifiedVol/actions/workflows/clang-tidy.yml)

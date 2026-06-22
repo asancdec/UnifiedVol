@@ -2,9 +2,9 @@ name: Quality
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
   workflow_dispatch:
 
 permissions:
@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           fetch-depth: 0
           submodules: recursive
@@ -59,16 +59,17 @@ jobs:
             --gcov-ignore-parse-errors negative_hits.warn_once_per_file \
             --gcov-ignore-errors=no_working_dir_found \
             --html-details build/linux-gcc-coverage/coverage/coverage.html \
+            --lcov build/linux-gcc-coverage/coverage/coverage.info \
             --xml-pretty \
             --xml build/linux-gcc-coverage/coverage/coverage.xml \
             --print-summary \
             --fail-under-line 85
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
         continue-on-error: true
         with:
-          files: build/linux-gcc-coverage/coverage/coverage.xml
+          files: build/linux-gcc-coverage/coverage/coverage.info
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: gcc
           name: gcc-coverage
@@ -79,13 +80,13 @@ jobs:
           github.actor != 'dependabot[bot]' &&
           (github.event_name != 'pull_request' ||
           github.event.pull_request.head.repo.full_name == github.repository)
-        uses: SonarSource/sonarqube-scan-action@v8
+        uses: SonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e # v8
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Upload coverage report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: gcc-coverage-report
           path: build/linux-gcc-coverage/coverage

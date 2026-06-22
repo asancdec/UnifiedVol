@@ -242,9 +242,7 @@ template <typename T> void nonNull(
     std::source_location loc = std::source_location::current()
 );
 
-template <typename Ptr>
-requires requires(const Ptr& p) { p.get(); }
-void nonNull(
+template <detail::PointerLike Ptr> void nonNull(
     const Ptr& p,
     std::string_view what,
     std::source_location loc = std::source_location::current()
@@ -255,18 +253,14 @@ set(const std::optional<T>& x,
     std::string_view what,
     std::source_location loc = std::source_location::current());
 
-template <typename A>
-requires requires(const A& a) { a.size(); }
-void sameSize(
+template <detail::Sized A> void sameSize(
     const A& a,
     std::size_t b,
     std::string_view what,
     std::source_location loc = std::source_location::current()
 );
 
-template <typename B>
-requires requires(const B& b) { b.size(); }
-void sameSize(
+template <detail::Sized B> void sameSize(
     std::size_t a,
     const B& b,
     std::string_view what,
@@ -280,12 +274,7 @@ void sameSize(
     std::source_location loc = std::source_location::current()
 );
 
-template <typename A, typename B>
-requires requires(const A& a, const B& b) {
-    a.size();
-    b.size();
-}
-void sameSize(
+template <detail::Sized A, detail::Sized B> void sameSize(
     const A& a,
     const B& b,
     std::string_view what,
@@ -299,9 +288,7 @@ template <typename T> void minSize(
     std::source_location loc = std::source_location::current()
 );
 
-template <typename R>
-requires requires(const R& x) { x.size(); }
-void minSize(
+template <detail::Sized R> void minSize(
     const R& x,
     std::size_t minSize,
     std::string_view what,

@@ -7,7 +7,12 @@
 namespace uv::models::svi::detail
 {
 
-double objectiveThunk(unsigned, const double* x, double* grad, void* data) noexcept
+double objectiveThunk(
+    unsigned,
+    const double* x,
+    double* grad,
+    void* data // NOSONAR: NLopt's callback ABI requires an opaque context pointer.
+) noexcept
 {
 #if defined(__GNUC__) || defined(__clang__) || defined(_MSC_VER)
     const double* __restrict xx{x};

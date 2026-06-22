@@ -20,3 +20,13 @@ TEST(UnitBaseErrors, UnreachableEnumRaisesUnifiedVolError)
         uv::errors::UnifiedVolError
     );
 }
+
+TEST(UnitBaseErrors, ErrorCodesHaveStableNames)
+{
+    using enum uv::errors::ErrorCode;
+
+    EXPECT_EQ(uv::errors::to_string(InvalidState), "InvalidState");
+    EXPECT_EQ(uv::errors::to_string(LinearAlgebra), "LinearAlgebra");
+    EXPECT_EQ(uv::errors::to_string(Unreachable), "Unreachable");
+    EXPECT_EQ(uv::errors::to_string(Unknown), "Unknown");
+}
