@@ -10,7 +10,7 @@
 #include <cstddef>
 #include <gtest/gtest.h>
 
-namespace
+namespace uv::tests::performance::tridiagonal::detail
 {
 template <std::size_t N> std::array<double, N> makeExpectedSolution()
 {
@@ -23,7 +23,9 @@ template <std::size_t N> std::array<double, N> makeExpectedSolution()
     return x;
 }
 
-} // namespace
+} // namespace uv::tests::performance::tridiagonal::detail
+
+using namespace uv::tests::performance::tridiagonal::detail;
 
 TEST(PerformanceTridiagonal, SolvesRepeatedSystemsWithinLatencyBudget)
 {

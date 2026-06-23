@@ -9,6 +9,6 @@ ignore:
 comment: false
 
 coverage:
-  precision: 2
-  round: down
+  precision: 3
+  round: nearest
   range: "70...95"

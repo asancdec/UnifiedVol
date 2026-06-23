@@ -44,7 +44,7 @@ template <std::floating_point T, std::size_t N = defaultNodes> class Pricer
   public:
     Pricer();
 
-    Pricer(
+    explicit Pricer(
         std::shared_ptr<const math::integration::TanHSinH<T, N>> quad,
         const Config<T>& config = {}
     );

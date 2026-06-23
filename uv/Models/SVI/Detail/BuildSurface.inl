@@ -50,7 +50,7 @@ buildSurface(const core::VolSurface<T>& volSurface, const Vector<Params<T>>& par
             math::linear_algebra::generateIndexed<T>(
                 volSurface.numMaturities(),
                 volSurface.numStrikes(),
-                [&](std::size_t i, std::size_t j)
+                [&params, &logKF](std::size_t i, std::size_t j)
                 {
                     const Params<T>& p{params[i]};
 

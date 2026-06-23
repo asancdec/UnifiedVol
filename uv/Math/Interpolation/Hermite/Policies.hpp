@@ -106,43 +106,6 @@ template <std::floating_point T> struct HermiteEval : Evaluate<HermiteEval<T>, T
         bool doValidate
     ) const;
 };
-
-namespace detail
-{
-
-template <std::floating_point T> void hermiteSplineInterp(
-    std::span<const T> x,
-    std::span<const T> xs,
-    std::span<const T> ys,
-    std::span<const T> dydx,
-    std::span<T> y,
-    bool doValidate
-);
-
-template <std::floating_point T> void pchipDerivatives(
-    std::span<const T> xs,
-    std::span<const T> ys,
-    std::span<T> dydx,
-    bool doValidate
-);
-
-template <std::floating_point T> T pchipEndpointSlope(T h1, T h2, T S1, T S2) noexcept;
-
-template <std::floating_point T> void validateInputsDerivatives(
-    std::span<const T> xs,
-    std::span<const T> ys,
-    std::span<const T> dydx
-);
-
-template <std::floating_point T> void validateInputsEvaluate(
-    std::span<const T> x,
-    std::span<const T> xs,
-    std::span<const T> ys,
-    std::span<const T> dydx,
-    std::span<const T> y
-);
-
-} // namespace detail
 } // namespace uv::math::interp::hermite
 
 #include "Math/Interpolation/Hermite/Detail/Policies.inl"

@@ -33,6 +33,7 @@ void clampBounds(
         const double after{std::clamp(before, lowerBounds[i], upperBounds[i])};
 
         WARN(
+            // codeql-suppress[cpp/equality-on-floats]
             after != before,
             std::format(
                 "[Calib]: parameter [{}] initial guess = {:.4f} "
@@ -69,6 +70,7 @@ void clampLowerBounds(
         const double after{bound >= before ? bound : before};
 
         WARN(
+            // codeql-suppress[cpp/equality-on-floats]
             after != before,
             std::format(
                 "[Calib]: parameter [{}] initial guess = {:.6f} "
@@ -104,6 +106,7 @@ void clampUpperBounds(
         const double after{bound <= before ? bound : before};
 
         WARN(
+            // codeql-suppress[cpp/equality-on-floats]
             after != before,
             std::format(
                 "[Calib]: parameter [{}] initial guess = {:.6f} "
@@ -157,13 +160,13 @@ void warnBoundsHit(
         }
     }
 
-    constexpr double absEps{1e-8};
-    constexpr double relEps{1e-8};
-
-    const auto near = [absEps, relEps](double v, double bd) noexcept
+    const auto near = [](double v, double bd) noexcept
     {
+        constexpr double absEps{1e-8};
+        constexpr double relEps{1e-8};
+
         return std::fabs(v - bd) <=
-               (absEps + relEps * (std::max)(std::fabs(v), std::fabs(bd)));
+               absEps + relEps * (std::max)(std::fabs(v), std::fabs(bd));
     };
 
     for (std::size_t i = 0; i < x.size(); ++i)
@@ -206,7 +209,7 @@ void logResults(
     std::span<const double> x,
     std::span<const std::string_view> paramNames,
     double sse,
-    unsigned iterCount,
+    std::size_t iterCount,
     double elapsedMs,
     bool isSuccess,
     std::string_view extraInfo

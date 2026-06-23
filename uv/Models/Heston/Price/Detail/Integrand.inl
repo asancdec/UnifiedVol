@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+
 #include "Math/Functions/Primitive.hpp"
 #include "Models/Heston/Price/Detail/CharFunction.hpp"
 

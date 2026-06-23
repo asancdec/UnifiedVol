@@ -12,30 +12,32 @@ NLoptStatus toStatus(const ::nlopt::result& r) noexcept
 
 std::string_view toString(NLoptStatus s) noexcept
 {
+    using enum NLoptStatus;
+
     switch (s)
     {
-    case NLoptStatus::Success:
+    case Success:
         return "SUCCESS";
-    case NLoptStatus::StopvalReached:
+    case StopvalReached:
         return "STOPVAL_REACHED";
-    case NLoptStatus::FtolReached:
+    case FtolReached:
         return "FTOL_REACHED";
-    case NLoptStatus::XtolReached:
+    case XtolReached:
         return "XTOL_REACHED";
-    case NLoptStatus::MaxevalReached:
+    case MaxevalReached:
         return "MAXEVAL_REACHED";
-    case NLoptStatus::MaxtimeReached:
+    case MaxtimeReached:
         return "MAXTIME_REACHED";
 
-    case NLoptStatus::Failure:
+    case Failure:
         return "FAILURE";
-    case NLoptStatus::InvalidArgs:
+    case InvalidArgs:
         return "INVALID_ARGS";
-    case NLoptStatus::OutOfMemory:
+    case OutOfMemory:
         return "OUT_OF_MEMORY";
-    case NLoptStatus::RoundoffLimited:
+    case RoundoffLimited:
         return "ROUNDOFF_LIMITED";
-    case NLoptStatus::ForcedStop:
+    case ForcedStop:
         return "FORCED_STOP";
     }
 

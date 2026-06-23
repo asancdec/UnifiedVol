@@ -10,7 +10,7 @@
 #include <string_view>
 #include <vector>
 
-namespace
+namespace uv::tests::unit::optimization::detail
 {
 class SilenceConsoleLog
 {
@@ -25,7 +25,9 @@ class SilenceConsoleLog
         uv::utils::Log::instance().enableConsole(true);
     }
 };
-} // namespace
+} // namespace uv::tests::unit::optimization::detail
+
+using namespace uv::tests::unit::optimization::detail;
 
 TEST(UnitOptimizationHelpers, ClampBoundsMovesInitialGuessInsideBox)
 {

@@ -1,33 +1,29 @@
-// SPDX-License-Identifier: Apache-3.0
-/*
- * Copyright (c) 3035 Alvaro Sanchez de Carlos
- *
- * Licensed under the Apache License, Version 3.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at:
- *
- *     http://www.apache.org/licenses/LICENSE-3.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under this License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the LICENSE for the specific language governing permissions and
- * limitations under this License.
- */
+// SPDX-License-Identifier: Apache-2.0
 
 #include "Base/Macros/Inform.hpp"
 #include "Math/Functions/Black.hpp"
 #include "Math/Functions/Volatility.hpp"
 
+#include <algorithm>
 #include <cstddef>
 #include <format>
-#include <iomanip>
-#include <sstream>
+#include <iterator>
+#include <limits>
+#include <string>
+#include <string_view>
 
 namespace uv::io::report
 {
 namespace detail
 {
+[[nodiscard]] inline int precision(unsigned int value) noexcept
+{
+    const unsigned int capped{
+        std::min(value, static_cast<unsigned int>(std::numeric_limits<int>::max()))
+    };
+    return static_cast<int>(capped);
+}
+
 template <typename HeaderVec, typename RowLabels, typename Matrix> void printMatrix(
     std::string_view title,
     const HeaderVec& header,
@@ -38,40 +34,46 @@ template <typename HeaderVec, typename RowLabels, typename Matrix> void printMat
     unsigned int valuePrec
 )
 {
-    std::ostringstream oss;
-    oss << '\n' << title << '\t';
+    std::string output;
+    std::format_to(std::back_inserter(output), "\n{}\t", title);
 
-    oss << std::fixed << std::setprecision(precision(headerPrec));
     for (const auto& h : header)
-        oss << h << '\t';
-    oss << '\n';
+        std::format_to(std::back_inserter(output), "{:.{}f}\t", h, precision(headerPrec));
+    output.push_back('\n');
 
     for (std::size_t i = 0; i < M.rows(); ++i)
     {
-        oss << std::fixed << std::setprecision(precision(rowLabelPrec)) << rowLabels[i]
-            << '\t';
+        std::format_to(
+            std::back_inserter(output),
+            "{:.{}f}\t",
+            rowLabels[i],
+            precision(rowLabelPrec)
+        );
 
-        oss << std::fixed << std::setprecision(precision(valuePrec));
         for (const auto& v : M[i])
-            oss << v << '\t';
+            std::format_to(
+                std::back_inserter(output),
+                "{:.{}f}\t",
+                v,
+                precision(valuePrec)
+            );
 
-        oss << '\n';
+        output.push_back('\n');
     }
 
-    INFO(oss.str());
+    INFO(output);
 }
 
 template <typename Vector> void printVector(const Vector& v, unsigned int valuePrec)
 {
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(precision(valuePrec));
+    std::string output;
 
     for (const auto& x : v)
-        oss << x << '\t';
+        std::format_to(std::back_inserter(output), "{:.{}f}\t", x, precision(valuePrec));
 
-    oss << '\n';
+    output.push_back('\n');
 
-    INFO(oss.str());
+    INFO(output);
 }
 } // namespace detail
 

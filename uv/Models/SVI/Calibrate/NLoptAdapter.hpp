@@ -15,7 +15,7 @@ inline opt::nlopt::Config<4> makeNLoptConfig(const Config& config) noexcept
         .ftolRel = config.objectiveTol,
         .maxEval = config.maxEval,
         .verbose = config.verbose,
-        .paramNames = paramNames
+        .paramNames = {"b", "rho", "m", "sigma"}
     };
 }
 

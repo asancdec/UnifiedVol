@@ -35,12 +35,4 @@ Vector<MaturitySlice> makeSlices(
     const opt::cost::WeightATM<double>& weightATM
 );
 
-void validateInputs(
-    const std::span<const double> maturities,
-    const std::span<const double> discountFactors,
-    const std::span<const double> forwards,
-    const std::span<const double> strikes,
-    const core::Matrix<double>& vol
-);
-
 } // namespace uv::models::heston::calibrate::detail

@@ -83,11 +83,6 @@ template <std::floating_point T> core::Matrix<T> impliedVol(
     const core::Curve<T>& curve,
     bool doValidate = true
 );
-
-namespace detail
-{
-double impliedVolJackelCall(double callPrice, double t, double dF, double F, double K);
-}
 } // namespace uv::math::vol
 
 #include "Math/Functions/Detail/Volatility.inl"

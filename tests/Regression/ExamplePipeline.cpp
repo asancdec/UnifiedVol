@@ -14,10 +14,12 @@
 #include <filesystem>
 #include <gtest/gtest.h>
 
-namespace
+namespace uv::tests::regression::example_pipeline::detail
 {
 namespace assertions = uv::tests::assertions;
-} // namespace
+} // namespace uv::tests::regression::example_pipeline::detail
+
+using namespace uv::tests::regression::example_pipeline::detail;
 
 TEST(RegressionExamplePipeline, MainCppResultsRemainStable)
 {

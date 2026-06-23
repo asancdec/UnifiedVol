@@ -129,14 +129,14 @@ template <typename T> T minValue(std::span<const T> x)
 {
     REQUIRE_NON_EMPTY(x);
 
-    return *std::min_element(x.begin(), x.end());
+    return *std::ranges::min_element(x);
 }
 
 template <typename T> T maxValue(std::span<const T> x)
 {
     REQUIRE_NON_EMPTY(x);
 
-    return *std::max_element(x.begin(), x.end());
+    return *std::ranges::max_element(x);
 }
 
 } // namespace uv::math::linear_algebra

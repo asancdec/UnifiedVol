@@ -22,15 +22,17 @@ namespace uv::opt::ceres::detail
 
 ::ceres::LinearSolverType toCeres(LinearSolver a)
 {
+    using enum LinearSolver;
+
     switch (a)
     {
-    case LinearSolver::DenseQR:
+    case DenseQR:
         return ::ceres::DENSE_QR;
-    case LinearSolver::DenseNormalCholesky:
+    case DenseNormalCholesky:
         return ::ceres::DENSE_NORMAL_CHOLESKY;
-    case LinearSolver::SparseNormalCholesky:
+    case SparseNormalCholesky:
         return ::ceres::SPARSE_NORMAL_CHOLESKY;
-    case LinearSolver::SparseSchur:
+    case SparseSchur:
         return ::ceres::SPARSE_SCHUR;
     }
     UNREACHABLE(LinearSolver, a);
@@ -38,15 +40,17 @@ namespace uv::opt::ceres::detail
 
 std::unique_ptr<::ceres::LossFunction> makeLoss(Loss a, double lossParam)
 {
+    using enum Loss;
+
     switch (a)
     {
-    case Loss::None:
+    case None:
         return nullptr;
-    case Loss::Huber:
+    case Huber:
         return std::make_unique<::ceres::HuberLoss>(lossParam);
-    case Loss::Cauchy:
+    case Cauchy:
         return std::make_unique<::ceres::CauchyLoss>(lossParam);
-    case Loss::SoftL1:
+    case SoftL1:
         return std::make_unique<::ceres::SoftLOneLoss>(lossParam);
     }
 

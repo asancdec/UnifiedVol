@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-namespace
+namespace uv::tests::performance::bspline::detail
 {
 std::vector<double> makeOpenUniformCubicKnots(const std::size_t controlPointCount)
 {
@@ -68,7 +68,9 @@ makeGrid(const double left, const double right, const std::size_t size)
     return x;
 }
 
-} // namespace
+} // namespace uv::tests::performance::bspline::detail
+
+using namespace uv::tests::performance::bspline::detail;
 
 TEST(PerformanceBSpline, EvaluatesLargeCubicGridWithinThroughputBudget)
 {

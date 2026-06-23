@@ -14,7 +14,7 @@
 #include <span>
 #include <vector>
 
-namespace
+namespace uv::tests::regression::svi_stress::detail
 {
 struct StressSVICase
 {
@@ -104,7 +104,9 @@ void expectStressFitWithinTolerance(const StressSVICase& data, const double tole
         }
     }
 }
-} // namespace
+} // namespace uv::tests::regression::svi_stress::detail
+
+using namespace uv::tests::regression::svi_stress::detail;
 
 TEST(StressSVICalibration, RecoversLowVolAndSteepSkewSyntheticSurfaces)
 {

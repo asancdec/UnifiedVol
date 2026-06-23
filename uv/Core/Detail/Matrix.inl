@@ -149,34 +149,4 @@ Matrix<U> Matrix<T>::as() const
     return out;
 }
 
-template <std::floating_point T> Matrix<T> operator+(Matrix<T> lhs, const Matrix<T>& rhs)
-{
-    lhs += rhs;
-    return lhs;
-}
-
-template <std::floating_point T> Matrix<T> operator-(Matrix<T> lhs, const Matrix<T>& rhs)
-{
-    lhs -= rhs;
-    return lhs;
-}
-
-template <std::floating_point T> Matrix<T> operator*(Matrix<T> lhs, T scalar)
-{
-    lhs *= scalar;
-    return lhs;
-}
-
-template <std::floating_point T> Matrix<T> operator/(Matrix<T> lhs, T scalar)
-{
-    lhs /= scalar;
-    return lhs;
-}
-
-template <std::floating_point T> Matrix<T> operator*(T scalar, Matrix<T> rhs)
-{
-    rhs *= scalar;
-    return rhs;
-}
-
 } // namespace uv::core

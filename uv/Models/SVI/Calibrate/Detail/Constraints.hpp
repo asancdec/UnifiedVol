@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Models/SVI/Calibrate/Detail/Contexts.hpp"
+#include "Models/SVI/Calibrate/Detail/SliceData.hpp"
 #include "Models/SVI/Params.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"
 

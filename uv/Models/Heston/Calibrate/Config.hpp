@@ -2,13 +2,11 @@
 
 #pragma once
 
-#include "Base/Types.hpp"
 #include "Optimization/Ceres/Config.hpp"
 #include "Optimization/Ceres/Policy.hpp"
 #include "Optimization/Cost.hpp"
 
 #include <cstddef>
-#include <string_view>
 
 namespace uv::models::heston::calibrate
 {
@@ -30,10 +28,5 @@ inline constexpr std::size_t defaultNodes{300};
 using HestonPolicy = opt::ceres::Policy<
     opt::ceres::TrustRegionStrategy::LevenbergMarquardt,
     opt::ceres::LinearSolver::DenseQR>;
-
-namespace detail
-{
-inline Vector<std::string_view> paramNames{"kappa", "theta", "sigma", "rho", "v0"};
-}
 
 } // namespace uv::models::heston::calibrate

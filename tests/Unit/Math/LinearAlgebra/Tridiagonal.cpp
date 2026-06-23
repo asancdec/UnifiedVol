@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 #include <random>
 
-namespace
+namespace uv::tests::unit::linear_algebra::detail
 {
 template <typename T, std::size_t N> void solveAndExpectNear(
     std::array<T, N> rhs,
@@ -62,7 +62,9 @@ template <std::size_t N> void runRandomDiagonallyDominantCases(const std::size_t
         solveAndExpectNear(rhs, upper, middle, lower, expected, 1e-11);
     }
 }
-} // namespace
+} // namespace uv::tests::unit::linear_algebra::detail
+
+using namespace uv::tests::unit::linear_algebra::detail;
 
 TEST(MathTridiagonal, ThomasSolveRecoversKnownSolution)
 {

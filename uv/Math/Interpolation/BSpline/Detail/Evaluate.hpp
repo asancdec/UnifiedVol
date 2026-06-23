@@ -12,9 +12,6 @@ namespace uv::math::interp::bspline::detail
 {
 
 template <std::floating_point T, std::size_t K>
-std::size_t findSpan(T x, std::span<const T> knots, std::span<const T> cPoints) noexcept;
-
-template <std::floating_point T, std::size_t K>
 T evalOne(T x, std::span<const T> knots, std::span<const T> cPoints) noexcept;
 
 template <std::floating_point T, std::size_t K> void evalInplace(

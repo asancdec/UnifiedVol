@@ -12,7 +12,7 @@ opt::ceres::Config makeCeresConfig(const Config& config)
         .functionTol = config.tolerance,
         .paramTol = config.tolerance,
         .gradientTol = config.tolerance,
-        .paramNames = paramNames,
+        .paramNames = {"kappa", "theta", "sigma", "rho", "v0"},
         .verbosity = config.verbosity,
         .numThreads = config.numThreads
     };

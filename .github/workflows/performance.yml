@@ -1,0 +1,43 @@
+name: Performance
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guardrails:
+    name: GCC 13 performance guardrails
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Set up C++ toolchain
+        uses: ./.github/actions/setup-cpp
+        with:
+          cache-key: performance
+
+      - name: Configure performance build
+        run: cmake --preset linux-gcc-perf
+
+      - name: Build performance tests
+        run: cmake --build --preset linux-gcc-perf-tests --parallel
+
+      - name: Run performance tests
+        run: ctest --preset linux-gcc-perf-performance
+
+      - name: Report ccache statistics
+        if: always()
+        run: ccache --show-stats

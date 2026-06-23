@@ -5,6 +5,12 @@
 #include <algorithm>
 #include <cmath>
 
+namespace uv::math::pde::detail
+{
+template <std::floating_point T, std::size_t N>
+std::array<T, N> generateUniformGrid(T xMin, T xMax);
+} // namespace uv::math::pde::detail
+
 namespace uv::math::pde
 {
 template <std::floating_point T, std::size_t N> Grid<T, N>::Grid(std::span<const T, N> x)

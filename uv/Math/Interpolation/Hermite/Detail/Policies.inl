@@ -8,6 +8,41 @@
 #include <cstddef>
 #include <iterator>
 
+namespace uv::math::interp::hermite::detail
+{
+template <std::floating_point T> void hermiteSplineInterp(
+    std::span<const T> x,
+    std::span<const T> xs,
+    std::span<const T> ys,
+    std::span<const T> dydx,
+    std::span<T> y,
+    bool doValidate
+);
+
+template <std::floating_point T> void pchipDerivatives(
+    std::span<const T> xs,
+    std::span<const T> ys,
+    std::span<T> dydx,
+    bool doValidate
+);
+
+template <std::floating_point T> T pchipEndpointSlope(T h1, T h2, T S1, T S2) noexcept;
+
+template <std::floating_point T> void validateInputsDerivatives(
+    std::span<const T> xs,
+    std::span<const T> ys,
+    std::span<const T> dydx
+);
+
+template <std::floating_point T> void validateInputsEvaluate(
+    std::span<const T> x,
+    std::span<const T> xs,
+    std::span<const T> ys,
+    std::span<const T> dydx,
+    std::span<const T> y
+);
+} // namespace uv::math::interp::hermite::detail
+
 namespace uv::math::interp::hermite
 {
 template <class Derived, std::floating_point T>
@@ -171,7 +206,7 @@ template <std::floating_point T> void hermiteSplineInterp(
             continue;
         }
 
-        auto it = std::upper_bound(xs.begin(), xs.end(), xi);
+        auto it = std::ranges::upper_bound(xs, xi);
         std::size_t idx = static_cast<std::size_t>(it - xs.begin()) - 1;
 
         const T dx{xi - xs[idx]};
@@ -215,7 +250,7 @@ template <std::floating_point T> void pchipDerivatives(
         S[i] = (ys[i + 1] - ys[i]) / hi;
     }
 
-    std::fill(dydx.begin(), dydx.end(), 0.0);
+    std::ranges::fill(dydx, T{0});
 
     for (std::size_t i{1}; i < numSteps; ++i)
     {

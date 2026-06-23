@@ -12,6 +12,38 @@
 namespace uv::models::heston::calibrate::detail
 {
 
+template <std::floating_point T, std::size_t N> struct SliceCommon
+{
+    const MaturitySlice* s_{nullptr};
+    const price::Pricer<T, N>* pricer_{nullptr};
+
+    SliceCommon(const MaturitySlice& s, const price::Pricer<T, N>& pricer) noexcept;
+
+    void residualOnly(const double* p, double* residuals) const;
+
+    void residualAndJac(const double* p, double* residuals, double* jacobian) const;
+};
+
+template <std::floating_point T, std::size_t N> class SliceJacobian final
+    : public ::ceres::CostFunction
+{
+  public:
+    explicit SliceJacobian(SliceCommon<T, N> common) noexcept;
+
+    bool Evaluate(double const* const* parameters, double* residuals, double** jacobians)
+        const override;
+
+  private:
+    SliceCommon<T, N> common_;
+};
+
+template <std::floating_point T, std::size_t N> struct SliceFunctor
+{
+    SliceCommon<T, N> common_;
+
+    bool operator()(double const* const* parameters, double* residuals) const;
+};
+
 template <std::floating_point T, std::size_t N> SliceCommon<T, N>::SliceCommon(
     const MaturitySlice& s,
     const price::Pricer<T, N>& pricer
@@ -130,10 +162,12 @@ makeSliceCostNumericForward(const MaturitySlice& slice, const price::Pricer<T, N
     using Functor = SliceFunctor<T, N>;
     using Cost = ::ceres::DynamicNumericDiffCostFunction<Functor, ::ceres::FORWARD>;
 
-    auto* cost = new Cost(new Functor{SliceCommon<T, N>{slice, pricer}});
+    auto functor = std::make_unique<Functor>(SliceCommon<T, N>{slice, pricer});
+    auto cost = std::make_unique<Cost>(functor.get(), ::ceres::TAKE_OWNERSHIP);
+    static_cast<void>(functor.release()); // Ownership transferred to Cost.
     cost->AddParameterBlock(5);
     cost->SetNumResiduals(static_cast<int>(slice.K.size()));
-    return std::unique_ptr<::ceres::CostFunction>(cost);
+    return cost;
 }
 
 template <std::floating_point T, std::size_t N> std::unique_ptr<::ceres::CostFunction>
@@ -142,25 +176,29 @@ makeSliceCostNumericCentral(const MaturitySlice& slice, const price::Pricer<T, N
     using Functor = SliceFunctor<T, N>;
     using Cost = ::ceres::DynamicNumericDiffCostFunction<Functor, ::ceres::CENTRAL>;
 
-    auto* cost = new Cost(new Functor{SliceCommon<T, N>{slice, pricer}});
+    auto functor = std::make_unique<Functor>(SliceCommon<T, N>{slice, pricer});
+    auto cost = std::make_unique<Cost>(functor.get(), ::ceres::TAKE_OWNERSHIP);
+    static_cast<void>(functor.release()); // Ownership transferred to Cost.
     cost->AddParameterBlock(5);
     cost->SetNumResiduals(static_cast<int>(slice.K.size()));
-    return std::unique_ptr<::ceres::CostFunction>(cost);
+    return cost;
 }
 
 template <opt::ceres::GradientMode Mode, std::floating_point T, std::size_t N>
 std::unique_ptr<::ceres::CostFunction>
 makeSliceCost(const MaturitySlice& slice, const price::Pricer<T, N>& pricer)
 {
-    if constexpr (Mode == opt::ceres::GradientMode::Analytic)
+    using enum opt::ceres::GradientMode;
+
+    if constexpr (Mode == Analytic)
     {
         return makeSliceCostAnalytic<T, N>(slice, pricer);
     }
-    else if constexpr (Mode == opt::ceres::GradientMode::NumericForward)
+    else if constexpr (Mode == NumericForward)
     {
         return makeSliceCostNumericForward<T, N>(slice, pricer);
     }
-    else if constexpr (Mode == opt::ceres::GradientMode::NumericCentral)
+    else if constexpr (Mode == NumericCentral)
     {
         return makeSliceCostNumericCentral<T, N>(slice, pricer);
     }

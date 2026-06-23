@@ -10,7 +10,7 @@
 
 namespace uv::tests::golden
 {
-namespace
+namespace detail
 {
 namespace json = uv::io::json;
 
@@ -43,6 +43,7 @@ std::size_t readIndex(const json::Value& tree, const std::string& path)
 {
     const double value{tree.asNumber()};
     requireFinite(value, path);
+    // codeql-suppress[cpp/equality-on-floats]
     if (value < 0.0 || std::floor(value) != value)
         throw std::runtime_error("Expected non-negative integer JSON index at: " + path);
     return static_cast<std::size_t>(value);
@@ -149,7 +150,9 @@ void validateHestonParams(const models::heston::Params<double>& params)
     if (params.rho <= -1.0 || params.rho >= 1.0)
         throw std::runtime_error("Expected rho in (-1, 1) at: hestonParams.rho");
 }
-} // namespace
+} // namespace detail
+
+using namespace detail;
 
 ExamplePipeline readExamplePipeline(const std::filesystem::path& path)
 {

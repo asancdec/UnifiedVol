@@ -9,6 +9,22 @@
 
 namespace uv::utils
 {
+namespace detail
+{
+template <typename Period>
+[[nodiscard]] constexpr std::string_view durationUnit() noexcept
+{
+    if constexpr (std::is_same_v<Period, std::milli>)
+        return "ms";
+    else if constexpr (std::is_same_v<Period, std::micro>)
+        return "us";
+    else if constexpr (std::is_same_v<Period, std::nano>)
+        return "ns";
+    else
+        return "s";
+}
+} // namespace detail
+
 template <typename Period> double StopWatch::GetTime() const noexcept
 {
 
@@ -30,10 +46,7 @@ template <typename Period> void StopWatch::LogTime() const noexcept
 {
     const double dt = GetTime<Period>();
 
-    constexpr const char* unit = std::is_same_v<Period, std::milli>   ? "ms"
-                                 : std::is_same_v<Period, std::micro> ? "us"
-                                 : std::is_same_v<Period, std::nano>  ? "ns"
-                                                                      : "s";
+    constexpr std::string_view unit{detail::durationUnit<Period>()};
 
     INFO(std::format("Elapsed time: {:.6f} {}", dt, unit));
 }
@@ -43,10 +56,7 @@ void StopWatch::LogTime(std::string_view message) const noexcept
 {
     const double dt = GetTime<Period>();
 
-    constexpr const char* unit = std::is_same_v<Period, std::milli>   ? "ms"
-                                 : std::is_same_v<Period, std::micro> ? "us"
-                                 : std::is_same_v<Period, std::nano>  ? "ns"
-                                                                      : "s";
+    constexpr std::string_view unit{detail::durationUnit<Period>()};
 
     if (!message.empty())
     {

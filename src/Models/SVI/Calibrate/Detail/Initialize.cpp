@@ -6,28 +6,42 @@ namespace uv::models::svi::detail
 {
 std::array<double, 4> coldGuess() noexcept
 {
-    return {0.1, -0.5, 0.1, 0.1};
+    return {
+        0.1,  // b: wing slope scale
+        -0.5, // rho: skew correlation
+        0.1,  // m: horizontal translation
+        0.1   // sigma: curvature scale
+    };
 }
 
 std::array<double, 4> warmGuess(const Params<double>& params) noexcept
 {
     return {
-
-        params.b,
-        params.rho,
-        params.m,
-        params.sigma
+        params.b,    // b
+        params.rho,  // rho
+        params.m,    // m
+        params.sigma // sigma
     };
 }
 
 std::array<double, 4> lowerBounds(double logKFMin) noexcept
 {
-    return {0.001, -0.9999, 10.0 * logKFMin, 0.01};
+    return {
+        0.001,           // b
+        -0.9999,         // rho
+        10.0 * logKFMin, // m
+        0.01             // sigma
+    };
 }
 
 std::array<double, 4> upperBounds(double logKFMax) noexcept
 {
-    return {2.0, 0.9999, 10.0 * logKFMax, 10.0};
+    return {
+        2.0,             // b
+        0.9999,          // rho
+        10.0 * logKFMax, // m
+        10.0             // sigma
+    };
 }
 
 } // namespace uv::models::svi::detail

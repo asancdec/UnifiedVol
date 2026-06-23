@@ -13,7 +13,7 @@ std::size_t findSpan(T x, std::span<const T> knots, std::span<const T> cPoints) 
 {
     const std::size_t n{cPoints.size() - 1};
 
-    // codeql-suppress[cpp/equality-on-floats]: exact right-boundary knot check.
+    // codeql-suppress[cpp/equality-on-floats]
     if (x == knots[n + 1])
     {
         return n;
@@ -47,7 +47,7 @@ template <std::floating_point T, std::size_t K> T evalOneInSpan(
 
             const T denom{knots[i + K + 1 - r] - knots[i]};
 
-            // codeql-suppress[cpp/equality-on-floats]: exact zero denominator guard.
+            // codeql-suppress[cpp/equality-on-floats]
             if (denom != T{0})
             {
                 const T alpha{(x - knots[i]) / denom};
@@ -76,7 +76,7 @@ T evalOne(T x, std::span<const T> knots, std::span<const T> cPoints) noexcept
         return T{0};
     }
 
-    // codeql-suppress[cpp/equality-on-floats]: exact domain endpoint handling.
+    // codeql-suppress[cpp/equality-on-floats]
     if (x == rightDomain)
     {
         return cPoints.back();
@@ -112,7 +112,7 @@ template <std::floating_point T, std::size_t K> void evalInplace(
             continue;
         }
 
-        // codeql-suppress[cpp/equality-on-floats]: exact domain endpoint handling.
+        // codeql-suppress[cpp/equality-on-floats]
         if (xi == rightDomain)
         {
             out[i] = cPoints.back();

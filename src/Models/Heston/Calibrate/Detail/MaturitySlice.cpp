@@ -6,6 +6,41 @@
 
 namespace uv::models::heston::calibrate::detail
 {
+void validateInputs(
+    std::span<const double> maturities,
+    std::span<const double> discountFactors,
+    std::span<const double> forwards,
+    std::span<const double> strikes,
+    const core::Matrix<double>& vol
+)
+{
+    REQUIRE_NON_EMPTY(maturities);
+    REQUIRE_NON_EMPTY(discountFactors);
+    REQUIRE_NON_EMPTY(forwards);
+    REQUIRE_NON_EMPTY(strikes);
+
+    REQUIRE_FINITE(maturities);
+    REQUIRE_FINITE(discountFactors);
+    REQUIRE_FINITE(forwards);
+    REQUIRE_FINITE(strikes);
+
+    REQUIRE_POSITIVE(maturities);
+    REQUIRE_POSITIVE(discountFactors);
+
+    REQUIRE_SAME_SIZE(maturities, forwards);
+    REQUIRE_SAME_SIZE(maturities, discountFactors);
+    REQUIRE_SAME_SIZE(maturities, vol.rows());
+    REQUIRE_SAME_SIZE(strikes, vol.cols());
+
+    for (std::size_t i{0}; i < maturities.size(); ++i)
+    {
+        const std::span<const double> volRow{vol[i]};
+
+        REQUIRE_NON_EMPTY(volRow);
+        REQUIRE_FINITE(volRow);
+        REQUIRE_POSITIVE(volRow);
+    }
+}
 
 MaturitySlice::MaturitySlice(std::size_t capacity)
 {
@@ -59,41 +94,5 @@ Vector<MaturitySlice> makeSlices(
     }
 
     return out;
-}
-
-void validateInputs(
-    const std::span<const double> maturities,
-    const std::span<const double> discountFactors,
-    const std::span<const double> forwards,
-    const std::span<const double> strikes,
-    const core::Matrix<double>& vol
-)
-{
-    REQUIRE_NON_EMPTY(maturities);
-    REQUIRE_NON_EMPTY(discountFactors);
-    REQUIRE_NON_EMPTY(forwards);
-    REQUIRE_NON_EMPTY(strikes);
-
-    REQUIRE_FINITE(maturities);
-    REQUIRE_FINITE(discountFactors);
-    REQUIRE_FINITE(forwards);
-    REQUIRE_FINITE(strikes);
-
-    REQUIRE_POSITIVE(maturities);
-    REQUIRE_POSITIVE(discountFactors);
-
-    REQUIRE_SAME_SIZE(maturities, forwards);
-    REQUIRE_SAME_SIZE(maturities, discountFactors);
-    REQUIRE_SAME_SIZE(maturities, vol.rows());
-    REQUIRE_SAME_SIZE(strikes, vol.cols());
-
-    for (std::size_t i{0}; i < maturities.size(); ++i)
-    {
-        std::span<const double> volRow{vol[i]};
-
-        REQUIRE_NON_EMPTY(volRow);
-        REQUIRE_FINITE(volRow);
-        REQUIRE_POSITIVE(volRow);
-    }
 }
 } // namespace uv::models::heston::calibrate::detail

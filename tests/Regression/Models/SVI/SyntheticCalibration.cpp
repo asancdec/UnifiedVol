@@ -14,7 +14,7 @@
 #include <span>
 #include <vector>
 
-namespace
+namespace uv::tests::regression::svi_synthetic::detail
 {
 namespace assertions = uv::tests::assertions;
 namespace svi_support = uv::tests::models::svi;
@@ -40,7 +40,9 @@ calibrateSynthetic(const svi_support::SyntheticSurfaceCase& data)
     );
 }
 
-} // namespace
+} // namespace uv::tests::regression::svi_synthetic::detail
+
+using namespace uv::tests::regression::svi_synthetic::detail;
 
 TEST(RegressionSVICalibration, RecoversSyntheticSurfaceShapeAndVols)
 {

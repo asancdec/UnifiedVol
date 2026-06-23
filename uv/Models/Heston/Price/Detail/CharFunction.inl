@@ -12,7 +12,7 @@
 namespace uv::models::heston::price::detail
 {
 
-template <std::floating_point T> Complex<T> charFunction(
+template <std::floating_point T> Complex<T> charFunction( // NOSONAR -- Hot Heston kernel.
     T kappa,
     T kappaThetaDivSigma2,
     T sigma2,
@@ -52,7 +52,8 @@ template <std::floating_point T> Complex<T> charFunction(
            v0 * (uu * y * math::invComplex(Complex<T>{T{1}, T{0}} + ry));
 }
 
-template <std::floating_point T> [[gnu::hot]] CharFunCache<T> charFunctionCached(
+template <std::floating_point T> [[gnu::hot]] CharFunCache<T>
+charFunctionCached( // NOSONAR -- Hot Heston kernel uses precomputed scalar terms.
     T kappa,
     T kappaThetaDivSigma2,
     T sigma2,

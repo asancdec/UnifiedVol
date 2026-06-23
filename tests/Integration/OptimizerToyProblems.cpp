@@ -12,7 +12,7 @@
 #include <memory>
 #include <span>
 
-namespace
+namespace uv::tests::integration::optimizer::detail
 {
 double nloptQuadratic(unsigned n, const double* x, double* grad, void*) noexcept
 {
@@ -48,7 +48,9 @@ class SilenceConsoleLog
         uv::utils::Log::instance().enableConsole(true);
     }
 };
-} // namespace
+} // namespace uv::tests::integration::optimizer::detail
+
+using namespace uv::tests::integration::optimizer::detail;
 
 TEST(IntegrationOptimizerToyProblems, NLoptSolvesBoundedQuadratic)
 {

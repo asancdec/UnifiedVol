@@ -33,12 +33,6 @@ Grid<T, N> generateCenteredSinHGrid(T xMin, T xMax, T beta = 0);
 template <std::floating_point T, std::size_t N>
 Grid<T, N> generateUniformGrid(T xMin, T xMax);
 
-namespace detail
-{
-template <std::floating_point T, std::size_t N>
-std::array<T, N> generateUniformGrid(T xMin, T xMax);
-}
-
 } // namespace uv::math::pde
 
 #include "Math/PDE/Detail/Grid.inl"

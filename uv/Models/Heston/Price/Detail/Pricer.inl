@@ -89,8 +89,18 @@ T Pricer<T, N>::getPhi(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcep
 }
 
 template <std::floating_point T, std::size_t N>
-T Pricer<T, N>::callPrice(T kappa, T theta, T sigma, T rho, T v0, T t, T dF, T F, T K)
-    const noexcept
+T Pricer<T, N>::callPrice( // NOSONAR -- Hot pricing kernel keeps model/market scalars
+                           // explicit.
+    T kappa,
+    T theta,
+    T sigma,
+    T rho,
+    T v0,
+    T t,
+    T dF,
+    T F,
+    T K
+) const noexcept
 {
     constexpr Complex<T> i{T{0}, T{1}};
 
@@ -199,7 +209,7 @@ template <std::floating_point T, std::size_t N> core::Matrix<T> Pricer<T, N>::ca
 }
 
 template <std::floating_point T, std::size_t N>
-std::array<T, 6> Pricer<T, N>::callPriceWithGradient(
+std::array<T, 6> Pricer<T, N>::callPriceWithGradient( // NOSONAR -- Hot kernel.
     T kappa,
     T theta,
     T sigma,
