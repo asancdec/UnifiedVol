@@ -85,8 +85,9 @@ implementations are subject to change.
 
 This software is provided for **research and educational purposes only**. It is **not investment advice** and must not be used in trading systems.
 
-Model implementations and market data used in examples and tests are documented
-where applicable in [docs/references.md](docs/references.md),
+All model implementations, numerical methods, and market data included in this
+repository are derived exclusively from **publicly available sources**. These
+sources are cited and documented in [docs/references.md](docs/references.md),
 [citations.bib](citations.bib), and [docs/DATA.md](docs/DATA.md).
 
 This project is **Apache License 2.0 compliant**, and all third-party
