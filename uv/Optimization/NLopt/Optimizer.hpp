@@ -32,13 +32,13 @@ template <std::size_t N, Algorithm Algo> class Optimizer
     ::nlopt::opt opt_;
     utils::StopWatch timer_;
 
-    std::array<double, N> lowerBounds_;
-    std::array<double, N> upperBounds_;
-    std::array<double, N> initGuess_;
+    std::array<double, N> lowerBounds_{};
+    std::array<double, N> upperBounds_{};
+    std::array<double, N> initGuess_{};
 
-    NloptFunction userFn_;
-    void* userData_;
-    unsigned iterCount_;
+    NloptFunction userFn_{nullptr};
+    void* userData_{nullptr};
+    unsigned iterCount_{0U};
 
     std::optional<double> userValue_;
 

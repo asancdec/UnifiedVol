@@ -47,7 +47,7 @@ void logResults(
     std::span<const double> x,
     std::span<const std::string_view> paramNames,
     double sse,
-    unsigned iterCount,
+    std::size_t iterCount,
     double elapsedMs,
     bool isSuccess,
     std::string_view extraInfo = {}

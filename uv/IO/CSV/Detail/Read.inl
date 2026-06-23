@@ -4,6 +4,7 @@
 #include "Base/Macros/Require.hpp"
 
 #include <charconv>
+#include <format>
 #include <fstream>
 #include <system_error>
 #include <utility>
@@ -24,8 +25,7 @@ template <std::floating_point T> T parseNumberCellOrThrow(
     {
         errors::raise(
             errors::ErrorCode::DataFormat,
-            std::string(what) + " is empty at line " + std::to_string(lineNo) + ", col " +
-                std::to_string(colNo)
+            std::format("{} is empty at line {}, col {}", what, lineNo, colNo)
         );
     }
 
@@ -39,8 +39,7 @@ template <std::floating_point T> T parseNumberCellOrThrow(
         {
             errors::raise(
                 errors::ErrorCode::DataFormat,
-                "Lonely % at line " + std::to_string(lineNo) + ", col " +
-                    std::to_string(colNo)
+                std::format("Lonely % at line {}, col {}", lineNo, colNo)
             );
         }
     }
@@ -55,12 +54,17 @@ template <std::floating_point T> T parseNumberCellOrThrow(
     {
         errors::raise(
             errors::ErrorCode::DataFormat,
-            std::string("Non-numeric ") + std::string(what) + " \"" + std::string(raw) +
-                "\" at line " + std::to_string(lineNo) + ", col " + std::to_string(colNo)
+            std::format(
+                "Non-numeric {} \"{}\" at line {}, col {}",
+                what,
+                raw,
+                lineNo,
+                colNo
+            )
         );
     }
 
-    T out = static_cast<T>(tmp);
+    auto out = static_cast<T>(tmp);
     if (percent)
         out *= static_cast<T>(0.01);
 
@@ -106,19 +110,19 @@ readLabeledDenseOrThrow(std::istream& is, std::string_view filenameForErrors, Op
     {
         ++lineNo;
 
-        if (opt.skipBlankLines)
-        {
-            if (trimView(line).empty())
-                continue;
-        }
+        if (opt.skipBlankLines && trimView(line).empty())
+            continue;
 
         const auto cells = splitComma(line);
         if (cells.size() < 2)
         {
             errors::raise(
                 errors::ErrorCode::DataFormat,
-                "Row has fewer than 2 columns at line " + std::to_string(lineNo) +
-                    " in " + std::string(filenameForErrors)
+                std::format(
+                    "Row has fewer than 2 columns at line {} in {}",
+                    lineNo,
+                    filenameForErrors
+                )
             );
         }
 
@@ -126,9 +130,12 @@ readLabeledDenseOrThrow(std::istream& is, std::string_view filenameForErrors, Op
         {
             errors::raise(
                 errors::ErrorCode::DataFormat,
-                "Row " + std::to_string(lineNo) + " has only " +
-                    std::to_string(cells.size() - 1) + " data cols; expected " +
-                    std::to_string(out.cols)
+                std::format(
+                    "Row {} has only {} data cols; expected {}",
+                    lineNo,
+                    cells.size() - 1,
+                    out.cols
+                )
             );
         }
 
@@ -136,9 +143,12 @@ readLabeledDenseOrThrow(std::istream& is, std::string_view filenameForErrors, Op
         {
             errors::raise(
                 errors::ErrorCode::DataFormat,
-                "Row " + std::to_string(lineNo) + " has extra columns (got " +
-                    std::to_string(cells.size() - 1) + ", expected " +
-                    std::to_string(out.cols) + ")"
+                std::format(
+                    "Row {} has extra columns (got {}, expected {})",
+                    lineNo,
+                    cells.size() - 1,
+                    out.cols
+                )
             );
         }
 

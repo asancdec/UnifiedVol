@@ -14,14 +14,7 @@ namespace uv::opt::nlopt
 template <std::size_t N, Algorithm Algo>
 Optimizer<N, Algo>::Optimizer(const Config<N>& config)
     : config_(config),
-      opt_(detail::toNlopt(Algo), N),
-
-      lowerBounds_(),
-      upperBounds_(),
-      initGuess_(),
-      userFn_(nullptr),
-      userData_(nullptr),
-      iterCount_(0U)
+      opt_(detail::toNlopt(Algo), N)
 {
     opt_.set_ftol_rel(config_.ftolRel);
     opt_.set_maxeval(config_.maxEval);

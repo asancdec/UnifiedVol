@@ -335,7 +335,8 @@ template <std::floating_point T> core::Matrix<T> impliedVol(
         maturities,
         discountFactors,
         volSurface.forwards(),
-        volSurface.strikes()
+        volSurface.strikes(),
+        doValidate
     );
 }
 

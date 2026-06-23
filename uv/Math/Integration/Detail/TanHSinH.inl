@@ -32,9 +32,15 @@ std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti(F&& f) const noexcept
 
     constexpr T eps{std::numeric_limits<T>::epsilon()};
 
-    std::array<T, M> sR0{T(0.0)}, sR1{T(0.0)}, sL0{T(0.0)}, sL1{T(0.0)};
+    std::array<T, M> sR0{T(0.0)};
+    std::array<T, M> sR1{T(0.0)};
+    std::array<T, M> sL0{T(0.0)};
+    std::array<T, M> sL1{T(0.0)};
 
-    std::bitset<M> actR0, actR1, actL0, actL1;
+    std::bitset<M> actR0;
+    std::bitset<M> actR1;
+    std::bitset<M> actL0;
+    std::bitset<M> actL1;
     actR0.set();
     actR1.set();
     actL0.set();
@@ -52,7 +58,8 @@ std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti(F&& f) const noexcept
 
         std::array<T, M> ta{};
         std::array<T, M> tb{};
-        T fa{T(0.0)}, fb{T(0.0)};
+        T fa{T(0.0)};
+        T fb{T(0.0)};
         if (anyA)
         {
             const Node& a{nodes_[i]};
@@ -99,7 +106,8 @@ std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti(F&& f) const noexcept
 
         std::array<T, M> ta{};
         std::array<T, M> tb{};
-        T fa{T(0.0)}, fb{T(0.0)};
+        T fa{T(0.0)};
+        T fb{T(0.0)};
         if (anyA)
         {
             const Node& a{nodes_[i]};
@@ -148,7 +156,10 @@ T TanHSinH<T, N>::integrateZeroToInf(F&& f) const noexcept
 
     constexpr T eps{std::numeric_limits<T>::epsilon()};
 
-    T sR0{T(0.0)}, sR1{T(0.0)}, sL0{T(0.0)}, sL1{T(0.0)};
+    T sR0{T(0.0)};
+    T sR1{T(0.0)};
+    T sL0{T(0.0)};
+    T sL1{T(0.0)};
 
     auto&& func = std::forward<F>(f);
 

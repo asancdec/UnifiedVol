@@ -47,6 +47,20 @@ runs:
         vcpkgDirectory: ${{ github.workspace }}/.vcpkg
         vcpkgJsonGlob: ${{ github.workspace }}/vcpkg.json
 
+    - name: Restore vcpkg binary packages
+      uses: actions/cache@v5
+      with:
+        path: ${{ github.workspace }}/.vcpkg-cache
+        key: vcpkg-${{ runner.os }}-gcc13-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'CMakePresets.json') }}
+        restore-keys: |
+          vcpkg-${{ runner.os }}-gcc13-
+
+    - name: Configure vcpkg binary cache
+      shell: bash
+      run: |
+        mkdir -p "${{ github.workspace }}/.vcpkg-cache"
+        echo "VCPKG_BINARY_SOURCES=clear;files,${{ github.workspace }}/.vcpkg-cache,readwrite" >> "$GITHUB_ENV"
+
     - name: Expose vcpkg to CMake presets
       shell: bash
       run: |

@@ -10,6 +10,24 @@ namespace uv::errors::validate
 {
 namespace detail
 {
+template <std::floating_point T> [[nodiscard]] constexpr bool
+orderedPair(T current, T previous, bool increasing, bool strict) noexcept
+{
+    if (increasing)
+        return strict ? current > previous : current >= previous;
+
+    return strict ? current < previous : current <= previous;
+}
+
+[[nodiscard]] constexpr std::string_view
+failedOrderOperator(bool increasing, bool strict) noexcept
+{
+    if (increasing)
+        return strict ? "<=" : "<";
+
+    return strict ? ">=" : ">";
+}
+
 template <std::floating_point T> void strictOrder(
     std::span<const T> xs,
     std::string_view what,
@@ -28,12 +46,8 @@ template <std::floating_point T> void strictOrder(
     for (std::size_t i = 1; i < n; ++i)
     {
         const T curr{xs[i]};
-        const bool ok{
-            strict ? (increasing ? curr > prev : curr < prev)
-                   : (increasing ? curr >= prev : curr <= prev)
-        };
-
-        if (!ok) [[unlikely]]
+        if (const bool ordered{orderedPair(curr, prev, increasing, strict)}; !ordered)
+            [[unlikely]]
         {
             raise(
                 ErrorCode::InvalidArgument,
@@ -44,7 +58,7 @@ template <std::floating_point T> void strictOrder(
                     increasing ? "increasing" : "decreasing",
                     i,
                     curr,
-                    increasing ? (strict ? "<=" : "<") : (strict ? ">=" : ">"),
+                    failedOrderOperator(increasing, strict),
                     prev
                 ),
                 loc
@@ -459,9 +473,7 @@ void strictlyDecreasing(const R& xs, std::string_view what, std::source_location
 template <std::floating_point T> void
 strictlyMonotonic(std::span<const T> xs, std::string_view what, std::source_location loc)
 {
-    const std::size_t n{xs.size()};
-
-    if (n < 2)
+    if (const std::size_t n{xs.size()}; n < 2)
         return;
 
     if (xs[1] > xs[0])

@@ -42,7 +42,7 @@ core::Matrix<T> transformIndexed(const core::Matrix<T>& m, F&& f)
     return generateIndexed<T>(
         m.rows(),
         m.cols(),
-        [&](std::size_t i, std::size_t j)
+        [&func, &m](std::size_t i, std::size_t j)
         {
             return std::invoke(func, i, j, m[i][j]);
         }
@@ -206,7 +206,6 @@ template <std::floating_point T> core::Matrix<T> sqrt(const core::Matrix<T>& m)
 template <std::floating_point T> void sqrtInplace(core::Matrix<T>& m)
 {
     const std::size_t numRows{m.rows()};
-    const std::size_t numCols{m.cols()};
 
     for (std::size_t i = 0; i < numRows; ++i)
     {

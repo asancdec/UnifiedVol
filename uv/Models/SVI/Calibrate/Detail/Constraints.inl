@@ -10,6 +10,37 @@
 namespace uv::models::svi::detail
 {
 
+template <opt::nlopt::Algorithm Algo> [[gnu::hot]] double
+wMinConstraint(unsigned, const double* x, double* grad, void* data) noexcept
+{
+    const auto& optimizer{*static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data)};
+
+    const double eps{optimizer.eps()};
+    const double atmTotalVariance{optimizer.userValue()};
+    const double b{x[0]};
+    const double rho{x[1]};
+    const double m{x[2]};
+    const double sigma{x[3]};
+
+    const double sigmaSquared{sigma * sigma};
+    const double radius{std::sqrt(m * m + sigmaSquared)};
+    const double rhoScale{std::sqrt(1.0 - rho * rho)};
+
+    const double base{-rho * m + radius};
+    const double a{atmTotalVariance - b * base};
+    const double minTotalVariance{b * sigma * rhoScale + a};
+
+    if (grad)
+    {
+        grad[0] = -(rho * m - radius + sigma * rhoScale);
+        grad[1] = -(b * (m - sigma * rho / rhoScale));
+        grad[2] = -(b * (rho - m / radius));
+        grad[3] = -(b * (rhoScale - sigma / radius));
+    }
+
+    return eps - minTotalVariance;
+}
+
 template <std::floating_point T, opt::nlopt::Algorithm Algo> void addCalendarConstraints(
     opt::nlopt::Optimizer<4, Algo>& optimizer,
     SliceConstraints& c,
@@ -55,46 +86,14 @@ template <opt::nlopt::Algorithm Algo> void addConvexityConstraints(
 template <opt::nlopt::Algorithm Algo>
 void addWMinConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
 {
-    optimizer.addInequalityConstraint(
-        +[](unsigned, const double* x, double* grad, void* data) noexcept -> double
-        {
-            const auto& opt{*static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data)};
-
-            const double eps{opt.eps()};
-            const double atmTotalVariance{opt.userValue()};
-            const double b{x[0]};
-            const double rho{x[1]};
-            const double m{x[2]};
-            const double sigma{x[3]};
-
-            const double s2{sigma * sigma};
-            const double R{std::sqrt(m * m + s2)};
-            const double S{std::sqrt(1.0 - rho * rho)};
-
-            const double base{-rho * m + R};
-            const double a{atmTotalVariance - b * base};
-
-            const double wMin{b * sigma * S + a};
-
-            if (grad)
-            {
-                grad[0] = -(rho * m - R + sigma * S);
-                grad[1] = -(b * (m - sigma * rho / S));
-                grad[2] = -(b * (rho - m / R));
-                grad[3] = -(b * (S - sigma / R));
-            }
-
-            return eps - wMin;
-        },
-        &optimizer
-    );
+    optimizer.addInequalityConstraint(&wMinConstraint<Algo>, &optimizer);
 }
 template <opt::nlopt::Algorithm Algo>
 void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
 {
 
     optimizer.addInequalityConstraint(
-        +[](unsigned, const double* x, double* grad, void* data) noexcept -> double
+        +[](unsigned, const double* x, double* grad, void* data) noexcept
         {
             const auto& opt = *static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data);
 
@@ -116,7 +115,7 @@ void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
     );
 
     optimizer.addInequalityConstraint(
-        +[](unsigned, const double* x, double* grad, void* data) noexcept -> double
+        +[](unsigned, const double* x, double* grad, void* data) noexcept
         {
             const auto& opt = *static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data);
 
@@ -143,7 +142,7 @@ void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
 {
 
     optimizer.addInequalityConstraint(
-        +[](unsigned, const double* x, double* grad, void*) noexcept -> double
+        +[](unsigned, const double* x, double* grad, void*) noexcept
         {
             const double b{x[0]};
             const double rho{x[1]};
@@ -162,7 +161,7 @@ void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
     );
 
     optimizer.addInequalityConstraint(
-        +[](unsigned, const double* x, double* grad, void*) noexcept -> double
+        +[](unsigned, const double* x, double* grad, void*) noexcept
         {
             const double b{x[0]};
             const double rho{x[1]};
