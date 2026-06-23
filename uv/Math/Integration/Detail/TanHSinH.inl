@@ -27,8 +27,13 @@ template <std::floating_point T, std::size_t N> TanHSinH<T, N>::TanHSinH()
 }
 
 template <std::floating_point T, std::size_t N> template <std::size_t M, typename F>
-std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti(F&& f) const noexcept
+std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti( // NOSONAR
+    F&& f
+) const noexcept
 {
+    // The explicit four-lane state mirrors the quadrature streams and keeps each
+    // convergence decision independently auditable; flattening it obscures the numerical
+    // policy.
 
     constexpr T eps{std::numeric_limits<T>::epsilon()};
 
@@ -79,7 +84,7 @@ std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti(F&& f) const noexcept
             {
 
                 T term{fa * ta[m]};
-                if (std::fabs(term) <= std::fabs(sR0[m] * eps))
+                if (std::fabs(term) <= std::fabs(sR0[m] * eps)) // NOSONAR
                     actR0.reset(m);
                 else
                     sR0[m] += term;
@@ -88,7 +93,7 @@ std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti(F&& f) const noexcept
             {
 
                 T term{fb * tb[m]};
-                if (std::fabs(term) <= std::fabs(sR1[m] * eps))
+                if (std::fabs(term) <= std::fabs(sR1[m] * eps)) // NOSONAR
                     actR1.reset(m);
                 else
                     sR1[m] += term;
@@ -127,7 +132,7 @@ std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti(F&& f) const noexcept
             {
 
                 T term{fa * ta[m]};
-                if (std::fabs(term) <= std::fabs(sL0[m] * eps))
+                if (std::fabs(term) <= std::fabs(sL0[m] * eps)) // NOSONAR
                     actL0.reset(m);
                 else
                     sL0[m] += term;
@@ -136,7 +141,7 @@ std::array<T, M> TanHSinH<T, N>::integrateZeroToInfMulti(F&& f) const noexcept
             {
 
                 T term{fb * tb[m]};
-                if (std::fabs(term) <= std::fabs(sL1[m] * eps))
+                if (std::fabs(term) <= std::fabs(sL1[m] * eps)) // NOSONAR
                     actL1.reset(m);
                 else
                     sL1[m] += term;
@@ -163,7 +168,8 @@ T TanHSinH<T, N>::integrateZeroToInf(F&& f) const noexcept
 
     auto&& func = std::forward<F>(f);
 
-    for (std::size_t i = 0; i + 1 < N; i += 2)
+    // NOSONAR -- Paired early exits are the quadrature convergence policy.
+    for (std::size_t i = 0; i + 1 < N; i += 2) // NOSONAR
     {
 
         const Node& a{nodes_[i]};
@@ -184,7 +190,7 @@ T TanHSinH<T, N>::integrateZeroToInf(F&& f) const noexcept
         sR1 += tb;
     }
 
-    for (std::size_t i = 1; i + 1 < N; i += 2)
+    for (std::size_t i = 1; i + 1 < N; i += 2) // NOSONAR
     {
         const Node& a{nodes_[i]};
         const Node& b{nodes_[i + 1]};

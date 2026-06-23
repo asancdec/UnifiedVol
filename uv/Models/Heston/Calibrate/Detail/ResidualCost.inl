@@ -188,15 +188,17 @@ template <opt::ceres::GradientMode Mode, std::floating_point T, std::size_t N>
 std::unique_ptr<::ceres::CostFunction>
 makeSliceCost(const MaturitySlice& slice, const price::Pricer<T, N>& pricer)
 {
-    if constexpr (Mode == opt::ceres::GradientMode::Analytic)
+    using enum opt::ceres::GradientMode;
+
+    if constexpr (Mode == Analytic)
     {
         return makeSliceCostAnalytic<T, N>(slice, pricer);
     }
-    else if constexpr (Mode == opt::ceres::GradientMode::NumericForward)
+    else if constexpr (Mode == NumericForward)
     {
         return makeSliceCostNumericForward<T, N>(slice, pricer);
     }
-    else if constexpr (Mode == opt::ceres::GradientMode::NumericCentral)
+    else if constexpr (Mode == NumericCentral)
     {
         return makeSliceCostNumericCentral<T, N>(slice, pricer);
     }

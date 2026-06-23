@@ -13,11 +13,11 @@
 namespace uv::models::svi::detail
 {
 template <std::floating_point T, opt::nlopt::Algorithm Algo> Params<T> calibrateSlice(
-    T maturity,
+    T t,
     std::span<const double> logKF,
     std::span<const double> totalVariance,
     const opt::nlopt::Optimizer<4, Algo>& prototype,
-    const Params<T>* previousParams
+    const Params<T>* prevParams
 );
 
 template <std::floating_point T> void validateInputs(

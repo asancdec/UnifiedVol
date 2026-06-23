@@ -26,8 +26,7 @@ template <std::floating_point T> void pchipDerivatives(
     bool doValidate
 );
 
-template <std::floating_point T>
-T pchipEndpointSlope(T h1, T h2, T slope1, T slope2) noexcept;
+template <std::floating_point T> T pchipEndpointSlope(T h1, T h2, T S1, T S2) noexcept;
 
 template <std::floating_point T> void validateInputsDerivatives(
     std::span<const T> xs,

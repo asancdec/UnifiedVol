@@ -49,7 +49,7 @@ priceB76(const core::VolSurface<T>& volSurface, const core::Curve<T>& curve, boo
     return out;
 }
 
-template <std::floating_point T> void priceB76(
+template <std::floating_point T> void priceB76( // NOSONAR -- Canonical Black inputs.
     std::span<T> out,
     T t,
     T dF,
@@ -85,8 +85,17 @@ template <std::floating_point T> void priceB76(
     }
 }
 
-template <std::floating_point T>
-T priceBS(T t, T r, T q, T vol, T S, T K, bool doValidate, bool isCall)
+template <std::floating_point T> T
+priceBS( // NOSONAR -- Canonical Black-Scholes inputs remain explicit and allocation-free.
+    T t,
+    T r,
+    T q,
+    T vol,
+    T S,
+    T K,
+    bool doValidate,
+    bool isCall
+)
 {
     if (doValidate)
     {

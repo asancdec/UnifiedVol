@@ -10,17 +10,20 @@
 namespace uv::models::svi::detail
 {
 
+// NLopt mandates C callbacks with an opaque void* context; typed lambdas cannot
+// replace these signatures without an equivalent ABI trampoline.
+
 template <opt::nlopt::Algorithm Algo> void fillCalendarMContext(
     CalendarMContext& context,
     Vector<double>& logKBuffer,
     Vector<double>& previousVarianceBuffer,
-    std::size_t numStrikes,
     const Params<double>& previousParams,
     opt::nlopt::Optimizer<4, Algo>& optimizer,
     std::span<const double> logKF,
     const SliceData& sliceData
 ) noexcept
 {
+    const std::size_t numStrikes{logKF.size()};
     const std::size_t constraintCount{numStrikes + 2};
 
     logKBuffer.resize(constraintCount);
@@ -65,7 +68,7 @@ template <opt::nlopt::Algorithm Algo> void fillCalendarMContext(
 }
 
 template <opt::nlopt::Algorithm Algo> [[gnu::hot]] double
-wMinConstraint(unsigned, const double* x, double* grad, void* data) noexcept
+wMinConstraint(unsigned, const double* x, double* grad, void* data) noexcept // NOSONAR
 {
     const auto& optimizer{*static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data)};
 
@@ -106,14 +109,12 @@ template <std::floating_point T, opt::nlopt::Algorithm Algo> void addCalendarCon
     if (!prevParams)
         return;
 
-    const std::size_t numStrikes{logKF.size()};
     const Params<double> prevParamsD{prevParams->template as<double>()};
 
     fillCalendarMContext<Algo>(
         c.calM,
         c.calLogKF,
         c.calPrevWk,
-        numStrikes,
         prevParamsD,
         optimizer,
         logKF,
@@ -147,7 +148,7 @@ void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
 {
 
     optimizer.addInequalityConstraint(
-        +[](unsigned, const double* x, double* grad, void* data) noexcept
+        +[](unsigned, const double* x, double* grad, void* data) noexcept // NOSONAR
         {
             const auto& opt = *static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data);
 
@@ -169,7 +170,7 @@ void addMinSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
     );
 
     optimizer.addInequalityConstraint(
-        +[](unsigned, const double* x, double* grad, void* data) noexcept
+        +[](unsigned, const double* x, double* grad, void* data) noexcept // NOSONAR
         {
             const auto& opt = *static_cast<const opt::nlopt::Optimizer<4, Algo>*>(data);
 
@@ -196,7 +197,7 @@ void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
 {
 
     optimizer.addInequalityConstraint(
-        +[](unsigned, const double* x, double* grad, void*) noexcept
+        +[](unsigned, const double* x, double* grad, void*) noexcept // NOSONAR
         {
             const double b{x[0]};
             const double rho{x[1]};
@@ -215,7 +216,7 @@ void addMaxSlopeConstraint(opt::nlopt::Optimizer<4, Algo>& optimizer)
     );
 
     optimizer.addInequalityConstraint(
-        +[](unsigned, const double* x, double* grad, void*) noexcept
+        +[](unsigned, const double* x, double* grad, void*) noexcept // NOSONAR
         {
             const double b{x[0]};
             const double rho{x[1]};

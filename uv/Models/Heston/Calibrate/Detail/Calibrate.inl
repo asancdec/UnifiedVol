@@ -14,6 +14,15 @@
 
 namespace uv::models::heston::calibrate::detail
 {
+template <std::floating_point T> struct CalibrationData
+{
+    std::span<const T> maturities;
+    std::span<const T> discountFactors;
+    std::span<const T> forwards;
+    std::span<const T> strikes;
+    const core::Matrix<T>& vol;
+};
+
 template <
     std::floating_point T,
     std::size_t N,
@@ -33,11 +42,7 @@ template <
     opt::ceres::GradientMode Mode,
     typename Policy>
 Params<T> calibrate(
-    std::span<const T> maturities,
-    std::span<const T> discountFactors,
-    std::span<const T> forwards,
-    std::span<const T> strikes,
-    const core::Matrix<T>& vol,
+    const CalibrationData<T>& data,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
     price::Pricer<T, N>& pricer
@@ -49,11 +54,7 @@ template <
     opt::ceres::GradientMode Mode,
     typename Policy>
 Params<double> calibrateDouble(
-    std::span<const double> maturities,
-    std::span<const double> discountFactors,
-    std::span<const double> forwards,
-    std::span<const double> strikes,
-    const core::Matrix<double>& vol,
+    const CalibrationData<double>& data,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
     price::Pricer<CalcT, N>& pricer
@@ -129,16 +130,16 @@ Params<T> calibrate(
 {
     std::span<const T> maturities{volSurface.maturities()};
 
-    return calibrate<T, N, Mode, Policy>(
-        volSurface.maturities(),
-        curve.interpolateDF(maturities),
-        volSurface.forwards(),
-        volSurface.strikes(),
-        volSurface.vol(),
-        optimizer,
-        weightATM,
-        pricer
-    );
+    const Vector<T> discountFactors{curve.interpolateDF(maturities)};
+    const CalibrationData<T> data{
+        .maturities = volSurface.maturities(),
+        .discountFactors = discountFactors,
+        .forwards = volSurface.forwards(),
+        .strikes = volSurface.strikes(),
+        .vol = volSurface.vol()
+    };
+
+    return calibrate<T, N, Mode, Policy>(data, optimizer, weightATM, pricer);
 }
 
 template <
@@ -147,11 +148,7 @@ template <
     opt::ceres::GradientMode Mode,
     typename Policy>
 Params<T> calibrate(
-    const std::span<const T> maturities,
-    const std::span<const T> discountFactors,
-    const std::span<const T> forwards,
-    const std::span<const T> strikes,
-    const core::Matrix<T>& vol,
+    const CalibrationData<T>& data,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
     price::Pricer<T, N>& pricer
@@ -159,28 +156,23 @@ Params<T> calibrate(
 {
     if constexpr (std::is_same_v<T, double>)
     {
-        return calibrateDouble<T, N, Mode, Policy>(
-            maturities,
-            discountFactors,
-            forwards,
-            strikes,
-            vol,
-            optimizer,
-            weightATM,
-            pricer
-        );
+        return calibrateDouble<T, N, Mode, Policy>(data, optimizer, weightATM, pricer);
     }
 
-    return calibrateDouble<T, N, Mode, Policy>(
-               convertVector<double>(maturities),
-               convertVector<double>(discountFactors),
-               convertVector<double>(forwards),
-               convertVector<double>(strikes),
-               vol.template as<double>(),
-               optimizer,
-               weightATM,
-               pricer
-    )
+    const Vector<double> maturities{convertVector<double>(data.maturities)};
+    const Vector<double> discountFactors{convertVector<double>(data.discountFactors)};
+    const Vector<double> forwards{convertVector<double>(data.forwards)};
+    const Vector<double> strikes{convertVector<double>(data.strikes)};
+    const core::Matrix<double> vol{data.vol.template as<double>()};
+    const CalibrationData<double> converted{
+        .maturities = maturities,
+        .discountFactors = discountFactors,
+        .forwards = forwards,
+        .strikes = strikes,
+        .vol = vol
+    };
+
+    return calibrateDouble<T, N, Mode, Policy>(converted, optimizer, weightATM, pricer)
         .template as<T>();
 }
 
@@ -190,11 +182,7 @@ template <
     opt::ceres::GradientMode Mode,
     typename Policy>
 Params<double> calibrateDouble(
-    std::span<const double> maturities,
-    std::span<const double> discountFactors,
-    std::span<const double> forwards,
-    std::span<const double> strikes,
-    const core::Matrix<double>& vol,
+    const CalibrationData<double>& data,
     opt::ceres::Optimizer<Policy>& optimizer,
     const opt::cost::WeightATM<double>& weightATM,
     price::Pricer<CalcT, N>& pricer
@@ -204,9 +192,14 @@ Params<double> calibrateDouble(
 
     optimizer.beginRun();
 
-    Vector<MaturitySlice> slices{
-        makeSlices(maturities, discountFactors, forwards, strikes, vol, weightATM)
-    };
+    Vector<MaturitySlice> slices{makeSlices(
+        data.maturities,
+        data.discountFactors,
+        data.forwards,
+        data.strikes,
+        data.vol,
+        weightATM
+    )};
 
     for (const auto& s : slices)
     {

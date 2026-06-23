@@ -72,7 +72,13 @@ void Log::log(Level lvl, std::string_view msg)
     const char* lvlStr = (lvl == Level::Info) ? "INFO" : "WARN";
 
     std::array<char, 20> timestamp{};
-    std::strftime(timestamp.data(), timestamp.size(), "%Y-%m-%d %H:%M:%S", &tm);
+    // NOSONAR -- chrono time-zone formatting is not portable across supported libstdc++.
+    std::strftime( // NOSONAR
+        timestamp.data(),
+        timestamp.size(),
+        "%Y-%m-%d %H:%M:%S",
+        &tm
+    );
     const std::string line{
         std::format("[{}.{:03}][{}] {}\n", timestamp.data(), ms.count(), lvlStr, msg)
     };

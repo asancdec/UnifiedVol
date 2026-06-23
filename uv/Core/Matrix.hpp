@@ -41,6 +41,36 @@ template <std::floating_point T> class Matrix
 
     Matrix operator-() const;
 
+    friend Matrix operator+(Matrix lhs, const Matrix& rhs)
+    {
+        lhs += rhs;
+        return lhs;
+    }
+
+    friend Matrix operator-(Matrix lhs, const Matrix& rhs)
+    {
+        lhs -= rhs;
+        return lhs;
+    }
+
+    friend Matrix operator*(Matrix lhs, T scalar)
+    {
+        lhs *= scalar;
+        return lhs;
+    }
+
+    friend Matrix operator/(Matrix lhs, T scalar)
+    {
+        lhs /= scalar;
+        return lhs;
+    }
+
+    friend Matrix operator*(T scalar, Matrix rhs)
+    {
+        rhs *= scalar;
+        return rhs;
+    }
+
     bool empty() const noexcept;
 
     std::size_t rows() const noexcept;
@@ -49,16 +79,6 @@ template <std::floating_point T> class Matrix
 
     template <std::floating_point U> Matrix<U> as() const;
 };
-
-template <std::floating_point T> Matrix<T> operator+(Matrix<T>, const Matrix<T>&);
-
-template <std::floating_point T> Matrix<T> operator-(Matrix<T>, const Matrix<T>&);
-
-template <std::floating_point T> Matrix<T> operator*(Matrix<T>, T);
-
-template <std::floating_point T> Matrix<T> operator/(Matrix<T>, T);
-
-template <std::floating_point T> Matrix<T> operator*(T, Matrix<T>);
 
 } // namespace uv::core
 
