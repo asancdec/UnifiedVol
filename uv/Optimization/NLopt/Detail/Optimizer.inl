@@ -65,11 +65,11 @@ void Optimizer<N, Algo>::addInequalityConstraint(NloptFunction c, void* data) //
     opt_.add_inequality_constraint(c, data, config_.tol);
 }
 
-template <std::size_t N, Algorithm Algo> void
-Optimizer<N, Algo>::addInequalityMConstraint( // NOSONAR -- Exact NLopt C callback ABI.
+template <std::size_t N, Algorithm Algo>
+void Optimizer<N, Algo>::addInequalityMConstraint(
     std::size_t m,
-    NloptMFunction c,
-    void* data
+    NloptMFunction c, // NOSONAR
+    void* data        // NOSONAR -- Exact NLopt C callback ABI.
 )
 {
     Vector<double> tol(m, config_.tol);
