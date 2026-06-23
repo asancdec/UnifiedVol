@@ -8,7 +8,7 @@
 #include <cmath>
 #include <gtest/gtest.h>
 
-namespace
+namespace uv::tests::integration::heston_stress::detail
 {
 constexpr double StressNoArbTolerance = 2e-6;
 
@@ -63,7 +63,9 @@ void expectFiniteBoundedMonotoneCalls(
         previous = price;
     }
 }
-} // namespace
+} // namespace uv::tests::integration::heston_stress::detail
+
+using namespace uv::tests::integration::heston_stress::detail;
 
 TEST(StressHestonPricing, HandlesExtremeMaturitiesAndCorrelations)
 {

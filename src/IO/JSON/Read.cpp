@@ -15,7 +15,7 @@
 
 namespace uv::io::json
 {
-namespace
+namespace detail
 {
 [[noreturn]] void raiseDataFormat(
     std::string_view message,
@@ -306,7 +306,10 @@ class Parser
     std::string text_;
     std::size_t pos_{};
 };
-} // namespace
+} // namespace detail
+
+using detail::raiseDataFormat;
+using detail::raiseFileIO;
 
 const Value& Value::at(std::string_view key) const
 {
@@ -342,7 +345,7 @@ const std::string& Value::asString() const
 
 Value parse(std::string text)
 {
-    return Parser{std::move(text)}.parse();
+    return detail::Parser{std::move(text)}.parse();
 }
 
 Value read(const std::filesystem::path& path)

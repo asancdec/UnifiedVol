@@ -3,6 +3,35 @@
 #include "Math/LinearAlgebra/VectorOps.hpp"
 
 #include <cstddef>
+#include <utility>
+
+namespace uv::core::detail
+{
+template <std::floating_point T> Curve<T>
+generateInterestCurve(const MarketData<T>& marketData, std::span<const T> maturities);
+
+template <std::floating_point T> Curve<T>
+generateDividendCurve(const MarketData<T>& marketData, std::span<const T> maturities);
+
+template <std::floating_point T> VolSurface<T> generateVolSurface(
+    const MarketData<T>& marketData,
+    std::span<const T> maturities,
+    std::span<const T> moneyness,
+    const Curve<T>& interestCurve,
+    const Curve<T>& dividendCurve,
+    const Matrix<T>& vol
+);
+
+template <std::floating_point T> Vector<T> generateForwards(
+    T spot,
+    std::span<const T> maturities,
+    const Curve<T>& interestCurve,
+    const Curve<T>& dividendCurve
+);
+
+template <std::floating_point T>
+Vector<T> generateStrikes(T spot, std::span<const T> moneyness);
+} // namespace uv::core::detail
 
 namespace uv::core
 {

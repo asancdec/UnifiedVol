@@ -15,9 +15,4 @@ struct Config
 
 void initialize(const Config& cfg = {});
 
-namespace detail
-{
-void applyLogConfig(const Config& cfg);
-}
-
 } // namespace uv

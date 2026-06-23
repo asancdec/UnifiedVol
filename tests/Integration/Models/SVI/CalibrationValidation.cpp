@@ -11,7 +11,7 @@
 #include <span>
 #include <vector>
 
-namespace
+namespace uv::tests::integration::svi_validation::detail
 {
 using SVIOptimizer = uv::opt::nlopt::Optimizer<4, uv::opt::nlopt::Algorithm::LD_SLSQP>;
 
@@ -25,7 +25,9 @@ SVIOptimizer makeOptimizer()
     };
     return SVIOptimizer{uv::models::svi::detail::makeNLoptConfig(config)};
 }
-} // namespace
+} // namespace uv::tests::integration::svi_validation::detail
+
+using namespace uv::tests::integration::svi_validation::detail;
 
 TEST(IntegrationSVICalibrationValidation, RejectsNonIncreasingMaturities)
 {

@@ -3,9 +3,6 @@
 #pragma once
 
 #include "Base/Types.hpp"
-#include "Models/SVI/Calibrate/Detail/SliceData.hpp"
-#include "Models/SVI/Params.hpp"
-#include "Optimization/NLopt/Optimizer.hpp"
 
 #include <cstddef>
 #include <span>
@@ -48,17 +45,4 @@ struct ConvexityMContext
     double atmTotalVariance{};
 };
 
-template <opt::nlopt::Algorithm Algo> void fillCalendarMContext(
-    CalendarMContext& mctx,
-    Vector<double>& logKFBuf,
-    Vector<double>& prevWkBuf,
-    std::size_t numStrikes,
-    const Params<double>& prevParams,
-    opt::nlopt::Optimizer<4, Algo>& optimizer,
-    std::span<const double> logKF,
-    const SliceData& sliceData
-) noexcept;
-
 } // namespace uv::models::svi::detail
-
-#include "Models/SVI/Calibrate/Detail/Contexts.inl"

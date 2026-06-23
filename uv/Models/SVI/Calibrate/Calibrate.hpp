@@ -26,25 +26,6 @@ template <std::floating_point T, opt::nlopt::Algorithm Algo> Vector<Params<T>> c
     const opt::nlopt::Optimizer<4, Algo>& prototype,
     bool printParams = false
 );
-
-namespace detail
-{
-
-template <std::floating_point T, opt::nlopt::Algorithm Algo> Params<T> calibrateSlice(
-    T t,
-    std::span<const double> logKF,
-    std::span<const double> totalVariance,
-    const opt::nlopt::Optimizer<4, Algo>& prototype,
-    const Params<T>* prevParams
-);
-
-template <std::floating_point T> void validateInputs(
-    std::span<const T> maturities,
-    const core::Matrix<T>& logKF,
-    const core::Matrix<T>& totalVariance
-);
-
-} // namespace detail
 } // namespace uv::models::svi
 
 #include "Models/SVI/Calibrate/Detail/Calibrate.inl"

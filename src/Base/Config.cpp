@@ -5,10 +5,6 @@
 
 namespace uv
 {
-void initialize(const Config& cfg)
-{
-    detail::applyLogConfig(cfg);
-}
 namespace detail
 {
 void applyLogConfig(const Config& cfg)
@@ -23,4 +19,9 @@ void applyLogConfig(const Config& cfg)
     }
 }
 } // namespace detail
+
+void initialize(const Config& cfg)
+{
+    detail::applyLogConfig(cfg);
+}
 } // namespace uv

@@ -4,14 +4,16 @@
 
 #include <gtest/gtest.h>
 
-namespace
+namespace uv::tests::unit::base_errors::detail
 {
 enum class DummyEnum
 {
     Known = 1,
     Unknown = 7
 };
-} // namespace
+} // namespace uv::tests::unit::base_errors::detail
+
+using namespace uv::tests::unit::base_errors::detail;
 
 TEST(UnitBaseErrors, UnreachableEnumRaisesUnifiedVolError)
 {

@@ -7,13 +7,15 @@
 #include <cmath>
 #include <gtest/gtest.h>
 
-namespace
+namespace uv::tests::regression::heston_gradient::detail
 {
 template <typename F> double centralDifference(F&& f, double x, double h)
 {
     return (f(x + h) - f(x - h)) / (2.0 * h);
 }
-} // namespace
+} // namespace uv::tests::regression::heston_gradient::detail
+
+using namespace uv::tests::regression::heston_gradient::detail;
 
 TEST(RegressionHestonGradient, MatchesCentralFiniteDifference)
 {

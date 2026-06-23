@@ -10,7 +10,7 @@
 
 namespace uv::tests::golden
 {
-namespace
+namespace detail
 {
 namespace json = uv::io::json;
 
@@ -150,7 +150,9 @@ void validateHestonParams(const models::heston::Params<double>& params)
     if (params.rho <= -1.0 || params.rho >= 1.0)
         throw std::runtime_error("Expected rho in (-1, 1) at: hestonParams.rho");
 }
-} // namespace
+} // namespace detail
+
+using namespace detail;
 
 ExamplePipeline readExamplePipeline(const std::filesystem::path& path)
 {

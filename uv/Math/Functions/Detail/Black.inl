@@ -7,6 +7,26 @@
 #include <cmath>
 #include <span>
 
+namespace uv::math::black::detail
+{
+
+template <std::floating_point T> T d1(T t, T r, T q, T vol, T S, T K) noexcept
+{
+    return std::fma(t, (r - q + vol * vol * 0.5), std::log(S / K)) / (std::sqrt(t) * vol);
+}
+
+template <std::floating_point T> T d2(T vol, T t, T d1) noexcept
+{
+    return std::fma(-vol, std::sqrt(t), d1);
+}
+
+template <std::floating_point T> T d1FromForward(T t, T vol, T F, T K) noexcept
+{
+    return std::fma(t, (vol * vol * 0.5), std::log(F / K)) / (std::sqrt(t) * vol);
+}
+
+} // namespace uv::math::black::detail
+
 namespace uv::math::black
 {
 template <std::floating_point T> core::Matrix<T>
@@ -137,23 +157,3 @@ template <std::floating_point T> T vegaB76(T t, T dF, T F, T vol, T K) noexcept
 }
 
 } // namespace uv::math::black
-
-namespace uv::math::black::detail
-{
-
-template <std::floating_point T> T d1(T t, T r, T q, T vol, T S, T K) noexcept
-{
-    return std::fma(t, (r - q + vol * vol * 0.5), std::log(S / K)) / (std::sqrt(t) * vol);
-}
-
-template <std::floating_point T> T d2(T vol, T t, T d1) noexcept
-{
-    return std::fma(-vol, std::sqrt(t), d1);
-}
-
-template <std::floating_point T> T d1FromForward(T t, T vol, T F, T K) noexcept
-{
-    return std::fma(t, (vol * vol * 0.5), std::log(F / K)) / (std::sqrt(t) * vol);
-}
-
-} // namespace uv::math::black::detail

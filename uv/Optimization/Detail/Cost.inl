@@ -4,6 +4,28 @@
 
 #include <cmath>
 
+namespace uv::opt::cost::detail
+{
+template <std::floating_point T> void
+validateWeightsATM(std::span<const T> logKF, const WeightATM<T>& params, std::span<T> out)
+{
+    const T wATM{params.wATM};
+    const T k0{params.k0};
+
+    REQUIRE_NON_EMPTY(out);
+    REQUIRE_NON_EMPTY(logKF);
+
+    REQUIRE_FINITE(logKF);
+    REQUIRE_FINITE(wATM);
+    REQUIRE_FINITE(k0);
+
+    REQUIRE_SAME_SIZE(out, logKF);
+
+    REQUIRE_EQUAL_OR_GREATER(wATM, 1.0);
+    REQUIRE_NON_NEGATIVE(k0);
+}
+} // namespace uv::opt::cost::detail
+
 namespace uv::opt::cost
 {
 template <std::floating_point T>
@@ -32,25 +54,3 @@ void weightsATM(
     }
 }
 } // namespace uv::opt::cost
-
-namespace uv::opt::cost::detail
-{
-template <std::floating_point T> void
-validateWeightsATM(std::span<const T> logKF, const WeightATM<T>& params, std::span<T> out)
-{
-    const T wATM{params.wATM};
-    const T k0{params.k0};
-
-    REQUIRE_NON_EMPTY(out);
-    REQUIRE_NON_EMPTY(logKF);
-
-    REQUIRE_FINITE(logKF);
-    REQUIRE_FINITE(wATM);
-    REQUIRE_FINITE(k0);
-
-    REQUIRE_SAME_SIZE(out, logKF);
-
-    REQUIRE_EQUAL_OR_GREATER(wATM, 1.0);
-    REQUIRE_NON_NEGATIVE(k0);
-}
-} // namespace uv::opt::cost::detail

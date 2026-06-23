@@ -10,6 +10,60 @@
 namespace uv::models::svi::detail
 {
 
+template <opt::nlopt::Algorithm Algo> void fillCalendarMContext(
+    CalendarMContext& context,
+    Vector<double>& logKBuffer,
+    Vector<double>& previousVarianceBuffer,
+    std::size_t numStrikes,
+    const Params<double>& previousParams,
+    opt::nlopt::Optimizer<4, Algo>& optimizer,
+    std::span<const double> logKF,
+    const SliceData& sliceData
+) noexcept
+{
+    const std::size_t constraintCount{numStrikes + 2};
+
+    logKBuffer.resize(constraintCount);
+    previousVarianceBuffer.resize(constraintCount);
+
+    constexpr double wingOffset{0.15};
+
+    for (std::size_t i = 0; i < numStrikes; ++i)
+    {
+        const double k{logKF[i]};
+        logKBuffer[i] = k;
+        previousVarianceBuffer[i] = totalVariance(
+            previousParams.a,
+            previousParams.b,
+            previousParams.rho,
+            previousParams.m,
+            previousParams.sigma,
+            k
+        );
+    }
+
+    const auto appendWing = [&](std::size_t index, double k)
+    {
+        logKBuffer[index] = k;
+        previousVarianceBuffer[index] = totalVariance(
+            previousParams.a,
+            previousParams.b,
+            previousParams.rho,
+            previousParams.m,
+            previousParams.sigma,
+            k
+        );
+    };
+
+    appendWing(numStrikes, sliceData.logKFMin - wingOffset);
+    appendWing(numStrikes + 1, sliceData.logKFMax + wingOffset);
+
+    context.logKF = logKBuffer;
+    context.prevWk = previousVarianceBuffer;
+    context.eps = optimizer.eps();
+    context.atmTotalVariance = sliceData.atmTotalVariance;
+}
+
 template <opt::nlopt::Algorithm Algo> [[gnu::hot]] double
 wMinConstraint(unsigned, const double* x, double* grad, void* data) noexcept
 {

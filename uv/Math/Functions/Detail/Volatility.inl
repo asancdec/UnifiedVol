@@ -12,6 +12,11 @@
 #include <cstddef>
 #include <span>
 
+namespace uv::math::vol::detail
+{
+double impliedVolJackelCall(double callPrice, double t, double dF, double F, double K);
+} // namespace uv::math::vol::detail
+
 namespace uv::math::vol
 {
 

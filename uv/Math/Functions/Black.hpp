@@ -36,17 +36,6 @@ T priceBS(T t, T r, T q, T vol, T S, T K, bool doValidate = true, bool isCall = 
 
 template <std::floating_point T> T vegaB76(T t, T dF, T F, T vol, T K) noexcept;
 
-namespace detail
-{
-
-template <std::floating_point T> T d1(T t, T r, T q, T vol, T S, T K) noexcept;
-
-template <std::floating_point T> T d1FromForward(T t, T vol, T F, T K) noexcept;
-
-template <std::floating_point T> T d2(T vol, T t, T d1) noexcept;
-
-} // namespace detail
-
 } // namespace uv::math::black
 
 #include "Math/Functions/Detail/Black.inl"

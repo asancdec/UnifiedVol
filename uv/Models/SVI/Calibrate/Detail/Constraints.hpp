@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Models/SVI/Calibrate/Detail/Contexts.hpp"
+#include "Models/SVI/Calibrate/Detail/SliceData.hpp"
 #include "Models/SVI/Params.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"
 
@@ -10,9 +11,6 @@
 
 namespace uv::models::svi::detail
 {
-
-template <opt::nlopt::Algorithm Algo> [[gnu::hot]] double
-wMinConstraint(unsigned, const double* x, double* grad, void* data) noexcept;
 
 template <std::floating_point T, opt::nlopt::Algorithm Algo> void addCalendarConstraints(
     opt::nlopt::Optimizer<4, Algo>& optimizer,
