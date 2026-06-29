@@ -5,7 +5,6 @@
 #include "Core/Curve.hpp"
 #include "Core/MarketState.hpp"
 #include "Core/VolSurface.hpp"
-#include "Models/SVI/Params.hpp"
 
 #include <concepts>
 
@@ -52,9 +51,6 @@ template <std::floating_point T> void putPrices(
 
 template <std::floating_point T>
 void putPrices(const core::MarketState<T>& marketState, unsigned int valuePrec = 3);
-
-template <std::floating_point T>
-void sviParams(const models::svi::Params<T>& params, unsigned int valuePrec = 6);
 
 } // namespace uv::io::report
 

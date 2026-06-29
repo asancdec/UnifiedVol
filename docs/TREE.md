@@ -28,6 +28,7 @@ UnifiedVol/
 ├── data/
 │   ├── VolSurface_SPY_04072011.csv
 ├── docs/
+│   ├── ARCHITECTURE.md
 │   ├── BUILD.md
 │   ├── CONTRIBUTING.md
 │   ├── DATA.md
@@ -242,6 +243,7 @@ UnifiedVol/
 │   │   │   ├── Warn.hpp
 │   │   ├── Types.hpp
 │   │   ├── Utils/
+│   │   │   ├── ConsoleRedirect.hpp
 │   │   │   ├── Detail/
 │   │   │   │   ├── Log.hpp
 │   │   │   │   ├── StopWatch.inl
@@ -269,7 +271,6 @@ UnifiedVol/
 │   │   ├── Console/
 │   │   │   ├── Detail/
 │   │   │   │   ├── Report.inl
-│   │   │   ├── Redirect.hpp
 │   │   │   ├── Report.hpp
 │   │   ├── JSON/
 │   │   │   ├── Read.hpp

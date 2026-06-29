@@ -2,7 +2,7 @@
 
 #include "Base/Execution/ThreadPolicy.hpp"
 #include "Base/Macros/Require.hpp"
-#include "IO/Console/Redirect.hpp"
+#include "Base/Utils/ConsoleRedirect.hpp"
 #include "Optimization/Ceres/Config.hpp"
 #include "Optimization/Helpers.hpp"
 
@@ -150,7 +150,7 @@ template <typename PolicyT> void Optimizer<PolicyT>::solveInPlace()
 
     if (v == Verbosity::FullReport)
     {
-        io::ConsoleRedirect capture;
+        utils::ConsoleRedirect capture;
         options_.minimizer_progress_to_stdout = true;
         ::ceres::Solve(options_, &problem_, &summary);
         INFO(summary.FullReport());

@@ -67,6 +67,7 @@ io::report::volatility(hestonVolSurface);
 
 ## Documentation
 
+- Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Contributing: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
 - Build instructions: [docs/BUILD.md](docs/BUILD.md)
 - File tree: [docs/TREE.md](docs/TREE.md)

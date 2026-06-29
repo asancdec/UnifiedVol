@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "Base/Macros/Require.hpp"
-#include "IO/Console/Report.hpp"
 #include "Math/Functions/Volatility.hpp"
 #include "Models/SVI/Calibrate/Detail/Constraints.hpp"
 #include "Models/SVI/Calibrate/Detail/Contexts.hpp"
@@ -9,6 +8,7 @@
 #include "Models/SVI/Calibrate/Detail/Objective.hpp"
 
 #include <cstddef>
+#include <format>
 
 namespace uv::models::svi::detail
 {
@@ -25,6 +25,9 @@ template <std::floating_point T> void validateInputs(
     const core::Matrix<T>& logKF,
     const core::Matrix<T>& totalVariance
 );
+
+template <std::floating_point T>
+void logParams(const Params<T>& params, unsigned int valuePrec = 6);
 } // namespace uv::models::svi::detail
 
 namespace uv::models::svi
@@ -74,7 +77,7 @@ template <std::floating_point T, opt::nlopt::Algorithm Algo> Vector<Params<T>> c
         )};
 
         if (printParams)
-            io::report::sviParams(sliceParams);
+            detail::logParams(sliceParams);
 
         surfaceParams.emplace_back(sliceParams);
     }
@@ -86,6 +89,25 @@ template <std::floating_point T, opt::nlopt::Algorithm Algo> Vector<Params<T>> c
 
 namespace uv::models::svi::detail
 {
+
+template <std::floating_point T>
+void logParams(const Params<T>& params, unsigned int valuePrec)
+{
+    INFO(std::format(
+        "T={:.4f}, a={:.{}f}, b={:.{}f}, rho={:.{}f}, m={:.{}f}, sigma={:.{}f}",
+        params.t,
+        params.a,
+        valuePrec,
+        params.b,
+        valuePrec,
+        params.rho,
+        valuePrec,
+        params.m,
+        valuePrec,
+        params.sigma,
+        valuePrec
+    ));
+}
 
 template <std::floating_point T, opt::nlopt::Algorithm Algo> Params<T> calibrateSlice(
     const T t,
