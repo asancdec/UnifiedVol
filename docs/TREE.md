@@ -293,8 +293,6 @@ UnifiedVol/
 │   │   ├── Interpolation/
 │   │   │   ├── BSpline/
 │   │   │   │   ├── Detail/
-│   │   │   │   │   ├── Evaluate.hpp
-│   │   │   │   │   ├── Evaluate.inl
 │   │   │   │   │   ├── Interpolator.inl
 │   │   │   │   ├── Interpolator.hpp
 │   │   │   ├── Hermite/

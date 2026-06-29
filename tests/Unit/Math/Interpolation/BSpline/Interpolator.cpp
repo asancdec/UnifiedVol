@@ -2,7 +2,6 @@
 
 #include "Math/Interpolation/BSpline/Interpolator.hpp"
 #include "Base/Errors/Errors.hpp"
-#include "Math/Interpolation/BSpline/Detail/Evaluate.hpp"
 #include "Support/Tolerances.hpp"
 
 #include <algorithm>
@@ -11,7 +10,6 @@
 #include <vector>
 
 namespace bspline = uv::math::interp::bspline;
-namespace bspline_detail = uv::math::interp::bspline::detail;
 
 TEST(MathBSplineInterpolator, LinearSplineInterpolatesControlPolygon)
 {
@@ -49,7 +47,9 @@ TEST(MathBSplineInterpolator, UnitControlSplinesFormPartitionOfUnityOnClampedDom
 
         std::vector<double> basis(x.size());
 
-        bspline_detail::evalInplace<double, degree>(basis, x, knots, controlPoints);
+        const bspline::BSpline<double, degree> basisSpline{controlPoints, knots};
+
+        basisSpline.evalInplace(basis, x);
 
         for (std::size_t i{0}; i < x.size(); ++i)
         {
@@ -176,70 +176,70 @@ TEST(MathBSplineInterpolator, RejectedSettersPreservePreviousState)
     EXPECT_EQ(spline.eval(x), before);
 }
 
-TEST(MathBSplineInterpolator, DetailEvalOneMatchesDetailEvalInplace)
+TEST(MathBSplineInterpolator, EvalInplaceMatchesIndependentScalarEvaluations)
 {
     const std::vector<double> controlPoints{-1.0, 0.5, 3.0, 2.0, 4.5, 1.5};
     const std::vector<double> knots{0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0};
+    const bspline::BSpline<double, 3> spline{controlPoints, knots};
 
     const std::vector<double>
         x{0.0, 0.1, 1.0, 1.0, 0.4, -0.2, 0.9, 1.4, 3.1, 2.0, 2.6, 3.0};
     std::vector<double> out(x.size());
 
-    bspline_detail::evalInplace<double, 3>(out, x, knots, controlPoints);
+    spline.evalInplace(out, x);
 
     for (std::size_t i{0}; i < x.size(); ++i)
     {
-        const double value{bspline_detail::evalOne<double, 3>(x[i], knots, controlPoints)
-        };
+        const auto value{spline.eval(std::vector<double>{x[i]})};
 
-        EXPECT_NEAR(value, out[i], 1e-15) << "x=" << x[i];
+        ASSERT_EQ(value.size(), 1U);
+        EXPECT_NEAR(value.front(), out[i], 1e-15) << "x=" << x[i];
     }
 }
 
-TEST(MathBSplineInterpolator, DetailEvalMatchesPublicInterpolator)
+TEST(MathBSplineInterpolator, EvalInplaceMatchesEvalForSortedInputs)
 {
     const std::vector<double> controlPoints{-1.0, 0.5, 3.0, 2.0, 4.5, 1.5};
     const std::vector<double> knots{0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 3.0, 3.0, 3.0};
 
     const bspline::BSpline<double, 3> spline{controlPoints, knots};
     const std::vector<double> x{0.0, 0.1, 0.4, 0.9, 1.4, 2.0, 2.6, 3.0};
+    std::vector<double> inplaceEval(x.size());
 
-    const auto publicEval{spline.eval(x)};
-    const auto detailEval{bspline_detail::eval<double, 3>(x, knots, controlPoints)};
+    spline.evalInplace(inplaceEval, x);
+    const auto vectorEval{spline.eval(x)};
 
-    ASSERT_EQ(publicEval.size(), detailEval.size());
+    ASSERT_EQ(inplaceEval.size(), vectorEval.size());
 
     for (std::size_t i{0}; i < x.size(); ++i)
     {
-        EXPECT_NEAR(publicEval[i], detailEval[i], 1e-15) << "x=" << x[i];
+        EXPECT_NEAR(inplaceEval[i], vectorEval[i], 1e-15) << "x=" << x[i];
     }
 }
 
-TEST(MathBSplineInterpolator, DetailEvalReturnsZeroOutsideDomain)
+TEST(MathBSplineInterpolator, EvalReturnsZeroOutsideDomain)
 {
     const std::vector<double> controlPoints{0.0, 2.0, 4.0};
     const std::vector<double> knots{0.0, 0.0, 1.0, 2.0, 2.0};
+    const bspline::BSpline<double, 1> spline{controlPoints, knots};
 
-    EXPECT_DOUBLE_EQ(
-        (bspline_detail::evalOne<double, 1>(-0.1, knots, controlPoints)),
-        0.0
-    );
+    const auto y{spline.eval(std::vector<double>{-0.1, 2.1})};
 
-    EXPECT_DOUBLE_EQ(
-        (bspline_detail::evalOne<double, 1>(2.1, knots, controlPoints)),
-        0.0
-    );
+    ASSERT_EQ(y.size(), 2U);
+    EXPECT_DOUBLE_EQ(y[0], 0.0);
+    EXPECT_DOUBLE_EQ(y[1], 0.0);
 }
 
-TEST(MathBSplineInterpolator, DetailEvalAtRightEndpointReturnsLastControlPoint)
+TEST(MathBSplineInterpolator, EvalAtRightEndpointReturnsLastControlPoint)
 {
     const std::vector<double> controlPoints{0.0, 2.0, 4.0};
     const std::vector<double> knots{0.0, 0.0, 1.0, 2.0, 2.0};
+    const bspline::BSpline<double, 1> spline{controlPoints, knots};
 
-    EXPECT_DOUBLE_EQ(
-        (bspline_detail::evalOne<double, 1>(2.0, knots, controlPoints)),
-        4.0
-    );
+    const auto y{spline.eval(std::vector<double>{2.0})};
+
+    ASSERT_EQ(y.size(), 1U);
+    EXPECT_DOUBLE_EQ(y.front(), 4.0);
 }
 
 TEST(MathBSplineInterpolator, DegreeZeroSplineIsPiecewiseConstant)

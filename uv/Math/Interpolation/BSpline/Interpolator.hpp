@@ -29,10 +29,6 @@ template <std::floating_point T, std::size_t K = 3, bool doValidate = true> clas
   private:
     Vector<T> cPoints_;
     Vector<T> knots_;
-
-    static void validate(std::span<const T> cPoints, std::span<const T> knots);
-
-    void validate() const;
 };
 } // namespace uv::math::interp::bspline
 
