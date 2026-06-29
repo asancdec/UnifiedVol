@@ -7,7 +7,7 @@
 #include <iostream>
 #include <sstream>
 
-namespace uv::io
+namespace uv::utils
 {
 
 struct ConsoleRedirect
@@ -28,4 +28,4 @@ struct ConsoleRedirect
     std::streambuf* oldBuf_{};
 };
 
-} // namespace uv::io
+} // namespace uv::utils

@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 
-#include "Math/LinearAlgebra/VectorOps.hpp"
-
 #include <cstddef>
 #include <utility>
 
@@ -129,6 +127,12 @@ template <std::floating_point T> Vector<T> generateForwards(
 template <std::floating_point T>
 Vector<T> generateStrikes(T spot, const std::span<const T> moneyness)
 {
-    return math::linear_algebra::multiply<T>(moneyness, spot);
+    Vector<T> strikes;
+    strikes.reserve(moneyness.size());
+
+    for (const T value : moneyness)
+        strikes.emplace_back(spot * value);
+
+    return strikes;
 }
 } // namespace uv::core::detail

@@ -9,7 +9,6 @@
 #include "Math/Integration/TanHSinH.hpp"
 #include "Models/Heston/Params.hpp"
 #include "Models/Heston/Price/Config.hpp"
-#include "Models/Heston/Price/Detail/CharFunction.hpp"
 
 #include <array>
 #include <concepts>
@@ -33,13 +32,6 @@ template <std::floating_point T, std::size_t N = defaultNodes> class Pricer
     void validateCallPrice(T t, T dF, T F, T K) const;
 
     void setAlphas(const Config<T>& config);
-
-    [[gnu::hot]] T getAlpha(T w) const noexcept;
-
-    [[gnu::hot]] static T getResidues(T alpha, T F, T K) noexcept;
-
-    [[gnu::hot]] static T
-    getPhi(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcept;
 
   public:
     Pricer();

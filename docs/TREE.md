@@ -28,6 +28,7 @@ UnifiedVol/
 ├── data/
 │   ├── VolSurface_SPY_04072011.csv
 ├── docs/
+│   ├── ARCHITECTURE.md
 │   ├── BUILD.md
 │   ├── CONTRIBUTING.md
 │   ├── DATA.md
@@ -91,7 +92,6 @@ UnifiedVol/
 │   ├── Models/
 │   │   ├── Heston/
 │   │   │   ├── Calibrate/
-│   │   │   │   ├── CeresAdapter.cpp
 │   │   │   │   ├── Detail/
 │   │   │   │   │   ├── MaturitySlice.cpp
 │   │   ├── SVI/
@@ -99,9 +99,7 @@ UnifiedVol/
 │   │   │   │   ├── Detail/
 │   │   │   │   │   ├── Constraints.cpp
 │   │   │   │   │   ├── Contexts.cpp
-│   │   │   │   │   ├── Initialize.cpp
 │   │   │   │   │   ├── Objective.cpp
-│   │   │   │   │   ├── SliceData.cpp
 │   ├── Optimization/
 │   │   ├── Ceres/
 │   │   │   ├── Detail/
@@ -245,6 +243,7 @@ UnifiedVol/
 │   │   │   ├── Warn.hpp
 │   │   ├── Types.hpp
 │   │   ├── Utils/
+│   │   │   ├── ConsoleRedirect.hpp
 │   │   │   ├── Detail/
 │   │   │   │   ├── Log.hpp
 │   │   │   │   ├── StopWatch.inl
@@ -272,7 +271,6 @@ UnifiedVol/
 │   │   ├── Console/
 │   │   │   ├── Detail/
 │   │   │   │   ├── Report.inl
-│   │   │   ├── Redirect.hpp
 │   │   │   ├── Report.hpp
 │   │   ├── JSON/
 │   │   │   ├── Read.hpp
@@ -293,8 +291,6 @@ UnifiedVol/
 │   │   ├── Interpolation/
 │   │   │   ├── BSpline/
 │   │   │   │   ├── Detail/
-│   │   │   │   │   ├── Evaluate.hpp
-│   │   │   │   │   ├── Evaluate.inl
 │   │   │   │   │   ├── Interpolator.inl
 │   │   │   │   ├── Interpolator.hpp
 │   │   │   ├── Hermite/
@@ -320,12 +316,10 @@ UnifiedVol/
 │   │   │   ├── BuildSurface.hpp
 │   │   │   ├── Calibrate/
 │   │   │   │   ├── Calibrate.hpp
-│   │   │   │   ├── CeresAdapter.hpp
 │   │   │   │   ├── Config.hpp
 │   │   │   │   ├── Detail/
 │   │   │   │   │   ├── Calibrate.inl
 │   │   │   │   │   ├── Initialize.hpp
-│   │   │   │   │   ├── Initialize.inl
 │   │   │   │   │   ├── MaturitySlice.hpp
 │   │   │   │   │   ├── ResidualCost.hpp
 │   │   │   │   │   ├── ResidualCost.inl
@@ -356,8 +350,6 @@ UnifiedVol/
 │   │   │   │   │   ├── Initialize.inl
 │   │   │   │   │   ├── Objective.hpp
 │   │   │   │   │   ├── Objective.inl
-│   │   │   │   │   ├── SliceData.hpp
-│   │   │   │   ├── NLoptAdapter.hpp
 │   │   │   ├── Detail/
 │   │   │   │   ├── BuildSurface.inl
 │   │   │   │   ├── Math.inl

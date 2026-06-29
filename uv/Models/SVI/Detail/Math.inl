@@ -12,6 +12,11 @@ T totalVariance(T a, T b, T rho, T m, T sigma, T k) noexcept
     return std::fma(b, (rho * x + R), a);
 }
 
+template <std::floating_point T> T totalVariance(const Params<T>& params, T k) noexcept
+{
+    return totalVariance(params.a, params.b, params.rho, params.m, params.sigma, k);
+}
+
 template <std::floating_point T> T gk(T a, T b, T rho, T m, T sigma, T k) noexcept
 {
     T x{k - m};
@@ -36,14 +41,9 @@ template <std::floating_point T> T gk(T a, T b, T rho, T m, T sigma, T k) noexce
 
     return (A * A) - 0.25 * wkD1Squared * B + wkD2 * 0.5;
 }
-} // namespace uv::models::svi
 
-namespace uv::models::svi::detail
+template <std::floating_point T> T gk(const Params<T>& params, T k) noexcept
 {
-template <std::floating_point T>
-T aParam(T atmTotalVariance, T b, T rho, T m, T sigma) noexcept
-{
-    return atmTotalVariance - b * (-rho * m + std::sqrt(m * m + sigma * sigma));
+    return gk(params.a, params.b, params.rho, params.m, params.sigma, k);
 }
-
-} // namespace uv::models::svi::detail
+} // namespace uv::models::svi

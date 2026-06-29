@@ -5,7 +5,7 @@
 #include "Models/Heston/Calibrate/Calibrate.hpp"
 #include "Models/SVI/BuildSurface.hpp"
 #include "Models/SVI/Calibrate/Calibrate.hpp"
-#include "Models/SVI/Calibrate/NLoptAdapter.hpp"
+#include "Models/SVI/Calibrate/Config.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"
 #include "Support/Assertions.hpp"
 #include "Support/Golden.hpp"

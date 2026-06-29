@@ -2,7 +2,6 @@
 
 #include "Base/Macros/DevStatus.hpp"
 #include "Base/Macros/Require.hpp"
-#include "Math/LinearAlgebra/VectorOps.hpp"
 
 #include <cmath>
 
@@ -22,9 +21,8 @@ Curve<T>::Curve(T continuouslyCompoundedRate, std::span<const T> maturities)
     REQUIRE_NON_NEGATIVE(maturities_);
     REQUIRE_STRICTLY_INCREASING(maturities_);
 
-    discountFactors_ = math::linear_algebra::exponential<T>(
-        math::linear_algebra::multiply<T>(maturities_, -continuouslyCompoundedRate)
-    );
+    for (std::size_t i{0}; i < numMaturities_; ++i)
+        discountFactors_[i] = std::exp(-continuouslyCompoundedRate * maturities_[i]);
 }
 
 template <std::floating_point T>

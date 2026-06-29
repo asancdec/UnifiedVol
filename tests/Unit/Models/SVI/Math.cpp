@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "Models/SVI/Math.hpp"
+#include "Models/SVI/Params.hpp"
 
+#include <cmath>
 #include <gtest/gtest.h>
 
 TEST(UnitModelsSVIMath, TotalVarianceMatchesRawSVIFormula)
@@ -19,19 +21,21 @@ TEST(UnitModelsSVIMath, TotalVarianceMatchesRawSVIFormula)
     EXPECT_NEAR(uv::models::svi::totalVariance(a, b, rho, m, sigma, k), expected, 1e-15);
 }
 
-TEST(UnitModelsSVIMath, AParameterMakesAtmVarianceMatch)
+TEST(UnitModelsSVIMath, TotalVarianceParamsOverloadMatchesRawParameterOverload)
 {
-    const double atmVariance = 0.04;
-    const double b = 0.3;
-    const double rho = -0.4;
-    const double m = 0.1;
-    const double sigma = 0.5;
-
-    const double a = uv::models::svi::detail::aParam(atmVariance, b, rho, m, sigma);
+    const uv::models::svi::Params<double> params{1.0, 0.02, 0.3, -0.4, 0.1, 0.5};
+    const double k = -0.2;
 
     EXPECT_NEAR(
-        uv::models::svi::totalVariance(a, b, rho, m, sigma, 0.0),
-        atmVariance,
+        uv::models::svi::totalVariance(params, k),
+        uv::models::svi::totalVariance(
+            params.a,
+            params.b,
+            params.rho,
+            params.m,
+            params.sigma,
+            k
+        ),
         1e-15
     );
 }
@@ -39,6 +43,17 @@ TEST(UnitModelsSVIMath, AParameterMakesAtmVarianceMatch)
 TEST(UnitModelsSVIMath, ButterflyDiagnosticIsPositiveForBenignParameters)
 {
     EXPECT_GT(uv::models::svi::gk(0.04, 0.2, -0.3, 0.0, 0.5, 0.1), 0.0);
+}
+
+TEST(UnitModelsSVIMath, ButterflyDiagnosticParamsOverloadMatchesRawParameterOverload)
+{
+    const uv::models::svi::Params<double> params{1.0, 0.04, 0.2, -0.3, 0.0, 0.5};
+    const double k = 0.1;
+
+    EXPECT_DOUBLE_EQ(
+        uv::models::svi::gk(params, k),
+        uv::models::svi::gk(params.a, params.b, params.rho, params.m, params.sigma, k)
+    );
 }
 
 TEST(UnitModelsSVIMath, ButterflyDiagnosticDetectsInvalidParameters)

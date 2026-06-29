@@ -225,22 +225,4 @@ void putPrices(const core::MarketState<T>& marketState, unsigned int valuePrec)
     );
 }
 
-template <std::floating_point T>
-void sviParams(const models::svi::Params<T>& params, unsigned int valuePrec)
-{
-    INFO(std::format(
-        "T={:.4f}, a={:.{}f}, b={:.{}f}, rho={:.{}f}, m={:.{}f}, sigma={:.{}f}",
-        params.t,
-        params.a,
-        valuePrec,
-        params.b,
-        valuePrec,
-        params.rho,
-        valuePrec,
-        params.m,
-        valuePrec,
-        params.sigma,
-        valuePrec
-    ));
-}
 } // namespace uv::io::report

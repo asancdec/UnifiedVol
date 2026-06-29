@@ -10,7 +10,7 @@ namespace uv::models::svi
 
 template <std::floating_point T> struct Params
 {
-    T t;
+    T t; // maturity
 
     T a;
     T b;

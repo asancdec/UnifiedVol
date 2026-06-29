@@ -10,6 +10,39 @@
 #include <numbers>
 #include <utility>
 
+namespace uv::models::heston::price::detail
+{
+
+template <std::floating_point T>
+[[gnu::hot]] T getAlpha(T w, T alphaItm, T alphaOtm) noexcept
+{
+    if (w >= T{0})
+        return alphaItm;
+
+    return alphaOtm;
+}
+
+template <std::floating_point T>
+[[gnu::hot]] T getResidues(T alpha, const T F, const T K) noexcept
+{
+    if (alpha < -T{1})
+        return F - K;
+
+    return T{0};
+}
+
+template <std::floating_point T>
+[[gnu::hot]] T getPhi(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcept
+{
+    if (w * (rho - sigma * w / (v0 + kappa * theta * t)) >= T{0})
+        return T{0};
+
+    constexpr T piDivTwelve{std::numbers::pi_v<T> / T{12}};
+    return std::copysign(piDivTwelve, w);
+}
+
+} // namespace uv::models::heston::price::detail
+
 namespace uv::models::heston::price
 {
 
@@ -61,34 +94,6 @@ void Pricer<T, N>::setAlphas(const Config<T>& config)
 }
 
 template <std::floating_point T, std::size_t N>
-T Pricer<T, N>::getAlpha(T w) const noexcept
-{
-    if (w >= T{0})
-        return alphaItm_;
-
-    return alphaOtm_;
-}
-
-template <std::floating_point T, std::size_t N>
-T Pricer<T, N>::getResidues(T alpha, const T F, const T K) noexcept
-{
-    if (alpha < -T{1})
-        return F - K;
-
-    return T{0};
-}
-
-template <std::floating_point T, std::size_t N>
-T Pricer<T, N>::getPhi(T kappa, T theta, T sigma, T rho, T v0, T t, T w) noexcept
-{
-    if (w * (rho - sigma * w / (v0 + kappa * theta * t)) >= T{0})
-        return T{0};
-
-    constexpr T piDivTwelve{std::numbers::pi_v<T> / T{12}};
-    return std::copysign(piDivTwelve, w);
-}
-
-template <std::floating_point T, std::size_t N>
 T Pricer<T, N>::callPrice( // NOSONAR -- Hot pricing kernel keeps model/market scalars
                            // explicit.
     T kappa,
@@ -105,8 +110,8 @@ T Pricer<T, N>::callPrice( // NOSONAR -- Hot pricing kernel keeps model/market s
     constexpr Complex<T> i{T{0}, T{1}};
 
     const T w{std::log(F / K)};
-    const T alpha{getAlpha(w)};
-    const T tanPhi{std::tan(getPhi(kappa, theta, sigma, rho, v0, t, w))};
+    const T alpha{detail::getAlpha(w, alphaItm_, alphaOtm_)};
+    const T tanPhi{std::tan(detail::getPhi(kappa, theta, sigma, rho, v0, t, w))};
 
     const T sigma2{sigma * sigma};
 
@@ -125,8 +130,9 @@ T Pricer<T, N>::callPrice( // NOSONAR -- Hot pricing kernel keeps model/market s
 
     constexpr T invPi{T{1} / std::numbers::pi_v<T>};
 
-    return dF * (getResidues(alpha, F, K) - (F * invPi) * std::exp(alpha * w) *
-                                                quad_->integrateZeroToInf(integrand));
+    return dF *
+           (detail::getResidues(alpha, F, K) -
+            (F * invPi) * std::exp(alpha * w) * quad_->integrateZeroToInf(integrand));
 }
 
 template <std::floating_point T, std::size_t N>
@@ -224,8 +230,8 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient( // NOSONAR -- Hot kernel.
     constexpr Complex<T> i{T{0}, T{1}};
 
     const T w{std::log(F / K)};
-    const T alpha{getAlpha(w)};
-    const T tanPhi{std::tan(getPhi(kappa, theta, sigma, rho, v0, t, w))};
+    const T alpha{detail::getAlpha(w, alphaItm_, alphaOtm_)};
+    const T tanPhi{std::tan(detail::getPhi(kappa, theta, sigma, rho, v0, t, w))};
     const T sigma2{sigma * sigma};
     const T invSigma3{T{1} / (sigma2 * sigma)};
     const T invSigma2{T{1} / sigma2};
@@ -259,7 +265,7 @@ std::array<T, 6> Pricer<T, N>::callPriceWithGradient( // NOSONAR -- Hot kernel.
     const T scale{dF * pref};
 
     return std::array<T, 6>{
-        dF * (getResidues(alpha, F, K) + pref * integrals[0]),
+        dF * (detail::getResidues(alpha, F, K) + pref * integrals[0]),
         scale * integrals[1],
         scale * integrals[2],
         scale * integrals[3],
