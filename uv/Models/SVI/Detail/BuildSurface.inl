@@ -5,7 +5,6 @@
 #include "Math/Functions/Volatility.hpp"
 #include "Math/LinearAlgebra/MatrixOps.hpp"
 #include "Models/SVI/Calibrate/Calibrate.hpp"
-#include "Models/SVI/Calibrate/NLoptAdapter.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"
 
 #include <cstddef>
@@ -52,9 +51,7 @@ buildSurface(const core::VolSurface<T>& volSurface, const Vector<Params<T>>& par
                 volSurface.numStrikes(),
                 [&params, &logKF](std::size_t i, std::size_t j)
                 {
-                    const Params<T>& p{params[i]};
-
-                    return totalVariance(p.a, p.b, p.rho, p.m, p.sigma, logKF[i][j]);
+                    return totalVariance(params[i], logKF[i][j]);
                 }
             )
         )

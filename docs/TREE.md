@@ -91,7 +91,6 @@ UnifiedVol/
 │   ├── Models/
 │   │   ├── Heston/
 │   │   │   ├── Calibrate/
-│   │   │   │   ├── CeresAdapter.cpp
 │   │   │   │   ├── Detail/
 │   │   │   │   │   ├── MaturitySlice.cpp
 │   │   ├── SVI/
@@ -99,9 +98,7 @@ UnifiedVol/
 │   │   │   │   ├── Detail/
 │   │   │   │   │   ├── Constraints.cpp
 │   │   │   │   │   ├── Contexts.cpp
-│   │   │   │   │   ├── Initialize.cpp
 │   │   │   │   │   ├── Objective.cpp
-│   │   │   │   │   ├── SliceData.cpp
 │   ├── Optimization/
 │   │   ├── Ceres/
 │   │   │   ├── Detail/
@@ -318,12 +315,10 @@ UnifiedVol/
 │   │   │   ├── BuildSurface.hpp
 │   │   │   ├── Calibrate/
 │   │   │   │   ├── Calibrate.hpp
-│   │   │   │   ├── CeresAdapter.hpp
 │   │   │   │   ├── Config.hpp
 │   │   │   │   ├── Detail/
 │   │   │   │   │   ├── Calibrate.inl
 │   │   │   │   │   ├── Initialize.hpp
-│   │   │   │   │   ├── Initialize.inl
 │   │   │   │   │   ├── MaturitySlice.hpp
 │   │   │   │   │   ├── ResidualCost.hpp
 │   │   │   │   │   ├── ResidualCost.inl
@@ -354,8 +349,6 @@ UnifiedVol/
 │   │   │   │   │   ├── Initialize.inl
 │   │   │   │   │   ├── Objective.hpp
 │   │   │   │   │   ├── Objective.inl
-│   │   │   │   │   ├── SliceData.hpp
-│   │   │   │   ├── NLoptAdapter.hpp
 │   │   │   ├── Detail/
 │   │   │   │   ├── BuildSurface.inl
 │   │   │   │   ├── Math.inl

@@ -5,6 +5,24 @@
 #include <cstddef>
 #include <utility>
 
+namespace uv::math::interp::bspline::detail
+{
+
+template <std::floating_point T, std::size_t K>
+std::size_t findSpan(T x, std::span<const T> knots, std::span<const T> cPoints) noexcept;
+
+template <std::floating_point T, std::size_t K> T evalOneInSpan(
+    T x,
+    std::size_t span,
+    std::span<const T> knots,
+    std::span<const T> cPoints
+) noexcept;
+
+template <std::floating_point T, std::size_t K>
+void validate(std::span<const T> cPoints, std::span<const T> knots);
+
+} // namespace uv::math::interp::bspline::detail
+
 namespace uv::math::interp::bspline
 {
 

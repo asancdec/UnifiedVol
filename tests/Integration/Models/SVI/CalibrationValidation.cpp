@@ -3,7 +3,7 @@
 #include "Base/Errors/Errors.hpp"
 #include "Core/Matrix.hpp"
 #include "Models/SVI/Calibrate/Calibrate.hpp"
-#include "Models/SVI/Calibrate/NLoptAdapter.hpp"
+#include "Models/SVI/Calibrate/Config.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"
 
 #include <gtest/gtest.h>

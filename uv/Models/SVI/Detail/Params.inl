@@ -2,6 +2,17 @@
 
 #include "Models/SVI/Math.hpp"
 
+namespace uv::models::svi::detail
+{
+
+template <std::floating_point T>
+T aParam(T atmTotalVariance, T b, T rho, T m, T sigma) noexcept
+{
+    return atmTotalVariance - totalVariance(T{0}, b, rho, m, sigma, T{0});
+}
+
+} // namespace uv::models::svi::detail
+
 namespace uv::models::svi
 {
 

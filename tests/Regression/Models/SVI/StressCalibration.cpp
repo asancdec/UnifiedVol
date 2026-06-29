@@ -2,7 +2,7 @@
 
 #include "Core/Matrix.hpp"
 #include "Models/SVI/Calibrate/Calibrate.hpp"
-#include "Models/SVI/Calibrate/NLoptAdapter.hpp"
+#include "Models/SVI/Calibrate/Config.hpp"
 #include "Models/SVI/Math.hpp"
 #include "Models/SVI/Params.hpp"
 #include "Optimization/NLopt/Optimizer.hpp"

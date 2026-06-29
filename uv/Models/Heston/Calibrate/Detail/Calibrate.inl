@@ -3,7 +3,6 @@
 #include "Core/Matrix.hpp"
 #include "Math/Functions/Black.hpp"
 #include "Math/LinearAlgebra/MatrixOps.hpp"
-#include "Models/Heston/Calibrate/CeresAdapter.hpp"
 #include "Models/Heston/Calibrate/Config.hpp"
 #include "Models/Heston/Calibrate/Detail/Initialize.hpp"
 #include "Models/Heston/Calibrate/Detail/MaturitySlice.hpp"
@@ -22,6 +21,20 @@ template <std::floating_point T> struct CalibrationData
     std::span<const T> strikes;
     const core::Matrix<T>& vol;
 };
+
+template <typename Policy>
+opt::ceres::Optimizer<Policy> makeOptimizer(const Config& config)
+{
+    return opt::ceres::Optimizer<Policy>{opt::ceres::Config{
+        .maxEval = config.maxEval,
+        .functionTol = config.tolerance,
+        .paramTol = config.tolerance,
+        .gradientTol = config.tolerance,
+        .paramNames = {"kappa", "theta", "sigma", "rho", "v0"},
+        .verbosity = config.verbosity,
+        .numThreads = config.numThreads
+    }};
+}
 
 template <
     std::floating_point T,
@@ -76,7 +89,7 @@ Params<T> calibrate(
 )
 {
     price::Pricer<T, N> pricer{};
-    opt::ceres::Optimizer<Policy> optimizer{detail::makeOptimizer(config)};
+    opt::ceres::Optimizer<Policy> optimizer{detail::makeOptimizer<Policy>(config)};
 
     return detail::calibrate<T, N, Mode, Policy>(
         volSurface,
@@ -99,7 +112,7 @@ Params<T> calibrate(
     price::Pricer<T, N>& pricer
 )
 {
-    opt::ceres::Optimizer<Policy> optimizer{detail::makeOptimizer(config)};
+    opt::ceres::Optimizer<Policy> optimizer{detail::makeOptimizer<Policy>(config)};
 
     return detail::calibrate<T, N, Mode, Policy>(
         volSurface,
