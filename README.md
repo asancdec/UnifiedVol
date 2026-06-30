@@ -12,9 +12,7 @@
 
 **UnifiedVol** is a **C++20 quantitative finance library** for volatility surface modelling.
 
-The project focuses on front-office style numerical engineering: explicit model
-validation, reproducible public-data fixtures, regression coverage, performance
-guardrails, and documented references for the implemented methods.
+This project is designed around clean architecture, modular C++20 components, optimized numerical routines, and reproducible CI. It combines calibration pipelines, explicit model validation, regression and performance guardrails, public-data fixtures, and documented model implementations.
 
 ---
 
@@ -25,6 +23,85 @@ guardrails, and documented references for the implemented methods.
 - Numerical methods including tanh-sinh integration, Thomas solver, B-splines, PCHIP/Fritsch-Carlson interpolation, non-uniform grids, and root-finding utilities
 - Core market-data objects for curves, volatility surfaces, and market states
 - Unit, integration, regression, and performance tests with CI and coverage guardrails
+
+---
+
+## Architecture
+
+In the diagram below, arrows mean "depends on, includes, or calls".
+
+```mermaid
+flowchart LR
+    subgraph Clients["Clients"]
+        direction TB
+        Examples[examples]
+        Tests[tests]
+    end
+
+    subgraph Public["Public API"]
+        direction TB
+        API[uv/UnifiedVol.hpp]
+    end
+
+    subgraph Domain["Domain Layer"]
+        direction TB
+        Models[uv/Models<br/>SVI, Heston]
+        IO[uv/IO]
+        Core[uv/Core]
+    end
+
+    subgraph Numerics["Numerical Layer"]
+        direction TB
+        Math[uv/Math]
+        Opt[uv/Optimization]
+    end
+
+    subgraph Foundation["Foundation"]
+        direction TB
+        Base[uv/Base]
+    end
+
+    subgraph External["External"]
+        direction TB
+        ExtTest[GoogleTest]
+        ExtOpt[NLopt / Ceres]
+        ExtMath[Boost.Math<br/>lets_be_rational]
+    end
+
+    Examples --> API
+    Tests --> API
+    Tests --> ExtTest
+
+    API --> Base
+    API --> Core
+    API --> IO
+    API --> Models
+    API --> Math
+    API --> Opt
+
+    Core --> Base
+
+    IO --> Base
+    IO --> Core
+    IO --> Math
+
+    Models --> Base
+    Models --> Core
+    Models --> Math
+    Models --> Opt
+
+    Math --> Base
+    Math --> Core
+    Math --> ExtMath
+
+    Opt --> Base
+    Opt --> ExtOpt
+
+    Examples ~~~ Tests
+    Models ~~~ IO
+    Math ~~~ Opt
+    Base ~~~ ExtTest
+```
 
 ---
 
@@ -67,7 +144,6 @@ io::report::volatility(hestonVolSurface);
 
 ## Documentation
 
-- Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Contributing: [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)
 - Build instructions: [docs/BUILD.md](docs/BUILD.md)
 - File tree: [docs/TREE.md](docs/TREE.md)

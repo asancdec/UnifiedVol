@@ -28,7 +28,6 @@ UnifiedVol/
 ├── data/
 │   ├── VolSurface_SPY_04072011.csv
 ├── docs/
-│   ├── ARCHITECTURE.md
 │   ├── BUILD.md
 │   ├── CONTRIBUTING.md
 │   ├── DATA.md
