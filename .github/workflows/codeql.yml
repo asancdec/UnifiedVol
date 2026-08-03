@@ -42,7 +42,7 @@ jobs:
       # Configure first so vcpkg dependency builds are never added to the
       # first-party CodeQL database when the binary cache is cold.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@v4.37.4
         with:
           languages: c-cpp
           build-mode: manual
@@ -52,7 +52,7 @@ jobs:
         run: cmake --build --preset linux-gcc-release-tests --parallel
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@v4.37.4
         with:
           upload: never
           output: codeql-results
@@ -248,7 +248,7 @@ jobs:
           PY
 
       - name: Upload filtered CodeQL results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@v4.37.4
         with:
           sarif_file: codeql-results-filtered
 
